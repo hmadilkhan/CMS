@@ -11,6 +11,11 @@ class Project extends Model
 
     protected $guarded = [];
 
+    public function customer()
+    {
+        return $this->belongsTo(Customer::class);
+    }
+
     public function department()
     {
         return $this->belongsTo(Department::class);

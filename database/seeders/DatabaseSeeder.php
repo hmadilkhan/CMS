@@ -58,28 +58,36 @@ class DatabaseSeeder extends Seeder
         // DEPARTMENT SEEDER
 
         \App\Models\Department::create([
-            "name" => "Deal Review"
+            "name" => "Deal Review",
+            "document_length" => 5
         ]);
         \App\Models\Department::create([
-            "name" => "Site Survey"
+            "name" => "Site Survey",
+            "document_length" => 1
         ]);
         \App\Models\Department::create([
-            "name" => "Engineering"
+            "name" => "Engineering",
+            "document_length" => 3
         ]);
         \App\Models\Department::create([
-            "name" => "Permitting"
+            "name" => "Permitting",
+            "document_length" => 2
         ]);
         \App\Models\Department::create([
-            "name" => "Installation"
+            "name" => "Installation",
+            "document_length" => 1
         ]);
         \App\Models\Department::create([
-            "name" => "Inspection"
+            "name" => "Inspection",
+            "document_length" => 1
         ]);
         \App\Models\Department::create([
-            "name" => "PTO"
+            "name" => "PTO",
+            "document_length" => 1
         ]);
         \App\Models\Department::create([
-            "name" => "Certificate of Completion"
+            "name" => "Certificate of Completion",
+            "document_length" => 0
         ]);
 
         // SUB DEPARTMENT SEEDER
