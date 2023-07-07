@@ -2,12 +2,12 @@
 <script type="text/javascript">
     $('.select2').select2();
 
-    projectList();
-    function projectList() {
+    projectList("all");
+    function projectList(value) {
         $.ajax({
             method: "POST",
             url: "{{ route('projects.list') }}",
-            data : {"_token": "{{ csrf_token() }}",},
+            data : {"_token": "{{ csrf_token() }}",id:value},
             success: function(response) {
                 $('#projectlist').empty();
                 $('#projectlist').append(response);

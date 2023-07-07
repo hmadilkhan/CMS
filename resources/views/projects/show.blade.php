@@ -236,11 +236,6 @@
                     <div class="col-sm-12 mb-3">
                         <button type="button" class="btn btn-dark me-1 mt-1 w-sm-100" id="saveProject"><i class="icofont-arrow-left me-2 fs-6"></i>Submit</button>
                     </div>
-                    @foreach($filesCount as $file)
-                    <div class="col-sm-12 mb-3">
-                        <a target="_blank" href="{{asset('storage/projects/'.$file->filename)}}">{{$file->filename}}</a>
-                    </div>
-                    @endforeach
                 </div>
             </form>
         </div>

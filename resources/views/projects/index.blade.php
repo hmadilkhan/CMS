@@ -12,9 +12,9 @@
                 </div>
                 <div class="d-flex py-2 project-tab flex-wrap w-sm-100">
                     <ul class="nav nav-tabs tab-body-header rounded ms-3 prtab-set w-sm-100" role="tablist">
-                        <li class="nav-item"><a class="nav-link active" data-bs-toggle="tab" href="#All-list" role="tab">All</a></li>
+                        <li class="nav-item"><a class="nav-link active" data-bs-toggle="tab" onclick="projectList('all')" role="tab">All</a></li>
                         @foreach($departments as $department)
-                            <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#Started-list" role="tab">{{$department->name}}</a></li>
+                            <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" onclick="projectList('{{$department->id}}')" role="tab">{{$department->name}}</a></li>
                         @endforeach
                     </ul>
                 </div>

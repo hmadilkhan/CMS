@@ -137,6 +137,9 @@ class ProjectController extends Controller
         // if (auth()->user()->getRoleNames()[0] == "Manager") {
         //     $query->where("department");
         // }
+        if ($request->id != "" && $request->id != "all") {
+           $query->where("department_id",$request->id);
+        }
         return view("projects.project-list", [
             "projects" => $query->get(),
         ]);
