@@ -185,5 +185,18 @@ class DatabaseSeeder extends Seeder
         \App\Models\SalesPartner::create([
             "name" => "Sales Partner 2",
         ]);
+
+        \App\Models\ModuleType::create([
+            "name" => "CS6R-400MS",
+            "value" => "400"
+        ]);
+        \App\Models\ModuleType::create([
+            "name" => "Aptos 440W",
+            "value" => "440"
+        ]);
+        \App\Models\ModuleType::create([
+            "name" => "Hanwha Q Cell G10 400",
+            "value" => "400"
+        ]);
     }
 }
