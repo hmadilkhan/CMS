@@ -197,7 +197,7 @@
                 </div>
                 <div class="col-sm-2 mb-3">
                     <label for="uom" class="form-label">UOM</label>
-                    <select class="form-select select2" aria-label="Default select UOM" id="uom" name="uom">
+                    <select class="form-select select2" aria-label="Default select UOM" id="uom" >
                         <option value="">Select UOM</option>
                         @foreach ($uoms as $uom)
                         <option value="{{ $uom->id }}">
