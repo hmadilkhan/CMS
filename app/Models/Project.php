@@ -30,4 +30,9 @@ class Project extends Model
     {
         return $this->hasMany(Task::class,"project_id","id")->where("status","In-Progress");
     }
+
+    public function task()
+    {
+        return $this->hasMany(Task::class,"project_id","id");
+    }
 }

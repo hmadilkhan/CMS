@@ -11,10 +11,10 @@ trait MediaTrait {
     {
         if($file) {
 			$this->removeImage($path,$previousImage);
-            $fileName   = time() ."-". $file->getClientOriginalName();
-            // Storage::disk('public')->put($path . $fileName, File::get($file));
+            $fileName   = time() ."-". str_replace(' ', '',$file->getClientOriginalName());
+            Storage::disk('public')->put($path . $fileName, File::get($file));
 			$file_size = $this->fileSize($file);
-			$file->move(public_path('images/'.$path), $fileName);
+			// $file->move(public_path('images/'.$path), $fileName);
             $file_name  = $file->getClientOriginalName();
             $file_type  = $file->getClientOriginalExtension();
             $filePath   = "https://sabsoft.com.pk/SabifyProject/public/images/".$path.$fileName;

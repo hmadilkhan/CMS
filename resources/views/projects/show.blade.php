@@ -161,6 +161,7 @@
                 <input type="hidden" name="id" value="{{$project->id}}">
                 <input type="hidden" name="taskid" value="{{$task->id}}">
                 <input type="hidden" name="length" value="{{$project->department->document_length}}">
+                <input type="hidden" name="alreadyuploaded" value="{{count($filesCount)}}">
                 <div class="row  mb-3">
                     <div class="col-md-12">
                         <div class="form-group">
@@ -181,7 +182,7 @@
                         @enderror
                     </div>
                     <div class="col-sm-3 ">
-                        <label for="finance_option_id" class="form-label">Move Back {{$project->department->document_length}}</label>
+                        <label for="finance_option_id" class="form-label">Move Back {{count($filesCount)}}</label>
                         <select class="form-select select2" aria-label="Default select Move Back" id="back" name="back">
                             <option value="">Select Move Back</option>
                             @if(!empty($backdepartments))
@@ -199,9 +200,9 @@
                         <select class="form-select select2" aria-label="Default select Move Forward" id="forward" name="forward">
                             <option value="">Select Move Forward</option>
                             @if(!empty($forwarddepartments))
-                                @foreach($forwarddepartments as $bdepartment)
-                                <option value="{{$bdepartment->id}}">{{$bdepartment->name}}</option>
-                                @endforeach
+                            @foreach($forwarddepartments as $bdepartment)
+                            <option value="{{$bdepartment->id}}">{{$bdepartment->name}}</option>
+                            @endforeach
                             @endif
                         </select>
                         @error("forward")
@@ -219,21 +220,27 @@
                     </div>
                     <div class="col-sm-3 mb-3">
                         <label for="formFileMultipleoneone" class="form-label">Required Files</label>
-                        <input class="form-control" type="file"  id="formFileMultipleoneone" name="file[]" accept=".png,.jpg,.pdf" multiple>
+                        <input class="form-control" type="file" id="file" name="file[]" accept=".png,.jpg,.pdf" multiple>
                         @error("file")
-                            <div class="text-danger message mt-2">{{$message}}</div>
+                        <div id="file_message" class="text-danger message mt-2">{{$message}}</div>
                         @enderror
+                        <div id="file_message" class="text-danger message mt-2"></div>
                     </div>
                     <div class="col-sm-12 mb-3">
                         <label for="formFileMultipleoneone" class="form-label">Notes</label>
                         <textarea class="form-control" rows="3" name="notes"></textarea>
                         @error("notes")
-                            <div class="text-danger message mt-2">{{$message}}</div>
+                        <div class="text-danger message mt-2">{{$message}}</div>
                         @enderror
                     </div>
                     <div class="col-sm-12 mb-3">
-                        <button type="submit" class="btn btn-dark me-1 mt-1 w-sm-100" id="saveProject"><i class="icofont-arrow-left me-2 fs-6"></i>Submit</button>
+                        <button type="button" class="btn btn-dark me-1 mt-1 w-sm-100" id="saveProject"><i class="icofont-arrow-left me-2 fs-6"></i>Submit</button>
                     </div>
+                    @foreach($filesCount as $file)
+                    <div class="col-sm-12 mb-3">
+                        <a target="_blank" href="{{asset('storage/projects/'.$file->filename)}}">{{$file->filename}}</a>
+                    </div>
+                    @endforeach
                 </div>
             </form>
         </div>
@@ -275,7 +282,7 @@
                 dataType: 'json',
                 success: function(response) {
                     $('#sub_department').empty();
-                    $('#sub_department').append($('<option value="">Select Loan Apr</soption>'));
+                    $('#sub_department').append($('<option value="">Select Sub Department</soption>'));
                     $.each(response.subdepartments, function(i, value) {
                         $('#sub_department').append($('<option  value="' + value.id + '">' + value.name + '</option>'));
                     });
@@ -286,5 +293,26 @@
             })
         }
     }
+
+
+
+    $("#saveProject").click(function() {
+        $("#file_message").html('')
+        let fileCount = $("[name='file[]']").prop("files").length;
+        let stage = $('input[name="stage"]:checked').val()
+        let totalCount = "{{$project->department->document_length}}";
+        let alreadyUploaded = "{{count($filesCount)}}";
+        if (stage == "forward" && alreadyUploaded == 0) {
+            if (fileCount == totalCount) {
+                $("#file_message").html('')
+                $("#form").submit();
+            } else {
+                $("#file_message").html("Please select total " + totalCount + " files");
+            }
+        } else {
+            $("#form").submit();
+        }
+
+    });
 </script>
 @endsection

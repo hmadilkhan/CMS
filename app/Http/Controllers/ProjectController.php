@@ -6,14 +6,18 @@ use App\Models\Customer;
 use App\Models\Department;
 use App\Models\Employee;
 use App\Models\Project;
+use App\Models\ProjectFile;
 use App\Models\SubDepartment;
 use App\Models\Task;
+use App\Traits\MediaTrait;
 use GuzzleHttp\Psr7\Query;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\Rule;
 
 class ProjectController extends Controller
 {
+    use MediaTrait;
     /**
      * Display a listing of the resource.
      */
@@ -79,13 +83,15 @@ class ProjectController extends Controller
      */
     public function show(Project $project)
     {
+        // return $project->task;
         // return Project::with("customer","department","subdepartment","assignedPerson","assignedPerson.employee")->first();
         $task = Task::where("status", "In-Progress")->where("project_id", $project->id)->first();
         return view("projects.show", [
-            "project" => Project::with("customer", "department", "subdepartment", "assignedPerson", "assignedPerson.employee")->first(),
+            "project" => Project::with("customer", "department", "subdepartment", "assignedPerson", "assignedPerson.employee")->where("id", $project->id)->first(),
             "task" => $task,
             "backdepartments" => Department::where("id", "<", $task->department_id)->get(),
             "forwarddepartments" => Department::where("id", ">", $task->department_id)->take(1)->get(),
+            "filesCount" => ProjectFile::where("project_id",$project->id)->where("department_id",$project->department_id)->get(),
         ]);
     }
 
@@ -121,10 +127,11 @@ class ProjectController extends Controller
         //
     }
 
-    public function getProjectList()
+    public function getProjectList(Request $request)
     {
+        $query = Project::with("department", "subdepartment", "assignedPerson", "assignedPerson.employee");
         return view("projects.project-list", [
-            "projects" => Project::with("department", "subdepartment", "assignedPerson", "assignedPerson.employee")->get(),
+            "projects" => $query->get(),
         ]);
     }
 
@@ -140,17 +147,38 @@ class ProjectController extends Controller
 
     public function projectMove(Request $request)
     {
+        $filesArray = [];
         $validated = $request->validate([
             'stage' => 'required',
             'forward' => 'required_if:stage,forward|integer',
             'back' => 'required_if:stage,back|integer',
             'sub_department' => 'required',
-            // 'file' => ['required'],
+            // 'file' => 'required_if:stage,forward|integer',
+            'file' => Rule::requiredIf(function () use ($request) {
+                return $request->stage == "forward" && $request->alreadyuploaded == 0;
+            }),
             'notes' => ['required'],
         ]);
-
+        if ($request->stage == "forward" && $request->alreadyuploaded == 0) {
+            foreach ($request->file as $key => $file) {
+                $result = $this->uploads($file, 'projects/');
+                array_push($filesArray, $result);
+            }
+        }
         try {
             DB::beginTransaction();
+            if ($request->stage == "forward" && $request->alreadyuploaded == 0) {
+                $project = Project::findOrFail($request->id);
+                $task = Task::findOrFail($request->taskid);
+                foreach ($filesArray as $key => $file) {
+                    ProjectFile::create([
+                        "project_id" => $project->id,
+                        "task_id" => $task->id,
+                        "department_id" => $project->department_id,
+                        "filename" => $file["fileName"],
+                    ]);
+                }
+            }
             Project::where("id", $request->id)->update([
                 "department_id" => ($request->stage == "forward" ? $request->forward : $request->back),
                 "sub_department_id" => $request->sub_department,
@@ -158,15 +186,16 @@ class ProjectController extends Controller
             $emp =  Employee::with("department")->whereHas("department", function ($query) use ($request) {
                 $query->whereIn("department_id", [($request->stage == "forward" ? $request->forward : $request->back)]);
             })->first();
-            Task::where("id",$request->taskid)->update(["status" => "Completed"]);
+            Task::where("id", $request->taskid)->update(["status" => "Completed", "notes" => $request->notes]);
             Task::create([
                 "project_id" => $request->id,
                 "employee_id" => $emp->id,
                 "department_id" => ($request->stage == "forward" ? $request->forward : $request->back),
                 "sub_department_id" => $request->sub_department,
             ]);
+
             DB::commit();
-            return redirect()->route("projects.list");
+            return redirect()->route("projects.index");
         } catch (\Throwable $th) {
             DB::rollBack();
             return $th->getMessage();

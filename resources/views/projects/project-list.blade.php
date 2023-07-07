@@ -91,7 +91,7 @@
                     <img src="assets/images/lg/avatar3.jpg" alt="" class="avatar xl rounded-circle img-thumbnail shadow-sm">
                 </div>
                 <h6 class="mb-0 fw-bold d-block fs-6 mt-2">{{$project->department->name}}</h6>
-                <div class="d-flex align-items-center justify-content-between mt-5">
+                <div class="d-flex align-items-center justify-content-between mt-1">
                     <div class="lesson_name">
                         <!-- <div class="project-block light-info-bg">
                             <i class="icofont-handshake-deal"></i>
