@@ -83,15 +83,19 @@ class ProjectController extends Controller
      */
     public function show(Project $project)
     {
-        // return $project->task;
+        // $project = Project::with("task","customer", "department", "subdepartment", "assignedPerson", "assignedPerson.employee")->where("id", $project->id)->first();
+        // return  $project->files->filter(function ($item)  {
+        //     return $item->department_id == 1;
+        // })->values();
         // return Project::with("customer","department","subdepartment","assignedPerson","assignedPerson.employee")->first();
         $task = Task::where("status", "In-Progress")->where("project_id", $project->id)->first();
         return view("projects.show", [
-            "project" => Project::with("customer", "department", "subdepartment", "assignedPerson", "assignedPerson.employee")->where("id", $project->id)->first(),
+            "project" => Project::with("task","customer", "department", "subdepartment", "assignedPerson", "assignedPerson.employee")->where("id", $project->id)->first(),
             "task" => $task,
             "backdepartments" => Department::where("id", "<", $task->department_id)->get(),
             "forwarddepartments" => Department::where("id", ">", $task->department_id)->take(1)->get(),
             "filesCount" => ProjectFile::where("project_id",$project->id)->where("department_id",$project->department_id)->get(),
+            "departments" => Department::all(),
         ]);
     }
 
@@ -130,6 +134,9 @@ class ProjectController extends Controller
     public function getProjectList(Request $request)
     {
         $query = Project::with("department", "subdepartment", "assignedPerson", "assignedPerson.employee");
+        // if (auth()->user()->getRoleNames()[0] == "Manager") {
+        //     $query->where("department");
+        // }
         return view("projects.project-list", [
             "projects" => $query->get(),
         ]);

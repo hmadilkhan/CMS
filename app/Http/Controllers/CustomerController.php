@@ -109,22 +109,24 @@ class CustomerController extends Controller
                 "dealer_fee" => $request->dealer_fee,
                 "dealer_fee_amount" => $request->dealer_fee_amount,
             ]);
-            $count = count($request->uom);
-            if ($count > 0) {
-                for ($i = 0; $i < $count; $i++) {
-                    CustomerAdder::create([
-                        "customer_id" => $customer->id,
-                        "adder_type_id" => $request->adders[$i],
-                        "adder_sub_type_id" => $request->subadders[$i],
-                        "adder_unit_id" => $request->uom[$i],
-                        "amount" => $request->amount[$i],
-                    ]);
+            if (!empty($request->uom)) {
+                $count = count($request->uom);
+                if ($count > 0) {
+                    for ($i = 0; $i < $count; $i++) {
+                        CustomerAdder::create([
+                            "customer_id" => $customer->id,
+                            "adder_type_id" => $request->adders[$i],
+                            "adder_sub_type_id" => $request->subadders[$i],
+                            "adder_unit_id" => $request->uom[$i],
+                            "amount" => $request->amount[$i],
+                        ]);
+                    }
                 }
             }
             $subdepartment = SubDepartment::where("department_id",1)->first();
             $project = Project::create([
                 "customer_id" => $customer->id,
-                "project_name" => $request->first_name.$request->last_name,
+                "project_name" => $request->first_name."-".$request->last_name,
                 "department_id" => 1,
                 "sub_department_id" => $subdepartment->id,
                 "description" =>  $request->notes,

@@ -246,6 +246,55 @@
         </div>
     </div>
 </div>
+<div class="card card-info mt-2">
+    <div class="card-body">
+        <div class="row clearfix">
+            <div class="col-md-12">
+                <div class="card border-0 mb-4 no-bg">
+                    <div class="card-header py-3 px-0 d-sm-flex align-items-center  justify-content-between border-bottom">
+                        <h3 class=" fw-bold flex-fill mb-0 mt-sm-0">Project Notes </h3>
+                    </div>
+                </div>
+            </div>
+            @foreach($departments as $department)
+            <div class="col-md-12">
+                <div class="card border-0 mb-4 no-bg">
+                    <div class="card-header py-3 px-0 d-sm-flex align-items-center  justify-content-between border-bottom border-top">
+                        <h3 class=" fw-bold flex-fill mb-0 mt-sm-0">{{$department->name}}</h3>
+                    </div>
+                </div>
+            </div>
+            @php
+            $filtered_collection = $project->task->filter(function ($item) use ($department) {
+            return $item->department_id == $department->id;
+            })->values();
+
+            $files = $project->files->filter(function ($item) use ($department) {
+            return $item->department_id == $department->id;
+            })->values();
+
+            @endphp
+
+            <div class="col-sm-12 mb-3">
+                <label for="formFileMultipleoneone" class="form-label">Notes</label>
+                <textarea class="form-control" rows="3" name="notes">
+                @foreach($filtered_collection as $value)    
+                    {{date("d M Y H:i:s",strtotime($value->created_at))."\n".$value->notes."\n"}}
+                @endforeach
+                </textarea>
+            </div>
+            <div class="col-sm-12 mb-3">
+            <label for="formFileMultipleoneone" class="form-label">Files</label>
+                @foreach($files as $file) 
+                   <label class="badge bg-light"> <a target="_blank" href="{{asset('storage/projects/'.$file->filename)}}" class="ml-3">{{$file->filename}}</a></label>
+                @endforeach
+            </div>
+
+            @endforeach
+        </div>
+    </div>
+</div>
+
 @endsection
 @section("scripts")
 <script>

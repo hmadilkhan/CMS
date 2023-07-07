@@ -11,6 +11,8 @@ class Project extends Model
 
     protected $guarded = [];
 
+    protected $with = ["files"];
+
     public function customer()
     {
         return $this->belongsTo(Customer::class);
@@ -34,5 +36,10 @@ class Project extends Model
     public function task()
     {
         return $this->hasMany(Task::class,"project_id","id");
+    }
+
+    public function files()
+    {
+        return $this->hasMany(ProjectFile::class,"project_id","id");
     }
 }

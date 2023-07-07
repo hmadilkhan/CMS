@@ -30,4 +30,9 @@ class Task extends Model
     {
         return $this->belongsTo(SubDepartment::class,"sub_department_id","id");
     }
+
+    public function files()
+    {
+        return $this->hasMany(ProjectFile::class,"task_id","id");
+    }
 }
