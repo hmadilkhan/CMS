@@ -96,7 +96,7 @@
                 </div>
                 <div class="col-sm-4">
                     <label for="code" class="form-label">Panel Qty</label>
-                    <input type="text" class="form-control" id="panel_qty" name="panel_qty" placeholder="System Size" onblur="getRedlineCost()">
+                    <input type="text" class="form-control" id="panel_qty" name="panel_qty" placeholder="Panel Qty" onblur="getRedlineCost()">
                     @error("panel_qty")
                     <div class="text-danger message mt-2">{{$message}}</div>
                     @enderror
@@ -145,8 +145,8 @@
                     @enderror -->
                 </div>
                 <div class="col-sm-4 mb-3">
-                    <label for="exampleFormControlInput877" class="form-label">Module Qty</label>
-                    <input type="text" class="form-control" id="module_qty" name="module_qty" placeholder="Module Qty">
+                    <label for="exampleFormControlInput877" class="form-label">System Size</label>
+                    <input type="text" class="form-control" id="module_qty" name="module_qty" placeholder="System Size">
                     @error("module_qty")
                     <div class="text-danger message mt-2">{{$message}}</div>
                     @enderror
@@ -431,6 +431,7 @@
                     let redlinecost = response.redlinecost;
                     let redline = panelQty * moduleQty * redlinecost
                     $('#redline_costs').val(redline);
+                    $('#module_qty').val(panelQty * moduleQty);
 
                 },
                 error: function(error) {
@@ -527,7 +528,7 @@
         if (unit_id == 3) {
             let moduleQty = $('#module_qty').val();
             let panelQty = $('#panel_qty').val();
-            amount = amount * moduleQty * panelQty;
+            amount = amount * moduleQty ;//* panelQty;
         }
         let result = checkExistence(adders_id, subadder_id, unit_id);
         if (result == false) {

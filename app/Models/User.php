@@ -26,6 +26,8 @@ class User extends Authenticatable
         'user_type_id',
     ];
 
+    protected $with = ['roles'];
+
     /**
      * The attributes that should be hidden for serialization.
      *

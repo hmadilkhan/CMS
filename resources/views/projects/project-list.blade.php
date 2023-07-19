@@ -1,107 +1,191 @@
-<!-- <div class=" fade"> -->
-<div class="row g-3 gy-5 py-3 row-deck">
-    <!-- <div class="row g-3 row-cols-3 row-cols-sm-3 row-cols-md-3 row-cols-lg-3 row-cols-xl-3 row-cols-xxl-3 row-deck py-1 pb-4"> -->
-        @foreach($projects as $project)
-        <!-- <div class="col"> -->
-            <!-- <div class="card teacher-card">
-                <div class="card-body  d-flex">
-                    <div class="profile-av pe-xl-4 pe-md-2 pe-sm-4 pe-4 text-center w220">
-                        <img src="assets/images/lg/avatar3.jpg" alt="" class="avatar xl rounded-circle img-thumbnail shadow-sm">
-                        <div class="about-info d-flex align-items-center mt-1 justify-content-center flex-column">
-                            <h6 class="mb-0 fw-bold d-block fs-6 mt-2">{{$project->department->name}}</h6>
-                            <div class="btn-group mt-2" role="group" aria-label="Basic outlined example">
-                                <button type="button" class="btn btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#editproject"><i class="icofont-edit text-success"></i></button>
-                                <button type="button" class="btn btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#deleteproject"><i class="icofont-ui-delete text-danger"></i></button>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="teacher-info border-start ps-xl-4 ps-md-3 ps-sm-4 ps-4 w-100">
-                        <h6 class="mb-0 mt-2  fw-bold d-block fs-6">{{$project->subdepartment->name}}</h6>
-                        <div class="video-setting-icon mt-3 pt-3 border-top">
-                            <div class="row g-2 pt-4">
-                                <div class="col-12 d-flex align-items-center">
-                                    <div class="">
-                                        <h3 class="mb-0 fw-bold  fs-6  mb-2">{{$project->project_name}}</h3>
-                                    </div>
-                                </div>
-                                <div class="col-6">
-                                    <div class="d-flex align-items-center">
-                                        <i class="icofont-ui-calendar"></i>
-                                        <span class="ms-2">Project Start Date</span>
-                                    </div>
-                                </div>
-                                <div class="col-6">
-                                    <div class="d-flex align-items-center">
-                                        <span class="ms-2 text-success">{{date("d M Y",strtotime($project->start_date))}}</span>
-                                    </div>
-                                </div>
-                                <div class="col-6">
-                                    <div class="d-flex align-items-center">
-                                        <i class="icofont-ui-calendar"></i>
-                                        <span class="ms-2">Project End Date</span>
-                                    </div>
-                                </div>
-                                <div class="col-6">
-                                    <div class="d-flex align-items-center">
-                                        <span class="ms-2 text-danger">{{date("d M Y",strtotime($project->end_date))}}</span>
-                                    </div>
-                                </div>
-                                <div class="col-6">
-                                    <div class="d-flex align-items-center">
-                                        <i class="icofont-group-students "></i>
-                                        <span class="ms-2">Assigned To</span>
-                                    </div>
-                                </div>
-                                <div class="col-6">
-                                    <div class="d-flex align-items-center">
-                                        <span class="ms-2">{{$project->assignedPerson[0]->employee->name}}</span>
-                                    </div>
-                                </div>
-                                <div class="col-6">
-                                    <div class="d-flex align-items-center">
-                                        <i class="icofont-dollar "></i>
-                                        <span class="ms-2">Budget</span>
-                                    </div>
-                                </div>
-                                <div class="col-6">
-                                    <div class="d-flex align-items-center">
-                                        <span class="ms-2">${{number_format($project->budget,0)}}</span>
-                                    </div>
-                                </div>
-                                <div class="col-12">
-                                    <div class="d-flex align-items-center justify-content-between mb-2">
-                                        <h4 class="small fw-bold mb-0">Progress</h4>
-                                        <span class="small {{($project->assignedPerson[0]->status == 'In-Progress' ? 'light-warning-bg' : 'light-success-bg')}}  p-1 rounded"><i class="icofont-ui-clock"></i> {{$project->assignedPerson[0]->status}}</span>
-                                    </div>
-                                </div>
-                            </div>
-                            <p>{{$project->description}}</p>
-                        </div>
-                        <div class="d-flex flex-wrap align-items-center ct-btn-set">
-                            <a href="{{route('projects.show',$project->id)}}" class="btn btn-dark btn-sm mt-1"><i class="icofont-eye me-2 fs-6"></i>Details</a>
-                        </div>
-                    </div>
-                </div>
-            </div> -->
-        <!-- </div> -->
-        <div class="col-xxl-4 col-xl-4 col-lg-4 col-md-6 col-sm-6">
+<style>
+    .custom-card-body {
+        min-height: 300px;
+        min-width: 100px;
+        margin-right: 5px;
+    }
+</style>
+
+@foreach($subdepartments as $subdepartment)
+<div class="container-fluid py-2">
+    <div class="card border-0 mb-4 no-bg">
+        <div class="card-header py-3 px-0 d-sm-flex align-items-center  justify-content-between border-bottom">
+            <h3 class=" fw-bold flex-fill mb-0 mt-sm-0">{{$subdepartment->name}}</h3>
+        </div>
+    </div>
+    <div class="d-flex flex-row flex-nowrap">
+        @php $collections = $projects->filter(function ($item) use ($subdepartment) {
+        return $item->sub_department_id == $subdepartment->id;
+        })->values(); @endphp
+        @if(count($collections) > 0)
+        @foreach($collections as $project)
+        <div class="col-xxl-4 col-xl-4 col-lg-4 col-md-4 col-sm-4 " style="margin-right: 5px;">
             <div class="card">
                 <div class="card-body">
+                    <div class="d-flex align-items-center justify-content-between profile-av pe-xl-4 pe-md-2 pe-sm-4 pe-4 w220">
+                        <img src="{{($project->customer->salespartner->image != '' ? (asset('storage/projects/'.$project->customer->salespartner->image)) : (asset('assets/images/profile_av.png')))}}" alt="" class="avatar xl rounded-circle img-thumbnail shadow-sm">
+                    </div>
+                    <h6 class="mb-0 fw-bold d-block fs-6 mt-2">{{$project->department->name}}</h6>
+                    <div class="d-flex align-items-center justify-content-between mt-1">
+                        <div class="lesson_name">
+                        </div>
+                    </div>
+
+                    <div class="row g-2 pt-4">
+                        <div class="col-12 d-flex align-items-center">
+                            <div class="">
+                                <h3 class="mb-0 fw-bold  fs-6  mb-2">{{$project->project_name}}</h3>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="d-flex align-items-center">
+                                <i class="icofont-ui-calendar"></i>
+                                <span class="ms-2">Sales Partner</span>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="d-flex align-items-center">
+                                <span class="ms-2 text-success">{{$project->customer->salespartner->name}}</span>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="d-flex align-items-center">
+                                <i class="icofont-ui-calendar"></i>
+                                <span class="ms-2">Status</span>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="d-flex align-items-center">
+                                <i class="icofont-sand-clock"></i>
+                                <span class="ms-2 text-danger">{{$project->assignedPerson[0]->status}}</span>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="d-flex align-items-center">
+                                <i class="icofont-group-students "></i>
+                                <span class="ms-2">Assigned To</span>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="d-flex align-items-center">
+                                <i class="icofont-ui-text-chat"></i>
+                                <span class="ms-2">{{$project->assignedPerson[0]->employee->name}}</span>
+                            </div>
+                        </div>
+                        <div class="col-12">
+                            <h4 class="small fw-bold mb-2 mt-2">Progress</h4>
+                            <div class="progress">
+                                <div class="progress-bar" role="progressbar" style="width: {{$project->department_id/8*100}}%;" aria-valuenow="{{$project->department_id/8*100}}" aria-valuemin="0" aria-valuemax="100">{{$project->department_id/8*100}}%</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="dividers-block"></div>
+                    <div class="d-flex align-items-center justify-content-between mb-2">
+                        <a href="{{route('projects.show',$project->id)}}" class="btn btn-dark btn-set-task w-sm-100"><i class="icofont-eye me-2 fs-6"></i>Details</a>
+                        @if(auth()->user()->getRoleNames()[0] == "Manager")
+                            <button type="button" class="btn btn-dark btn-set-task w-sm-100" onclick="assignTask('{{$project->department_id}}','{{$project->id}}')"><i class="icofont-plus-circle me-2 fs-6"></i>Assign Task</button>
+                        @endif
+                    </div>
+
+                </div>
+            </div>
+        </div>
+        @endforeach
+        @else
+        <div class="col-xxl-12 col-xl-12 col-lg-12 col-md-12 col-sm-12 ">
+            <div class="card">
+                <div class="card-body">
+                    <h5>No Records found</h5>
+                </div>
+            </div>
+        </div>
+        @endif
+
+    </div>
+</div>
+@endforeach
+
+<!-- Create task-->
+<div class="modal fade" id="createtask" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-md modal-dialog-scrollable">
+        <div class="modal-content">
+            <input type="hidden" id="department_id" />
+            <input type="hidden" id="project_id" />
+            <div class="modal-header">
+                <h5 class="modal-title  fw-bold" id="createprojectlLabel"> Assign Task</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label class="form-label">Project Name</label>
+                    <select id="employee" class="form-select select2" aria-label="Default select Project Category">
+                    </select>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" id="btnAssignTask" disabled>Done</button>
+                <button type="button" class="btn btn-primary" data-bs-dismiss="modal">Cancel</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function assignTask(departmentId, projectId) {
+        $("#createtask").modal("show");
+        $("#department_id").val(departmentId)
+        $("#project_id").val(projectId)
+        getDepartmentEmployees(departmentId)
+    }
+
+    function getDepartmentEmployees(departmentId) {
+        $.ajax({
+            url: "{{route('get.employee.department')}}",
+            method: "POST",
+            data: {
+                "_token": "{{ csrf_token() }}",
+                id: departmentId
+            },
+            success: function(response) {
+                $('#employee').empty();
+                $('#employee').append($('<option value="">Select Employee</soption>'));
+                $.each(response.employees, function(i, employee) {
+                    $('#employee').append($('<option  value="' + employee.id + '">' + employee.name + '</option>'));
+                });
+                $("#btnAssignTask").prop("disabled", false);
+            }
+        })
+    }
+    $("#btnAssignTask").click(function() {
+        $.ajax({
+            url: "{{route('projects.assign')}}",
+            method: "POST",
+            data: {
+                "_token": "{{ csrf_token() }}",
+                department_id: $("#department_id").val(),
+                project_id: $("#project_id").val(),
+                employee_id: $("#employee").val(),
+            },
+            success: function(response) {
+                $("#createtask").modal("hide");
+                location.reload();
+            }
+        })
+    });
+</script>
+<!-- <div class="row g-3 gy-5 py-3 row-deck">
+    @foreach($projects as $project)
+    <div class="col-xxl-4 col-xl-4 col-lg-4 col-md-6 col-sm-6">
+        <div class="card">
+            <div class="card-body">
                 <div class="d-flex align-items-center justify-content-between profile-av pe-xl-4 pe-md-2 pe-sm-4 pe-4 w220">
                     <img src="assets/images/lg/avatar3.jpg" alt="" class="avatar xl rounded-circle img-thumbnail shadow-sm">
                 </div>
                 <h6 class="mb-0 fw-bold d-block fs-6 mt-2">{{$project->department->name}}</h6>
                 <div class="d-flex align-items-center justify-content-between mt-1">
                     <div class="lesson_name">
-                        <!-- <div class="project-block light-info-bg">
-                            <i class="icofont-handshake-deal"></i>
-                        </div>
-                        <span class="large text-muted project_name fw-bold"> {{$project->department->name}} </span>
-                        <h5 class="mb-0 fw-bold  fs-6  mb-2">{{$project->subdepartment->name}}</h5> -->
                     </div>
-                    <!-- <div class="btn-group" role="group" aria-label="Basic outlined example">
-
-                    </div> -->
                 </div>
 
                 <div class="row g-2 pt-4">
@@ -113,25 +197,24 @@
                     <div class="col-6">
                         <div class="d-flex align-items-center">
                             <i class="icofont-ui-calendar"></i>
-                            <span class="ms-2">Project Start Date</span>
+                            <span class="ms-2">Sales Partner</span>
                         </div>
                     </div>
                     <div class="col-6">
                         <div class="d-flex align-items-center">
-                           
-                            <span class="ms-2 text-success">{{date("d M Y",strtotime($project->start_date))}}</span>
+                            <span class="ms-2 text-success">{{$project->customer->salespartner->name}}</span>
                         </div>
                     </div>
                     <div class="col-6">
                         <div class="d-flex align-items-center">
                             <i class="icofont-ui-calendar"></i>
-                            <span class="ms-2">Project End Date</span>
+                            <span class="ms-2">Status</span>
                         </div>
                     </div>
                     <div class="col-6">
                         <div class="d-flex align-items-center">
                             <i class="icofont-sand-clock"></i>
-                            <span class="ms-2 text-danger">{{date("d M Y",strtotime($project->end_date))}}</span>
+                            <span class="ms-2 text-danger">{{$project->assignedPerson[0]->status}}</span>
                         </div>
                     </div>
                     <div class="col-6">
@@ -146,38 +229,22 @@
                             <span class="ms-2">{{$project->assignedPerson[0]->employee->name}}</span>
                         </div>
                     </div>
-                    <div class="col-6">
-                        <div class="d-flex align-items-center">
-                            <i class="icofont-dollar "></i>
-                            <span class="ms-2">Budget</span>
-                        </div>
-                    </div>
-                    <div class="col-6">
-                        <div class="d-flex align-items-center">
-                            <i class="icofont-dollar"></i>
-                            <span class="ms-2">${{number_format($project->budget,0)}}</span>
-                        </div>
-                    </div>
+                    
                     <div class="col-12">
-                        <div class="d-flex align-items-center justify-content-between mb-2">
-                            <h4 class="small fw-bold mb-0">Progress</h4>
-                            <span class="small {{($project->assignedPerson[0]->status == 'In-Progress' ? 'light-warning-bg' : 'light-success-bg')}}  p-1 rounded"><i class="icofont-ui-clock"></i> {{$project->assignedPerson[0]->status}}</span>
+                        <h4 class="small fw-bold mb-2 mt-2">Progress</h4>
+                        <div class="progress">
+                            <div class="progress-bar" role="progressbar" style="width: {{$project->department_id/8*100}}%;" aria-valuenow="{{$project->department_id/8*100}}" aria-valuemin="0" aria-valuemax="100">{{$project->department_id/8*100}}%</div>
                         </div>
                     </div>
                 </div>
 
                 <div class="dividers-block"></div>
                 <div class="d-flex align-items-center justify-content-between mb-2">
-                    <!-- <p>{{$project->description}}</p> -->
                     <a href="{{route('projects.show',$project->id)}}" class="btn btn-dark btn-sm mt-1"><i class="icofont-eye me-2 fs-6"></i>Details</a>
                 </div>
-
             </div>
         </div>
-        </div>
-    <!-- </div> -->
-        @endforeach
-    <!-- </div> -->
-</div>
-<!-- </div> -->
-<!-- </div> -->
+    </div>
+    @endforeach
+
+</div> -->

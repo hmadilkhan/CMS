@@ -11,6 +11,19 @@
                         <a href="{{route('projects.index')}}" class="btn btn-dark me-1 mt-1 w-sm-100" id="openemployee"><i class="icofont-arrow-left me-2 fs-6"></i>Back to List</a>
                     </div>
                 </div>
+                <div class="card border-0 mb-4 no-bg d-flex py-2 project-tab flex-wrap w-sm-100">
+                    <ul class="nav nav-tabs tab-body-header rounded ms-3 prtab-set w-sm-100" role="tablist">
+                        @foreach($departments as $department)
+                        @if($department->id < $project->department_id)
+                            <li class="nav-item "><a class="nav-link active bg-success" data-bs-toggle="tab"  role="tab">{{$department->name}}</a></li>
+                        @elseif($department->id == $project->department_id)
+                            <li class="nav-item "><a class="nav-link active " data-bs-toggle="tab"  role="tab">{{$department->name}}</a></li>
+                        @else
+                            <li class="nav-item"><a class="nav-link" data-bs-toggle="tab"  role="tab">{{$department->name}}</a></li>
+                        @endif
+                        @endforeach
+                    </ul>
+                </div>
                 <div class="row g-3 mb-3">
                     <div class="col-sm-3">
                         <label for="exampleFormControlInput877" class="form-label">First Name</label>
@@ -101,6 +114,7 @@
                         @endforeach
                     </tbody>
                 </table>
+                @if(auth()->user()->getRoleNames()[0] == "Manager" or auth()->user()->getRoleNames()[0] == "Admin")
                 <div class="card-header py-3 px-0 d-sm-flex align-items-center  justify-content-between border-bottom">
                     <h3 class=" fw-bold flex-fill mb-0 mt-sm-0" data-bs-toggle="collapse" data-bs-target="#finance" aria-expanded="false" aria-controls="finance">Financial Details</h3>
                 </div>
@@ -142,6 +156,7 @@
                         <input disabled type="text" class="form-control" value="{{$project->customer->finances->dealer_fee_amount}}">
                     </div>
                 </div>
+                @endif
             </div>
         </div><!-- Row End -->
     </div>
@@ -271,7 +286,7 @@
             @endphp
 
             <div class="col-sm-12 mb-3">
-                <label for="formFileMultipleoneone" class="form-label">Notes</label>
+                <label for="formFileMultipleoneone" class="form-label">Department Notes</label>
                 <textarea class="form-control" rows="3" name="notes">
                 @foreach($filtered_collection as $value)    
                     {{date("d M Y H:i:s",strtotime($value->created_at))."\n".$value->notes."\n"}}

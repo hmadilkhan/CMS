@@ -12,6 +12,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rules;
 use Spatie\Permission\Models\Role;
+use Symfony\Component\HttpFoundation\JsonResponse;
 
 class EmployeeController extends Controller
 {
@@ -21,6 +22,16 @@ class EmployeeController extends Controller
      */
     public function index()
     {
+        // $employee = Employee::with("user")
+        // ->whereHas("user.roles",function($query){
+        //     $query->whereIn("name", ["Employee"]);
+        // })
+        // ->whereHas("department",function($query){
+        //     $query->whereIn("department_id", [2]);
+        // })
+        // ->get();
+        // return $employee;
+
         // return Employee::with("user","user.roles","department")->get();
         return view("employees.index", [
             "employees" => Employee::with("department")->get(),
@@ -154,5 +165,19 @@ class EmployeeController extends Controller
     public function destroy(Employee $employee)
     {
         //
+    }
+
+    function getDepartmentEmployees(Request $request){
+        if ($request->id != "") {
+            $employees = Employee::with("user")
+            ->whereHas("user.roles",function($query){
+                $query->whereIn("name", ["Employee"]);
+            })
+            ->whereHas("department",function($query) use ($request){
+                $query->whereIn("department_id", [$request->id]);
+            })
+            ->get();
+            return response()->json(["status" => 200,"employees" => $employees]);
+        }
     }
 }

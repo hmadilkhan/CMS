@@ -93,7 +93,7 @@ class ProjectController extends Controller
             "project" => Project::with("task","customer", "department", "subdepartment", "assignedPerson", "assignedPerson.employee")->where("id", $project->id)->first(),
             "task" => $task,
             "backdepartments" => Department::where("id", "<", $task->department_id)->get(),
-            "forwarddepartments" => Department::where("id", ">", $task->department_id)->take(1)->get(),
+            "forwarddepartments" => Department::whereIn("id",Task::where("project_id",$project->id)->pluck("department_id"))->get(),
             "filesCount" => ProjectFile::where("project_id",$project->id)->where("department_id",$project->department_id)->get(),
             "departments" => Department::all(),
         ]);
@@ -133,15 +133,18 @@ class ProjectController extends Controller
 
     public function getProjectList(Request $request)
     {
-        $query = Project::with("department", "subdepartment", "assignedPerson", "assignedPerson.employee");
+        $query = Project::with("customer","customer.salespartner","department", "subdepartment", "assignedPerson", "assignedPerson.employee");
+        $subdepartmentsQuery = SubDepartment::with("department");
         // if (auth()->user()->getRoleNames()[0] == "Manager") {
         //     $query->where("department");
         // }
         if ($request->id != "" && $request->id != "all") {
            $query->where("department_id",$request->id);
+           $subdepartmentsQuery->where("department_id",$request->id);
         }
         return view("projects.project-list", [
             "projects" => $query->get(),
+            "subdepartments" => $subdepartmentsQuery->get(),
         ]);
     }
 
@@ -167,7 +170,7 @@ class ProjectController extends Controller
             'file' => Rule::requiredIf(function () use ($request) {
                 return $request->stage == "forward" && $request->alreadyuploaded == 0;
             }),
-            'notes' => ['required'],
+            // 'notes' => ['required'],
         ]);
         if ($request->stage == "forward" && $request->alreadyuploaded == 0) {
             foreach ($request->file as $key => $file) {
@@ -209,6 +212,15 @@ class ProjectController extends Controller
         } catch (\Throwable $th) {
             DB::rollBack();
             return $th->getMessage();
+        }
+    }
+
+    function assignTaskToEmployee(Request $request) {
+        try {
+            Task::where("project_id",$request->project_id)->where("department_id",$request->department_id)->where("status","In-Progress")->update(["employee_id" => $request->employee_id]);
+            return response()->json(["status" => 200, "message" => "Task Assigned Successfully"]);
+        } catch (\Throwable $th) {
+            return response()->json(["status" => 200, "message" => "Error:".$th->getMessage()]);
         }
     }
 }

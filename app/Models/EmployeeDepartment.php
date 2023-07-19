@@ -13,4 +13,8 @@ class EmployeeDepartment extends Model
     function department() {
         return $this->belongsTo(Department::class);
     }
+
+    function employee() {
+        return $this->belongsTo(Employee::class);
+    }
 }
