@@ -413,7 +413,7 @@
     function getRedlineCost() {
         let panelQty = $("#panel_qty").val();
         let inverterType = $("#inverter_type_id").val();
-
+        modulesType($("#module_type_id").val());
         if (panelQty != "" && inverterType != "") {
             $.ajax({
                 method: "POST",
@@ -608,14 +608,18 @@
     }
 
     $("#module_type_id").change(function() {
-        if ($(this).val() != "") {
+        modulesType($(this).val());
+    });
+    function modulesType(id)
+    {
+        if (id != "") {
             $("#inverter_type_id").prop("disabled", false)
             $.ajax({
                 method: "POST",
                 url: "{{ route('get.module.types') }}",
                 data: {
                     _token: "{{ csrf_token() }}",
-                    id: $(this).val(),
+                    id: id,
                 },
                 dataType: 'json',
                 success: function(response) {
@@ -628,6 +632,6 @@
         } else {
             $("#inverter_type_id").prop("disabled", true)
         }
-    })
+    }
 </script>
 @endsection

@@ -74,7 +74,7 @@ class CustomerController extends Controller
             'commission' => 'required',
             'dealer_fee' => 'required',
         ]);
-       
+
         try {
             DB::beginTransaction();
             // Customer::create($request->except(["finance_option_id", "contract_amount", "redline_costs", "adders", "commission", "dealer_fee","loan_term_id","loan_apr_id","dealer_fee_amount"]));
@@ -123,10 +123,10 @@ class CustomerController extends Controller
                     }
                 }
             }
-            $subdepartment = SubDepartment::where("department_id",1)->first();
+            $subdepartment = SubDepartment::where("department_id", 1)->first();
             $project = Project::create([
                 "customer_id" => $customer->id,
-                "project_name" => $request->first_name."-".$request->last_name,
+                "project_name" => $request->first_name . "-" . $request->last_name,
                 "department_id" => 1,
                 "sub_department_id" => $subdepartment->id,
                 "description" =>  $request->notes,
@@ -161,10 +161,13 @@ class CustomerController extends Controller
     {
         return view("customer.edit", [
             "customer" => $customer,
-            "partners" => SalesPartner::all(),
             "financeoptions" => FinanceOption::all(),
+            "partners" => SalesPartner::all(),
             "inverter_types" => InverterType::all(),
             "battery_types" => BatteryType::all(),
+            "modules" => ModuleType::all(),
+            "adders" => AdderType::all(),
+            "uoms" => AdderUnit::all(),
         ]);
     }
 
@@ -175,8 +178,50 @@ class CustomerController extends Controller
     {
         try {
             DB::beginTransaction();
-            $customer->update($request->except(["finance_option_id", "contract_amount", "redline_costs", "adders", "commission", "dealer_fee"]));
-            $customer->finances()->update($request->only(["finance_option_id", "contract_amount", "redline_costs", "adders", "commission", "dealer_fee"]));
+            $customer->update([
+                "first_name" => $request->first_name,
+                "last_name" => $request->last_name,
+                "street" => $request->street,
+                "city" => $request->city,
+                "state" => $request->state,
+                "zipcode" => $request->zipcode,
+                "phone" => $request->phone,
+                "email" => $request->email,
+                "sales_partner_id" => $request->sales_partner_id,
+                "sold_date" => $request->sold_date,
+                "panel_qty" => $request->panel_qty,
+                "inverter_type_id" => $request->inverter_type_id,
+                "module_type_id" => $request->module_type_id,
+                "inverter_qty" => $request->inverter_qty,
+                "module_value" => $request->module_qty,
+                "notes" => $request->notes,
+            ]);
+            if (!empty($request->uom)) {
+                $count = count($request->uom);
+                if ($count > 0) {
+                    for ($i = 0; $i < $count; $i++) {
+                        $customer->adders()->update([
+                            "customer_id" => $customer->id,
+                            "adder_type_id" => $request->adders[$i],
+                            "adder_sub_type_id" => $request->subadders[$i],
+                            "adder_unit_id" => $request->uom[$i],
+                            "amount" => $request->amount[$i],
+                        ]);
+                    }
+                }
+            }
+            $customer->finances()->update([
+                "customer_id" => $customer->id,
+                "finance_option_id" => $request->finance_option_id,
+                "loan_term_id" => $request->loan_term_id,
+                "loan_apr_id" => $request->loan_apr_id,
+                "contract_amount" => $request->contract_amount,
+                "redline_costs" => $request->redline_costs,
+                "adders" => $request->adders_amount,
+                "commission" => $request->commission,
+                "dealer_fee" => $request->dealer_fee,
+                "dealer_fee_amount" => $request->dealer_fee_amount,
+            ]);
             DB::commit();
             return redirect()->route("customers.index");
         } catch (\Throwable $th) {
