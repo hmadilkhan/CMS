@@ -55,6 +55,13 @@ class User extends Authenticatable
 
     public function employee()
     {
-        return $this->belongsTo(Employee::class,"user_id","id");
+        return $this->belongsTo(Employee::class,"id","user_id");
+    }
+
+    public function scopeFilterByRole($query,$rolename) 
+    {
+        return $query->whereHas("roles", function ($query) use ($rolename) {
+                    $query->where("name", $rolename);
+                });
     }
 }

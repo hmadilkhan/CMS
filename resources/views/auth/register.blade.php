@@ -66,7 +66,7 @@
                 <div class="col-sm-4">
                     <div class="form-group">
                         <label>Type</label>
-                        <select id="type" name="type" class="form-control select2 @error('type') is-invalid @enderror" style="width: 100%;">
+                        <select id="user_type_id" name="user_type_id" class="form-control select2 @error('type') is-invalid @enderror" style="width: 100%;">
                             <option value="">Select User Type</option>
                             @foreach ($types as $typeValue)
                             @if (!empty($user))

@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Customer;
 use App\Models\Department;
 use App\Models\Employee;
+use App\Models\EmployeeDepartment;
 use App\Models\Project;
 use App\Models\ProjectFile;
 use App\Models\SubDepartment;
@@ -23,7 +24,7 @@ class ProjectController extends Controller
      */
     public function index()
     {
-        // return Project::with("department","subdepartment","assignedPerson","assignedPerson.employee")->get();
+        // return EmployeeDepartment::whereIn("employee_id",Employee::where("user_id",auth()->user()->id)->pluck("id"))->pluck("department_id");
         return view("projects.index", [
             "customers" => Customer::all(),
             "departments" => Department::all(),
@@ -83,11 +84,6 @@ class ProjectController extends Controller
      */
     public function show(Project $project)
     {
-        // $project = Project::with("task","customer", "department", "subdepartment", "assignedPerson", "assignedPerson.employee")->where("id", $project->id)->first();
-        // return  $project->files->filter(function ($item)  {
-        //     return $item->department_id == 1;
-        // })->values();
-        // return Project::with("customer","department","subdepartment","assignedPerson","assignedPerson.employee")->first();
         $task = Task::where("status", "In-Progress")->where("project_id", $project->id)->first();
         return view("projects.show", [
             "project" => Project::with("task","customer", "department", "subdepartment", "assignedPerson", "assignedPerson.employee")->where("id", $project->id)->first(),
@@ -133,17 +129,9 @@ class ProjectController extends Controller
 
     public function getProjectList(Request $request)
     {
-        $query = Project::with("customer","customer.salespartner","department", "subdepartment", "assignedPerson", "assignedPerson.employee");
         $subdepartmentsQuery = SubDepartment::with("department");
-        // if (auth()->user()->getRoleNames()[0] == "Manager") {
-        //     $query->where("department");
-        // }
-        if ($request->id != "" && $request->id != "all") {
-           $query->where("department_id",$request->id);
-           $subdepartmentsQuery->where("department_id",$request->id);
-        }
         return view("projects.project-list", [
-            "projects" => $query->get(),
+            "projects" => $this->projectQuery($request),
             "subdepartments" => $subdepartmentsQuery->get(),
         ]);
     }
@@ -215,7 +203,7 @@ class ProjectController extends Controller
         }
     }
 
-    function assignTaskToEmployee(Request $request) {
+    public function assignTaskToEmployee(Request $request) {
         try {
             Task::where("project_id",$request->project_id)->where("department_id",$request->department_id)->where("status","In-Progress")->update(["employee_id" => $request->employee_id]);
             return response()->json(["status" => 200, "message" => "Task Assigned Successfully"]);
@@ -223,4 +211,31 @@ class ProjectController extends Controller
             return response()->json(["status" => 200, "message" => "Error:".$th->getMessage()]);
         }
     }
+
+    public function projectQuery(Request $request)
+    {
+        $query = Project::with("customer","customer.salespartner","department", "subdepartment", "assignedPerson", "assignedPerson.employee");
+        $subdepartmentsQuery = SubDepartment::with("department");
+        if (auth()->user()->getRoleNames()[0] == "Sales Person") {
+            $query->whereHas("customer",function($query){
+                $query->where("sales_partner_id",auth()->user()->id);
+            });
+        }else if (auth()->user()->getRoleNames()[0] == "Manager") {
+            $query->whereIn("department_id",EmployeeDepartment::whereIn("employee_id",Employee::where("user_id",auth()->user()->id)->pluck("id"))->pluck("department_id"));
+        }
+        if ($request->id != "" && $request->id != "all") {
+           $query->where("department_id",$request->id);
+           $subdepartmentsQuery->where("department_id",$request->id);
+        }
+        return $query->get();
+    }
+
+    public function getProjects(Request $request)
+    {
+        return view("projects.list",[
+           "projects" => $this->projectQuery($request),
+        ]);
+    }
+
+
 }

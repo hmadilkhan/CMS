@@ -31,11 +31,24 @@ class Customer extends Model
 
     public function salespartner()
     {
-        return $this->belongsTo(SalesPartner::class,"sales_partner_id","id");
+        return $this->belongsTo(User::class,"sales_partner_id","id");
     }
 
     public function adders()
     {
         return $this->hasMany(CustomerAdder::class,"customer_id","id");
+    }
+
+    public function getRoleName()
+    {
+        return auth()->user()->getRoleNames()[0];
+    }
+
+    public function scopeGetCustomers($query) 
+    {
+        if ($this->getRoleName() == "Sales Person") {
+            return $query->where("sales_partner_id",auth()->user()->id);
+        }
+        
     }
 }

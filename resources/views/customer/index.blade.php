@@ -8,7 +8,9 @@
                 <div class="card border-0 mb-4 no-bg">
                     <div class="card-header py-3 px-0 d-sm-flex align-items-center  justify-content-between border-bottom">
                         <h3 class=" fw-bold flex-fill mb-0 mt-sm-0">Customer</h3>
+                        @can("Create Customer")
                         <a href="{{route('customers.create')}}" class="btn btn-dark me-1 mt-1 w-sm-100" id="openemployee"><i class="icofont-plus-circle me-2 fs-6"></i>Add Customer</a>
+                        @endcan
                     </div>
                 </div>
             </div>
@@ -40,10 +42,14 @@
                             <td>{{ $customer->state }}</td>
                             <td>{{ $customer->street }}</td>
                             <td class="text-center">
+                                @can("Edit Customer")
                                 <a style="cursor: pointer;" data-toggle="tooltip" title="Edit" href="{{route('customers.edit',$customer->id)}}">
                                     <i class="icofont-pencil text-warning fs-4"></i></a>
+                                @endcan
+                                @can("Delete Customer")
                                 <a style="cursor: pointer;" data-toggle="tooltip" title="Delete" class="ml-2" onclick="deleteUser('{{ $customer->id }}')">
                                     <i class="icofont-trash text-danger fs-4"></i></a>
+                                @endcan
                             </td>
                         </tr>
                         @endforeach

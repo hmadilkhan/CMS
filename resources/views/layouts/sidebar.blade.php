@@ -13,10 +13,13 @@
         <!-- Menu: main ul -->
 
         <ul class="menu-list flex-grow-1 mt-3">
+            @can('Dashboard')
             <li class="collapsed">
                 <a class="m-link {{ Route::currentRouteName() == 'dashboard' ? 'active' : '' }}" href="{{route('dashboard')}}">
                     <i class="icofont-home fs-5"></i> <span>Dashboard</span> <span class=" ms-auto text-end fs-5"></span></a>
             </li>
+            @endcan
+            @can('User Management')
             <li class="collapsed">
                 <a class="m-link {{ (Route::currentRouteName() == 'get.register' or Route::currentRouteName() == 'role' or Route::currentRouteName() == 'permission' or Route::currentRouteName() == 'role.permission' or Route::currentRouteName() == 'user.permission') ? 'show' : '' }}" data-bs-toggle="collapse" data-bs-target="#user-Components" href="#">
                     <i class="icofont-briefcase"></i><span>User Management</span> <span class="arrow icofont-dotted-down ms-auto text-end fs-5"></span></a>
@@ -29,35 +32,34 @@
                     <li><a class="ms-link {{ Route::currentRouteName() == 'user.permission' ? 'active' : '' }}" href="{{ route('user.permission') }}"><span>Users Permissions</span></a></li>
                 </ul>
             </li>
-
+            @endcan
+            @can('View Employees')
             <li class="collapsed">
-                <a class="m-link {{Route::currentRouteName() == 'employees.index' ? 'active' : 
-                        ''}}" href="#" data-bs-toggle="collapse" data-bs-target="#employee-Components">
-                    <i class="icofont-users-alt-5"></i> <span>Employees</span> <span class="arrow icofont-dotted-down ms-auto text-end fs-5"></span>
-                </a>
-                <!-- Menu: Sub menu ul -->
-                <ul class="sub-menu collapse {{ (Route::currentRouteName() == 'employees.index' ? 'show' : 
-                        '')}}" id="employee-Components">
-                    <li>
-                        <a class="ms-link {{Route::currentRouteName() == 'employees.index' ? 'active' : 
-                        ''}}" href="{{route('employees.index')}}"> <span>Employees</span></a>
-                    </li>
-                </ul>
+                <a class="m-link {{ (Route::currentRouteName() == 'employees.index' or Route::currentRouteName() == 'employees.create') ? 'active' : '' }}" href="{{route('employees.index')}}">
+                    <i class="icofont-users-alt-5 "></i> <span>Employees </span> <span class=" ms-auto text-end fs-5"></span></a>
             </li>
+            @endcan
+            @can('View Customer')
             <li class="collapsed">
                 <a class="m-link {{ (Route::currentRouteName() == 'customers.index' or Route::currentRouteName() == 'customers.create') ? 'active' : '' }}" href="{{route('customers.index')}}">
                     <i class="icofont-user-suited "></i> <span>Customers </span> <span class=" ms-auto text-end fs-5"></span></a>
             </li>
-
+            @endcan
+            @can('View Project')
             <li class="collapsed">
-                <a class="m-link {{ (Route::currentRouteName() == 'projects.index' or Route::currentRouteName() == 'projects.create' or Route::currentRouteName() == 'projects.edit' ) ? 'show' : '' }}" data-bs-toggle="collapse" data-bs-target="#project-Components" href="#">
+                <a class="m-link {{ (Route::currentRouteName() == 'projects.index' or Route::currentRouteName() == 'projects.create' or Route::currentRouteName() == 'projects.edit'  or Route::currentRouteName() == 'projects' ) ? 'show' : '' }}" data-bs-toggle="collapse" data-bs-target="#project-Components" href="#">
                     <i class="icofont-briefcase"></i><span>Projects</span> <span class="arrow icofont-dotted-down ms-auto text-end fs-5"></span></a>
                 <!-- Menu: Sub menu ul -->
-                <ul class="sub-menu collapse {{ (Route::currentRouteName() == 'projects.index' or Route::currentRouteName() == 'projects.create' or Route::currentRouteName() == 'projects.edit' or Route::currentRouteName() == 'tasks.index' ) ? 'show' : '' }}" id="project-Components">
+                <ul class="sub-menu collapse {{ (Route::currentRouteName() == 'projects.index' or Route::currentRouteName() == 'projects.create' or Route::currentRouteName() == 'projects.edit' or Route::currentRouteName() == 'tasks.index' or Route::currentRouteName() == 'projects' ) ? 'show' : '' }}" id="project-Components">
                     <li><a class="ms-link {{ Route::currentRouteName() == 'projects.index' ? 'active' : '' }}" href="{{route('projects.index')}}"><span>Projects</span></a></li>
-                    <li><a class="ms-link {{ Route::currentRouteName() == 'tasks.index' ? 'active' : '' }}" href=" {{ route('tasks.index') }}"><span>Tasks</span></a></li>
+                    <li><a class="ms-link {{ Route::currentRouteName() == 'projects' ? 'active' : '' }}" href="{{route('projects')}}"><span>Project List</span></a></li>
+                    @can('View Task')
+                        <li><a class="ms-link {{ Route::currentRouteName() == 'tasks.index' ? 'active' : '' }}" href=" {{ route('tasks.index') }}"><span>Tasks</span></a></li>
+                    @endcan
                 </ul>
             </li>
+            @endcan
+            @can('User Management')
             <li class="collapsed">
                 <a class="m-link {{ (Route::currentRouteName() == 'projects.index' or Route::currentRouteName() == 'projects.create' or Route::currentRouteName() == 'projects.edit' ) ? 'show' : '' }}" data-bs-toggle="collapse" data-bs-target="#module-types" href="#">
                     <i class="icofont-briefcase"></i><span>Operations</span> <span class="arrow icofont-dotted-down ms-auto text-end fs-5"></span></a>
@@ -66,6 +68,7 @@
                     <li><a class="ms-link {{ Route::currentRouteName() == 'module-types.index' ? 'active' : '' }}" href="{{route('module-types.index')}}"><span>Module Types</span></a></li>
                 </ul>
             </li>
+            @endcan
         </ul>
 
 

@@ -20,6 +20,7 @@ use App\Models\Project;
 use App\Models\SalesPartner;
 use App\Models\SubDepartment;
 use App\Models\Task;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -31,7 +32,7 @@ class CustomerController extends Controller
     public function index()
     {
         return view("customer.index", [
-            "customers" => Customer::all(),
+            "customers" => Customer::getCustomers()->get(),
         ]);
     }
 
@@ -42,7 +43,7 @@ class CustomerController extends Controller
     {
         return view("customer.create", [
             "financeoptions" => FinanceOption::all(),
-            "partners" => SalesPartner::all(),
+            "partners" => User::filterByRole('Sales Person')->get(),
             "inverter_types" => InverterType::all(),
             "battery_types" => BatteryType::all(),
             "modules" => ModuleType::all(),
@@ -162,7 +163,7 @@ class CustomerController extends Controller
         return view("customer.edit", [
             "customer" => $customer,
             "financeoptions" => FinanceOption::all(),
-            "partners" => SalesPartner::all(),
+            "partners" =>  User::filterByRole('Sales Person')->get(),
             "inverter_types" => InverterType::all(),
             "battery_types" => BatteryType::all(),
             "modules" => ModuleType::all(),

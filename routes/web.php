@@ -82,6 +82,7 @@ Route::middleware('auth')->group(function () {
     Route::post('get-sub-departments', [App\Http\Controllers\ProjectController::class, 'getSubDepartments'])->name('get.sub.departments');
     Route::post('projects-move', [App\Http\Controllers\ProjectController::class, 'projectMove'])->name('projects.move');
     Route::post('projects-assign-to-employee', [App\Http\Controllers\ProjectController::class, 'assignTaskToEmployee'])->name('projects.assign');
+    Route::get('projects-list', [App\Http\Controllers\ProjectController::class, 'getProjects'])->name('projects');
 
 
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
