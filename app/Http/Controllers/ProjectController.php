@@ -92,6 +92,7 @@ class ProjectController extends Controller
             "forwarddepartments" => Department::whereIn("id",Task::where("project_id",$project->id)->pluck("department_id"))->get(),
             "filesCount" => ProjectFile::where("project_id",$project->id)->where("department_id",$project->department_id)->get(),
             "departments" => Department::all(),
+            "employees" => $this->getEmployees($project->department_id),
         ]);
     }
 
@@ -204,11 +205,12 @@ class ProjectController extends Controller
     }
 
     public function assignTaskToEmployee(Request $request) {
+        // return Task::where("project_id",$request->project_id)->where("department_id",$request->department_id)->where("status","In-Progress")->get();
         try {
-            Task::where("project_id",$request->project_id)->where("department_id",$request->department_id)->where("status","In-Progress")->update(["employee_id" => $request->employee_id]);
-            return response()->json(["status" => 200, "message" => "Task Assigned Successfully"]);
+            Task::where("project_id",$request->project_id)->where("department_id",$request->department_id)->where("status","In-Progress")->update(["employee_id" => $request->employee,"notes" => $request->notes]);
+            return redirect()->route("projects.show",$request->project_id);
         } catch (\Throwable $th) {
-            return response()->json(["status" => 200, "message" => "Error:".$th->getMessage()]);
+            return redirect()->route("projects.show",$request->project_id);
         }
     }
 
@@ -228,6 +230,19 @@ class ProjectController extends Controller
            $subdepartmentsQuery->where("department_id",$request->id);
         }
         return $query->get();
+    }
+
+    public function getEmployees($departmentId)
+    {
+        $employees = Employee::with("user")
+            ->whereHas("user.roles",function($query){
+                $query->whereIn("name", ["Employee"]);
+            })
+            ->whereHas("department",function($query) use ($departmentId){
+                $query->whereIn("department_id", [$departmentId]);
+            })
+            ->get();
+        return $employees;
     }
 
     public function getProjects(Request $request)

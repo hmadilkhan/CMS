@@ -15,14 +15,50 @@
                     <ul class="nav nav-tabs tab-body-header rounded ms-3 prtab-set w-sm-100" role="tablist">
                         @foreach($departments as $department)
                         @if($department->id < $project->department_id)
-                            <li class="nav-item "><a class="nav-link active bg-success" data-bs-toggle="tab"  role="tab">{{$department->name}}</a></li>
-                        @elseif($department->id == $project->department_id)
-                            <li class="nav-item "><a class="nav-link active " data-bs-toggle="tab"  role="tab">{{$department->name}}</a></li>
-                        @else
-                            <li class="nav-item"><a class="nav-link" data-bs-toggle="tab"  role="tab">{{$department->name}}</a></li>
-                        @endif
-                        @endforeach
+                            <li class="nav-item "><a class="nav-link active bg-success" data-bs-toggle="tab" role="tab">{{$department->name}}</a></li>
+                            @elseif($department->id == $project->department_id)
+                            <li class="nav-item "><a class="nav-link active " data-bs-toggle="tab" role="tab">{{$department->name}}</a></li>
+                            @else
+                            <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" role="tab">{{$department->name}}</a></li>
+                            @endif
+                            @endforeach
                     </ul>
+                </div>
+                <div class="card-header py-3 px-0 d-sm-flex align-items-center  justify-content-between border-bottom">
+                    <h3 class=" fw-bold flex-fill mb-0 mt-sm-0">Assign Task</h3>
+                </div>
+                <form method="post" action="{{route('projects.assign')}}">
+                <div class="row g-3 mb-3 border-bottom">
+                        @csrf
+                        <input type="hidden" name="project_id" value="{{$project->id}}">
+                        <input type="hidden" name="department_id" value="{{$project->department_id}}">
+                        <div class="col-sm-3 mb-3">
+                            <label for="employee" class="form-label">Select Employee</label>
+                            <select class="form-select select2" aria-label="Default Select Employee" id="employee" name="employee">
+                                <option value="">Select Employee</option>
+                                @foreach($employees as $employee)
+                                <option value="{{$employee->id}}">{{$employee->name}}</option>
+                                @endforeach
+                            </select>
+                            @error("loan_term_id")
+                            <div class="text-danger message mt-2">{{$message}}</div>
+                            @enderror
+                        </div>
+                        <div class="col-sm-8 mb-3">
+                            <label for="formFileMultipleoneone" class="form-label">Notes</label>
+                            <textarea class="form-control" rows="1" name="notes"></textarea>
+                            @error("notes")
+                            <div class="text-danger message mt-2">{{$message}}</div>
+                            @enderror
+                        </div>
+                        <div class="col-sm-12 mb-3">
+                            <button type="submit" class="btn btn-dark me-1 w-sm-100" ><i class="icofont-arrow-left me-2 fs-6"></i>Submit</button>
+                        </div>
+                    </div>
+                </form>
+
+                <div class="card-header py-3 px-0 d-sm-flex align-items-center  justify-content-between border-bottom">
+                    <h3 class=" fw-bold flex-fill mb-0 mt-sm-0">Customer Details</h3>
                 </div>
                 <div class="row g-3 mb-3">
                     <div class="col-sm-3">
@@ -294,9 +330,9 @@
                 </textarea>
             </div>
             <div class="col-sm-12 mb-3">
-            <label for="formFileMultipleoneone" class="form-label">Files</label>
-                @foreach($files as $file) 
-                   <label class="badge bg-light"> <a target="_blank" href="{{asset('storage/projects/'.$file->filename)}}" class="ml-3">{{$file->filename}}</a></label>
+                <label for="formFileMultipleoneone" class="form-label">Files</label>
+                @foreach($files as $file)
+                <label class="badge bg-light"> <a target="_blank" href="{{asset('storage/projects/'.$file->filename)}}" class="ml-3">{{$file->filename}}</a></label>
                 @endforeach
             </div>
 
