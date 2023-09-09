@@ -133,6 +133,7 @@
                 <tr>
                     <th>No.</th>
                     <th>Full Name</th>
+                    <th>Username</th>
                     <th>Email</th>
                     <th>Type</th>
                     <th>Roles</th>
@@ -144,6 +145,7 @@
                 <tr>
                     <td>{{ ++$key }}</td>
                     <td>{{ $user->name }}</td>
+                    <td>{{ $user->username }}</td>
                     <td>{{ $user->email }}</td>
                     <td>{{ $user->type->name }}</td>
                     <td>{{ implode(",",$user->getRoleNames()->toArray()) }}</td>

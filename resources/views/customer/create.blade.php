@@ -567,6 +567,7 @@
     function deleteItem(id) {
         $("#row" + id).remove();
         calculateAddersAmount();
+        calculateCommission();
     }
 
     function editItem(id, addersId, subAdderId, uomId, amount) {

@@ -30,7 +30,7 @@ class Project extends Model
 
     public function assignedPerson()
     {
-        return $this->hasMany(Task::class,"project_id","id")->where("status","In-Progress");
+        return $this->hasMany(Task::class,"project_id","id")->whereIn("status",["In-Progress","Hold","Cancelled"]);
     }
 
     public function task()

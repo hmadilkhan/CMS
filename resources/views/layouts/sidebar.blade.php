@@ -47,11 +47,11 @@
             @endcan
             @can('View Project')
             <li class="collapsed">
-                <a class="m-link {{ (Route::currentRouteName() == 'projects.index' or Route::currentRouteName() == 'projects.create' or Route::currentRouteName() == 'projects.edit'  or Route::currentRouteName() == 'projects' ) ? 'show' : '' }}" data-bs-toggle="collapse" data-bs-target="#project-Components" href="#">
+                <a class="m-link {{ (Route::currentRouteName() == 'projects.index' or Route::currentRouteName() == 'projects.create' or Route::currentRouteName() == 'projects.edit'  or Route::currentRouteName() == 'projects' or Route::currentRouteName() == 'projects.show' ) ? 'show' : '' }}" data-bs-toggle="collapse" data-bs-target="#project-Components" href="#">
                     <i class="icofont-briefcase"></i><span>Projects</span> <span class="arrow icofont-dotted-down ms-auto text-end fs-5"></span></a>
                 <!-- Menu: Sub menu ul -->
-                <ul class="sub-menu collapse {{ (Route::currentRouteName() == 'projects.index' or Route::currentRouteName() == 'projects.create' or Route::currentRouteName() == 'projects.edit' or Route::currentRouteName() == 'tasks.index' or Route::currentRouteName() == 'projects' ) ? 'show' : '' }}" id="project-Components">
-                    <li><a class="ms-link {{ Route::currentRouteName() == 'projects.index' ? 'active' : '' }}" href="{{route('projects.index')}}"><span>Projects</span></a></li>
+                <ul class="sub-menu collapse {{ (Route::currentRouteName() == 'projects.index' or Route::currentRouteName() == 'projects.create' or Route::currentRouteName() == 'projects.edit' or Route::currentRouteName() == 'tasks.index' or Route::currentRouteName() == 'projects' or Route::currentRouteName() == 'projects.show'  ) ? 'show' : '' }}" id="project-Components">
+                    <li><a class="ms-link {{ Route::currentRouteName() == 'projects.index' or Route::currentRouteName() == 'projects.show'  ? 'active' : '' }}" href="{{route('projects.index')}}"><span>Projects</span></a></li>
                     <li><a class="ms-link {{ Route::currentRouteName() == 'projects' ? 'active' : '' }}" href="{{route('projects')}}"><span>Project List</span></a></li>
                     @can('View Task')
                         <li><a class="ms-link {{ Route::currentRouteName() == 'tasks.index' ? 'active' : '' }}" href=" {{ route('tasks.index') }}"><span>Tasks</span></a></li>

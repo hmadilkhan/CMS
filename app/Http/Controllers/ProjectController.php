@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\AdderType;
+use App\Models\AdderUnit;
 use App\Models\Customer;
 use App\Models\Department;
 use App\Models\Employee;
@@ -84,15 +86,17 @@ class ProjectController extends Controller
      */
     public function show(Project $project)
     {
-        $task = Task::where("status", "In-Progress")->where("project_id", $project->id)->first();
+        $task = Task::whereIn("status", ["In-Progress","Hold"])->where("project_id", $project->id)->first();
         return view("projects.show", [
-            "project" => Project::with("task","customer", "department", "subdepartment", "assignedPerson", "assignedPerson.employee")->where("id", $project->id)->first(),
+            "project" => Project::with("task", "customer", "department", "subdepartment", "assignedPerson", "assignedPerson.employee")->where("id", $project->id)->first(),
             "task" => $task,
             "backdepartments" => Department::where("id", "<", $task->department_id)->get(),
-            "forwarddepartments" => Department::whereIn("id",Task::where("project_id",$project->id)->pluck("department_id"))->get(),
-            "filesCount" => ProjectFile::where("project_id",$project->id)->where("department_id",$project->department_id)->get(),
+            "forwarddepartments" => Department::whereIn("id", Task::where("project_id", $project->id)->pluck("department_id"))->get(),
+            "filesCount" => ProjectFile::where("project_id", $project->id)->where("department_id", $project->department_id)->get(),
             "departments" => Department::all(),
             "employees" => $this->getEmployees($project->department_id),
+            "adders" => AdderType::all(),
+            "uoms" => AdderUnit::all(),
         ]);
     }
 
@@ -130,10 +134,10 @@ class ProjectController extends Controller
 
     public function getProjectList(Request $request)
     {
-        $subdepartmentsQuery = SubDepartment::with("department");
+        $result =  $this->projectQuery($request);
         return view("projects.project-list", [
-            "projects" => $this->projectQuery($request),
-            "subdepartments" => $subdepartmentsQuery->get(),
+            "projects" => $result["projects"],
+            "subdepartments" => $result["subdepartments"],
         ]);
     }
 
@@ -204,41 +208,71 @@ class ProjectController extends Controller
         }
     }
 
-    public function assignTaskToEmployee(Request $request) {
-        // return Task::where("project_id",$request->project_id)->where("department_id",$request->department_id)->where("status","In-Progress")->get();
+    public function assignTaskToEmployee(Request $request)
+    { 
+        DB::beginTransaction();
         try {
-            Task::where("project_id",$request->project_id)->where("department_id",$request->department_id)->where("status","In-Progress")->update(["employee_id" => $request->employee,"notes" => $request->notes]);
-            return redirect()->route("projects.show",$request->project_id);
+            Task::where("id", $request->task_id)->update(["status" => "Completed", "notes" => "Task Assigned to Employee"]);
+            Task::create([
+                "project_id" => $request->project_id,
+                "employee_id" => $request->employee,
+                "department_id" => $request->department_id,
+                "sub_department_id" => $request->sub_department,
+                "status" => "In-Progress"
+            ]);
+            DB::commit();
+            return redirect()->route("projects.show", $request->project_id);
         } catch (\Throwable $th) {
-            return redirect()->route("projects.show",$request->project_id);
+            DB::rollBack();
+            return $th->getMessage();
+            return redirect()->route("projects.show", $request->project_id);
+        }
+    }
+
+    public function projectStatus(Request $request)
+    {
+        $validated = $request->validate([
+            'status' => 'required',
+            'reason' => 'required_if:status,Cancelled|integer',
+        ]);
+        try {
+            Task::where("project_id", $request->project_id)->where("status", "In-Progress")->update(["status" => $request->status, "notes" => $request->reason]);
+            return redirect()->route("projects.show", $request->project_id);
+        } catch (\Throwable $th) {
+            return redirect()->route("projects.show", $request->project_id);
         }
     }
 
     public function projectQuery(Request $request)
     {
-        $query = Project::with("customer","customer.salespartner","department", "subdepartment", "assignedPerson", "assignedPerson.employee");
+        $query = Project::with("customer", "customer.salespartner", "department", "subdepartment", "assignedPerson", "assignedPerson.employee");
         $subdepartmentsQuery = SubDepartment::with("department");
         if (auth()->user()->getRoleNames()[0] == "Sales Person") {
-            $query->whereHas("customer",function($query){
-                $query->where("sales_partner_id",auth()->user()->id);
+            $query->whereHas("customer", function ($query) {
+                $query->where("sales_partner_id", auth()->user()->id);
             });
-        }else if (auth()->user()->getRoleNames()[0] == "Manager") {
-            $query->whereIn("department_id",EmployeeDepartment::whereIn("employee_id",Employee::where("user_id",auth()->user()->id)->pluck("id"))->pluck("department_id"));
+        } else if (auth()->user()->getRoleNames()[0] == "Manager") {
+            $query->whereIn("department_id", EmployeeDepartment::whereIn("employee_id", Employee::where("user_id", auth()->user()->id)->pluck("id"))->pluck("department_id"));
+        } else if (auth()->user()->getRoleNames()[0] == "Employee") {
+            $query->whereIn("id", Task::whereIn("employee_id", Employee::where("user_id", auth()->user()->id)->pluck("id"))->whereIn("status",["In-Progress","Hold","Cancelled"])->pluck("project_id"));
         }
         if ($request->id != "" && $request->id != "all") {
-           $query->where("department_id",$request->id);
-           $subdepartmentsQuery->where("department_id",$request->id);
+            $query->where("department_id", $request->id);
+            $subdepartmentsQuery->where("department_id", $request->id);
         }
-        return $query->get();
+        return [
+            "projects" => $query->get(),
+            "subdepartments" => $subdepartmentsQuery->get(),
+        ];
     }
 
     public function getEmployees($departmentId)
     {
         $employees = Employee::with("user")
-            ->whereHas("user.roles",function($query){
+            ->whereHas("user.roles", function ($query) {
                 $query->whereIn("name", ["Employee"]);
             })
-            ->whereHas("department",function($query) use ($departmentId){
+            ->whereHas("department", function ($query) use ($departmentId) {
                 $query->whereIn("department_id", [$departmentId]);
             })
             ->get();
@@ -247,10 +281,51 @@ class ProjectController extends Controller
 
     public function getProjects(Request $request)
     {
-        return view("projects.list",[
-           "projects" => $this->projectQuery($request),
+        return auth()->user();
+        $result = $this->projectQuery($request);
+        return view("projects.list", [
+            "projects" => $result["projects"],
         ]);
     }
 
-
+    public function projectAdders(Request $request)
+    {
+        $customer = Customer::findOrFail($request->customer_id);
+        DB::beginTransaction();
+        try {
+            if (!empty($request->uom)) {
+                $customer->adders()->delete();
+                $count = count($request->uom);
+                if ($count > 0) {
+                    for ($i = 0; $i < $count; $i++) {
+                        $customer->adders()->create([
+                            "customer_id" => $customer->id,
+                            "adder_type_id" => $request->adders[$i],
+                            "adder_sub_type_id" => $request->subadders[$i],
+                            "adder_unit_id" => $request->uom[$i],
+                            "amount" => $request->amount[$i],
+                        ]);
+                    }
+                }
+            }
+            $customer->finances()->update([
+                "customer_id" => $customer->id,
+                "finance_option_id" => $request->finance_option_id,
+                "loan_term_id" => $request->loan_term_id,
+                "loan_apr_id" => $request->loan_apr_id,
+                "contract_amount" => $request->contract_amount,
+                "redline_costs" => $request->redline_costs,
+                "adders" => $request->adders_amount,
+                "commission" => $request->commission,
+                "dealer_fee" => $request->dealer_fee,
+                "dealer_fee_amount" => $request->dealer_fee_amount,
+            ]);
+            DB::commit();
+            return redirect()->route("projects.show", $request->project_id);
+        } catch (\Throwable $th) {
+            DB::rollBack();
+            return $th->getMessage();
+            return redirect()->route("projects.show", $request->project_id);
+        }
+    }
 }

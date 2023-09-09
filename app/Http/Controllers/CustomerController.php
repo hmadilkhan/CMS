@@ -198,10 +198,11 @@ class CustomerController extends Controller
                 "notes" => $request->notes,
             ]);
             if (!empty($request->uom)) {
+                $customer->adders()->delete();
                 $count = count($request->uom);
                 if ($count > 0) {
                     for ($i = 0; $i < $count; $i++) {
-                        $customer->adders()->update([
+                        $customer->adders()->create([
                             "customer_id" => $customer->id,
                             "adder_type_id" => $request->adders[$i],
                             "adder_sub_type_id" => $request->subadders[$i],

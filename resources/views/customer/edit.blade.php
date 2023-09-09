@@ -612,6 +612,7 @@
             adders_amount += $(this).children().eq(8).text() * 1;
         });
         $("#adders_amount").val(adders_amount);
+        calculateCommission();
     }
 
     function emptyControls() {
