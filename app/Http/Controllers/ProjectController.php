@@ -281,7 +281,6 @@ class ProjectController extends Controller
 
     public function getProjects(Request $request)
     {
-        return auth()->user();
         $result = $this->projectQuery($request);
         return view("projects.list", [
             "projects" => $result["projects"],
