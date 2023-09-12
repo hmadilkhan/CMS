@@ -15,13 +15,15 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rules;
 use Illuminate\View\View;
 use Spatie\Permission\Models\Role;
+use App\Traits\MediaTrait;
 
 class RegisteredUserController extends Controller
 {
+    use MediaTrait;
     /**
      * Display the registration view.
      */
-    public function create(Request $request): View
+    public function create(Request $request)
     {
         return view('auth.register',[
             "user" => ($request->id != "" ? User::find($request->id) : []),
@@ -54,26 +56,30 @@ class RegisteredUserController extends Controller
             'email' => ['required', 'string', 'email', 'max:255', 'unique:'.User::class],
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
         ]);
-
+        $result = $this->uploads($request->file, 'users/',"");
         $user = User::create([
             'name' => $request->name,
             'email' => $request->email,
             'password' => Hash::make($request->password),
             'username' => $request->username,
             'user_type_id' => $request->user_type_id,
+            'phone' => $request->phone,
+            'image' => (!empty($result) ? $result["fileName"] : ""),
         ]);
         $user->assignRole($request->role);
-
         event(new Registered($user));
         return redirect()->back();
     }
 
     protected function update(Request $request)
     {
+        $result = $this->uploads($request->file, 'users/', $request->previous_logo);
         $user = User::where("id", $request->id)->update([
             'name' => $request->name,
             'email' => $request->email,
             'user_type_id' => $request->user_type_id,
+            'phone' => $request->phone,
+            "image" => (!empty($result) ? $result["fileName"] : $request->previous_logo),
         ]);
         $user = User::findOrFail($request->id);
         $user->syncRoles($request->role);

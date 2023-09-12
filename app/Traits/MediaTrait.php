@@ -48,8 +48,8 @@ trait MediaTrait {
 	public function removeImage($path,$filename)
 	{
 		if($filename != ""){
-			if(File::exists(public_path('images/'.$path.$filename) )){
-				File::delete(public_path('images/'.$path.$filename));
+			if(Storage::disk('public')->exists($path.$filename)){
+				Storage::disk('public')->delete($path.$filename);
 				return 1;
 			}
 		}

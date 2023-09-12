@@ -23,7 +23,7 @@
             <div class="card">
                 <div class="card-body">
                     <div class="d-flex align-items-center justify-content-between profile-av pe-xl-4 pe-md-2 pe-sm-4 pe-4 w220">
-                        <img src="{{($project->customer->salespartner->image != '' ? (asset('storage/projects/'.$project->customer->salespartner->image)) : (asset('assets/images/profile_av.png')))}}" alt="" class="avatar xl rounded-circle img-thumbnail shadow-sm">
+                        <img src="{{($project->customer->salespartner->image != '' ? (asset('storage/users/'.$project->customer->salespartner->image)) : (asset('assets/images/profile_av.png')))}}" alt="" class="avatar xl rounded-circle img-thumbnail shadow-sm">
                     </div>
                     <h6 class="mb-0 fw-bold d-block fs-6 mt-2">{{$project->department->name}}</h6>
                     <div class="d-flex align-items-center justify-content-between mt-1">
