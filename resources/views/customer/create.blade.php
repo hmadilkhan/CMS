@@ -103,7 +103,7 @@
                 </div>
                 <div class="col-sm-4">
                     <label class="form-label">Module Type</label>
-                    <select class="form-select select2" aria-label="Default select Module Type" id="module_type_id" name="module_type_id">
+                    <select class="form-select select2" aria-label="Default select Module Type" id="module_type_id" name="module_type_id" onchange="getRedlineCost()">
                         <option value="">Select Module Type</option>
                         @foreach ($modules as $module)
                         <option value="{{ $module->id }}">
@@ -608,9 +608,9 @@
         $("#amount").val('');
     }
 
-    $("#module_type_id").change(function() {
-        modulesType($(this).val());
-    });
+    // $("#module_type_id").change(function() {
+    //     modulesType($(this).val());
+    // });
     function modulesType(id)
     {
         if (id != "") {

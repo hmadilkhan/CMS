@@ -40,6 +40,7 @@
     <script src="{{asset('assets/bundles/dataTables.bundle.js')}}"></script>
     <!-- Jquery Page Js -->
     <script src="{{asset('page/template.js')}}"></script>
+    
     <script type="text/javascript">
         $(document).ready(function() {
             $('.select2').select2();
