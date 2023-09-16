@@ -13,7 +13,7 @@
 @endif
 <div class="card card-info">
     <div class="card-header">
-        <h4 class="card-title">Change Redline Cost</h4>
+        <h4 class="card-title">Change DealerFee</h4>
     </div>
     <div class="card-body">
         <!-- ADD NEW PRODUCT PART START -->
@@ -74,7 +74,7 @@
 </div>
 <div class="card mt-3">
     <div class="card-header">
-        <h4 class="card-title">Redline Cost List</h3>
+        <h4 class="card-title">DealerFee List</h3>
     </div>
     <div class="card-body">
         <table id="example1" class="table table-bordered table-striped datatable">
@@ -99,7 +99,7 @@
                     <td class="text-center">
                         <a style="cursor: pointer;" data-toggle="tooltip" title="Edit" href="{{ route('view-dealer-fee',$list->id)}}">
                             <i class="icofont-pencil text-warning"></i></a>
-                        <a style="cursor: pointer;" data-toggle="tooltip" title="Delete" class="ml-2" onclick="deleteDealerModal('{{ $list->id }}')">
+                        <a style="cursor: pointer;" data-toggle="tooltip" title="Delete" class="ml-2" onclick="deleteDealerModal    ('{{ $list->id }}')">
                             <i class="icofont-trash text-danger"></i></a>
                     </td>
                 </tr>
