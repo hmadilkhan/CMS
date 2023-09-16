@@ -3,6 +3,7 @@
 use App\Http\Controllers\CustomerController;
 use App\Http\Controllers\EmployeeController;
 use App\Http\Controllers\ModuleTypeController;
+use App\Http\Controllers\OperationController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ProjectController;
 use App\Http\Controllers\TaskController;
@@ -86,6 +87,20 @@ Route::middleware('auth')->group(function () {
     Route::post('projects-status', [App\Http\Controllers\ProjectController::class, 'projectStatus'])->name('projects.status');
     Route::get('projects-list', [App\Http\Controllers\ProjectController::class, 'getProjects'])->name('projects');
 
+    Route::controller(OperationController::class)->group(function () {
+        // REDLINE COST
+        Route::get('/view-redline-cost/{id?}', 'changeRedlineCostView')->name("view-redline-cost");
+        Route::post('/get-redline-cost', 'getRedlineCostByInverter')->name("get-redline-cost");
+        Route::post('/redlinecost-store', 'redlineStore')->name("redlinecost.store");
+        Route::post('/redlinecost-update', 'redlineUpdate')->name("redlinecost.update");
+        Route::post('/redlinecost-delete', 'redlineDelete')->name("redlinecost.delete");
+        
+        // DEALER FEE
+        Route::get('/view-dealer-fee/{id?}', 'dealerFeeView')->name("view-dealer-fee");
+        Route::post('/dealerfee-store', 'dealerFeeStore')->name("dealerfee.store");
+        Route::post('/dealerfee-update', 'dealerFeeUpdate')->name("dealerfee.update");
+        Route::post('/dealerfee-delete', 'dealerFeeDelete')->name("dealerfee.delete");
+    });
 
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');

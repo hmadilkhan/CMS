@@ -245,7 +245,7 @@ class ProjectController extends Controller
 
     public function projectQuery(Request $request)
     {
-        $query = Project::with("customer", "customer.salespartner", "department", "subdepartment", "assignedPerson", "assignedPerson.employee");
+        $query = Project::with("customer", "customer.salespartner", "department", "subdepartment", "assignedPerson", "assignedPerson.employee","task");
         $subdepartmentsQuery = SubDepartment::with("department");
         if (auth()->user()->getRoleNames()[0] == "Sales Person") {
             $query->whereHas("customer", function ($query) {

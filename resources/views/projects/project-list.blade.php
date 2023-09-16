@@ -83,10 +83,17 @@
                     <div class="dividers-block"></div>
                     <div class="d-flex align-items-center justify-content-between mb-2">
                         <a href="{{route('projects.show',$project->id)}}" class="btn btn-dark btn-set-task w-sm-100"><i class="icofont-eye me-2 fs-6"></i>Details</a>
-                        @if(auth()->user()->getRoleNames()[0] == "Manager")
-                            <button type="button" class="btn btn-dark btn-set-task w-sm-100" onclick="assignTask('{{$project->department_id}}','{{$project->id}}')"><i class="icofont-plus-circle me-2 fs-6"></i>Assign Task</button>
-                        @endif
                     </div>
+                    <hr/>
+                    <h6 class="mb-0 fw-bold d-block fs-6 mt-2">Project Notes</h6>
+                    <hr/>
+                    @if(!empty($project->task))
+                    <ul class="list-group list-group-flush">
+                        @foreach($project->task as $task)
+                        <li class="list-group-item">{{$task->notes}}</li>
+                        @endforeach
+                    </ul>
+                    @endif
 
                 </div>
             </div>
