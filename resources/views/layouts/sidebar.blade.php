@@ -61,13 +61,14 @@
             @endcan
             @can('User Management')
             <li class="collapsed">
-                <a class="m-link {{ (Route::currentRouteName() == 'module-types.index' or Route::currentRouteName() == 'view-redline-cost' or Route::currentRouteName() == 'view-dealer-fee' ) ? 'show' : '' }}" data-bs-toggle="collapse" data-bs-target="#module-types" href="#">
+                <a class="m-link {{ (Route::currentRouteName() == 'module-types.index' or Route::currentRouteName() == 'view-redline-cost' or Route::currentRouteName() == 'view-dealer-fee' or Route::currentRouteName() == 'tools.index' ) ? 'show' : '' }}" data-bs-toggle="collapse" data-bs-target="#module-types" href="#">
                     <i class="icofont-briefcase"></i><span>Operations</span> <span class="arrow icofont-dotted-down ms-auto text-end fs-5"></span></a>
                 <!-- Menu: Sub menu ul -->
-                <ul class="sub-menu collapse {{ (Route::currentRouteName() == 'module-types.index' or Route::currentRouteName() == 'view-redline-cost' or Route::currentRouteName() == 'view-dealer-fee' ) ? 'show' : '' }}" id="module-types">
+                <ul class="sub-menu collapse {{ (Route::currentRouteName() == 'module-types.index' or Route::currentRouteName() == 'view-redline-cost' or Route::currentRouteName() == 'view-dealer-fee' or Route::currentRouteName() == 'tools.index' ) ? 'show' : '' }}" id="module-types">
                     <li><a class="ms-link {{ Route::currentRouteName() == 'module-types.index' ? 'active' : '' }}" href="{{route('module-types.index')}}"><span>Module Types</span></a></li>
                     <li><a class="ms-link {{ Route::currentRouteName() == 'view-redline-cost' ? 'active' : '' }}" href="{{route('view-redline-cost')}}"><span>Redline Cost</span></a></li>
                     <li><a class="ms-link {{ Route::currentRouteName() == 'view-dealer-fee' ? 'active' : '' }}" href="{{route('view-dealer-fee')}}"><span>Dealer Fee</span></a></li>
+                    <li><a class="ms-link {{ Route::currentRouteName() == 'tools.index' ? 'active' : '' }}" href="{{route('tools.index')}}"><span>Tools</span></a></li>
                 </ul>
             </li>
             @endcan
