@@ -88,6 +88,7 @@
             <thead>
                 <tr>
                     <th>No.</th>
+                    <th>Department</th>
                     <th>Name</th>
                     <th>Description</th>
                     <th>File</th>
@@ -105,7 +106,7 @@
                     <td class="text-center">
                         <a style="cursor: pointer;" data-toggle="tooltip" title="Edit" href="{{ route('tools.index',$tool->id)  }}">
                             <i class="icofont-pencil text-warning"></i></a>
-                        <a style="cursor: pointer;" data-toggle="tooltip" title="Delete" class="ml-2" onclick="deleteUser('{{ $tool->id }}')">
+                        <a style="cursor: pointer;" data-toggle="tooltip" title="Delete" class="ml-2" onclick="deleteToolModal('{{ $tool->id }}')">
                             <i class="icofont-trash text-danger"></i></a>
                     </td>
                 </tr>
@@ -114,4 +115,48 @@
         </table>
     </div>
 </div>
+<div class="modal fade" id="deleteproject" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-md modal-dialog-scrollable">
+        <input type="hidden" id="deleteId"/>
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title  fw-bold" id="deleteprojectLabel"> Delete item Permanently?</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body justify-content-center flex-column d-flex">
+                <i class="icofont-ui-delete text-danger display-2 text-center mt-2"></i>
+                <p class="mt-4 fs-5 text-center">You can only delete this item Permanently</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-danger color-fff" onclick="deleteTool()">Delete</button>
+            </div>
+        </div>
+    </div>
+</div>
+@endsection
+@section("scripts")
+<script type="text/javascript">
+    function deleteToolModal(id)
+    {
+        $("#deleteId").val(id);
+        $("#deleteproject").modal("show")
+    }
+    function deleteTool(id)
+    {
+        $.ajax({
+            method: "POST",
+            url: "{{ route('tools.delete')}}",
+            data: {
+                _token: "{{csrf_token()}}",
+                id: $("#deleteId").val()
+            },
+            success:function(response){
+                if (response.status == 200) {
+                    location.reload();
+                }
+            }
+        });
+    }
+</script>
 @endsection

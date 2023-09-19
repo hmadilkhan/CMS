@@ -85,8 +85,13 @@ class ToolController extends Controller
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(Tool $tool)
+    public function toolDelete(Request $request)
     {
-        //
+        try {
+            Tool::where("id",$request->id)->delete();
+            return response()->json(["message" => "Tool Deleted Successfully", "status" => 200]);
+        } catch (\Throwable $th) {
+            return response()->json(["message" => "Error:".$th->getMessage(), "status" => 500]);
+        }
     }
 }

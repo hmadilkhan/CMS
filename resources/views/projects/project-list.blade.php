@@ -90,7 +90,9 @@
                     @if(!empty($project->task))
                     <ul class="list-group list-group-flush">
                         @foreach($project->task as $task)
-                        <li class="list-group-item">{{$task->notes}}</li>
+                        @if($task->assign_to_notes != "")
+                        <li class="list-group-item">{{$task->assign_to_notes}}</li>
+                        @endif
                         @endforeach
                     </ul>
                     @endif

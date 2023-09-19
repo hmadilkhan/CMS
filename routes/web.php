@@ -71,6 +71,7 @@ Route::middleware('auth')->group(function () {
     
     Route::resource('tools', ToolController::class);
     Route::get('tools-index/{id?}', [App\Http\Controllers\ToolController::class, 'index'])->name('tools.index');
+    Route::post('tools-delete', [App\Http\Controllers\ToolController::class, 'toolDelete'])->name('tools.delete');
 
 
     Route::post('get-employees-with-department', [App\Http\Controllers\EmployeeController::class, 'getDepartmentEmployees'])->name('get.employee.department');

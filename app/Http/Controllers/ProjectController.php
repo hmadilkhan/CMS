@@ -218,6 +218,7 @@ class ProjectController extends Controller
                 "employee_id" => $request->employee,
                 "department_id" => $request->department_id,
                 "sub_department_id" => $request->sub_department,
+                "assign_to_notes" => $request->notes,
                 "status" => "In-Progress"
             ]);
             DB::commit();
