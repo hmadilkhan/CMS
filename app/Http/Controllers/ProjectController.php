@@ -86,17 +86,21 @@ class ProjectController extends Controller
      */
     public function show(Project $project)
     {
+        $departments = Department::whereIn("id", Task::where("project_id", $project->id)->pluck("department_id"))->get();
         $task = Task::whereIn("status", ["In-Progress","Hold"])->where("project_id", $project->id)->first();
+        $fwdDepartments =  array_merge($departments->toArray(),Department::where("id", ">", $task->department_id)->take(1)->get()->toArray());
+        // return  ;
         return view("projects.show", [
             "project" => Project::with("task", "customer", "department", "subdepartment", "assignedPerson", "assignedPerson.employee")->where("id", $project->id)->first(),
             "task" => $task,
             "backdepartments" => Department::where("id", "<", $task->department_id)->get(),
-            "forwarddepartments" => Department::whereIn("id", Task::where("project_id", $project->id)->pluck("department_id"))->get(),
+            "forwarddepartments" => (object)$fwdDepartments,//Department::whereIn("id", Task::where("project_id", $project->id)->pluck("department_id"))->get(),
             "filesCount" => ProjectFile::where("project_id", $project->id)->where("department_id", $project->department_id)->get(),
             "departments" => Department::all(),
             "employees" => $this->getEmployees($project->department_id),
             "adders" => AdderType::all(),
             "uoms" => AdderUnit::all(),
+            "lengths" => Department::select("id","document_length")->get()
         ]);
     }
 

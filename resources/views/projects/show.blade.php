@@ -187,7 +187,7 @@
                 <div class="card-header py-3 px-0 d-sm-flex align-items-center  justify-content-between border-bottom">
                     <h3 class=" fw-bold flex-fill mb-0 mt-sm-0" data-bs-toggle="collapse" data-bs-target="#adderTable" aria-expanded="false" aria-controls="adderTable">Adders Details</h3>
                 </div>
-                <form id="form" method="post" action="{{route('projects.adders')}}">
+                <form  method="post" action="{{route('projects.adders')}}">
                     @csrf
                     <input type="hidden" name="project_id" value="{{$project->id}}">
                     <input type="hidden" name="customer_id" value="{{$project->customer->id}}">
@@ -314,7 +314,7 @@
                         </div>
                     </div>
                     <div class="col-sm-12 mb-3">
-                        <button type="button" class="btn btn-dark me-1 mt-1 w-sm-100" id="saveProject"><i class="icofont-arrow-left me-2 fs-6"></i>Submit</button>
+                        <button type="submit" class="btn btn-dark me-1 mt-1 w-sm-100" ><i class="icofont-arrow-left me-2 fs-6"></i>Submit</button>
                     </div>
                     @endif
                 </form>
@@ -377,7 +377,7 @@
                             <option value="">Select Move Forward</option>
                             @if(!empty($forwarddepartments))
                             @foreach($forwarddepartments as $bdepartment)
-                            <option value="{{$bdepartment->id}}">{{$bdepartment->name}}</option>
+                            <option value="{{$bdepartment['id']}}">{{$bdepartment['name']}}</option>
                             @endforeach
                             @endif
                         </select>
@@ -514,15 +514,15 @@
         }
     }
 
-
-
-    $("#saveProject").click(function() {
+    $("#saveProject").click(function(e) {
         $("#file_message").html('')
         let fileCount = $("[name='file[]']").prop("files").length;
         let stage = $('input[name="stage"]:checked').val()
         let totalCount = "{{$project->department->document_length}}";
         let alreadyUploaded = "{{count($filesCount)}}";
-        if (stage == "forward" && alreadyUploaded == 0) {
+        let project = "{{$project->department->id}}";
+
+        if (stage == "forward" && alreadyUploaded == 0 && (project != $("#forward").val())) {
             if (fileCount == totalCount) {
                 $("#file_message").html('')
                 $("#form").submit();

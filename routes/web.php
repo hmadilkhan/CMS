@@ -95,7 +95,7 @@ Route::middleware('auth')->group(function () {
     Route::controller(OperationController::class)->group(function () {
         // REDLINE COST
         Route::get('/view-redline-cost/{id?}', 'changeRedlineCostView')->name("view-redline-cost");
-        Route::post('/get-redline-cost', 'getRedlineCostByInverter')->name("get-redline-cost");
+        Route::post('/get-redlines-cost', 'getRedlineCostByInverter')->name("get-redline-cost");
         Route::post('/redlinecost-store', 'redlineStore')->name("redlinecost.store");
         Route::post('/redlinecost-update', 'redlineUpdate')->name("redlinecost.update");
         Route::post('/redlinecost-delete', 'redlineDelete')->name("redlinecost.delete");
