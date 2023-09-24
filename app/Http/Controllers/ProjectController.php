@@ -17,6 +17,7 @@ use App\Models\Tool;
 use App\Traits\MediaTrait;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\Rule;
 
 class ProjectController extends Controller
 {
@@ -175,7 +176,9 @@ class ProjectController extends Controller
             'ntp_approval_date' => 'required_if:forward,2',
             'site_survey_link' => 'required_if:forward,3',
             'hoa' => 'required_if:forward,3',
-            'hoa_phone_number' => 'required_if:hoa,yes',
+            'hoa_phone_number' => Rule::requiredIf(function () use ($request) {
+                                    return $request->forward == 3 && !$request->hoa == "yes";
+                                    }),//'required_if:hoa,yes',
             'adders_approve_checkbox' => 'required_if:forward,4',
             'mpu_required' => 'required_if:forward,4',
             'meter_spot_request_date' => 'required_if:mpu_required,yes',
@@ -187,7 +190,9 @@ class ProjectController extends Controller
             'hoa_approval_date' => 'required_if:projecthoa,yes',
             'solar_install_date' => 'required_if:forward,6',
             'battery_install_date' => 'required_if:forward,6',
-            'mpu_install_date' => 'required_if:projectmpu,yes',
+            'mpu_install_date' => Rule::requiredIf(function () use ($request) {
+                                    return $request->forward == 6 && !$request->projectmpu == "yes";
+                                    }),// 'required_if:projectmpu,yes',
             'rough_inspection_date' => 'required_if:forward,7',
             'final_inspection_date' => 'required_if:forward,7',
             'pto_submission_date' => 'required_if:forward,8',
