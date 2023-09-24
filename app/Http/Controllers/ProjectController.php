@@ -9,14 +9,13 @@ use App\Models\Department;
 use App\Models\Employee;
 use App\Models\EmployeeDepartment;
 use App\Models\Project;
+use App\Models\ProjectCallLog;
 use App\Models\ProjectFile;
 use App\Models\SubDepartment;
 use App\Models\Task;
 use App\Traits\MediaTrait;
-use GuzzleHttp\Psr7\Query;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Validation\Rule;
 
 class ProjectController extends Controller
 {
@@ -26,7 +25,6 @@ class ProjectController extends Controller
      */
     public function index()
     {
-        // return EmployeeDepartment::whereIn("employee_id",Employee::where("user_id",auth()->user()->id)->pluck("id"))->pluck("department_id");
         return view("projects.index", [
             "customers" => Customer::all(),
             "departments" => Department::all(),
@@ -86,21 +84,20 @@ class ProjectController extends Controller
      */
     public function show(Project $project)
     {
-        $departments = Department::whereIn("id", Task::where("project_id", $project->id)->pluck("department_id"))->get();
-        $task = Task::whereIn("status", ["In-Progress","Hold"])->where("project_id", $project->id)->first();
-        $fwdDepartments =  array_merge($departments->toArray(),Department::where("id", ">", $task->department_id)->take(1)->get()->toArray());
-        // return  ;
+        $task = Task::whereIn("status", ["In-Progress", "Hold"])->where("project_id", $project->id)->first();
+        $departments = Department::whereIn("id", Task::where("project_id", $project->id)->whereNotIn("department_id", Department::where("id", ">", $task->department_id)->take(1)->pluck("id"))->groupBy("department_id")->orderBy("department_id")->pluck("department_id"))->get();
+        $fwdDepartments =  array_merge($departments->toArray(), Department::where("id", ">", $task->department_id)->take(1)->get()->toArray());
+        // return Project::with("task", "customer", "department","logs", "subdepartment", "assignedPerson", "assignedPerson.employee")->where("id", $project->id)->first();
         return view("projects.show", [
-            "project" => Project::with("task", "customer", "department", "subdepartment", "assignedPerson", "assignedPerson.employee")->where("id", $project->id)->first(),
+            "project" => Project::with("task", "customer", "department", "logs", "subdepartment", "assignedPerson", "assignedPerson.employee")->where("id", $project->id)->first(),
             "task" => $task,
             "backdepartments" => Department::where("id", "<", $task->department_id)->get(),
-            "forwarddepartments" => (object)$fwdDepartments,//Department::whereIn("id", Task::where("project_id", $project->id)->pluck("department_id"))->get(),
+            "forwarddepartments" => (object)$fwdDepartments, //Department::whereIn("id", Task::where("project_id", $project->id)->pluck("department_id"))->get(),
             "filesCount" => ProjectFile::where("project_id", $project->id)->where("department_id", $project->department_id)->get(),
             "departments" => Department::all(),
             "employees" => $this->getEmployees($project->department_id),
             "adders" => AdderType::all(),
             "uoms" => AdderUnit::all(),
-            "lengths" => Department::select("id","document_length")->get()
         ]);
     }
 
@@ -163,36 +160,147 @@ class ProjectController extends Controller
             'forward' => 'required_if:stage,forward|integer',
             'back' => 'required_if:stage,back|integer',
             'sub_department' => 'required',
+            'utility_company' => 'required_if:forward,2',
+            'ntp_approval_date' => 'required_if:forward,2',
+            'site_survey_link' => 'required_if:forward,3',
+            'hoa' => 'required_if:forward,3',
+            'hoa_phone_number' => 'required_if:hoa,yes',
+            'adders_approve_checkbox' => 'required_if:forward,4',
+            'mpu_required' => 'required_if:forward,4',
+            'meter_spot_request_date' => 'required_if:mpu_required,yes',
+            'meter_spot_request_number' => 'required_if:mpu_required,yes',
+            'meter_spot_result' => 'required_if:forward,4',
+            'permitting_submittion_date' => 'required_if:forward,5',
+            'permitting_approval_date' => 'required_if:forward,5',
+            'hoa_approval_request_date' => 'required_if:projecthoa,yes',
+            'hoa_approval_date' => 'required_if:projecthoa,yes',
+            'solar_install_date' => 'required_if:forward,6',
+            'battery_install_date' => 'required_if:forward,6',
+            'mpu_install_date' => 'required_if:projectmpu,yes',
+            'rough_inspection_date' => 'required_if:forward,7',
+            'final_inspection_date' => 'required_if:forward,7',
+            'pto_submission_date' => 'required_if:forward,8',
+            'pto_approval_date' => 'required_if:forward,8',
+            'coc_packet_mailed_out_date' => 'required_if:forward,9',
             // 'file' => 'required_if:stage,forward|integer',
-            'file' => Rule::requiredIf(function () use ($request) {
-                return $request->stage == "forward" && $request->alreadyuploaded == 0;
-            }),
+            // 'file' => Rule::requiredIf(function () use ($request) {
+            //     return $request->stage == "forward" && $request->alreadyuploaded == 0;
+            // }),
             // 'notes' => ['required'],
         ]);
-        if ($request->stage == "forward" && $request->alreadyuploaded == 0) {
-            foreach ($request->file as $key => $file) {
-                $result = $this->uploads($file, 'projects/');
-                array_push($filesArray, $result);
-            }
-        }
         try {
-            DB::beginTransaction();
-            if ($request->stage == "forward" && $request->alreadyuploaded == 0) {
-                $project = Project::findOrFail($request->id);
-                $task = Task::findOrFail($request->taskid);
-                foreach ($filesArray as $key => $file) {
-                    ProjectFile::create([
-                        "project_id" => $project->id,
-                        "task_id" => $task->id,
-                        "department_id" => $project->department_id,
-                        "filename" => $file["fileName"],
-                    ]);
+            $project = Project::findOrFail($request->id);
+
+            if ($request->stage == "forward" && $request->alreadyuploaded == 0 && ($project->department_id != $request->forward)) {
+                if (!empty($request->file)) {
+                    foreach ($request->file as $key => $file) {
+                        $result = $this->uploads($file, 'projects/');
+                        array_push($filesArray, $result);
+                    }
                 }
             }
-            Project::where("id", $request->id)->update([
+            DB::beginTransaction();
+            if ($request->stage == "forward" && $request->alreadyuploaded == 0) {
+
+                $task = Task::findOrFail($request->taskid);
+                if (!empty($request->file)) {
+                    foreach ($filesArray as $key => $file) {
+                        ProjectFile::create([
+                            "project_id" => $project->id,
+                            "task_id" => $task->id,
+                            "department_id" => $project->department_id,
+                            "filename" => $file["fileName"],
+                        ]);
+                    }
+                }
+                $logsCount = ProjectCallLog::where("project_id", $project->id)->where("department_id", $request->forward)->count();
+                if ($request->forward != 1 && $request->forward != 8 && $logsCount == 0) {
+                    ProjectCallLog::create([
+                        "project_id" => $project->id,
+                        "department_id" => $request->forward,
+                        "call_no" => $request->call_no_1,
+                        "notes" => $request->notes_1,
+                    ]);
+                    ProjectCallLog::create([
+                        "project_id" => $project->id,
+                        "department_id" => $request->forward,
+                        "call_no" => $request->call_no_2,
+                        "notes" => $request->notes_2,
+                    ]);
+                }
+                // else{
+                //     if($request->call_no_1 != "" && $request->notes_1 != "" )
+                //     {
+                //         ProjectCallLog::where("call_no",$request->call_no_1)->where("notes",$request->call_no_1)->where("notes",$request->call_no_1);
+                //     }
+                // }
+            }
+            $updateItems = [
                 "department_id" => ($request->stage == "forward" ? $request->forward : $request->back),
                 "sub_department_id" => $request->sub_department,
-            ]);
+            ];
+            if ($request->forward == 2) {
+                $updateItems = array_merge($updateItems, [
+                    "utility_company" => $request->utility_company,
+                    "ntp_approval_date" => $request->ntp_approval_date,
+                ]);
+            }
+            if ($request->forward == 3) {
+                $updateItems = array_merge($updateItems, [
+                    "site_survey_link" => $request->site_survey_link,
+                    "hoa" => $request->hoa,
+                    "hoa_phone_number" => $request->hoa_phone_number,
+                ]);
+            }
+
+            if ($request->forward == 4) {
+                $updateItems = array_merge($updateItems, [
+                    "adders_approve_checkbox" => $request->adders_approve_checkbox,
+                    "mpu_required" => $request->mpu_required,
+                    "meter_spot_request_date" => $request->meter_spot_request_date,
+                    "meter_spot_request_number" => $request->meter_spot_request_number,
+                    "meter_spot_result" => $request->meter_spot_result,
+                ]);
+            }
+
+            if ($request->forward == 5) {
+                $updateItems = array_merge($updateItems, [
+                    "permitting_submittion_date" => $request->permitting_submittion_date,
+                    "permitting_approval_date" => $request->permitting_approval_date,
+                    "hoa_approval_request_date" => $request->hoa_approval_request_date,
+                    "hoa_approval_date" => $request->hoa_approval_date,
+                ]);
+            }
+
+            if ($request->forward == 6) {
+                $updateItems = array_merge($updateItems, [
+                    "solar_install_date" => $request->solar_install_date,
+                    "battery_install_date" => $request->battery_install_date,
+                    "mpu_install_date" => $request->mpu_install_date,
+                ]);
+            }
+
+            if ($request->forward == 7) {
+                $updateItems = array_merge($updateItems, [
+                    "rough_inspection_date" => $request->rough_inspection_date,
+                    "final_inspection_date" => $request->final_inspection_date,
+                ]);
+            }
+
+            if ($request->forward == 8) {
+                $updateItems = array_merge($updateItems, [
+                    "pto_submission_date" => $request->pto_submission_date,
+                    "pto_approval_date" => $request->pto_approval_date,
+                ]);
+            }
+
+            if ($request->forward == 9) {
+                $updateItems = array_merge($updateItems, [
+                    "coc_packet_mailed_out_date" => $request->coc_packet_mailed_out_date,
+                ]);
+            }
+
+            Project::where("id", $request->id)->update($updateItems);
             $emp =  Employee::with("department")->whereHas("department", function ($query) use ($request) {
                 $query->whereIn("department_id", [($request->stage == "forward" ? $request->forward : $request->back)]);
             })->first();
@@ -213,7 +321,7 @@ class ProjectController extends Controller
     }
 
     public function assignTaskToEmployee(Request $request)
-    { 
+    {
         DB::beginTransaction();
         try {
             Task::where("id", $request->task_id)->update(["status" => "Completed", "notes" => "Task Assigned to Employee"]);
@@ -250,7 +358,7 @@ class ProjectController extends Controller
 
     public function projectQuery(Request $request)
     {
-        $query = Project::with("customer", "customer.salespartner", "department", "subdepartment", "assignedPerson", "assignedPerson.employee","task");
+        $query = Project::with("customer", "customer.salespartner", "department", "subdepartment", "assignedPerson", "assignedPerson.employee", "task");
         $subdepartmentsQuery = SubDepartment::with("department");
         if (auth()->user()->getRoleNames()[0] == "Sales Person") {
             $query->whereHas("customer", function ($query) {
@@ -259,7 +367,7 @@ class ProjectController extends Controller
         } else if (auth()->user()->getRoleNames()[0] == "Manager") {
             $query->whereIn("department_id", EmployeeDepartment::whereIn("employee_id", Employee::where("user_id", auth()->user()->id)->pluck("id"))->pluck("department_id"));
         } else if (auth()->user()->getRoleNames()[0] == "Employee") {
-            $query->whereIn("id", Task::whereIn("employee_id", Employee::where("user_id", auth()->user()->id)->pluck("id"))->whereIn("status",["In-Progress","Hold","Cancelled"])->pluck("project_id"));
+            $query->whereIn("id", Task::whereIn("employee_id", Employee::where("user_id", auth()->user()->id)->pluck("id"))->whereIn("status", ["In-Progress", "Hold", "Cancelled"])->pluck("project_id"));
         }
         if ($request->id != "" && $request->id != "all") {
             $query->where("department_id", $request->id);

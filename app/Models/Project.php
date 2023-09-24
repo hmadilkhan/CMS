@@ -42,4 +42,9 @@ class Project extends Model
     {
         return $this->hasMany(ProjectFile::class,"project_id","id");
     }
+
+    public function logs()
+    {
+        return $this->hasMany(ProjectCallLog::class,"project_id","id");
+    }
 }

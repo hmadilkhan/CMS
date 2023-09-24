@@ -8,7 +8,7 @@
                 <div class="card border-0 mb-4 no-bg">
                     <div class="card-header py-3 px-0 d-sm-flex align-items-center  justify-content-between border-bottom">
                         <h3 class=" fw-bold flex-fill mb-0 mt-sm-0">{{$project->project_name}}</h3>
-                        <a  class="btn {{($task->status == 'Hold' ? 'btn-warning' : ($task->status == 'Cancelled' ? 'btn-danger' : 'btn-dark'))}} text-white me-1 mt-1 w-sm-100" id="openemployee">{{$task->status}}</a>
+                        <a class="btn {{($task->status == 'Hold' ? 'btn-warning' : ($task->status == 'Cancelled' ? 'btn-danger' : 'btn-dark'))}} text-white me-1 mt-1 w-sm-100" id="openemployee">{{$task->status}}</a>
                         <a href="{{route('projects.index')}}" class="btn btn-dark me-1 mt-1 w-sm-100" id="openemployee"><i class="icofont-arrow-left me-2 fs-6"></i>Back to List</a>
                     </div>
                 </div>
@@ -69,7 +69,7 @@
                         @csrf
                         <input type="hidden" name="project_id" value="{{$project->id}}">
                         <input type="hidden" name="taskid" value="{{$task->id}}">
-                        
+
                         <div class="col-sm-3 mb-3">
                             <label for="employee" class="form-label">Select Status</label>
                             <select class="form-select select2" aria-label="Default Select Status" id="status" name="status">
@@ -187,7 +187,7 @@
                 <div class="card-header py-3 px-0 d-sm-flex align-items-center  justify-content-between border-bottom">
                     <h3 class=" fw-bold flex-fill mb-0 mt-sm-0" data-bs-toggle="collapse" data-bs-target="#adderTable" aria-expanded="false" aria-controls="adderTable">Adders Details</h3>
                 </div>
-                <form  method="post" action="{{route('projects.adders')}}">
+                <form method="post" action="{{route('projects.adders')}}">
                     @csrf
                     <input type="hidden" name="project_id" value="{{$project->id}}">
                     <input type="hidden" name="customer_id" value="{{$project->customer->id}}">
@@ -314,7 +314,7 @@
                         </div>
                     </div>
                     <div class="col-sm-12 mb-3">
-                        <button type="submit" class="btn btn-dark me-1 mt-1 w-sm-100" ><i class="icofont-arrow-left me-2 fs-6"></i>Submit</button>
+                        <button type="submit" class="btn btn-dark me-1 mt-1 w-sm-100"><i class="icofont-arrow-left me-2 fs-6"></i>Submit</button>
                     </div>
                     @endif
                 </form>
@@ -328,7 +328,7 @@
             <div class="col-md-12">
                 <div class="card border-0 mb-4 no-bg">
                     <div class="card-header py-3 px-0 d-sm-flex align-items-center  justify-content-between border-bottom">
-                        <h3 class=" fw-bold flex-fill mb-0 mt-sm-0">Project </h3>
+                        <h3 class=" fw-bold flex-fill mb-0 mt-sm-0">Call Logs </h3>
                     </div>
                 </div>
             </div>
@@ -338,6 +338,48 @@
                 <input type="hidden" name="taskid" value="{{$task->id}}">
                 <input type="hidden" name="length" value="{{$project->department->document_length}}">
                 <input type="hidden" name="alreadyuploaded" value="{{count($filesCount)}}">
+
+                <div class="row g-3 mb-3">
+                    <div class="col-sm-3 mb-3">
+                        <label for="call_no_1" class="form-label">Call No 1</label>
+                        <select class="form-select select2" aria-label="Default select Call No 1" id="call_no_1" name="call_no_1">
+                            <option value="">Select Call</option>
+                            <option {{old("call_no_1") != "" && old("call_no_1") == 'yes'  ? 'selected' : '' }} value="yes">Yes</option>
+                            <option {{old("call_no_1") != "" && old("call_no_1") == 'no'  ? 'selected' : '' }} value="no">Customer Not Responding</option>
+                        </select>
+                        <div id="call_no_1_message" class="text-danger message mt-2"></div>
+                    </div>
+                    <div class="col-sm-9 mb-3">
+                        <label for="notes_1" class="form-label">Comments:</label>
+                        <input type="text" class="form-control" id="notes_1" name="notes_1" value="{{old('notes_1')}}" />
+                        <div id="notes_1_message" class="text-danger message mt-2"></div>
+                    </div>
+                    <div class="col-sm-3 mb-3">
+                        <label for="call_no_2" class="form-label">Call No 2</label>
+                        <select class="form-select select2" aria-label="Default select Call No 1" id="call_no_2" name="call_no_2">
+                            <option value="">Select Call</option>
+                            <option {{old("call_no_2") != "" && old("call_no_2") == 'yes'  ? 'selected' : '' }} value="yes">Yes</option>
+                            <option {{old("call_no_2") != "" && old("call_no_2") == 'no'  ? 'selected' : '' }} value="no">Customer Not Responding</option>
+                        </select>
+                        <div id="call_no_2_message" class="text-danger message mt-2"></div>
+                    </div>
+                    <div class="col-sm-9 mb-3">
+                        <label for="notes_2" class="form-label">Comments:</label>
+                        <input type="text" class="form-control" id="notes_2" name="notes_2" value="{{old('notes_2')}}" />
+                        <div id="notes_2_message" class="text-danger message mt-2"></div>
+                    </div>
+                </div>
+
+
+                <div class="col-md-12">
+                    <div class="card border-0 mb-4 no-bg">
+                        <div class="card-header py-3 px-0 d-sm-flex align-items-center  justify-content-between border-bottom">
+                            <h3 class=" fw-bold flex-fill mb-0 mt-sm-0">Project </h3>
+                        </div>
+                    </div>
+                </div>
+
+
                 <div class="row  mb-3">
                     <div class="col-md-12">
                         <div class="form-group">
@@ -348,7 +390,7 @@
                                 <span><i></i>Back</span>
                             </label>
                             <label class="fancy-radio">
-                                <input type="radio" id="stage" name="stage" value="forward">
+                                <input type="radio" id="stage" name="stage" value="forward" >
                                 <span><i></i>Forward</span>
                             </label>
                             <p id="error-radio"></p>
@@ -363,7 +405,7 @@
                             <option value="">Select Move Back</option>
                             @if(!empty($backdepartments))
                             @foreach($backdepartments as $mdepartment)
-                            <option value="{{$mdepartment->id}}">{{$mdepartment->name}}</option>
+                            <option {{old("back") != "" && old("back") == $mdepartment->id  ? 'selected' : '' }} value="{{$mdepartment->id}}">{{$mdepartment->name}}</option>
                             @endforeach
                             @endif
                         </select>
@@ -371,13 +413,18 @@
                         <div class="text-danger message mt-2">{{$message}}</div>
                         @enderror
                     </div>
+                    @if(!empty($forwarddepartments))
+                    @foreach($forwarddepartments as $bdepartment)
+                    <input type="hidden" id="{{$bdepartment['id']}}_length" value="{{$bdepartment['document_length']}}" />
+                    @endforeach
+                    @endif
                     <div class="col-sm-3 ">
                         <label for="finance_option_id" class="form-label">Move Forward</label>
                         <select class="form-select select2" aria-label="Default select Move Forward" id="forward" name="forward">
                             <option value="">Select Move Forward</option>
                             @if(!empty($forwarddepartments))
                             @foreach($forwarddepartments as $bdepartment)
-                            <option value="{{$bdepartment['id']}}">{{$bdepartment['name']}}</option>
+                            <option {{old("forward") != "" && old("forward") == $bdepartment['id']  ? 'selected' : '' }} value="{{$bdepartment['id']}}">{{$bdepartment['name']}}</option>
                             @endforeach
                             @endif
                         </select>
@@ -395,13 +442,223 @@
                         @enderror
                     </div>
                     <div class="col-sm-3 mb-3">
-                        <label for="formFileMultipleoneone" class="form-label">Required Files</label>
+                        <label for="formFileMultipleoneone" class="form-label" id="requiredfiles">Required Files</label>
                         <input class="form-control" type="file" id="file" name="file[]" accept=".png,.jpg,.pdf" multiple>
                         @error("file")
                         <div id="file_message" class="text-danger message mt-2">{{$message}}</div>
                         @enderror
                         <div id="file_message" class="text-danger message mt-2"></div>
                     </div>
+                    @if($project->department->id == 1)
+                    <div class="col-sm-3 mb-3">
+                        <label for="utility_company" class="form-label" id="requiredfiles">Utility Company</label>
+                        <input class="form-control" type="text" id="utility_company" name="utility_company"  value="{{$project->utility_company}}">
+                        @error("utility_company")
+                        <div id="utility_company_message" class="text-danger message mt-2">{{$message}}</div>
+                        @enderror
+                        <div id="utility_company_message" class="text-danger message mt-2"></div>
+                    </div>
+                    <div class="col-sm-3 mb-3">
+                        <label for="ntp_approval_date" class="form-label" id="requiredfiles">NTP Approval Date</label>
+                        <input class="form-control" type="text" id="ntp_approval_date" name="ntp_approval_date"  value="{{$project->ntp_approval_date}}">
+                        @error("ntp_approval_date")
+                        <div id="ntp_approval_date_message" class="text-danger message mt-2">{{$message}}</div>
+                        @enderror
+                        <div id="ntp_approval_date_message" class="text-danger message mt-2"></div>
+                    </div>
+                    @endif
+                    @if($project->department->id == 2)
+                    <div class="col-sm-3 mb-3">
+                        <label for="site_survey_link" class="form-label" id="requiredfiles">Site Survey Link</label>
+                        <input class="form-control" type="text" id="site_survey_link" name="site_survey_link" value="{{$project->site_survey_link}}">
+                        @error("site_survey_link")
+                        <div id="site_survey_link_message" class="text-danger message mt-2">{{$message}}</div>
+                        @enderror
+                        <div id="site_survey_link_message" class="text-danger message mt-2"></div>
+                    </div>
+                    <div class="col-sm-3 ">
+                        <label for="hoa" class="form-label">HOA</label>
+                        <select class="form-select select2" aria-label="Default select HOA" id="hoa" name="hoa">
+                            <option value="">Select HOA</option>
+                            <option {{$project->hoa != "" && $project->hoa == 'yes' ? 'selected' : '' }} value="yes">Yes</option>
+                            <option {{$project->hoa != "" && $project->hoa == 'no' ? 'selected' : '' }} value="no">No</option>
+                        </select>
+                        @error("hoa")
+                        <div class="text-danger message mt-2">{{$message}}</div>
+                        @enderror
+                    </div>
+                    <div class="col-sm-3 mb-3" id="hoa_select" style="display:none;">
+                        <label for="hoa_phone_number" class="form-label" id="requiredfiles">Phone Number Field</label>
+                        <input class="form-control" type="text" id="hoa_phone_number" name="hoa_phone_number" value="{{$project->hoa_phone_number}}">
+                        @error("hoa_phone_number")
+                        <div id="hoa_phone_number_message" class="text-danger message mt-2">{{$message}}</div>
+                        @enderror
+                        <div id="hoa_phone_number_message" class="text-danger message mt-2"></div>
+                    </div>
+                    @endif
+                    @if($project->department->id == 3)
+                    <div class="col-sm-3 ">
+                        <label for="hoa" class="form-label">Adders Approved</label>
+                        <select class="form-select select2" aria-label="Default select Adders Approved" id="adders_approve_checkbox" name="adders_approve_checkbox">
+                            <option value="">Select Adders Approved</option>
+                            <option {{$project->adders_approve_checkbox != "" && $project->adders_approve_checkbox == 'yes' ? 'selected' : '' }} value="yes">Yes</option>
+                            <option {{$project->adders_approve_checkbox != "" && $project->adders_approve_checkbox == 'no' ? 'selected' : '' }} value="no">No</option>
+                        </select>
+                        @error("adders_approve_checkbox")
+                        <div class="text-danger message mt-2">{{$message}}</div>
+                        @enderror
+                    </div>
+                    <div class="col-sm-3 ">
+                        <label for="mpu_required" class="form-label">MPU Required</label>
+                        <select class="form-select select2" aria-label="Default select MPU Required" id="mpu_required" name="mpu_required">
+                            <option value="">Select MPU Required</option>
+                            <option {{$project->mpu_required != "" && $project->mpu_required == 'yes' ? 'selected' : '' }} value="yes">Yes</option>
+                            <option {{$project->mpu_required != "" && $project->mpu_required == 'no' ? 'selected' : '' }} value="no">No</option>
+                        </select>
+                        @error("mpu_required")
+                        <div class="text-danger message mt-2">{{$message}}</div>
+                        @enderror
+                    </div>
+                    <div class="col-sm-3 mb-3 mpuselect" style="display:none;">
+                        <label for="meter_spot_request_date" class="form-label" id="requiredfiles">Meter Spot Request Date</label>
+                        <input class="form-control" type="text" id="meter_spot_request_date" name="meter_spot_request_date" value="{{$project->meter_spot_request_date}}">
+                        @error("meter_spot_request_date")
+                        <div id="meter_spot_request_date_message" class="text-danger message mt-2">{{$message}}</div>
+                        @enderror
+                        <div id="meter_spot_request_date_message" class="text-danger message mt-2"></div>
+                    </div>
+                    <div class="col-sm-3 mb-3 mpuselect" style="display:none;">
+                        <label for="meter_spot_request_number" class="form-label" id="requiredfiles">Meter Spot Request Number</label>
+                        <input class="form-control" type="text" id="meter_spot_request_number" name="meter_spot_request_number" value="{{$project->meter_spot_request_number}}">
+                        @error("meter_spot_request_number")
+                        <div id="meter_spot_request_number_message" class="text-danger message mt-2">{{$message}}</div>
+                        @enderror
+                        <div id="meter_spot_request_number_message" class="text-danger message mt-2"></div>
+                    </div>
+                    <div class="col-sm-3 " >
+                        <label for="meter_spot_result" class="form-label">Meter Spot Result</label>
+                        <select class="form-select select2" aria-label="Default select Meter Spot Result" id="meter_spot_result" name="meter_spot_result">
+                            <option value="">Select Meter Spot Result</option>
+                            <option {{$project->meter_spot_result != "" && $project->meter_spot_result == 'same' ? 'selected' : '' }} value="same">Same Location</option>
+                            <option {{$project->meter_spot_result != "" && $project->meter_spot_result == 'relocation' ? 'selected' : '' }} value="relocation">Relocation</option>
+                        </select>
+                        @error("meter_spot_result")
+                        <div class="text-danger message mt-2">{{$message}}</div>
+                        @enderror
+                    </div>
+                    @endif
+                    @if($project->department->id == 4)
+                    <div class="col-sm-3 mb-3 ">
+                        <label for="permitting_submittion_date" class="form-label">Permit Submission Date</label>
+                        <input class="form-control" type="text" id="permitting_submittion_date" name="permitting_submittion_date" value="{{$project->permitting_submittion_date}}">
+                        @error("permitting_submittion_date")
+                        <div id="permitting_submittion_date_message" class="text-danger message mt-2">{{$message}}</div>
+                        @enderror
+                        <div id="permitting_submittion_date_message" class="text-danger message mt-2"></div>
+                    </div>
+                    <div class="col-sm-3 mb-3 ">
+                        <label for="permitting_approval_date" class="form-label" >Meter Approval Date</label>
+                        <input class="form-control" type="text" id="permitting_approval_date" name="permitting_approval_date" value="{{$project->permitting_approval_date}}">
+                        @error("permitting_approval_date")
+                        <div id="permitting_approval_date_message" class="text-danger message mt-2">{{$message}}</div>
+                        @enderror
+                        <div id="permitting_approval_date_message" class="text-danger message mt-2"></div>
+                    </div>
+                    <input type="hidden" name="projecthoa" value="{{$project->hoa}}"/>
+                    @if($project->hoa == "yes")
+                        <div class="col-sm-3 mb-3 ">
+                            <label for="hoa_approval_request_date" class="form-label" >HOA Approval Request Date</label>
+                            <input class="form-control" type="text" id="hoa_approval_request_date" name="hoa_approval_request_date" value="{{$project->hoa_approval_request_date}}">
+                            @error("hoa_approval_request_date")
+                            <div id="hoa_approval_request_date_message" class="text-danger message mt-2">{{$message}}</div>
+                            @enderror
+                            <div id="hoa_approval_request_date_message" class="text-danger message mt-2"></div>
+                        </div>
+                        <div class="col-sm-3 mb-3 ">
+                            <label for="hoa_approval_date" class="form-label" >HOA Approval Date</label>
+                            <input class="form-control" type="text" id="hoa_approval_date" name="hoa_approval_date" value="{{$project->hoa_approval_date}}">
+                            @error("hoa_approval_date")
+                            <div id="hoa_approval_date_message" class="text-danger message mt-2">{{$message}}</div>
+                            @enderror
+                            <div id="hoa_approval_date_message" class="text-danger message mt-2"></div>
+                        </div>
+                    @endif
+                    @endif
+                    @if($project->department->id == 5)
+                        <div class="col-sm-3 mb-3 ">
+                            <label for="solar_install_date" class="form-label" >Solar Install Date </label>
+                            <input class="form-control" type="text" id="solar_install_date" name="solar_install_date" value="{{$project->solar_install_date}}">
+                            @error("solar_install_date")
+                            <div id="solar_install_date_message" class="text-danger message mt-2">{{$message}}</div>
+                            @enderror
+                            <div id="solar_install_date_message" class="text-danger message mt-2"></div>
+                        </div>
+                        <div class="col-sm-3 mb-3 ">
+                            <label for="battery_install_date" class="form-label" >Battery Install Date</label>
+                            <input class="form-control" type="text" id="battery_install_date" name="battery_install_date" value="{{$project->battery_install_date}}">
+                            @error("battery_install_date")
+                            <div id="battery_install_date_message" class="text-danger message mt-2">{{$message}}</div>
+                            @enderror
+                            <div id="battery_install_date_message" class="text-danger message mt-2"></div>
+                        </div>
+                        <input type="hidden" name="projectmpu" value="{{$project->mpu_required}}"/>
+                        @if($project->mpu_required == "yes")
+                        <div class="col-sm-3 mb-3 ">
+                            <label for="mpu_install_date" class="form-label" >MPU Install Date</label>
+                            <input class="form-control" type="text" id="mpu_install_date" name="mpu_install_date" value="{{$project->mpu_install_date}}">
+                            @error("mpu_install_date")
+                            <div id="mpu_install_date_message" class="text-danger message mt-2">{{$message}}</div>
+                            @enderror
+                            <div id="mpu_install_date_message" class="text-danger message mt-2"></div>
+                        </div>
+                        @endif
+                    @endif
+                    @if($project->department->id == 6)
+                        <div class="col-sm-3 mb-3 ">
+                            <label for="rough_inspection_date" class="form-label" >Rough Inspection Date</label>
+                            <input class="form-control" type="text" id="rough_inspection_date" name="rough_inspection_date" value="{{$project->rough_inspection_date}}">
+                            @error("rough_inspection_date")
+                            <div id="rough_inspection_date_message" class="text-danger message mt-2">{{$message}}</div>
+                            @enderror
+                            <div id="rough_inspection_date_message" class="text-danger message mt-2"></div>
+                        </div>
+                        <div class="col-sm-3 mb-3 ">
+                            <label for="final_inspection_date" class="form-label" >Final Inspection Date</label>
+                            <input class="form-control" type="text" id="final_inspection_date" name="final_inspection_date" value="{{$project->final_inspection_date}}">
+                            @error("final_inspection_date")
+                            <div id="final_inspection_date_message" class="text-danger message mt-2">{{$message}}</div>
+                            @enderror
+                            <div id="final_inspection_date_message" class="text-danger message mt-2"></div>
+                        </div>
+                    @endif
+                    @if($project->department->id == 7)
+                        <div class="col-sm-3 mb-3 ">
+                            <label for="pto_submission_date" class="form-label" >PTO Submission Date</label>
+                            <input class="form-control" type="text" id="pto_submission_date" name="pto_submission_date" value="{{$project->pto_submission_date}}">
+                            @error("pto_submission_date")
+                            <div id="pto_submission_date_message" class="text-danger message mt-2">{{$message}}</div>
+                            @enderror
+                            <div id="pto_submission_date_message" class="text-danger message mt-2"></div>
+                        </div>
+                        <div class="col-sm-3 mb-3 ">
+                            <label for="pto_approval_date" class="form-label" >PTO Approval Date</label>
+                            <input class="form-control" type="text" id="pto_approval_date" name="pto_approval_date" value="{{$project->pto_approval_date}}">
+                            @error("pto_approval_date")
+                            <div id="pto_approval_date_message" class="text-danger message mt-2">{{$message}}</div>
+                            @enderror
+                            <div id="pto_approval_date_message" class="text-danger message mt-2"></div>
+                        </div>
+                    @endif
+                    @if($project->department->id == 8)
+                        <div class="col-sm-3 mb-3 ">
+                            <label for="coc_packet_mailed_out_date" class="form-label" >COC Packet</label>
+                            <input class="form-control" type="text" id="coc_packet_mailed_out_date" name="coc_packet_mailed_out_date" value="{{$project->coc_packet_mailed_out_date}}">
+                            @error("coc_packet_mailed_out_date")
+                            <div id="coc_packet_mailed_out_date_message" class="text-danger message mt-2">{{$message}}</div>
+                            @enderror
+                            <div id="coc_packet_mailed_out_date_message" class="text-danger message mt-2"></div>
+                        </div>
+                    @endif
                     <div class="col-sm-12 mb-3">
                         <label for="formFileMultipleoneone" class="form-label">Notes</label>
                         <textarea class="form-control" rows="3" name="notes"></textarea>
@@ -440,27 +697,40 @@
             return $item->department_id == $department->id;
             })->values();
 
+            $logs = $project->logs->filter(function ($item) use ($department) {
+            return $item->department_id == $department->id;
+            })->values();
+
             $files = $project->files->filter(function ($item) use ($department) {
             return $item->department_id == $department->id;
             })->values();
 
             @endphp
 
-            <div class="col-sm-12 mb-3">
-                <label for="formFileMultipleoneone" class="form-label">Department Notes</label>
-                <textarea class="form-control" rows="3" name="notes">
-                @foreach($filtered_collection as $value)    
-                    {{date("d M Y H:i:s",strtotime($value->created_at))."\n".$value->notes."\n"}}
-                @endforeach
-                </textarea>
-            </div>
-            <div class="col-sm-12 mb-3">
-                <label for="formFileMultipleoneone" class="form-label">Files</label>
-                @foreach($files as $file)
-                <label class="badge bg-light"> <a target="_blank" href="{{asset('storage/projects/'.$file->filename)}}" class="ml-3">{{$file->filename}}</a></label>
+            <input type="hidden" id="{{$department->id}}_log_count" value="{{count($logs)}}" />
+            <div class="col-sm-4 mb-3">
+                <label for="formFileMultipleoneone" class="form-label fw-bold flex-fill mb-2 mt-sm-0">Department Notes</label>
+                @foreach($filtered_collection as $value)
+                @if($value->notes != "")
+                <textarea class="form-control" disabled rows="3">{{$value->notes}}</textarea>
+                @endif
                 @endforeach
             </div>
-
+            <div class="col-sm-4 mb-3">
+                @foreach($logs as $key => $log)
+                <label for="formFileMultipleoneone" class="form-label fw-bold flex-fill mb-2 mt-sm-0">Call No {{++$key}} : {{($log->call_no == "no" ? "Customer not responding" : $log->call_no)}} </label>
+                <textarea class="form-control" disabled rows="3">{{$log->notes}}</textarea>
+                @endforeach
+            </div>
+            <div class="col-sm-4 mb-3">
+                <label for="formFileMultipleoneone" class="form-label fw-bold flex-fill mb-2 mt-sm-0">Files</label>
+                <ul class="list-group list-group-custom">
+                    @foreach($files as $file)
+                    <!-- <label class="badge bg-light"> <a target="_blank" href="{{asset('storage/projects/'.$file->filename)}}" class="ml-3">{{$file->filename}}</a></label> -->
+                    <li class="list-group-item light-primary-bg"><a target="_blank" href="{{asset('storage/projects/'.$file->filename)}}" class="ml-3">{{$file->filename}}</a></li>
+                    @endforeach
+                </ul>
+            </div>
             @endforeach
         </div>
     </div>
@@ -487,6 +757,8 @@
     });
 
     $("#forward").change(function() {
+        let totalCount = $("#" + $("#forward").val() + "_length").val();
+        $("#requiredfiles").html(totalCount + " File Required");
         getSubDepartments($(this).val())
     });
 
@@ -518,19 +790,55 @@
         $("#file_message").html('')
         let fileCount = $("[name='file[]']").prop("files").length;
         let stage = $('input[name="stage"]:checked').val()
-        let totalCount = "{{$project->department->document_length}}";
+        let totalCount = $("#" + $("#forward").val() + "_length").val(); //"{{$project->department->document_length}}";
         let alreadyUploaded = "{{count($filesCount)}}";
-        let project = "{{$project->department->id}}";
+        let currentproject = "{{$project->department->id}}";
+        let project = $("#forward").val();
+        let logs = $("#" + $("#forward").val() + "_log_count").val() //"{{count($project->department->logs)}}"
+        $("#call_no_1_message").html("");
+        $("#call_no_2_message").html("");
+        $("#notes_1_message").html("");
+        $("#notes_2_message").html("");
+        // alert(($("#notes_1").val() == ""))
+        // alert((stage == "forward" && alreadyUploaded == 0 && (project != $("#forward").val())))
 
-        if (stage == "forward" && alreadyUploaded == 0 && (project != $("#forward").val())) {
-            if (fileCount == totalCount) {
-                $("#file_message").html('')
-                $("#form").submit();
+        if (project != 1 && project != 8 && logs == 0) {
+            if ($("#call_no_1").val() == "") {
+                $("#call_no_1").focus();
+                $("#call_no_1_message").html("Please select the desired option");
+            } else if ($("#notes_1").val() == "") {
+                $("#notes_1").focus();
+                $("#notes_1_message").html("Please enter notes");
+            } else if ($("#call_no_2").val() == "") {
+                $("#call_no_2").focus();
+                $("#call_no_2_message").html("Please select the desired option");
+            } else if ($("#notes_2").val() == "") {
+                $("#notes_2").focus();
+                $("#notes_2_message").html("Please enter notes");
             } else {
-                $("#file_message").html("Please select total " + totalCount + " files");
+                if (stage == "forward" && alreadyUploaded == 0 && (currentproject != $("#forward").val())) {
+                    if (fileCount == totalCount) {
+                        $("#file_message").html('')
+                        $("#form").submit();
+                    } else {
+                        $("#file_message").html("Please select total " + totalCount + " files");
+                    }
+                } else {
+                    $("#form").submit();
+                }
             }
+
         } else {
-            $("#form").submit();
+            if (stage == "forward" && alreadyUploaded == 0 && (currentproject != $("#forward").val())) {
+                if (fileCount == totalCount) {
+                    $("#file_message").html('')
+                    $("#form").submit();
+                } else {
+                    $("#file_message").html("Please select total " + totalCount + " files");
+                }
+            } else {
+                $("#form").submit();
+            }
         }
 
     });
@@ -681,5 +989,20 @@
         let commission = contractAmount - dealerFeeAmount - redlineFee - adders;
         $("#commission").val(commission.toFixed(2));
     }
+
+    $("#hoa").change(function(){
+        if ($(this).val() == "yes") {
+            $("#hoa_select").css("display","block")
+        }else{
+            $("#hoa_select").css("display","none")
+        }
+    })
+    $("#mpu_required").change(function(){
+        if ($(this).val() == "yes") {
+            $(".mpuselect").css("display","block")
+        }else{
+            $(".mpuselect").css("display","none")
+        }
+    })
 </script>
 @endsection
