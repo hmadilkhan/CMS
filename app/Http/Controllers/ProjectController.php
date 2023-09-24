@@ -13,6 +13,7 @@ use App\Models\ProjectCallLog;
 use App\Models\ProjectFile;
 use App\Models\SubDepartment;
 use App\Models\Task;
+use App\Models\Tool;
 use App\Traits\MediaTrait;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -27,8 +28,17 @@ class ProjectController extends Controller
     {
         return view("projects.index", [
             "customers" => Customer::all(),
-            "departments" => Department::all(),
+            "departments" => $this->departmentQuery(),
         ]);
+    }
+
+    public function departmentQuery()
+    {
+        $query = Department::query();
+        if (auth()->user()->getRoleNames()[0] == "Manager" || auth()->user()->getRoleNames()[0] == "Employee") {
+            $query->whereIn("id", EmployeeDepartment::whereIn("employee_id",Employee::where("user_id",auth()->user()->id)->pluck("id"))->pluck("department_id"));
+        } 
+        return $query->get();
     }
 
     /**
@@ -98,6 +108,7 @@ class ProjectController extends Controller
             "employees" => $this->getEmployees($project->department_id),
             "adders" => AdderType::all(),
             "uoms" => AdderUnit::all(),
+            "tools" => Tool::where("department_id",$project->department_id)->get()
         ]);
     }
 
@@ -366,8 +377,10 @@ class ProjectController extends Controller
             });
         } else if (auth()->user()->getRoleNames()[0] == "Manager") {
             $query->whereIn("department_id", EmployeeDepartment::whereIn("employee_id", Employee::where("user_id", auth()->user()->id)->pluck("id"))->pluck("department_id"));
+            $subdepartmentsQuery->whereIn("department_id", EmployeeDepartment::whereIn("employee_id", Employee::where("user_id", auth()->user()->id)->pluck("id"))->pluck("department_id"));
         } else if (auth()->user()->getRoleNames()[0] == "Employee") {
             $query->whereIn("id", Task::whereIn("employee_id", Employee::where("user_id", auth()->user()->id)->pluck("id"))->whereIn("status", ["In-Progress", "Hold", "Cancelled"])->pluck("project_id"));
+            $subdepartmentsQuery->whereIn("department_id", EmployeeDepartment::whereIn("employee_id", Employee::where("user_id", auth()->user()->id)->pluck("id"))->pluck("department_id"));
         }
         if ($request->id != "" && $request->id != "all") {
             $query->where("department_id", $request->id);

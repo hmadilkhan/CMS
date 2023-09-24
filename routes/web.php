@@ -6,6 +6,7 @@ use App\Http\Controllers\ModuleTypeController;
 use App\Http\Controllers\OperationController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ProjectController;
+use App\Http\Controllers\ReportController;
 use App\Http\Controllers\TaskController;
 use App\Http\Controllers\ToolController;
 use Illuminate\Support\Facades\Route;
@@ -105,6 +106,11 @@ Route::middleware('auth')->group(function () {
         Route::post('/dealerfee-store', 'dealerFeeStore')->name("dealerfee.store");
         Route::post('/dealerfee-update', 'dealerFeeUpdate')->name("dealerfee.update");
         Route::post('/dealerfee-delete', 'dealerFeeDelete')->name("dealerfee.delete");
+    });
+
+    Route::controller(ReportController::class)->group(function () {
+        Route::get('/reports-profilt', 'profitabilityReport')->name("reports.profit");
+        Route::post('/reports-profilt', 'getProfitabilityReport')->name("reports.profit");
     });
 
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
