@@ -47,4 +47,9 @@ class Project extends Model
     {
         return $this->hasMany(ProjectCallLog::class,"project_id","id");
     }
+
+    public function notes()
+    {
+        return $this->belongsTo(Task::class,"id","project_id")->orderBy("id","DESC")->take(1);
+    }
 }

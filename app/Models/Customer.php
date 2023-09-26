@@ -34,6 +34,11 @@ class Customer extends Model
         return $this->belongsTo(User::class,"sales_partner_id","id");
     }
 
+    public function project()
+    {
+        return $this->belongsTo(Project::class,"id","customer_id");
+    }
+
     public function adders()
     {
         return $this->hasMany(CustomerAdder::class,"customer_id","id");

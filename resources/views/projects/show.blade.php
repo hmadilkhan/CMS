@@ -371,14 +371,14 @@
                         </div>
                     </div>
                     <div class="col-md-6 ml-3">
-                    <div class="col-sm-12 m-l-3 py-3 px-5">
-                        <label for="formFileMultipleoneone" class="card-header fw-bold d-sm-flex align-items-center  justify-content-between mb-2 mt-sm-0">Department Tools</label>
-                        <ul class="list-group list-group-custom">
-                            @foreach($tools as $tool)
+                        <div class="col-sm-12 m-l-3 py-3 px-5">
+                            <label for="formFileMultipleoneone" class="card-header fw-bold d-sm-flex align-items-center  justify-content-between mb-2 mt-sm-0">Department Tools</label>
+                            <ul class="list-group list-group-custom">
+                                @foreach($tools as $tool)
                                 <li class="list-group-item light-primary-bg"><a target="_blank" href="{{asset('storage/tools/'.$tool->file)}}" class="ml-3">{{$tool->name}}</a></li>
-                            @endforeach
-                        </ul>
-                    </div>
+                                @endforeach
+                            </ul>
+                        </div>
                     </div>
                 </div>
 
@@ -519,6 +519,22 @@
                         <div class="text-danger message mt-2">{{$message}}</div>
                         @enderror
                     </div>
+                    <div class="col-sm-3 mb-3 ">
+                        <label for="actual_labor_cost" class="form-label">Actual Labor Cost</label>
+                        <input class="form-control" type="date" id="actual_labor_cost" name="actual_labor_cost" value="{{$project->actual_labor_cost}}">
+                        @error("actual_labor_cost")
+                        <div id="actual_labor_cost_message" class="text-danger message mt-2">{{$message}}</div>
+                        @enderror
+                        <div id="actual_labor_cost_message" class="text-danger message mt-2"></div>
+                    </div>
+                    <div class="col-sm-3 mb-3 ">
+                        <label for="actual_material_cost" class="form-label">Actual Material Cost</label>
+                        <input class="form-control" type="date" id="actual_material_cost" name="actual_material_cost" value="{{$project->actual_material_cost}}">
+                        @error("actual_material_cost")
+                        <div id="actual_material_cost_message" class="text-danger message mt-2">{{$message}}</div>
+                        @enderror
+                        <div id="actual_material_cost_message" class="text-danger message mt-2"></div>
+                    </div>
                     <div class="col-sm-3 ">
                         <label for="mpu_required" class="form-label">MPU Required</label>
                         <select class="form-select select2" aria-label="Default select MPU Required" id="mpu_required" name="mpu_required">
@@ -566,6 +582,14 @@
                         <div id="permitting_submittion_date_message" class="text-danger message mt-2">{{$message}}</div>
                         @enderror
                         <div id="permitting_submittion_date_message" class="text-danger message mt-2"></div>
+                    </div>
+                    <div class="col-sm-3 mb-3 ">
+                        <label for="actual_permit_fee" class="form-label">Actual Permit Fee</label>
+                        <input class="form-control" type="date" id="actual_permit_fee" name="actual_permit_fee" value="{{$project->actual_permit_fee}}">
+                        @error("actual_permit_fee")
+                        <div id="actual_permit_fee_message" class="text-danger message mt-2">{{$message}}</div>
+                        @enderror
+                        <div id="actual_permit_fee_message" class="text-danger message mt-2"></div>
                     </div>
                     <div class="col-sm-3 mb-3 ">
                         <label for="permitting_approval_date" class="form-label">Meter Approval Date</label>
@@ -720,12 +744,15 @@
 
             <input type="hidden" id="{{$department->id}}_log_count" value="{{count($logs)}}" />
             <div class="col-sm-4 mb-3">
-                <label for="formFileMultipleoneone" class="form-label fw-bold flex-fill mb-2 mt-sm-0">Department Notes</label>
-                @foreach($filtered_collection as $value)
-                @if($value->notes != "")
-                <textarea class="form-control" disabled rows="3">{{$value->notes}}</textarea>
-                @endif
-                @endforeach
+                <div class="col-sm-12 mb-3">
+                    <label for="formFileMultipleoneone" class="form-label fw-bold flex-fill mb-2 mt-sm-0">Department Notes</label>
+                    @foreach($filtered_collection as $value)
+                        @if($value->notes != "")
+                            <textarea class="form-control" disabled rows="3">{{$value->notes}}</textarea>
+                        @endif
+                    @endforeach
+                </div>
+                @include("projects.partial.show-department-fields")
             </div>
             <div class="col-sm-4 mb-3">
                 @foreach($logs as $key => $log)

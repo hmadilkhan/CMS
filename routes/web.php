@@ -3,6 +3,7 @@
 use App\Http\Controllers\CustomerController;
 use App\Http\Controllers\EmployeeController;
 use App\Http\Controllers\ModuleTypeController;
+use App\Http\Controllers\OfficeCostController;
 use App\Http\Controllers\OperationController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ProjectController;
@@ -69,6 +70,7 @@ Route::middleware('auth')->group(function () {
     Route::resource('customers', CustomerController::class);
     Route::resource('projects', ProjectController::class);
     Route::resource('module-types', ModuleTypeController::class);
+    Route::resource('office-costs', OfficeCostController::class);
     
     Route::resource('tools', ToolController::class);
     Route::get('tools-index/{id?}', [App\Http\Controllers\ToolController::class, 'index'])->name('tools.index');

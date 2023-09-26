@@ -87,13 +87,11 @@
                     <hr/>
                     <h6 class="mb-0 fw-bold d-block fs-6 mt-2">Project Notes</h6>
                     <hr/>
-                    @if(!empty($project->task))
+                    @if(!empty($project->notes))
                     <ul class="list-group list-group-flush">
-                        @foreach($project->task as $task)
-                        @if($task->assign_to_notes != "")
-                        <li class="list-group-item">{{$task->assign_to_notes}}</li>
+                        @if($project->notes->assign_to_notes != "")
+                        <li class="list-group-item">{{$project->notes->assign_to_notes}}</li>
                         @endif
-                        @endforeach
                     </ul>
                     @endif
 

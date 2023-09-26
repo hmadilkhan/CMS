@@ -53,22 +53,20 @@
                 <ul class="sub-menu collapse {{ (Route::currentRouteName() == 'projects.index' or Route::currentRouteName() == 'projects.create' or Route::currentRouteName() == 'projects.edit' or Route::currentRouteName() == 'tasks.index' or Route::currentRouteName() == 'projects' or Route::currentRouteName() == 'projects.show'  ) ? 'show' : '' }}" id="project-Components">
                     <li><a class="ms-link {{ Route::currentRouteName() == 'projects.index' or Route::currentRouteName() == 'projects.show'  ? 'active' : '' }}" href="{{route('projects.index')}}"><span>Projects</span></a></li>
                     <li><a class="ms-link {{ Route::currentRouteName() == 'projects' ? 'active' : '' }}" href="{{route('projects')}}"><span>Project List</span></a></li>
-                    @can('View Task')
-                        <li><a class="ms-link {{ Route::currentRouteName() == 'tasks.index' ? 'active' : '' }}" href=" {{ route('tasks.index') }}"><span>Tasks</span></a></li>
-                    @endcan
                 </ul>
             </li>
             @endcan
             @can('User Management')
             <li class="collapsed">
-                <a class="m-link {{ (Route::currentRouteName() == 'module-types.index' or Route::currentRouteName() == 'view-redline-cost' or Route::currentRouteName() == 'view-dealer-fee' or Route::currentRouteName() == 'tools.index' ) ? 'show' : '' }}" data-bs-toggle="collapse" data-bs-target="#module-types" href="#">
+                <a class="m-link {{ (Route::currentRouteName() == 'module-types.index' or Route::currentRouteName() == 'view-redline-cost' or Route::currentRouteName() == 'view-dealer-fee' or Route::currentRouteName() == 'tools.index' or Route::currentRouteName() == 'office-costs.index' ) ? 'show' : '' }}" data-bs-toggle="collapse" data-bs-target="#module-types" href="#">
                     <i class="icofont-briefcase"></i><span>Operations</span> <span class="arrow icofont-dotted-down ms-auto text-end fs-5"></span></a>
                 <!-- Menu: Sub menu ul -->
-                <ul class="sub-menu collapse {{ (Route::currentRouteName() == 'module-types.index' or Route::currentRouteName() == 'view-redline-cost' or Route::currentRouteName() == 'view-dealer-fee' or Route::currentRouteName() == 'tools.index' ) ? 'show' : '' }}" id="module-types">
+                <ul class="sub-menu collapse {{ (Route::currentRouteName() == 'module-types.index' or Route::currentRouteName() == 'view-redline-cost' or Route::currentRouteName() == 'view-dealer-fee' or Route::currentRouteName() == 'tools.index' or Route::currentRouteName() == 'office-costs.index' ) ? 'show' : '' }}" id="module-types">
                     <li><a class="ms-link {{ Route::currentRouteName() == 'module-types.index' ? 'active' : '' }}" href="{{route('module-types.index')}}"><span>Module Types</span></a></li>
                     <li><a class="ms-link {{ Route::currentRouteName() == 'view-redline-cost' ? 'active' : '' }}" href="{{route('view-redline-cost')}}"><span>Redline Cost</span></a></li>
                     <li><a class="ms-link {{ Route::currentRouteName() == 'view-dealer-fee' ? 'active' : '' }}" href="{{route('view-dealer-fee')}}"><span>Dealer Fee</span></a></li>
                     <li><a class="ms-link {{ Route::currentRouteName() == 'tools.index' ? 'active' : '' }}" href="{{route('tools.index')}}"><span>Tools</span></a></li>
+                    <li><a class="ms-link {{ Route::currentRouteName() == 'office-costs.index' ? 'active' : '' }}" href="{{route('office-costs.index')}}"><span>Office Cost</span></a></li>
                 </ul>
             </li>
             @endcan

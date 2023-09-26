@@ -25,7 +25,7 @@ class ProjectController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
         return view("projects.index", [
             "customers" => Customer::all(),
@@ -233,23 +233,17 @@ class ProjectController extends Controller
                 if ($request->forward != 1 && $request->forward != 8 && $logsCount == 0) {
                     ProjectCallLog::create([
                         "project_id" => $project->id,
-                        "department_id" => $request->forward,
+                        "department_id" => $project->department_id,
                         "call_no" => $request->call_no_1,
                         "notes" => $request->notes_1,
                     ]);
                     ProjectCallLog::create([
                         "project_id" => $project->id,
-                        "department_id" => $request->forward,
+                        "department_id" => $project->department_id,
                         "call_no" => $request->call_no_2,
                         "notes" => $request->notes_2,
                     ]);
                 }
-                // else{
-                //     if($request->call_no_1 != "" && $request->notes_1 != "" )
-                //     {
-                //         ProjectCallLog::where("call_no",$request->call_no_1)->where("notes",$request->call_no_1)->where("notes",$request->call_no_1);
-                //     }
-                // }
             }
             $updateItems = [
                 "department_id" => ($request->stage == "forward" ? $request->forward : $request->back),
@@ -272,6 +266,8 @@ class ProjectController extends Controller
             if ($request->forward == 4) {
                 $updateItems = array_merge($updateItems, [
                     "adders_approve_checkbox" => $request->adders_approve_checkbox,
+                    "actual_labor_cost" => $request->actual_labor_cost,
+                    "actual_material_cost" => $request->actual_material_cost,
                     "mpu_required" => $request->mpu_required,
                     "meter_spot_request_date" => $request->meter_spot_request_date,
                     "meter_spot_request_number" => $request->meter_spot_request_number,
@@ -282,6 +278,7 @@ class ProjectController extends Controller
             if ($request->forward == 5) {
                 $updateItems = array_merge($updateItems, [
                     "permitting_submittion_date" => $request->permitting_submittion_date,
+                    "actual_permit_fee" => $request->actual_permit_fee,
                     "permitting_approval_date" => $request->permitting_approval_date,
                     "hoa_approval_request_date" => $request->hoa_approval_request_date,
                     "hoa_approval_date" => $request->hoa_approval_date,
@@ -327,7 +324,6 @@ class ProjectController extends Controller
                 "department_id" => ($request->stage == "forward" ? $request->forward : $request->back),
                 "sub_department_id" => $request->sub_department,
             ]);
-
             DB::commit();
             return redirect()->route("projects.index");
         } catch (\Throwable $th) {
@@ -374,7 +370,7 @@ class ProjectController extends Controller
 
     public function projectQuery(Request $request)
     {
-        $query = Project::with("customer", "customer.salespartner", "department", "subdepartment", "assignedPerson", "assignedPerson.employee", "task");
+        $query = Project::with("customer", "customer.salespartner", "department", "subdepartment", "assignedPerson", "assignedPerson.employee", "task","notes");
         $subdepartmentsQuery = SubDepartment::with("department");
         if (auth()->user()->getRoleNames()[0] == "Sales Person") {
             $query->whereHas("customer", function ($query) {
