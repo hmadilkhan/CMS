@@ -164,7 +164,12 @@ class EmployeeController extends Controller
      */
     public function destroy(Employee $employee)
     {
-        //
+        try {
+            $employee->delete();
+            return response()->json(["status" => 200]);
+        } catch (\Throwable $th) {
+            return response()->json(["status" => 500]);
+        }
     }
 
     function getDepartmentEmployees(Request $request){

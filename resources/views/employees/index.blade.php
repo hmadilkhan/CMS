@@ -55,7 +55,7 @@
                             <td class="text-center">
                                 <a style="cursor: pointer;" data-toggle="tooltip" title="Edit" onclick="edit('{{ $employee->id }}')">
                                     <i class="icofont-pencil text-warning fs-4"></i></a>
-                                <a style="cursor: pointer;" data-toggle="tooltip" title="Delete" class="ml-2" onclick="deleteUser('{{ $employee->id }}')">
+                                <a style="cursor: pointer;" data-toggle="tooltip" title="Delete" class="ml-2" onclick="deleteEmployee('{{ $employee->id }}')">
                                     <i class="icofont-trash text-danger fs-4"></i></a>
                             </td>
                         </tr>
@@ -67,6 +67,7 @@
 
         <!-- Create Employee-->
         @include("employees.create_model")
+        @include("employees.delete_modal")
     </div>
 </div>
 @include("employees.script")

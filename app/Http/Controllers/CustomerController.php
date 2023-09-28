@@ -71,7 +71,7 @@ class CustomerController extends Controller
             'finance_option_id' => 'required',
             'contract_amount' => 'required',
             'redline_costs' => 'required',
-            'adders' => 'required',
+            // 'adders' => 'required',
             'commission' => 'required',
             'dealer_fee' => 'required',
         ]);

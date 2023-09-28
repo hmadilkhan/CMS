@@ -12,9 +12,9 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('projects', function (Blueprint $table) {
-            $table->float("actual_permit_fee");
-            $table->float("actual_labor_cost");
-            $table->float("actual_material_cost");
+            $table->float("actual_permit_fee")->nullable();
+            $table->float("actual_labor_cost")->nullable();
+            $table->float("actual_material_cost")->nullable();
         });
     }
 

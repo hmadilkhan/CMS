@@ -74,5 +74,25 @@
             }
         });
     });
+    function deleteEmployee(id) {
+        $("#deleteId").val(id);
+        $("#deleteproject").modal("show")
+    }
+    function deleteEmployeeCall() {
+        let deleteId = $("#deleteId").val();
+        $.ajax({
+            method: "DELETE",
+            url: "{{ url('/employees') }}"+"/"+deleteId,
+            data: {
+                _token: "{{csrf_token()}}",
+                id: deleteId
+            },
+            success:function(response){
+                if (response.status == 200) {
+                    location.reload();
+                }
+            }
+        });
+    }
 </script>
 @endsection
