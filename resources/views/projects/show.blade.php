@@ -519,22 +519,6 @@
                         <div class="text-danger message mt-2">{{$message}}</div>
                         @enderror
                     </div>
-                    <div class="col-sm-3 mb-3 ">
-                        <label for="actual_labor_cost" class="form-label">Actual Labor Cost</label>
-                        <input class="form-control" type="date" id="actual_labor_cost" name="actual_labor_cost" value="{{$project->actual_labor_cost}}">
-                        @error("actual_labor_cost")
-                        <div id="actual_labor_cost_message" class="text-danger message mt-2">{{$message}}</div>
-                        @enderror
-                        <div id="actual_labor_cost_message" class="text-danger message mt-2"></div>
-                    </div>
-                    <div class="col-sm-3 mb-3 ">
-                        <label for="actual_material_cost" class="form-label">Actual Material Cost</label>
-                        <input class="form-control" type="date" id="actual_material_cost" name="actual_material_cost" value="{{$project->actual_material_cost}}">
-                        @error("actual_material_cost")
-                        <div id="actual_material_cost_message" class="text-danger message mt-2">{{$message}}</div>
-                        @enderror
-                        <div id="actual_material_cost_message" class="text-danger message mt-2"></div>
-                    </div>
                     <div class="col-sm-3 ">
                         <label for="mpu_required" class="form-label">MPU Required</label>
                         <select class="form-select select2" aria-label="Default select MPU Required" id="mpu_required" name="mpu_required">
@@ -585,7 +569,7 @@
                     </div>
                     <div class="col-sm-3 mb-3 ">
                         <label for="actual_permit_fee" class="form-label">Actual Permit Fee</label>
-                        <input class="form-control" type="date" id="actual_permit_fee" name="actual_permit_fee" value="{{$project->actual_permit_fee}}">
+                        <input class="form-control" type="text" id="actual_permit_fee" name="actual_permit_fee" value="{{$project->actual_permit_fee}}">
                         @error("actual_permit_fee")
                         <div id="actual_permit_fee_message" class="text-danger message mt-2">{{$message}}</div>
                         @enderror
@@ -635,6 +619,22 @@
                         <div id="battery_install_date_message" class="text-danger message mt-2">{{$message}}</div>
                         @enderror
                         <div id="battery_install_date_message" class="text-danger message mt-2"></div>
+                    </div>
+                    <div class="col-sm-3 mb-3 ">
+                        <label for="actual_labor_cost" class="form-label">Actual Labor Cost</label>
+                        <input class="form-control" type="text" id="actual_labor_cost" name="actual_labor_cost" value="{{$project->actual_labor_cost}}">
+                        @error("actual_labor_cost")
+                        <div id="actual_labor_cost_message" class="text-danger message mt-2">{{$message}}</div>
+                        @enderror
+                        <div id="actual_labor_cost_message" class="text-danger message mt-2"></div>
+                    </div>
+                    <div class="col-sm-3 mb-3 ">
+                        <label for="actual_material_cost" class="form-label">Actual Material Cost</label>
+                        <input class="form-control" type="text" id="actual_material_cost" name="actual_material_cost" value="{{$project->actual_material_cost}}">
+                        @error("actual_material_cost")
+                        <div id="actual_material_cost_message" class="text-danger message mt-2">{{$message}}</div>
+                        @enderror
+                        <div id="actual_material_cost_message" class="text-danger message mt-2"></div>
                     </div>
                     <input type="hidden" name="projectmpu" value="{{$project->mpu_required}}" />
                     @if($project->mpu_required == "yes")
