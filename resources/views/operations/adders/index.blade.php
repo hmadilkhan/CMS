@@ -1,5 +1,5 @@
 @extends("layouts.master")
-@section('title', 'Module Types')
+@section('title', 'Adders')
 @section('content')
 @if(session('success'))
 <div class="alert alert-primary" role="alert">
@@ -13,58 +13,56 @@
 @endif
 <div class="card card-info">
     <div class="card-header">
-        <h4 class="card-title">Change DealerFee</h4>
+        <h4 class="card-title">Add Adders</h4>
     </div>
     <div class="card-body">
         <!-- ADD NEW PRODUCT PART START -->
-        <form method="POST" action="{{ !empty($loan) ? route('dealerfee.update',$loan->id) :  route('dealerfee.store') }}">
+        <form method="POST" action="{{ !empty($adder) ? route('adders.update',$adder->id) :  route('adder.store') }}">
             @csrf
-            <input type="hidden" name="id" value="{{ !empty($loan) ? $loan->id : '' }}" />
+            <input type="hidden" name="id" value="{{ !empty($adder) ? $adder->id : '' }}" />
             <div class="row g-3  mb-3 align-items-center">
                 <div class="col-sm-4">
-                    <label class="form-label">Loan Term</label>
-                    <select class="form-select select2" aria-label="Default select Loan Term" id="loan_term_id" name="loan_term_id">
-                        <option value="">Select Loan Term</option>
-                        @foreach ($terms as $term)
-                        <option {{(!empty($loan) && $loan->loan_term_id == $term->id ? 'selected' : '')}} value="{{ $term->id }}">
-                            {{ $term->year }}
+                    <label class="form-label">Types</label>
+                    <select class="form-select select2" aria-label="Default select Types" id="adder_type_id" name="adder_type_id">
+                        <option value="">Select Types</option>
+                        @foreach ($types as $type)
+                        <option {{(!empty($adder) && $adder->adder_type_id == $type->id ? 'selected' : '')}} value="{{ $type->id }}">
+                            {{ $type->name }}
                         </option>
                         @endforeach
                     </select>
-                    @error("loan_term_id")
+                    @error("adder_type_id")
                     <div class="text-danger message mt-2">{{$message}}</div>
                     @enderror
                 </div>
                 <div class="col-sm-4">
-                    <label class="form-label">Finance Option</label>
-                    <select class="form-select select2" aria-label="Default select Finance Option" id="finance_option_id" name="finance_option_id">
-                        <option value="">Select Finance Option</option>
-                        @foreach ($financing as $finance)
-                        <option {{(!empty($loan) && $loan->loan->finance->id == $finance->id ? 'selected' : '')}} value="{{ $finance->id }}">
-                            {{ $finance->name }}
+                    <label class="form-label">Sub Types</label>
+                    <select class="form-select select2" aria-label="Default select Sub Type" id="adder_sub_type_id" name="adder_sub_type_id">
+                        <option value="">Select Sub Type</option>
+                    </select>
+                    @error("adder_sub_type_id")
+                    <div class="text-danger message mt-2">{{$message}}</div>
+                    @enderror
+                </div>
+                <div class="col-sm-4">
+                    <label class="form-label">Units</label>
+                    <select class="form-select select2" aria-label="Default select Unit" id="adder_unit_id" name="adder_unit_id">
+                        <option value="">Select Unit</option>
+                        @foreach ($units as $unit)
+                        <option {{(!empty($adder) && $adder->adder_unit_id == $unit->id ? 'selected' : '')}} value="{{ $unit->id }}">
+                            {{ $unit->name }}
                         </option>
                         @endforeach
                     </select>
-                    @error("loan_term_id")
+                    @error("adder_unit_id")
                     <div class="text-danger message mt-2">{{$message}}</div>
                     @enderror
                 </div>
                 <div class="col-sm-4 ">
                     <!-- <div class="form-group"> -->
-                    <label>APR</label>
-                    <input type="text" class="form-control @error('apr') is-invalid @enderror" id="apr" name="apr" placeholder="Enter Apr" value="{{ !empty($loan) ? $loan->apr : old('apr') }}">
-                    @error('apr')
-                    <span class="invalid-feedback" role="alert">
-                        <strong>{{ $message }}</strong>
-                    </span>
-                    @enderror
-                    <!-- </div> -->
-                </div>
-                <div class="col-sm-4">
-                    <!-- <div class="form-group"> -->
-                    <label>Dealer Fee</label>
-                    <input type="text" class="form-control @error('dealer_fee') is-invalid @enderror" id="dealer_fee" name="dealer_fee" placeholder="Enter Dealer Fee" value="{{ !empty($loan) ? $loan->dealer_fee : old('dealer_fee') }}">
-                    @error('dealer_fee')
+                    <label>Price</label>
+                    <input type="text" class="form-control @error('price') is-invalid @enderror" id="price" name="price" placeholder="Enter Price" value="{{ !empty($adder) ? $adder->price : old('price') }}">
+                    @error('price')
                     <span class="invalid-feedback" role="alert">
                         <strong>{{ $message }}</strong>
                     </span>
@@ -88,32 +86,32 @@
 </div>
 <div class="card mt-3">
     <div class="card-header">
-        <h4 class="card-title">DealerFee List</h3>
+        <h4 class="card-title">Adders List</h3>
     </div>
     <div class="card-body">
         <table id="example1" class="table table-bordered table-striped datatable">
             <thead>
                 <tr>
                     <th>No.</th>
-                    <th>Loan Term</th>
-                    <th>Finance Option</th>
-                    <th>Panel Qty</th>
-                    <th>Redline Cost</th>
+                    <th>Type</th>
+                    <th>Sub Type</th>
+                    <th>Unit</th>
+                    <th>Price</th>
                     <th>Actions</th>
                 </tr>
             </thead>
             <tbody>
-                @foreach ($dealerfeelist as $key => $list)
+                @foreach ($adders as $key => $adderList)
                 <tr>
                     <td>{{ ++$key }}</td>
-                    <td>{{ $list->loan->year }}</td>
-                    <td>{{(!empty($list->loan->finance) ? $list->loan->finance->name : '') }}</td>
-                    <td>{{ $list->apr }}</td>
-                    <td>{{ $list->dealer_fee }}</td>
+                    <td>{{ $adderList->type->name }}</td>
+                    <td>{{$adderList->subtype->name}}</td>
+                    <td>{{ $adderList->unit->name }}</td>
+                    <td>{{ $adderList->price }}</td>
                     <td class="text-center">
-                        <a style="cursor: pointer;" data-toggle="tooltip" title="Edit" href="{{ route('view-dealer-fee',$list->id)}}">
+                        <a style="cursor: pointer;" data-toggle="tooltip" title="Edit" href="{{ route('view-adders',$adderList->id)}}">
                             <i class="icofont-pencil text-warning"></i></a>
-                        <a style="cursor: pointer;" data-toggle="tooltip" title="Delete" class="ml-2" onclick="deleteDealerModal    ('{{ $list->id }}')">
+                        <a style="cursor: pointer;" data-toggle="tooltip" title="Delete" class="ml-2" onclick="deleteDealerModal('{{ $adderList->id }}')">
                             <i class="icofont-trash text-danger"></i></a>
                     </td>
                 </tr>
@@ -153,7 +151,7 @@
     function deleteDealerFee() {
         $.ajax({
             method: "POST",
-            url: "{{ route('dealerfee.delete') }}",
+            url: "{{ route('adders.delete') }}",
             data: {
                 _token: "{{csrf_token()}}",
                 id: $("#deleteId").val()
@@ -165,24 +163,33 @@
             }
         });
     }
-    $("#loan_term_id").change(function() {
+    $("#adder_type_id").change(function() {
+        getSubTypes();
+    });
+
+    function getSubTypes()
+    {
+        let adder_sub_type_id = "{{!empty($adder) ? $adder->adder_sub_type_id: ''}}";
         $.ajax({
             method: "POST",
-            url: "{{ route('finance.option') }}",
+            url: "{{ route('get.sub.types') }}",
             data: {
                 _token: "{{csrf_token()}}",
-                id: $(this).val()
+                id: $("#adder_type_id").val()
             },
             success: function(response) {
                 console.log(response);
-                $("#finance_option_id").empty();
+                $("#adder_sub_type_id").empty();
                 if (response.status == 200) {
-                    $.each(response.finances,function(index,item){
-                        $('#finance_option_id').append($('<option  value="' + item.id + '">' + item.name + '</option>'));
+                    $.each(response.subtypes, function(index, item) {
+                        $('#adder_sub_type_id').append($('<option '+(adder_sub_type_id != "" && adder_sub_type_id ==  item.id ? 'selected' : '')+' value="' + item.id + '">' + item.name + '</option>'));
                     });
                 }
             }
         });
-    });
+    }
+    @if(!empty($adder))
+        getSubTypes()
+    @endif
 </script>
 @endsection

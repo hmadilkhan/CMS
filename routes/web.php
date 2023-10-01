@@ -94,6 +94,7 @@ Route::middleware('auth')->group(function () {
     Route::post('projects-assign-to-employee', [App\Http\Controllers\ProjectController::class, 'assignTaskToEmployee'])->name('projects.assign');
     Route::post('projects-status', [App\Http\Controllers\ProjectController::class, 'projectStatus'])->name('projects.status');
     Route::get('projects-list', [App\Http\Controllers\ProjectController::class, 'getProjects'])->name('projects');
+    Route::post('get-departments-fields', [App\Http\Controllers\ProjectController::class, 'getDepartmentFields'])->name('get.departments.fields');
 
     Route::controller(OperationController::class)->group(function () {
         // REDLINE COST
@@ -108,6 +109,14 @@ Route::middleware('auth')->group(function () {
         Route::post('/dealerfee-store', 'dealerFeeStore')->name("dealerfee.store");
         Route::post('/dealerfee-update', 'dealerFeeUpdate')->name("dealerfee.update");
         Route::post('/dealerfee-delete', 'dealerFeeDelete')->name("dealerfee.delete");
+        Route::post('/get-fianance-option', 'getFinanceOption')->name("finance.option");
+
+         // ADDERS VIEW
+         Route::get('/view-adder/{id?}', 'addersView')->name("view-adders");
+         Route::post('/adder-store', 'addersStore')->name("adder.store");
+         Route::post('/adders-update', 'addersUpdate')->name("adders.update");
+         Route::post('/adders-delete', 'addersDelete')->name("adders.delete");
+         Route::post('/get-sub-types', 'getSubTypes')->name("get.sub.types");
     });
 
     Route::controller(ReportController::class)->group(function () {

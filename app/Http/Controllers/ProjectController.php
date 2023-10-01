@@ -266,8 +266,6 @@ class ProjectController extends Controller
             if ($request->forward == 4) {
                 $updateItems = array_merge($updateItems, [
                     "adders_approve_checkbox" => $request->adders_approve_checkbox,
-                    "actual_labor_cost" => $request->actual_labor_cost,
-                    "actual_material_cost" => $request->actual_material_cost,
                     "mpu_required" => $request->mpu_required,
                     "meter_spot_request_date" => $request->meter_spot_request_date,
                     "meter_spot_request_number" => $request->meter_spot_request_number,
@@ -288,6 +286,8 @@ class ProjectController extends Controller
             if ($request->forward == 6) {
                 $updateItems = array_merge($updateItems, [
                     "solar_install_date" => $request->solar_install_date,
+                    "actual_labor_cost" => $request->actual_labor_cost,
+                    "actual_material_cost" => $request->actual_material_cost,
                     "battery_install_date" => $request->battery_install_date,
                     "mpu_install_date" => $request->mpu_install_date,
                 ]);
@@ -452,6 +452,22 @@ class ProjectController extends Controller
             DB::rollBack();
             return $th->getMessage();
             return redirect()->route("projects.show", $request->project_id);
+        }
+    }
+
+    public function getDepartmentFields(Request $request)
+    {
+        try {
+            //code...
+            if($request->id){
+                $project = Project::findOrFail($request->projectId);
+                return view("projects.partial.department-fields",[
+                    "department" => $request->id,
+                    "project" => $project,
+                ]);
+            }
+        } catch (\Throwable $th) {
+            return $th->getMessage();
         }
     }
 }
