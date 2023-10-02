@@ -322,6 +322,7 @@
         </div><!-- Row End -->
     </div>
 </div>
+@if(auth()->user()->getRoleNames()[0] != "Sales Partner" )
 <div class="card card-info mt-2">
     <div class="card-body">
         <div class="row clearfix">
@@ -486,6 +487,7 @@
         </div>
     </div>
 </div>
+@endif
 <div class="card card-info mt-2">
     <div class="card-body">
         <div class="row clearfix">
