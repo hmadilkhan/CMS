@@ -50,7 +50,7 @@
                         </div>
                         <div class="col-sm-8 mb-3">
                             <label for="formFileMultipleoneone" class="form-label">Notes</label>
-                            <textarea class="form-control" rows="1" name="notes"></textarea>
+                            <textarea class="form-control" rows="1" name="notes">{{old('notes')}}</textarea>
                             @error("notes")
                             <div class="text-danger message mt-2">{{$message}}</div>
                             @enderror

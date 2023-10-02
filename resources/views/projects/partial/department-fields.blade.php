@@ -115,7 +115,7 @@
         <div id="actual_permit_fee_message" class="text-danger message mt-2"></div>
     </div>
     <div class="col-sm-3 mb-3 ">
-        <label for="permitting_approval_date" class="form-label">Meter Approval Date</label>
+        <label for="permitting_approval_date" class="form-label">Permit Approval Date</label>
         <input class="form-control" type="date" id="permitting_approval_date" name="permitting_approval_date" value="{{$project->permitting_approval_date}}">
         @error("permitting_approval_date")
         <div id="permitting_approval_date_message" class="text-danger message mt-2">{{$message}}</div>

@@ -63,7 +63,7 @@
         <input disabled class="form-control" type="date" value="{{$project->actual_permit_fee}}">
     </div>
     <div class="col-sm-6 mb-3 ">
-        <label for="permitting_approval_date" class="form-label">Meter Approval Date</label>
+        <label for="permitting_approval_date" class="form-label">Permit Approval Date</label>
         <input disabled class="form-control" type="date" value="{{$project->permitting_approval_date}}">
     </div>
     @if($project->hoa == "yes")
