@@ -235,9 +235,18 @@ class CustomerController extends Controller
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(Customer $customer)
+    public function destroy(Request $request)
     {
-        //
+        try {
+            DB::beginTransaction();
+            Project::where("customer_id", $request->id)->delete();
+            Customer::where("id", $request->id)->delete();
+            DB::commit();
+            return response()->json(["status" => 200, "message" => "Customer Deleted Successfully."]);
+        } catch (\Throwable $th) {
+            DB::rollBack();
+            return response()->json(["status" => 500, "message" => "Error. " . $th->getMessage()]);
+        }
     }
 
     public function getLoanTerms(Request $request)
