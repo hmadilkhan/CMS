@@ -34,7 +34,7 @@
                 $totalRedlineCosts += $customer->finances->redline_costs;
                 $totalAddersAmount += $customer->finances->adders;
                 $totalCommissionAmount += $customer->finances->commission;
-                $actualJob = $customer->project->actual_permit_fee + $customer->project->actual_labor_cost + $customer->project->actual_material_cost + $officeCost->cost;
+                $actualJob = $customer->project->actual_permit_fee + $customer->project->actual_labor_cost + $customer->project->actual_material_cost + $customer->project->office_cost;
                 $totalActualJob += $actualJob;
                 $profitAmount = $customer->finances->redline_costs + $customer->finances->adders - $actualJob;
                 $profitPercentage = $profitAmount / $customer->finances->redline_costs;

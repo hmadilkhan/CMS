@@ -28,18 +28,11 @@
         <label for="hoa" class="form-label">Adders Approved</label>
         <input disabled class="form-control" type="text" value="{{$project->adders_approve_checkbox}}">
     </div>
-    <div class="col-sm-6 mb-3 ">
-        <label for="actual_labor_cost" class="form-label">Actual Labor Cost</label>
-        <input disabled class="form-control" type="date" value="{{$project->actual_labor_cost}}">
-    </div>
-    <div class="col-sm-6 mb-3 ">
-        <label for="actual_material_cost" class="form-label">Actual Material Cost</label>
-        <input disabled class="form-control" type="date" value="{{$project->actual_material_cost}}">
-    </div>
     <div class="col-sm-6 ">
         <label for="mpu_required" class="form-label">MPU Required</label>
-        <input disabled class="form-control" type="date" value="{{$project->mpu_required}}">
+        <input disabled class="form-control" type="text" value="{{$project->mpu_required}}">
     </div>
+    @if($project->mpu_required == "yes")
     <div class="col-sm-6 mb-3 mpuselect">
         <label for="meter_spot_request_date" class="form-label">Meter Spot Request Date</label>
         <input disabled class="form-control" type="date" value="{{$project->meter_spot_request_date}}">
@@ -53,6 +46,7 @@
         <input disabled class="form-control" type="text" value="{{$project->meter_spot_result}}">
     </div>
     @endif
+    @endif
     @if($department->id == 4)
     <div class="col-sm-6 mb-3 ">
         <label for="permitting_submittion_date" class="form-label">Permit Submission Date</label>
@@ -60,7 +54,7 @@
     </div>
     <div class="col-sm-6 mb-3 ">
         <label for="actual_permit_fee" class="form-label">Actual Permit Fee</label>
-        <input disabled class="form-control" type="date" value="{{$project->actual_permit_fee}}">
+        <input disabled class="form-control" type="text" value="{{$project->actual_permit_fee}}">
     </div>
     <div class="col-sm-6 mb-3 ">
         <label for="permitting_approval_date" class="form-label">Permit Approval Date</label>
@@ -78,6 +72,14 @@
     @endif
     @endif
     @if($department->id == 5)
+    <div class="col-sm-6 mb-3 ">
+        <label for="actual_labor_cost" class="form-label">Actual Labor Cost</label>
+        <input disabled class="form-control" type="date" value="{{$project->actual_labor_cost}}">
+    </div>
+    <div class="col-sm-6 mb-3 ">
+        <label for="actual_material_cost" class="form-label">Actual Material Cost</label>
+        <input disabled class="form-control" type="date" value="{{$project->actual_material_cost}}">
+    </div>
     <div class="col-sm-6 mb-3 ">
         <label for="solar_install_date" class="form-label">Solar Install Date </label>
         <input disabled class="form-control" type="date" value="{{$project->solar_install_date}}">

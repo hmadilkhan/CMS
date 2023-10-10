@@ -658,26 +658,31 @@
                 $("#notes_2").focus();
                 $("#notes_2_message").html("Please enter notes");
             } else {
-                if (stage == "forward" && alreadyUploaded == 0 && (currentproject != $("#forward").val())) {
-                    if (fileCount == totalCount) {
-                        $("#file_message").html('')
-                        $("#form").submit();
-                    } else {
-                        $("#file_message").html("Please select total " + totalCount + " files");
-                    }
+                
+                if (stage == "forward"  && (currentproject != $("#forward").val())) { //&& alreadyUploaded == 0
+                    $("#form").submit();
+                    /* THIS CODE IS COMMENTED BECAUSE OF THE REQUIREMENT THAT FILES NOT MANDATORY*/
+                    // if (fileCount == totalCount) {
+                    //     $("#file_message").html('')
+                    //     $("#form").submit();
+                    // } else {
+                    //     $("#file_message").html("Please select total " + totalCount + " files");
+                    // }
                 } else {
                     $("#form").submit();
                 }
             }
-
         } else {
-            if (stage == "forward" && alreadyUploaded == 0 && (currentproject != $("#forward").val())) {
-                if (fileCount == totalCount) {
-                    $("#file_message").html('')
-                    $("#form").submit();
-                } else {
-                    $("#file_message").html("Please select total " + totalCount + " files");
-                }
+            if (stage == "forward"  && (currentproject != $("#forward").val())) { //&& alreadyUploaded == 0
+                $("#form").submit();
+
+                /* THIS CODE IS COMMENTED BECAUSE OF THE REQUIREMENT THAT FILES NOT MANDATORY*/
+                // if (fileCount == totalCount) {
+                //     $("#file_message").html('')
+                //     $("#form").submit();
+                // } else {
+                //     $("#file_message").html("Please select total " + totalCount + " files");
+                // }
             } else {
                 $("#form").submit();
             }

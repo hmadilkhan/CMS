@@ -16,6 +16,7 @@ use App\Models\InverterTypeRate;
 use App\Models\LoanApr;
 use App\Models\LoanTerm;
 use App\Models\ModuleType;
+use App\Models\OfficeCost;
 use App\Models\Project;
 use App\Models\SalesPartner;
 use App\Models\SubDepartment;
@@ -57,7 +58,7 @@ class CustomerController extends Controller
      */
     public function store(Request $request)
     {
-
+        $officeCost = OfficeCost::first();
         $validated = $request->validate([
             'first_name' => 'required',
             'last_name' => 'required',
@@ -131,6 +132,7 @@ class CustomerController extends Controller
                 "department_id" => 1,
                 "sub_department_id" => $subdepartment->id,
                 "description" =>  $request->notes,
+                "office_cost" => (!empty($officeCost) ? $officeCost->cost : ""),
             ]);
             Task::create([
                 "project_id" => $project->id,
