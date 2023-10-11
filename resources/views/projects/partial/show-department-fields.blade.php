@@ -74,11 +74,11 @@
     @if($department->id == 5)
     <div class="col-sm-6 mb-3 ">
         <label for="actual_labor_cost" class="form-label">Actual Labor Cost</label>
-        <input disabled class="form-control" type="date" value="{{$project->actual_labor_cost}}">
+        <input disabled class="form-control" type="text" value="{{$project->actual_labor_cost}}">
     </div>
     <div class="col-sm-6 mb-3 ">
         <label for="actual_material_cost" class="form-label">Actual Material Cost</label>
-        <input disabled class="form-control" type="date" value="{{$project->actual_material_cost}}">
+        <input disabled class="form-control" type="text" value="{{$project->actual_material_cost}}">
     </div>
     <div class="col-sm-6 mb-3 ">
         <label for="solar_install_date" class="form-label">Solar Install Date </label>
