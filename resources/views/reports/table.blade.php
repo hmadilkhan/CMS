@@ -11,6 +11,8 @@
                     <th>Redline Cost</th>
                     <th>Adders</th>
                     <th>Commission</th>
+                    <th>Actual Material Cost</th>
+                    <th>Actual Labor Cost</th>
                     <th>Actual Job Cost</th>
                     <th>Profit</th>
                     <th>Profit %</th>
@@ -50,6 +52,8 @@
                     <td>{{number_format($customer->finances->redline_costs,2) }}</td>
                     <td>{{number_format($customer->finances->adders,2) }}</td>
                     <td>{{number_format($customer->finances->commission,2) }}</td>
+                    <td>{{number_format($customer->project->actual_material_cost,2) }}</td>
+                    <td>{{number_format($customer->project->actual_labor_cost,2) }}</td>
                     <td>{{number_format($actualJob,2) }}</td>
                     <td>{{number_format($profitAmount,2) }}</td>
                     <td>{{number_format($profitPercentage * 100,2) }}</td>
