@@ -1,0 +1,711 @@
+/*** 
+
+====================================================================
+    Why Choose Us Home 1
+====================================================================
+
+***/
+.why-choose-us{
+    background-color: #1E1E22;
+    padding-top: 280px;
+    @media (max-width: 991.98px) {
+        padding: 120px 0;
+    }
+    .contact-form{
+        background-color: #fff;
+        box-shadow: 0 1px 20px 0px rgba(0,0,0,0.08);
+        margin-bottom: -180px;
+        z-index: 1;
+        @media (max-width: 991.98px) {
+           margin-bottom: 0;
+        }
+    }
+    .bg-image {
+        background-size: cover;
+        background-repeat: no-repeat;
+        bottom: 0;
+        left: 0;
+        position: absolute;
+        right: 0;
+        top: 0;
+    }
+}
+.why-choose-us-home1{
+    position: relative;
+    padding: 120px 0;
+    z-index: 1;
+    @media (max-width: 991.98px) {
+        padding: 120px 0;
+    }
+    .bg-image {
+        background-size: cover;
+        background-repeat: no-repeat;
+        position: absolute;
+        top: 0;
+        right: 0;
+        height: 100%;
+        width: 52%;
+        z-index: 1;
+    }
+    .bg-shape{
+        position: absolute;
+        top: 0;
+        left: 0;
+        height: 100%;
+        width: 100%;
+        @include background;
+        .shape{
+            position: absolute;
+            left: 0;
+            right: 0px;
+            height: 100%;
+            background-repeat: no-repeat;
+            background-size: cover;
+        }
+    }
+    .content-column {
+        position: relative;
+        .sec-title {
+            margin-bottom: 40px;
+            .sub-title {
+                color: #9898a0;
+            }
+            .text{
+                color: #9898a0;
+                font-size: 18px;
+                line-height: 34px;
+            }
+        }
+        .inner-column {
+            padding-right: 70px;
+        }
+    }
+    .image-column{
+        position: relative;
+        .image-box.hide-desktop{
+            display: none;
+            position: absolute;
+            left: 0;
+            top: 0;
+            height: 100%;
+            width: 100%;
+            @media (max-width: 991.98px) {display: block;}
+            img{
+                height: 100%;
+                width: 100%;
+                object-fit: cover;
+            }
+        }
+        .inner-column{
+            padding: 160px 0;
+            display: flex;
+            justify-content: space-between;
+            @media (max-width: 575.98px) {
+                display: block;
+            }
+        }
+        .video-box{
+            position: relative;
+            z-index: 2;
+            .arrow{
+                position: relative;
+                top: 5px;
+                right: 140px;
+            }
+        }
+    }    
+}
+
+.why-choose-us-home1 .info-box {
+    position: relative;
+    display: flex;
+    height: 100%;
+    background: #ffffff;
+    padding: 30px 30px 30px 30px;
+    border-radius: 5px;
+    min-width: 270px;
+    left: -20px;
+    @include Shadow;
+    z-index: 2;
+    @media (max-width: 575.98px) {
+        left: 0;
+    }
+    &:before {
+        position: absolute;
+        right: 0;
+        top: 100%;
+        margin-top: -5px;
+        border-left: 40px solid transparent;
+        border-top: 30px solid #ffffff;
+        content: "";
+    }
+    .icon {
+        position: absolute;
+        left: 30px;
+        top: 30px;
+        color: var(--theme-color1);
+        font-size: 62px;
+        line-height: 65px;
+    }
+    strong {
+        position: relative;
+        padding-left: 85px;
+        font-size: 18px;
+        line-height: 26px;
+        color: var(--theme-color3);
+        font-weight: 700;
+        display: block;
+        min-height: 65px;       
+        padding-top: 5px;
+    }
+}
+.feature-block-two{
+    position: relative;
+    margin-bottom: 40px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.26);
+    .inner-box{
+        padding-left: 120px;
+        position: relative;
+    }
+    .inner-box{
+        &:hover{
+            .icon{
+                background-color: var(--theme-color2);
+                color: #fff;
+            }
+        }
+    }
+    .icon{
+        position: absolute;
+        left: 0;
+        top: 0;
+        height: 60px;
+        width: 60px;
+        background-color: var(--bg-theme-color1);
+        @include flex-center;
+        font-size: 18px;
+        color: #ffffff;
+        border-radius: 50%;
+        transition: all 300ms ease;
+    }
+    .title {
+        position: relative;
+        top: -3px;
+        font-size: 24px;
+        line-height: 30px;
+        color: #ffffff;
+        font-weight: 700;
+        margin-bottom: 10px;
+        a {
+            color: #ffffff;
+        }
+    }
+    .text{
+        font-size: 16px;
+        line-height: 30px;
+        color: #9898a0;
+    }
+}
+.feature-block-four {
+    position: relative;
+    margin-bottom: 40px;
+    .inner-box {
+        position: relative;
+    }
+    .icon {
+        height: 90px;
+        width: 90px;
+        background-color: var(--bg-theme-color1);
+        @include flex-center;
+        font-size: 48px;
+        color: #ffffff;
+        border-radius: 50px;
+        margin-bottom: 15px;
+    }
+    .title {
+        position: relative;
+        font-size: 20px;
+        line-height: 1.2em;
+        color: #ffffff;
+        font-weight: 700;
+        margin-bottom: 5px;
+        a {
+            color: #ffffff;
+        }
+    }
+    .text {
+        font-size: 16px;
+        line-height: 30px;
+        color: #9898a0;
+    }
+}
+
+/*** 
+
+====================================================================
+    Why Choose Us Home 2
+====================================================================
+
+***/
+.why-choose-home2{
+    padding-bottom: 100px;
+    position: relative;
+    &:before{
+        background-color: rgba(246, 245, 246, 0.85);
+        content: "";
+        bottom: 0;
+        left: 0;
+        position: absolute;
+        right: 0;
+        top: 0;
+        z-index: 0;
+    }
+    .bg-image{
+        position: absolute;
+        width: 100%;
+        height: 100%;
+        background-repeat: no-repeat;
+        background-position: center center;
+        background-size: cover;
+        z-index: -1;
+    }
+}
+.featire-block-1{
+    position: relative;
+    .icon{
+        background-color: #fff;
+        border-radius: 10px;
+        color: var(--theme-color1);
+        font-size: 60px;
+        display: block;
+        height: 85px;
+        line-height: 85px;
+        text-align: center;
+        width: 85px;
+    }
+}
+.why-choose-us-home2{
+    align-items: center;
+    display: flex;
+    max-height: 680px;
+    padding: 100px 0;
+    position: relative;
+    z-index: 1;
+    @media (max-width: 575.98px) {
+        max-height: initial;
+        padding: 0;
+    }
+    .bg-image {
+        position: absolute;
+        top: 0;
+        left: 0;
+        height: 100%;
+        width: 50%;
+        @include background;
+        z-index: 1;
+    }
+    .bg-shape{
+        position: absolute;
+        top: 0;
+        right: 0;
+        height: 100%;
+        width: 50%;
+        @include background;
+        @media (max-width: 1199.98px) {
+            width: 100%;
+        }
+        .shape{
+            position: absolute;
+            left: 0;
+            right: 0px;
+            height: 100%;
+            background-repeat: no-repeat;
+            background-size: cover;
+            background-position: center;
+        }
+    }
+    .content-column {
+        position: relative;
+        .sec-title {
+            margin-bottom: 40px;
+            .sub-title {
+                color: #9898a0;
+            }
+            .text{
+                color: #9898a0;
+                font-size: 18px;
+                line-height: 34px;
+            }
+        }
+    }
+    .image-column{
+        position: relative;
+        .image-box.hide-desktop{
+            display: none;
+            position: absolute;
+            left: 0;
+            top: 0;
+            height: 100%;
+            width: 100%;
+            img{
+                height: 100%;
+                width: 100%;
+                object-fit: cover;
+            }
+        }
+        .inner-column{
+            padding: 160px 0;
+            display: flex;
+            justify-content: space-between;
+        }
+    }    
+}
+.feature-block-home2{
+    position: relative;
+    .icon{
+        color: var(--theme-color1);
+        font-size: 65px;
+        line-height: 50px;
+        position: relative;
+        &:after{
+            background-color: #2e2838;
+            border-radius: 50%;
+            content: "";
+            height: 54px;
+            left: -10px;
+            position: absolute;
+            top: -10px;
+            width: 54px;
+            z-index: -1;
+        }
+    }
+}
+.feature-block-four {
+    position: relative;
+    margin-bottom: 40px;
+    .inner-box {
+        position: relative;
+    }
+    .icon {
+        height: 90px;
+        width: 90px;
+        background-color: var(--bg-theme-color1);
+        @include flex-center;
+        font-size: 48px;
+        color: #ffffff;
+        border-radius: 50px;
+        margin-bottom: 15px;
+    }
+    .title {
+        position: relative;
+        font-size: 20px;
+        line-height: 1.2em;
+        color: #ffffff;
+        font-weight: 700;
+        margin-bottom: 5px;
+        a {
+            color: #ffffff;
+        }
+    }
+    .text {
+        font-size: 16px;
+        line-height: 30px;
+        color: #9898a0;
+    }
+}
+.contact-form {
+    background-color: var(--bg-theme-color1);
+    border-radius: 10px;
+    padding: 55px 60px 60px;
+    position: relative;
+    .title{
+        font-size: 36px;
+        font-weight: 700;
+        margin-bottom: 30px;
+    }
+    .form-group {
+        position: relative;
+        margin-bottom: 20px;
+        &:last-child {
+            margin-bottom: 0;
+        }
+        label {
+            color: #ffffff;
+            font-size: 16px;
+            line-height: 20px;
+            font-weight: 500;
+            display: block;
+            letter-spacing: 1px;
+            margin-bottom: 15px;
+            &.error {
+                display: block;
+                font-weight: 500;
+                font-size: 13px;
+                text-transform: capitalize;
+                line-height: 24px;
+                color: #ff0000;
+                margin-bottom: 0;
+            }
+        }
+        .select2-container--default .select2-selection--single,
+        input:not([type="submit"]),
+        textarea,
+        select {
+            position: relative;
+            display: block;
+            height: 60px;
+            width: 100%;
+            font-size: 14px;
+            color: var(--theme-color1);
+            line-height: 30px;
+            font-weight: 400;
+            padding: 14px 20px;
+            border-radius: 5px;
+            margin-bottom: 0;
+            border: 1px solid #dfe8ee;
+            transition: all 300ms ease;
+        }
+        input:focus,
+        select:focus,
+        textarea:focus {
+            border-color: var(--border-theme-color1);
+        }
+        textarea {
+            height: auto;
+            resize: none;
+        }
+        input[type="submit"],
+        button {
+            margin-top: 5px;
+            text-transform: uppercase;
+        }
+    }
+    &.home2-style{
+        border-radius: 0;
+        margin-top: -40px;
+        @media (max-width: 991.98px) {
+           margin-top: 0;
+        }
+        &:before{
+            content: "";
+            width: 40px;
+            height: 40px;
+            clip-path: polygon(100% 0,0% 100%,100% 100%);
+            background-color: var(--bg-theme-color1);
+            top: 0;
+            left: -39px;
+            position: absolute;
+            @media (max-width: 991.98px) {
+               display: none;
+            }
+        }
+        &:after{
+            content: "";
+            width: 40px;
+            height: 40px;
+            clip-path: polygon(0 0,0% 100%,100% 100%);
+            background-color: var(--bg-theme-color1);
+            top: 0;
+            right: -40px;
+            position: absolute;
+            @media (max-width: 991.98px) {
+               display: none;
+            }
+        }
+    }
+}
+.why-choose-us-home2-2{
+    align-items: center;
+    display: flex;
+    position: relative;
+    z-index: 1;
+    @media (max-width: 575.98px) {
+        max-height: initial;
+        padding: 0;
+    }
+    .bg-image {
+        position: absolute;
+        top: 0;
+        left: 0;
+        height: 100%;
+        width: 50%;
+        @include background;
+        z-index: 1;
+    }
+    .bg-shape{
+        position: absolute;
+        top: 0;
+        right: 0;
+        height: 100%;
+        width: 50%;
+        @include background;
+        @media (max-width: 1199.98px) {
+            width: 100%;
+        }
+        .shape{
+            position: absolute;
+            left: 0;
+            right: 0px;
+            height: 100%;
+            background-repeat: no-repeat;
+            background-size: cover;
+            background-position: center;
+        }
+    }
+    .content-column {
+        position: relative;
+        .sec-title {
+            margin-bottom: 40px;
+            .sub-title {
+                color: #9898a0;
+            }
+            .text{
+                color: #9898a0;
+                font-size: 18px;
+                line-height: 34px;
+            }
+        }
+    }
+    .image-column{
+        position: relative;
+        .image-box.hide-desktop{
+            display: none;
+            position: absolute;
+            left: 0;
+            top: 0;
+            height: 100%;
+            width: 100%;
+            img{
+                height: 100%;
+                width: 100%;
+                object-fit: cover;
+            }
+        }
+        .inner-column{
+            padding: 160px 0;
+            display: flex;
+            justify-content: space-between;
+        }
+    }    
+}
+/***==================================
+    Range Slider One
+==================================***/
+.range-slider-one {
+    position: relative;
+    margin-bottom: 5px;
+    .range-amount {
+        position: absolute !important;
+        right: 0;
+        top: -35px;
+        background: none;
+        text-align: right;
+        border: 0 !important;
+        padding: 0 !important;
+        max-width: 75px;
+        color: #ffffff !important;
+        width: auto !important;
+        height: auto !important;
+    }
+    .ui-widget.ui-widget-content {
+        height: 10px;
+        border: none;
+        border-radius: 10px;
+        background: var(--headings-color);
+    }
+    .ui-slider {
+        .ui-slider-range {
+            top: 0px;
+            height: 10px;
+            background: #ffffff;
+        }
+    }
+    .ui-state-default {
+        top: -5px;
+        width: 20px;
+        height: 20px;
+        background: #ffffff;
+        cursor: pointer;
+        border: 3px solid var(--border-theme-color3-light);
+        border-radius: 20px;
+    }
+    .ui-widget-content {
+        .ui-state-default {
+            top: -5px;
+            width: 20px;
+            height: 20px;
+            background: #ffffff;
+            cursor: pointer;
+            border: 3px solid var(--headings-color);
+            border-radius: 20px;
+        }
+    }
+    .ui-slider-horizontal {
+        .ui-slider-handle {
+            &:nth-child(2) {
+                margin-left: 0 !important;
+            }
+            &:nth-child(3) {
+                margin-left: -20px !important;
+            }
+        }
+    }
+}
+
+
+/*** 
+
+====================================================================
+    Why Choose Us Home 3
+====================================================================
+
+***/
+.why-choose-home3{
+    position: relative;
+    &:before{
+        background-color: rgba(11, 59, 94, 0.95);
+        bottom: 0;
+        content: "";
+        left: 0;
+        position: absolute;
+        right: 0;
+        top: 0;
+        z-index: 0;
+    }
+}
+.bg-image-h3{
+    background-position: center center;
+    background-size: cover;
+    position: absolute;
+    right: 0;
+    left: 0;
+    bottom: 0;
+    top: 0;
+    z-index: -1;
+}
+
+
+/*** 
+
+====================================================================
+    Why Choose Us Home 4
+====================================================================
+
+***/
+.why-choseus-home4{
+    background-color: #f5f5f6;
+    @media (max-width: 1199.98px) {
+        padding-top: 120px;
+    }
+}
+.whychose-text,
+.whychose-img{
+    margin-top: -200px;
+    @media (max-width: 1199.98px) {
+        margin-top: 0;
+    }
+}
+.whychose-text{
+    background-color: var(--theme-color4);
+    padding: 45px;
+}

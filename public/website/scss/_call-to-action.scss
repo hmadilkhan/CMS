@@ -1,0 +1,191 @@
+/*** 
+
+====================================================================
+		Call To Action
+====================================================================
+
+***/
+
+.call-to-action{
+    position: relative;
+    padding: 200px 0 120px;
+    @include background;
+    z-index: 2;
+    &:before{
+        @include overlay;
+        background-color: var(--bg-theme-color3);
+        opacity: .5;
+        content: "";
+        pointer-events: none;
+    }
+    .outer-box {
+        position: relative;
+        padding-left: 270px;
+        .sec-title .sub-title {
+            margin-bottom: 15px;
+        }
+        .play-now {
+            position: absolute;
+            left: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            display: inline-block;
+
+            .icon {
+                height: 120px;
+                width: 120px;
+                background-color: var(--bg-theme-color2);
+                color: #fff;
+                font-size: 34px;
+                @include flex-center;
+                padding-left: 10px;
+            }
+        }
+        .theme-btn {
+            margin-top: 35px;
+        }
+        .highlighted{
+            position: relative;
+            z-index: 2;
+            &:before{
+                position: absolute;
+                left: -10px;
+                top: 0;
+                height: 88px;
+                width: 260px;
+                background-image: url(../images/icons/object-2.png);
+                background-size: 100%;
+                background-repeat: no-repeat;
+                content: "";
+            }
+        }
+    }
+}
+
+
+// Call to Action / Style Two
+.call-to-action.style-two{
+    padding: 120px 0;
+    &:before{
+        background-color: var(--bg-theme-color1);
+        opacity: .8;
+    }
+    &:after{
+        display: none;
+    }
+    .outer-box{
+        padding: 0;
+    }
+
+}
+
+
+/*** 
+
+====================================================================
+		Call To Action
+====================================================================
+
+***/
+
+.call-to-action-two{
+    margin-bottom: -100px;
+    padding: 120px 0;
+    position: relative;
+    z-index: 2;
+    .outer-box{
+        position: relative;
+        @include background;
+        @include flex-between;
+        background-color: var(--bg-theme-color1);
+        padding: 57px 60px;
+        padding-left: 90px;
+        overflow: hidden;
+    }
+    .title-box{
+        .title{
+            font-size: 36px;
+            line-height: 1.2em;
+            color: #fff;
+            font-weight: 700;
+        }
+    }
+    .btn-box {
+        position: relative;
+        z-index: 8;
+    }
+}
+
+
+/*** 
+
+====================================================================
+        Call To Action Home 4
+====================================================================
+
+***/
+.cta-home4{
+    background-color: var(--headings-color);
+    height: 716px;
+    @media (max-width: 1199px) {
+        height: auto;
+    }
+}
+.bg-image-h4{
+    bottom: 0;
+    opacity: 0.3;
+    left: 0;
+    position: absolute;
+    right: 0;
+    top: 0;
+}
+.cta-home4-box{
+    position: relative;
+}
+.caller-btn{
+    background-color: var(--theme-color1);
+    border-radius: 100px;
+    height: 97px;
+    max-width: 429px;
+    padding: 10px;
+    text-align: center;
+    .icon{
+        background-color: var(--theme-color4);
+        border-radius: 50%;
+        color: #fff;
+        display: block;
+        font-size: 29px;
+        height: 75px;
+        line-height: 75px;
+        transform: rotate(-38deg);
+        width: 75px;
+        -webkit-transition: all 240ms linear 0ms;
+        -khtml-transition: all 240ms linear 0ms;
+        -moz-transition: all 240ms linear 0ms;
+        -ms-transition: all 240ms linear 0ms;
+        -o-transition: all 240ms linear 0ms;
+        transition: all 240ms linear 0ms;
+    }
+    .btn-text{
+        color: #fff;
+        line-height: 97px;
+        font-size: 40px;
+        font-weight: 600;
+        -webkit-transition: all 240ms linear 0ms;
+        -khtml-transition: all 240ms linear 0ms;
+        -moz-transition: all 240ms linear 0ms;
+        -ms-transition: all 240ms linear 0ms;
+        -o-transition: all 240ms linear 0ms;
+        transition: all 240ms linear 0ms;
+        @media (max-width: 576px) {
+            font-size: 30px;
+        }
+    }
+    &:hover{
+        background-color: var(--headings-color);
+        .icon{
+            background-color: #fff;
+            color: var(--headings-color);
+        }
+    }
+}

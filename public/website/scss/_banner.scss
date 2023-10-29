@@ -1,0 +1,168 @@
+
+/*** 
+
+====================================================================
+    Banner Section
+====================================================================
+
+***/
+.banner-section {
+    position: relative;
+}
+
+.banner-section .slide-item {
+    position: relative;
+    background-repeat: no-repeat;
+    background-position: center;
+    background-size: cover;
+    min-height: 860px;
+    @media (max-width: 991.98px) {
+        min-height: 760px;
+    }
+    @media (max-width: 767.98px) {
+        min-height: 660px;
+    }
+    @media (max-width: 575.98px) {
+        min-height: 460px;
+    }
+    .bg-image {
+        @include overlay;
+        @include background;
+        bottom: 0;
+        height: auto;
+        &:before{
+            @include overlay;
+            background-color: var(--bg-theme-color3);
+            opacity: .75;
+            content: "";
+        }
+    }
+}
+
+
+.banner-section .content-box {
+    position: relative;
+    padding: 240px 0 50px;
+     .title{
+        position: relative;
+        display: block;
+        font-size: 80px;
+        line-height: 1.3;
+        color: #ffffff;
+        font-weight: 900;
+        margin-bottom: 40px;
+        .colored{
+            color: #ffbf42;
+        }
+    }
+    .btn-box{
+        .theme-btn:hover{
+            color: var(--bg-theme-color2);
+        }
+        .theme-btn:before{
+            background-color: #ffffff;
+        }
+    }
+}
+
+.banner-section .image-box{
+    position: relative;
+    padding: 230px 0 0px;
+    margin-right: -340px;
+    z-index: 9;
+}
+
+
+/* Animate 1 */
+.owl-carousel .animate-7,
+.owl-carousel .animate-6,
+.owl-carousel .animate-5,
+.owl-carousel .animate-4,
+.owl-carousel .animate-3,
+.owl-carousel .animate-2,
+.owl-carousel .animate-1 {
+    opacity: 0;
+    transform: translateY(100px);
+    transition: all 500ms ease;
+}
+
+.owl-carousel .animate-x{
+    opacity: 0;
+    transform: translateX(100px);
+    transition: all 500ms ease;
+}
+
+.owl-carousel .active .animate-1,
+.owl-carousel .active .animate-2,
+.owl-carousel .active .animate-3,
+.owl-carousel .active .animate-4,
+.owl-carousel .active .animate-5,
+.owl-carousel .active .animate-6,
+.owl-carousel .active .animate-7 {
+    opacity: 1;
+    -webkit-transform: translateY(0);
+    -ms-transform: translateY(0);
+    transform: translateY(0);
+}
+
+.owl-carousel .active .animate-2 {
+    transition-delay: 300ms;
+}
+.owl-carousel .active .animate-3 {
+    transition-delay: 600ms;
+}
+.owl-carousel .active .animate-4 {
+    transition-delay: 900ms;
+}
+.owl-carousel .active .animate-5 {
+    transition-delay: 1200ms;
+}
+.owl-carousel .active .animate-6 {
+    transition-delay: 1500ms;
+}
+.owl-carousel .active .animate-7 {
+    transition-delay: 1800ms;
+}
+
+.banner-carousel .owl-nav {
+    position: absolute;
+    margin: -65px auto 0;
+    top: 50%;
+    width: 100%;
+}
+
+.banner-carousel .owl-next,
+.banner-carousel .owl-prev {
+    border: 2px solid #ffffff;
+    border-radius: 50%;
+    color: #ffffff;
+    display: block;
+    font-size: 20px;
+    font-weight: 700;
+    height: 50px;
+    line-height: 48px;
+    margin:10px 0;
+    opacity: .20;
+    position: absolute;
+    text-align: center;
+    width: 50px;
+    -webkit-transition: all 500ms ease;
+    -o-transition: all 500ms ease;
+    transition: all 500ms ease;
+}
+.banner-carousel .owl-next{
+    right: 100px;
+}
+.banner-carousel .owl-prev{
+    left: 100px;
+}
+
+.banner-carousel .owl-next:hover,
+.banner-carousel .owl-prev:hover {
+    opacity: 1;
+}
+
+
+
+
+

@@ -1,0 +1,228 @@
+//Root for dark
+:root {
+  --dark-color1: #232331;
+  --dark-color2: #292738;
+  --dark-color3: #2b242b;
+  --dark-color4: #212529;
+}
+
+//dark color1
+.bg-dark-1,
+body,
+.sticky-header.fixed-header,
+.page-wrapper,
+.about-section-home1 .image-1:before,
+.services-section-home1,
+.faqs-section-home1:before,
+.accordion-box .block,
+.accordion-box.style-two,
+.work-block .icon-box .count,
+.work-block .icon-box .icon,
+.news-block .image-box .date,
+.team-block .inner-box,
+.header-style-two .header-lower .logo-box,
+.header-style-two .header-top,
+.pricing-block .image,
+.skills .skill-item .skill-bar .bar-inner .bar,
+.call-to-action.style-two:before,
+.testimonial-block-two .inner-content .reviews,
+.clients-section-home2
+{
+  background-color: var(--dark-color1);
+}
+.bg-dark-light,
+.why-choose-home2:before
+{
+	background-color: var(--dark-color1);
+	opacity: 0.9;
+}
+
+//dark color 2
+.bg-dark-2,
+.header-top .inner-container,
+.header-top,
+.service-block .content-box,
+.team-block .info-box,
+.work-section,
+.feature-block1-home2,
+.icon-box1-home2,
+.service-block-home2 .inner-box,
+.pricing-block .inner-box,
+.contact-form,
+.contact-form.home2-style:before,
+.contact-form.home2-style:after,
+.news-block-two .lower-content:after
+{
+  background-color: var(--dark-color2);
+}
+
+
+//dark color 3
+.bg-dark-3,
+.header-lower .logo-box,
+.testimonial-block .content-box,
+.news-block .inner-box:hover .read-more,
+.pricing-block.style-two .inner-box
+{
+  background-color: var(--dark-color3);
+}
+
+//dark color 4
+.bg-dark-4,
+.call-to-action-two .outer-box,
+.service-block-home2 .icon,
+.range-slider-one .ui-widget-content .ui-state-default,
+.range-slider-one .ui-slider .ui-slider-range
+{
+	background-color: var(--dark-color4);
+}
+// black color
+.btn-style-three,
+.work-tabs .tab-buttons .tab-btn{
+  background-color: #000;
+}
+
+//border dark color 1
+.process-block .inner-box::before,
+.service-block .inner-box
+{
+  border-color: var(--dark-color1);
+}
+
+//border dark color 2
+//border color
+
+//text color
+.main-menu .navigation > li > a,
+.main-menu .navigation > li.current > a,
+strong,
+.title a,
+.sec-title h2,
+.metis.tparrows:before,
+.accordion-box.style-two .block .acc-btn,
+.team-block .name,
+.pricing-block .price-box .price
+{
+  color: #fff;
+}
+
+.text-lights,
+.social-icon-one li a,
+.list-style-two li,
+.list-style-two li i,
+.news-block-two:hover .post-info li
+{
+	color: rgba(255, 255, 255, .6);
+}
+
+.bg-dark-text-light,
+.btn-style-one,
+.metis.tparrows,
+.about-section-home1 .company-cell .icon,
+.service-block .content-box .read-more,
+.faq-block .icon,
+.team-block .social-links a,
+.work-block .icon-box,
+.subscribe-form .form-group input[type=email],
+.subscribe-form .form-group input[type=text],
+.feature-block-two .icon,
+.feature-block1-home2 .icon,
+.list-style-three li,
+.list-style-four li,
+.home-2-tabs .nav-tabs .nav-link,
+.featire-block-1 .icon,
+.select2-container--default .select2-selection--single,
+.contact-info-block .icon-box
+{
+	background-color: #000000;
+	color: #ffffff;
+}
+
+/*	Border Color */
+.border-color,
+.about-section-home1 .image-2,
+.contact-form .form-group .select2-container--default .select2-selection--single,
+.contact-form .form-group input:not([type=submit]),
+.contact-form .form-group textarea, .contact-form .form-group select,
+.btn-style-three:before,
+.btn-style-three,
+.feature-block-two,
+.accordion-box.style-two .block .acc-btn,
+.accordion-box.style-two .block .acc-content .content,
+.work-block .icon-box,
+.home2-about1-img-col .image-2,
+.icon-box1-home2,
+.pricing-block .price-box,
+.testimonial-block-two .inner-content,
+.range-slider-one .ui-widget-content .ui-state-default
+{
+  border-color: #2c2a2a;
+}
+
+.why-choose-us-home1 .info-box:before
+{
+	border-top-color: #2c2a2a;
+}
+.bg-border-color,
+.why-choose-us-home1 .info-box,,
+.testimonial-block-two .inner-content,
+.testimonial-block-two .inner-content:before,
+.testimonial-block-two .inner-content:after
+{
+	background-color: #2c2a2a;
+}
+
+//body color 
+.header-style-two{
+  background-color: unset;
+}
+
+
+
+//bg image
+.counter-block .inner{
+  background-image: unset;
+}
+
+.team-section:before{
+  background-image: url(../images/icons/shape-6-dark.png);
+}
+.icon-dotted-map-2{
+  background-image: url(../images/icons/dotted-map-2-dark.png);
+}
+.services-section-home2{
+  background-image: url(../images/background/service-bg-img-dark.jpg);
+}
+.pricing-section .bg-layer{
+  background-image: url(../images/icons/layout-pricing-right-dark.jpg);	
+}
+.clients-carousel {
+	.slide-item {
+		img {
+			filter: invert(1);
+		}
+	}
+}
+.clients-section {
+	.slide-item {
+		a {
+			&:hover {
+				background-color: inherit;
+			}
+		}
+	}
+}
+
+.contact-form {
+	.form-group {
+		textarea {
+			background-color: #0a090f;
+		}
+		input {
+			&:not([type=submit]) {
+				background-color: #0a090f;
+			}
+		}
+	}
+}
+

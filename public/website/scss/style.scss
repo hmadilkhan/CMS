@@ -1,0 +1,109 @@
+/* Soluris - Ecology & Solar HTML Template
+
+Template Name: Soluris
+Version: 1.0.0
+License: copyright commercial
+
+/************ TABLE OF CONTENTS ***************
+1. Fonts
+2. Reset
+3. Global Settings
+4. Main Header / TWO
+5. Sticky Header 
+6. Mobile Menu
+7. Section Title
+8. Page Title
+9. Main Slider
+10. Banner Section
+11. Features Section / Two
+12. About Section / Two
+13. Services Section / Two
+14. Tracking Section
+15. Call To Action / Two
+16. Work Section
+17. Fun Fact Section
+18. Fun Fact Section
+19. Project Section
+20. Why Choose Us / Twp
+21. Testimonial Section / Two
+22. Offer Section
+23. Team Section
+24. News Section
+25. Clients Section
+26. Main Footer
+**********************************************/
+
+@import "common/root.scss";
+@import "common/mixing.scss";
+
+/*** 
+
+====================================================================
+Fonts
+====================================================================
+
+***/
+
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&display=swap');
+
+
+@import url('animate.css');
+@import url('owl.css');
+@import url('swiper.min.css');
+@import url('jquery.fancybox.min.css');
+@import url('jquery-ui.css');
+@import url('linear.css');
+@import url('select2.min.css');
+@import url('fontawesome.css');
+@import url('flaticon.css');
+@import url('tm-bs-mp.css');
+@import url('tm-utility-classes.css');
+
+
+// import SCSS components one by one
+
+
+@import "reset.scss";
+@import "common/loader.scss";
+@import "button.scss";
+@import "animate-icon.scss";
+@import "search-popup.scss";
+@import "header.scss";
+@import "mobile-menu.scss";
+@import "section-title.scss";
+@import "main-slider.scss";
+@import "banner.scss";
+@import "features.scss";
+@import "about.scss";
+@import "services.scss";
+@import "tracking.scss";
+@import "call-to-action.scss";
+@import "how-we-work.scss";
+@import "funfact.scss";
+@import "projects.scss";
+@import "why-choose-us.scss";
+@import "testimonials.scss";
+@import "special-offer.scss";
+@import "team.scss";
+@import "news.scss";
+@import "accordion.scss";
+@import "clients.scss";
+@import "faqs.scss";
+@import "pricing.scss";
+
+@import "shop/loader.scss";
+
+//inner
+@import "inner/page-title.scss";
+@import "inner/404.scss";
+@import "inner/service-details.scss";
+@import "inner/project-details.scss";
+@import "inner/news-details.scss";
+@import "inner/news-sidebar.scss";
+@import "inner/news-comment.scss";
+@import "inner/team-details.scss";
+@import "inner/contact-page.scss";
+
+@import "footer.scss";
+
+
