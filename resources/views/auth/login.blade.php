@@ -71,7 +71,7 @@
                                         <div class="form-label">
                                             <span class="d-flex justify-content-between align-items-center">
                                                 Password
-                                                <a class="text-secondary" href="auth-password-reset.html">Forgot Password?</a>
+                                                <a class="text-secondary" href="{{url('forgot-password')}}">Forgot Password?</a>
                                             </span>
                                         </div>
                                         <input type="password" name="password" class="form-control form-control-lg" placeholder="***************">

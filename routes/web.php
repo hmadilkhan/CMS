@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\CustomerController;
 use App\Http\Controllers\EmployeeController;
+use App\Http\Controllers\InverterTypeController;
 use App\Http\Controllers\ModuleTypeController;
 use App\Http\Controllers\OfficeCostController;
 use App\Http\Controllers\OperationController;
@@ -10,6 +11,7 @@ use App\Http\Controllers\ProjectController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\TaskController;
 use App\Http\Controllers\ToolController;
+use App\Models\InverterType;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -31,15 +33,6 @@ Route::get('/storage-link', function () {
 Route::get('/', function () {
     return view('welcome');
 });
-
-Route::get('/contact', function () {
-    return view('contact');
-});
-
-Route::get('/about', function () {
-    return view('about');
-});
-
 
 
 Route::middleware('auth')->group(function () {
@@ -94,6 +87,7 @@ Route::middleware('auth')->group(function () {
     Route::post('get-sub-adders', [App\Http\Controllers\CustomerController::class, 'getSubAdders'])->name('get.sub.adders');
     Route::post('get-adders', [App\Http\Controllers\CustomerController::class, 'getAdderDetails'])->name('get.adders');
     Route::post('get-module-types', [App\Http\Controllers\CustomerController::class, 'getModulTypevalue'])->name('get.module.types');
+    Route::post('delete-customer', [App\Http\Controllers\CustomerController::class, 'destroy'])->name('delete.customer');
 
     Route::post('project-list', [App\Http\Controllers\ProjectController::class, 'getProjectList'])->name('projects.list');
     Route::post('get-sub-departments', [App\Http\Controllers\ProjectController::class, 'getSubDepartments'])->name('get.sub.departments');
@@ -125,6 +119,13 @@ Route::middleware('auth')->group(function () {
          Route::post('/adders-update', 'addersUpdate')->name("adders.update");
          Route::post('/adders-delete', 'addersDelete')->name("adders.delete");
          Route::post('/get-sub-types', 'getSubTypes')->name("get.sub.types");
+    });
+
+    Route::controller(InverterTypeController::class)->group(function () {
+        Route::get('/view-inverter-type/{id?}', 'inverterTypeIndex')->name("view-inverter-type");
+        Route::post('/inverter-type-store', 'inverterTypeStore')->name("inverter.type.store");
+        Route::post('/inverter-type-update', 'inverterTypeUpdate')->name("inverter.type.update");
+        Route::post('/inverter-type-delete', 'inverterTypeDelete')->name("inverter.type.delete");
     });
 
     Route::controller(ReportController::class)->group(function () {

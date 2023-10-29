@@ -102,7 +102,7 @@ class DatabaseSeeder extends Seeder
         ]);
 
         \App\Models\SubDepartment::create([
-            "name" => "Site Survey News",
+            "name" => "Site Survey New",
             "department_id" => 2,
         ]);
         \App\Models\SubDepartment::create([

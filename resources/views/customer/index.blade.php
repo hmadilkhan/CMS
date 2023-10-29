@@ -47,7 +47,7 @@
                                     <i class="icofont-pencil text-warning fs-4"></i></a>
                                 @endcan
                                 @can("Delete Customer")
-                                <a style="cursor: pointer;" data-toggle="tooltip" title="Delete" class="ml-2" onclick="deleteUser('{{ $customer->id }}')">
+                                <a style="cursor: pointer;" data-toggle="tooltip" title="Delete" class="ml-2" onclick="deleteCustomerModal('{{ $customer->id }}')">
                                     <i class="icofont-trash text-danger fs-4"></i></a>
                                 @endcan
                             </td>
@@ -59,4 +59,48 @@
         </div> <!-- ROW END -->
     </div>
 </div>
+<!-- Modal  Delete Folder/ File-->
+<div class="modal fade" id="deleteproject" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-md modal-dialog-scrollable">
+        <input type="hidden" id="deleteId" />
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title  fw-bold" id="deleteprojectLabel"> Delete item Permanently?</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body justify-content-center flex-column d-flex">
+                <i class="icofont-ui-delete text-danger display-2 text-center mt-2"></i>
+                <p class="mt-4 fs-5 text-center">You can only delete this item Permanently</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-danger color-fff" onclick="deleteCustomer()">Delete</button>
+            </div>
+        </div>
+    </div>
+</div>
+@endsection
+@section("scripts")
+<script>
+    function deleteCustomerModal(id) {
+        $("#deleteId").val(id);
+        $("#deleteproject").modal("show")
+    }
+
+    function deleteCustomer() {
+        $.ajax({
+            method: "POST",
+            url: "{{ route('delete.customer') }}",
+            data: {
+                _token: "{{csrf_token()}}",
+                id: $("#deleteId").val()
+            },
+            success: function(response) {
+                if (response.status == 200) {
+                    location.reload();
+                }
+            }
+        });
+    }
+</script>
 @endsection
