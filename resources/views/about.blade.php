@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
-
+@section("title","About Us")
 <head>
     @include("layouts.website.header")
 </head>
@@ -11,12 +11,8 @@
         <div class="preloader"></div>
 
         <!-- Main Header-->
-        <header class="main-header header-style-one">
-            <!-- Header Top -->
-            <div class="header-top">
-                
-            </div>
-            <!-- Header Top -->
+        <header class="main-header header-style-two">
+
 
             <!-- Header Lower -->
             <div class="header-lower">
@@ -59,47 +55,6 @@
 
                     <ul class="navigation clearfix">
                         <!--Keep This Empty / Menu will come through Javascript-->
-                    </ul>
-                    <ul class="contact-list-one">
-                        <li>
-                            <!-- Contact Info Box -->
-                            <div class="contact-info-box">
-                                <i class="icon lnr-icon-phone-handset"></i>
-                                <span class="title">Call Now</span>
-                                <a href="tel:+92880098670">+92 (8800) - 98670</a>
-                            </div>
-                        </li>
-                        <li>
-                            <!-- Contact Info Box -->
-                            <div class="contact-info-box">
-                                <span class="icon lnr-icon-envelope1"></span>
-                                <span class="title">Send Email</span>
-                                <a href="mailto:help@company.com">help@company.com</a>
-                            </div>
-                        </li>
-                        <li>
-                            <!-- Contact Info Box -->
-                            <div class="contact-info-box">
-                                <span class="icon lnr-icon-clock"></span>
-                                <span class="title">Send Email</span>
-                                Mon - Sat 8:00 - 6:30, Sunday - CLOSED
-                            </div>
-                        </li>
-                    </ul>
-
-                    <ul class="social-links">
-                        <li>
-                            <a href="#"><i class="fab fa-twitter"></i></a>
-                        </li>
-                        <li>
-                            <a href="#"><i class="fab fa-facebook-f"></i></a>
-                        </li>
-                        <li>
-                            <a href="#"><i class="fab fa-pinterest"></i></a>
-                        </li>
-                        <li>
-                            <a href="#"><i class="fab fa-instagram"></i></a>
-                        </li>
                     </ul>
                 </nav>
             </div>
@@ -153,7 +108,7 @@
         <!--End Main Header -->
 
         <!-- Start main-content -->
-        <section class="page-title" style="background-image: url(images/background/page-title-bg.png);">
+        <section class="page-title" style="background-image: url(website/images/background/page-title-bg.png);">
             <div class="auto-container">
                 <div class="title-outer text-center">
                     <h1 class="title">About Us</h1>

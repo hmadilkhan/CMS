@@ -34,7 +34,7 @@
                                 </svg>
                             </div>
                             <div class="mb-5">
-                                <h2 class="color-900 text-center">My-Task Let's Management Better</h2>
+                                <h2 class="color-900 text-center">Solen Energy Co.</h2>
                             </div>
                             <!-- Image block -->
                             <div class="">
@@ -49,7 +49,7 @@
                                 @csrf
                                 <div class="col-12 text-center mb-1 mb-lg-5">
                                     <h1>Sign in</h1>
-                                    <span>Free access to our dashboard.</span>
+                                    <!-- <span>Free access to our dashboard.</span> -->
                                 </div>
                                 <!-- <div class="col-12 text-center mb-4">
                                     <a class="btn btn-lg btn-outline-secondary btn-block" href="#">
@@ -89,7 +89,7 @@
                                     <button type="submit" class="btn btn-lg btn-block btn-light lift text-uppercase" atl="signin">SIGN IN</button>
                                 </div>
                                 <div class="col-12 text-center mt-4">
-                                    <span class="text-muted">Don't have an account yet? <a href="auth-signup.html" class="text-secondary">Sign up here</a></span>
+                                    <!-- <span class="text-muted">Don't have an account yet? <a href="auth-signup.html" class="text-secondary">Sign up here</a></span> -->
                                 </div>
                             </form>
                             <!-- End Form -->
