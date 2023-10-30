@@ -28,6 +28,8 @@
                 $totalProfitAmount = 0;
                 $totalProfitPercentage = 0;
                 $totalActualJob = 0;
+                $totalActualMaterialCost = 0;
+                $totalActualLaborCost = 0;
                 ?>
                 @foreach ($customers as $key => $customer)
                 <?php 
@@ -38,6 +40,8 @@
                 $totalCommissionAmount += $customer->finances->commission;
                 $actualJob = $customer->project->actual_permit_fee + $customer->project->actual_labor_cost + $customer->project->actual_material_cost + $customer->project->office_cost;
                 $totalActualJob += $actualJob;
+                $totalActualMaterialCost += $customer->project->actual_material_cost;
+                $totalActualLaborCost += $customer->project->actual_labor_cost;
                 $profitAmount = $customer->finances->redline_costs + $customer->finances->adders - $actualJob;
                 $profitPercentage = $profitAmount / $customer->finances->redline_costs;
                 $totalProfitAmount += $profitAmount;
@@ -66,7 +70,9 @@
                     <td class="fw-bold">{{number_format($totalRedlineCosts,2)}}</td>
                     <td class="fw-bold">{{number_format($totalAddersAmount,2)}}</td>
                     <td class="fw-bold">{{number_format($totalCommissionAmount,2)}}</td> 
-                    <td class="fw-bold">{{number_format($totalActualJob,2)}}</td> 
+                    <td class="fw-bold">{{number_format($totalCommissionAmount,2)}}</td> 
+                    <td class="fw-bold">{{number_format($totalActualMaterialCost,2)}}</td> 
+                    <td class="fw-bold">{{number_format($totalActualLaborCost,2)}}</td> 
                     <td class="fw-bold">{{number_format($totalRedlineCosts - $totalActualJob ,2)}}</td> 
                     <td class="fw-bold">{{number_format((($totalRedlineCosts + $totalAddersAmount - $totalActualJob) / $totalRedlineCosts) * 100,2)}}%</td> 
                 </tr>
