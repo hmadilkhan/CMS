@@ -12,143 +12,7 @@
         <div class="preloader"></div>
 
         <!-- Main Header-->
-        <header class="main-header  header-style-two">
-            <!-- Header Top -->
-            <div class="header-top">
-
-            </div>
-            <!-- Header Top -->
-
-            <!-- Header Lower -->
-            <div class="header-lower">
-                <!-- Main box -->
-                <div class="main-box">
-                    <div class="logo-box">
-                        <div class="logo"><a href="index.html"><img src="{{asset('website/images/logo-2.png')}}" alt="" title="Tronis"></a></div>
-                    </div>
-
-                    <!--Nav Box-->
-                    <div class="nav-outer">
-                        @include("layouts.website.navbar")
-                        <!-- Main Menu End-->
-
-                        <div class="outer-box">
-                            <a href="page-contact.html" class="theme-btn btn-style-one alternate"><span class="btn-title">Get A Quote</span></a>
-
-                            <!-- Mobile Nav toggler -->
-                            <div class="mobile-nav-toggler"><span class="icon lnr-icon-bars"></span></div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <!-- End Header Lower -->
-
-            <!-- Mobile Menu  -->
-            <div class="mobile-menu">
-                <div class="menu-backdrop"></div>
-
-                <!--Here Menu Will Come Automatically Via Javascript / Same Menu as in Header-->
-                <nav class="menu-box">
-                    <div class="upper-box">
-                        <div class="nav-logo">
-                            <a href="index.html"><img src="{{asset('website/images/logo-2.png')}}" alt="" title="Fesho" /></a>
-                        </div>
-                        <div class="close-btn"><i class="icon fa fa-times"></i></div>
-                    </div>
-
-                    <ul class="navigation clearfix">
-                        <!--Keep This Empty / Menu will come through Javascript-->
-                    </ul>
-                    <ul class="contact-list-one">
-                        <li>
-                            <!-- Contact Info Box -->
-                            <div class="contact-info-box">
-                                <i class="icon lnr-icon-phone-handset"></i>
-                                <span class="title">Call Now</span>
-                                <a href="tel:+92880098670">+92 (8800) - 98670</a>
-                            </div>
-                        </li>
-                        <li>
-                            <!-- Contact Info Box -->
-                            <div class="contact-info-box">
-                                <span class="icon lnr-icon-envelope1"></span>
-                                <span class="title">Send Email</span>
-                                <a href="mailto:help@company.com">help@company.com</a>
-                            </div>
-                        </li>
-                        <li>
-                            <!-- Contact Info Box -->
-                            <div class="contact-info-box">
-                                <span class="icon lnr-icon-clock"></span>
-                                <span class="title">Send Email</span>
-                                Mon - Sat 8:00 - 6:30, Sunday - CLOSED
-                            </div>
-                        </li>
-                    </ul>
-
-                    <ul class="social-links">
-                        <li>
-                            <a href="#"><i class="fab fa-twitter"></i></a>
-                        </li>
-                        <li>
-                            <a href="#"><i class="fab fa-facebook-f"></i></a>
-                        </li>
-                        <li>
-                            <a href="#"><i class="fab fa-pinterest"></i></a>
-                        </li>
-                        <li>
-                            <a href="#"><i class="fab fa-instagram"></i></a>
-                        </li>
-                    </ul>
-                </nav>
-            </div>
-            <!-- End Mobile Menu -->
-
-            <!-- Header Search -->
-            <div class="search-popup">
-                <span class="search-back-drop"></span>
-                <button class="close-search"><span class="fa fa-times"></span></button>
-
-                <div class="search-inner">
-                    <form method="post" action="index.html">
-                        <div class="form-group">
-                            <input type="search" name="search-field" value="" placeholder="Search..." required="" />
-                            <button type="submit"><i class="fa fa-search"></i></button>
-                        </div>
-                    </form>
-                </div>
-            </div>
-            <!-- End Header Search -->
-
-            <!-- Sticky Header  -->
-            <div class="sticky-header">
-                <div class="auto-container">
-                    <div class="inner-container">
-                        <!--Logo-->
-                        <div class="logo">
-                            <a href="index.html" title=""><img src="{{asset('website/images/logo.png')}}" alt="" title="" /></a>
-                        </div>
-
-                        <!--Right Col-->
-                        <div class="nav-outer">
-                            <!-- Main Menu -->
-                            <nav class="main-menu">
-                                <div class="navbar-collapse show collapse clearfix">
-                                    <ul class="navigation clearfix">
-                                        <!--Keep This Empty / Menu will come through Javascript-->
-                                    </ul>
-                                </div>
-                            </nav>
-                            <!-- Main Menu End-->
-
-                            <!--Mobile Navigation Toggler-->
-                            <div class="mobile-nav-toggler"><span class="icon lnr-icon-bars"></span></div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <!-- End Sticky Menu -->
-        </header>
+        @include("layouts.website.main_header")
         <!--End Main Header -->
 
         <!-- Start main-content -->
@@ -157,7 +21,7 @@
                 <div class="title-outer text-center">
                     <h1 class="title">Contact Us</h1>
                     <ul class="page-breadcrumb">
-                        <li><a href="index.html">Home</a></li>
+                        <li><a href="{{url('/')}}">Home</a></li>
                         <li>Contact</li>
                     </ul>
                 </div>
@@ -175,7 +39,8 @@
                             <h2>Feel free to write</h2>
                         </div>
                         <!-- Contact Form -->
-                        <form id="contact_form" name="contact_form" class="" action="includes/sendmail.php" method="post">
+                        <form id="contact_form" name="contact_form" class="" action="{{route('store.ticket')}}" method="post">
+                            @csrf
                             <div class="row">
                                 <div class="col-sm-6">
                                     <div class="mb-3">
@@ -225,7 +90,7 @@
                                     </div>
                                     <div class="text ml-xs--0 mt-xs-10">
                                         <h6>Have any question?</h6>
-                                        <a href="tel:980089850"><span>Free</span> +92 (020)-9850</a>
+                                        <a href="tel:9095676536"><span>Free</span> (909) 567-6536</a>
                                     </div>
                                 </li>
                                 <li class="d-block d-sm-flex align-items-sm-center ">
@@ -234,7 +99,7 @@
                                     </div>
                                     <div class="text ml-xs--0 mt-xs-10">
                                         <h6>Write email</h6>
-                                        <a href="mailto:needhelp@company.com">needhelp@company.com</a>
+                                        <a href="mailto:info@solenenergyco.com">info@solenenergyco.com</a>
                                     </div>
                                 </li>
                                 <li class="d-block d-sm-flex align-items-sm-center ">
@@ -243,7 +108,7 @@
                                     </div>
                                     <div class="text ml-xs--0 mt-xs-10">
                                         <h6>Visit anytime</h6>
-                                        <span>66 broklyn golden street. New York</span>
+                                        <span>6835 Song Sparrow Rd, Eastvale CA, 92880</span>
                                     </div>
                                 </li>
                             </ul>
@@ -261,100 +126,7 @@
         <!--End Map Section-->
 
         <!-- Main Footer -->
-        <footer class="main-footer style-one pt-0">
-            <div class="bg-image" style="background-image: url(./website/images/background/5.jpg)"></div>
-            <!--Widgets Section-->
-            <div class="widgets-section">
-                <div class="auto-container">
-                    <div class="row">
-                        <!--Footer Column-->
-                        <div class="footer-column col-xl-3 col-sm-6">
-                            <div class="footer-widget about-widget">
-                                <div class="logo">
-                                    <a href="index.html"><img src="{{asset('website/images/logo-2.png')}}" alt="" /></a>
-                                </div>
-                                <p class="text mb-2">012 Broklyn Street, 57 <br class="d-none d-xl-block"> New York, USA</p>
-                                <p class="mb-2"><a class="text" href="mailto:needhelp@domain.com">needhelp@domain.com</a></p>
-                                <p><a class="text-white" href="tel:9993330000">999 333 0000</a></p>
-                            </div>
-                        </div>
-                        <!--Footer Column-->
-                        <div class="footer-column col-xl-3 col-sm-6">
-                            <div class="footer-widget">
-                                <h3 class="widget-title">Service</h3>
-                                <ul class="user-links">
-                                    <li><a href="#">Reliability & Punctuality</a></li>
-                                    <li><a href="#">Trusted Franchise</a></li>
-                                    <li><a href="#">Warehoues Storage</a></li>
-                                    <li><a href="#">Real Time Tracking</a></li>
-                                    <li><a href="#">Transparent Pricing</a></li>
-                                </ul>
-                            </div>
-                        </div>
-                        <!--Footer Column-->
-                        <div class="footer-column col-xl-3 col-sm-6">
-                            <div class="footer-widget gallery-widget">
-                                <h3 class="widget-title">Projects</h3>
-                                <ul class="user-links two-column">
-                                    <li><a href="#">About</a></li>
-                                    <li><a href="#">New Projects</a></li>
-                                    <li><a href="#">Our History</a></li>
-                                    <li><a href="#">Contact</a></li>
-                                    <li><a href="#">Blog Post</a></li>
-                                    <li><a href="#">Press Release</a></li>
-                                    <li><a href="#">Help Topics</a></li>
-                                    <li><a href="#">Privacy Policy</a></li>
-                                    <li><a href="#">Terms Of Use</a></li>
-                                </ul>
-                            </div>
-                        </div>
-                        <!--Footer Column-->
-                        <div class="footer-column col-xl-3 col-sm-6">
-                            <div class="footer-widget">
-                                <h3 class="widget-title">Newsletter</h3>
-                                <div class="widget-content">
-                                    <div class="subscribe-form">
-                                        <div class="text">Subscribe our newsletter to get our latest update & news</div>
-                                        <form method="post" action="#">
-                                            <div class="form-group">
-                                                <input type="email" name="email" class="email" value="" placeholder="Email Address" required="" />
-                                                <button type="button" class="theme-btn btn-style-one">
-                                                    <span class="btn-title"><i class="fa fa-paper-plane"></i></span>
-                                                </button>
-                                            </div>
-                                        </form>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <!--Footer Bottom-->
-            <div class="footer-bottom">
-                <div class="auto-container">
-                    <div class="inner-container">
-                        <div class="copyright-text">
-                            <p>&copy; Copyright 2023 by <a href="{{url('/')}}">Company.com</a></p>
-                        </div>
-                        <ul class="social-icon-two">
-                            <li>
-                                <a href="#"><i class="fab fa-facebook"></i></a>
-                            </li>
-                            <li>
-                                <a href="#"><i class="fab fa-twitter"></i></a>
-                            </li>
-                            <li>
-                                <a href="#"><i class="fab fa-pinterest"></i></a>
-                            </li>
-                            <li>
-                                <a href="#"><i class="fab fa-instagram"></i></a>
-                            </li>
-                        </ul>
-                    </div>
-                </div>
-            </div>
-        </footer>
+        @include("layouts.website.footer_bottom")
         <!--End Main Footer -->
     </div><!-- End Page Wrapper -->
     <!-- Scroll To Top -->
@@ -375,6 +147,7 @@
                     $(form).ajaxSubmit({
                         dataType: 'json',
                         success: function(data) {
+                            console.log(data)
                             if (data.status == 'true') {
                                 $(form).find('.form-control').val('');
                             }

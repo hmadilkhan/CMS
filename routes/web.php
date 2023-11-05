@@ -42,6 +42,12 @@ Route::get('/about', function () {
     return view('about');
 });
 
+Route::get('/track-your-project', function () {
+    return view('track-your-project');
+});
+
+Route::post('store-ticket', [App\Http\Controllers\NewTicketController::class, 'store'])->name("store.ticket");
+
 
 Route::middleware('auth')->group(function () {
     Route::get('/dashboard', [App\Http\Controllers\HomeController::class, 'dashboard'])->name('dashboard');
