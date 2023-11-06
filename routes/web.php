@@ -46,6 +46,7 @@ Route::get('/track-your-project', function () {
     return view('track-your-project');
 });
 
+
 Route::post('store-ticket', [App\Http\Controllers\NewTicketController::class, 'store'])->name("store.ticket");
 
 
@@ -151,6 +152,9 @@ Route::middleware('auth')->group(function () {
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
     Route::get('/logout', [ProfileController::class, 'logout'])->name('profile.logout');
+
+    Route::get('tickets', [App\Http\Controllers\NewTicketController::class, 'index'])->name("tickets");
+    Route::post('change-ticket-status', [App\Http\Controllers\NewTicketController::class, 'changeStatus'])->name("change.ticket.status");
 });
 
 require __DIR__.'/auth.php';

@@ -9,6 +9,12 @@ use Illuminate\Support\Facades\Notification;
 
 class NewTicketController extends Controller
 {
+    public function index()
+    {
+        return view("tickets.index",[
+            "tickets" => ModelsNewTicket::all(),
+        ]);
+    }
     public function store(Request $request)
     {
         $request->validate([
@@ -27,9 +33,21 @@ class NewTicketController extends Controller
                 "message" => $request->form_message,
             ]);
             // $this->sendNotification($newTicket);
-            return response()->json(["status" => true]);
+            return response()->json(["status" => true,"message" => "Your information has been submitted. You will be contacted shortly."]);
         } catch (\Throwable $th) {
             //throw $th;
+        }
+    }
+
+    public function changeStatus(Request $request)
+    {
+        try {
+            $ticket = ModelsNewTicket::findOrFail($request->id);
+            $ticket->status = "Done";
+            $ticket->save();
+            return response()->json(["status" => 200, "message" => "Status changes successfully."]);
+        } catch (\Throwable $th) {
+            return response()->json(["status" => 500, "message" => "Error. " . $th->getMessage()]);
         }
     }
 

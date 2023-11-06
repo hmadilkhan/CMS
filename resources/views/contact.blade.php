@@ -148,7 +148,7 @@
                         dataType: 'json',
                         success: function(data) {
                             console.log(data)
-                            if (data.status == 'true') {
+                            if (data.status == true) {
                                 $(form).find('.form-control').val('');
                             }
                             form_btn.prop('disabled', false).html(form_btn_old_msg);

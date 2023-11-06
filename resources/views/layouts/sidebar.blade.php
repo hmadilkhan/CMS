@@ -83,6 +83,13 @@
                 </ul>
             </li>
             @endcan
+            @can('Tickets')
+            <li class="collapsed">
+                <a class="m-link {{ Route::currentRouteName() == 'tickets' ? 'active' : '' }}" href="{{route('tickets')}}">
+                    <i class="icofont-ticket fs-5"></i> <span>Tickets</span> <span class=" ms-auto text-end fs-5"></span>
+                </a>
+            </li>
+            @endcan
         </ul>
 
 

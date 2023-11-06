@@ -32,7 +32,7 @@
                 <!--Here Menu Will Come Automatically Via Javascript / Same Menu as in Header-->
                 <nav class="menu-box">
                     <div class="upper-box">
-                        <div class="nav-logo"><a href="{{url('/')}}"><img src="images/logo-2.png" alt="" title="Fesho"></a></div>
+                        <div class="nav-logo"><a href="{{url('/')}}"><img src="{{asset('website/images/logo.png')}}" alt="" title="Solen Energy Co."></a></div>
                         <div class="close-btn"><i class="icon fa fa-times"></i></div>
                     </div>
 
@@ -98,7 +98,7 @@
                     <div class="inner-container">
                         <!--Logo-->
                         <div class="logo">
-                            <a href="{{url('/')}}" title=""><img src="{{asset('website/images/logo-2.png')}}" alt="" title=""></a>
+                            <a href="{{url('/')}}" title=""><img src="{{asset('website/images/logo.png')}}" alt="Solen Energy Co." title="Solen Energy Co."></a>
                         </div>
 
                         <!--Right Col-->
