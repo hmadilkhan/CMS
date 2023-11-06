@@ -39,16 +39,17 @@
                             <h2>Check your project progress</h2>
                         </div>
                         <!-- Contact Form -->
-                        <form id="contact_form" name="contact_form" class="" action="includes/sendmail.php" method="post">
+                        <form id="project_form" name="project_form" class="" action="{{route('get.website.project')}}" method="post">
+                            @csrf
                             <div class="row">
                                 <div class="col-sm-6">
                                     <div class="mb-3">
-                                        <input name="job_id" class="form-control" type="text" placeholder="Enter Job Id">
+                                        <input name="project_id" class="form-control" type="text" placeholder="Enter Job Id">
                                     </div>
                                 </div>
                                 <div class="col-sm-6">
                                     <div class="mb-3">
-                                        <input name="form_email" class="form-control required email" type="email" placeholder="Enter Email">
+                                        <input name="email" class="form-control required email" type="email" placeholder="Enter Email">
                                     </div>
                                 </div>
                             </div>
@@ -65,6 +66,15 @@
         </section>
         <!--Contact Details End-->
 
+        <!--Contact Details Start-->
+        <section class="contact-details">
+            <div class="container ">
+                <div class="row" id="project-data">
+                    
+                </div>
+            </div>
+        </section>
+
         <!-- Main Footer -->
         @include("layouts.website.footer_bottom")
         <!--End Main Footer -->
@@ -76,7 +86,7 @@
     <script src="{{asset('website/js/jquery.form.min.js')}}"></script>
     <script>
         (function($) {
-            $("#contact_form").validate({
+            $("#project_form").validate({
                 submitHandler: function(form) {
                     var form_btn = $(form).find('button[type="submit"]');
                     var form_result_div = '#form-result';
@@ -85,11 +95,13 @@
                     var form_btn_old_msg = form_btn.html();
                     form_btn.html(form_btn.prop('disabled', true).data("loading-text"));
                     $(form).ajaxSubmit({
-                        dataType: 'json',
+                        // dataType: 'json',
                         success: function(data) {
+                            console.log(data);
                             if (data.status == 'true') {
                                 $(form).find('.form-control').val('');
                             }
+                            $("#project-data").html(data);
                             form_btn.prop('disabled', false).html(form_btn_old_msg);
                             $(form_result_div).html(data.message).fadeIn('slow');
                             setTimeout(function() {

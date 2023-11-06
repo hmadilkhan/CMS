@@ -14,9 +14,6 @@
             </div>
         </div><!-- Row End -->
         <div class="card mt-3">
-            <div class="card-header">
-                <h4 class="card-title">Ticket List</h3>
-            </div>
             <div class="card-body">
                 <table id="example1" class="table table-bordered table-striped datatable">
                     <thead>

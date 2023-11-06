@@ -1,5 +1,5 @@
 <footer class="main-footer">
-    <div class="bg-image" style="background-image: url(./webite/images/background/5.jpg)"></div>
+    <div class="bg-image" style="background-image: url({{asset('website/images/background/5.jpg')}})"></div>
 
     <!-- Contact info -->
     <div class="contacts-outer">
@@ -20,7 +20,7 @@
                         <h4 class="title">Contact</h4>
                         <div class="text">
                             <a href="mailto:needhelp@company.com">6835 Song Sparrow Rd, Eastvale CA, 92880</a>
-                            <a href="tel:+92(8800)48720">909) 567-6536</a>
+                            <a href="tel:+92(8800)48720">909 567-6536</a>
                         </div>
                     </div>
                 </div>

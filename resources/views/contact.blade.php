@@ -147,7 +147,6 @@
                     $(form).ajaxSubmit({
                         dataType: 'json',
                         success: function(data) {
-                            console.log(data)
                             if (data.status == true) {
                                 $(form).find('.form-control').val('');
                             }
