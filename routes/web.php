@@ -48,7 +48,7 @@ Route::get('/track-your-project', function () {
 
 
 Route::post('store-ticket', [App\Http\Controllers\NewTicketController::class, 'store'])->name("store.ticket");
-
+Route::post('get-website-project', [App\Http\Controllers\ProjectController::class, 'getWebsiteProject'])->name('get.website.project');
 
 Route::middleware('auth')->group(function () {
     Route::get('/dashboard', [App\Http\Controllers\HomeController::class, 'dashboard'])->name('dashboard');
@@ -112,7 +112,7 @@ Route::middleware('auth')->group(function () {
     Route::post('projects-status', [App\Http\Controllers\ProjectController::class, 'projectStatus'])->name('projects.status');
     Route::get('projects-list', [App\Http\Controllers\ProjectController::class, 'getProjects'])->name('projects');
     Route::post('get-departments-fields', [App\Http\Controllers\ProjectController::class, 'getDepartmentFields'])->name('get.departments.fields');
-    Route::post('get-website-project', [App\Http\Controllers\ProjectController::class, 'getWebsiteProject'])->name('get.website.project');
+    
 
     Route::controller(OperationController::class)->group(function () {
         // REDLINE COST
