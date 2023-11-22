@@ -18,10 +18,12 @@
         <label for="hoa" class="form-label">HOA</label>
         <input disabled class="form-control" type="text" value="{{$project->hoa}}">
     </div>
+    @if($project->hoa == "yes")
     <div class="col-sm-6 mb-3" id="hoa_select">
         <label for="hoa_phone_number" class="form-label">Phone Number Field</label>
         <input disabled class="form-control" type="text" value="{{$project->hoa_phone_number}}">
     </div>
+    @endif
     @endif
     @if($department->id == 3)
     <div class="col-sm-6 ">
