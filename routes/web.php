@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\AuroraController;
 use App\Http\Controllers\CustomerController;
 use App\Http\Controllers\EmployeeController;
 use App\Http\Controllers\InverterTypeController;
@@ -147,6 +148,10 @@ Route::middleware('auth')->group(function () {
     Route::controller(ReportController::class)->group(function () {
         Route::get('/reports-profilt', 'profitabilityReport')->name("reports.profit");
         Route::post('/reports-profilt', 'getProfitabilityReport')->name("reports.profit");
+    });
+
+    Route::controller(AuroraController::class)->group(function () {
+        Route::get('/get-aurora-projects', 'index')->name("aurora.projects");
     });
 
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
