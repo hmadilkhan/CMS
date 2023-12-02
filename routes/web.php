@@ -139,9 +139,15 @@ Route::middleware('auth')->group(function () {
 
          // ADDERS TYPE VIEW
          Route::get('/view-adder-type/{id?}', 'addersTypeView')->name("view.adder.types");
-         Route::post('/adder-type-store', 'addersTypeStore')->name("adder.type.store");
+         Route::post('/adders-type-store', 'addersTypeStore')->name("adder.type.store");
          Route::post('/adders-type-update', 'addersTypeUpdate')->name("adder.type.update");
          Route::post('/adders-type-delete', 'addersTypeDelete')->name("adder.type.delete");
+
+         // SALES PARTNERS VIEW
+         Route::get('/sales-partner-type/{id?}', 'salesPartnerView')->name("sales.partner.types");
+         Route::post('/sales-partner-store', 'salesPartnerStore')->name("sales.partner.store");
+         Route::post('/sales-partner-update', 'salesPartnerUpdate')->name("sales.partner.update");
+         Route::post('/sales-partner-delete', 'salesPartnerDelete')->name("sales.partner.delete");
     });
 
     Route::controller(InverterTypeController::class)->group(function () {

@@ -11,6 +11,7 @@ use App\Models\InverterType;
 use App\Models\InverterTypeRate;
 use App\Models\LoanApr;
 use App\Models\LoanTerm;
+use App\Models\SalesPartner;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\Request;
 
@@ -263,6 +264,57 @@ class OperationController extends Controller
         if ($request->id != "") {
             $subtypes = AdderSubType::where("adder_type_id",$request->id)->get();
             return response()->json(["status" => 200, "subtypes" => $subtypes]);
+        }
+    }
+
+
+    public function salesPartnerView(Request $request)
+    {
+        if ($request->id != "") {
+            $partner = SalesPartner::where("id", $request->id)->first();
+        }
+        return view("operations/sales-partner/index", [
+            "partners" => SalesPartner::all(),
+            "partner" => ($request->id != "" ? $partner : []),
+        ]);
+    }
+
+    public function salesPartnerStore(Request $request)
+    {
+        try {
+            $count = SalesPartner::where("name", $request->name)->count();
+            if ($count == 0) {
+                SalesPartner::create([
+                    "name" => $request->name,
+                ]);
+                return redirect()->route("sales.partner.types")->with("success", "Data Saved Successfully");
+            } else {
+                return redirect()->route("sales.partner.types")->with("error", "Data already exists");
+            }
+        } catch (\Throwable $th) {
+            return redirect()->route("sales.partner.types")->with("error", $th->getMessage());
+        }
+    }
+
+    public function salesPartnerUpdate(Request $request)
+    {
+        try {
+            $salesPartner = SalesPartner::find($request->id);
+            $salesPartner->name = $request->name;
+            $salesPartner->save();
+            return redirect()->route("sales.partner.types");
+        } catch (\Throwable $th) {
+            return redirect()->route("sales.partner.types")->with('error', $th->getMessage());
+        }
+    }
+
+    public function salesPartnerDelete(Request $request)
+    {
+        try {
+            SalesPartner::where("id", $request->id)->delete();
+            return response()->json(["status" => 200]);
+        } catch (\Throwable $th) {
+            return response()->json(["status" => 500]);
         }
     }
 }
