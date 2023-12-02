@@ -32,12 +32,6 @@ class CustomerController extends Controller
      */
     public function index()
     {
-        $subAdders = AdderSubType::all();
-        foreach ($subAdders as $key => $value) {
-            AdderType::create([
-                "name" => $value->name,
-            ]);
-        }
         return view("customer.index", [
             "customers" => Customer::getCustomers()->get(),
         ]);
