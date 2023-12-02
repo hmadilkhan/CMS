@@ -204,12 +204,12 @@
                                 @endforeach
                             </select>
                         </div>
-                        <div class="col-sm-3 mb-3">
+                        <!-- <div class="col-sm-3 mb-3">
                             <label for="sub_type" class="form-label">Sub Type</label>
                             <select class="form-select select2" aria-label="Default select Sub Type" id="sub_type" name="sub_type">
                                 <option value="">Select Sub Type</option>
                             </select>
-                        </div>
+                        </div> -->
                         <div class="col-sm-2 mb-3">
                             <label for="uom" class="form-label">UOM</label>
                             <select class="form-select select2" aria-label="Default select UOM" id="uom">
@@ -242,7 +242,7 @@
                             <tr>
                                 <th>No.</th>
                                 <th>Adder</th>
-                                <th>Sub Adders</th>
+                                <!-- <th>Sub Adders</th> -->
                                 <th>Unit</th>
                                 <th>Amount</th>
                                 <th>Actions</th>
@@ -253,12 +253,12 @@
                             @php $index = ++$key; @endphp
                             <tr id="row{{$key}}">
                                 <input type="hidden" value="{{$adder->adder_type_id}}" name="adders[]" />
-                                <input type="hidden" value="{{$adder->adder_sub_type_id}}" name="subadders[]" />
+                                <!-- <input type="hidden" value="{{$adder->adder_sub_type_id}}" name="subadders[]" /> -->
                                 <input type="hidden" value="{{$adder->adder_unit_id}}" name="uom[]" />
                                 <input type="hidden" value="{{$adder->amount}}" name="amount[]" />
                                 <td>{{$index}}</td>
                                 <td>{{$adder->type->name}}</td>
-                                <td>{{$adder->subtype->name}}</td>
+                                {{-- <td>{{$adder->subtype->name}}</td> --}}
                                 <td>{{$adder->unit->name}}</td>
                                 <td>{{$adder->amount}}</td>
                                 <td>

@@ -32,6 +32,12 @@ class CustomerController extends Controller
      */
     public function index()
     {
+        $subAdders = AdderSubType::all();
+        foreach ($subAdders as $key => $value) {
+            AdderType::create([
+                "name" => $value->name,
+            ]);
+        }
         return view("customer.index", [
             "customers" => Customer::getCustomers()->get(),
         ]);
@@ -44,7 +50,7 @@ class CustomerController extends Controller
     {
         return view("customer.create", [
             "financeoptions" => FinanceOption::all(),
-            "partners" => User::filterByRole('Sales Person')->get(),
+            "partners" => SalesPartner::all(),//User::filterByRole('Sales Person')->get(),
             "inverter_types" => InverterType::all(),
             "battery_types" => BatteryType::all(),
             "modules" => ModuleType::all(),
@@ -118,7 +124,7 @@ class CustomerController extends Controller
                         CustomerAdder::create([
                             "customer_id" => $customer->id,
                             "adder_type_id" => $request->adders[$i],
-                            "adder_sub_type_id" => $request->subadders[$i],
+                            // "adder_sub_type_id" => $request->subadders[$i],
                             "adder_unit_id" => $request->uom[$i],
                             "amount" => $request->amount[$i],
                         ]);
@@ -304,7 +310,9 @@ class CustomerController extends Controller
     public function getAdderDetails(Request $request)
     {
         try {
-            $adders = Adder::where("adder_type_id", $request->adder)->where("adder_sub_type_id", $request->subadder)->first();
+            $adders = Adder::where("adder_type_id", $request->adder)
+                    //  ->where("adder_sub_type_id", $request->subadder)
+                     ->first();
             return response()->json(["status" => 200, "adders" => $adders]);
         } catch (\Throwable $th) {
             return response()->json(["status" => 200, "message" => $th->getMessage()]);

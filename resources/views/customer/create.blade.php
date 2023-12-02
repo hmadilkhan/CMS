@@ -189,13 +189,13 @@
                         @endforeach
                     </select>
                 </div>
-                <div class="col-sm-3 mb-3">
+                <!-- <div class="col-sm-3 mb-3">
                     <label for="sub_type" class="form-label">Sub Type</label>
                     <select class="form-select select2" aria-label="Default select Sub Type" id="sub_type" name="sub_type">
                         <option value="">Select Sub Type</option>
                     </select>
-                </div>
-                <div class="col-sm-2 mb-3">
+                </div> -->
+                <div class="col-sm-3 mb-3">
                     <label for="uom" class="form-label">UOM</label>
                     <select class="form-select select2" aria-label="Default select UOM" id="uom" >
                         <option value="">Select UOM</option>
@@ -209,14 +209,14 @@
                     <div class="text-danger message mt-2">{{$message}}</div>
                     @enderror
                 </div>
-                <div class="col-sm-2 mb-3">
+                <div class="col-sm-3 mb-3">
                     <label for="amount" class="form-label">Amount</label>
                     <input type="text" class="form-control" id="amount" name="amount" placeholder="Adders Amount">
                     @error("amount")
                     <div class="text-danger message mt-2">{{$message}}</div>
                     @enderror
                 </div>
-                <div class="col-sm-2 mt-5">
+                <div class="col-sm-3 mt-5">
                     <button type="button" id="btnAdder" class="btn btn-primary"><i class="icofont-save me-2 fs-6"></i>Add</button>
                 </div>
             </div>
@@ -226,7 +226,7 @@
                     <tr>
                         <th>No.</th>
                         <th>Adder</th>
-                        <th>Sub Adders</th>
+                        <!-- <th>Sub Adders</th> -->
                         <th>Unit</th>
                         <th>Amount</th>
                         <th>Actions</th>
@@ -467,40 +467,40 @@
         $("#commission").val(commission.toFixed(2));
     }
 
-    $("#adders").change(function() {
-        if ($(this).val() != "") {
-            $.ajax({
-                method: "POST",
-                url: "{{ route('get.sub.adders') }}",
-                data: {
-                    _token: "{{ csrf_token() }}",
-                    id: $(this).val(),
-                },
-                dataType: 'json',
-                success: function(response) {
-                    $('#sub_type').empty();
-                    $('#sub_type').append($('<option value="">Select Loan Apr</soption>'));
-                    $.each(response.subadders, function(i, subtype) {
-                        $('#sub_type').append($('<option  value="' + subtype.id + '">' + subtype.name + '</option>'));
-                    });
-                    calculateCommission()
-                },
-                error: function(error) {
-                    console.log(error.responseJSON.message);
-                }
-            })
-        }
-    })
+    // $("#adders").change(function() {
+    //     if ($(this).val() != "") {
+    //         $.ajax({
+    //             method: "POST",
+    //             url: "{{ route('get.sub.adders') }}",
+    //             data: {
+    //                 _token: "{{ csrf_token() }}",
+    //                 id: $(this).val(),
+    //             },
+    //             dataType: 'json',
+    //             success: function(response) {
+    //                 $('#sub_type').empty();
+    //                 $('#sub_type').append($('<option value="">Select Loan Apr</soption>'));
+    //                 $.each(response.subadders, function(i, subtype) {
+    //                     $('#sub_type').append($('<option  value="' + subtype.id + '">' + subtype.name + '</option>'));
+    //                 });
+    //                 calculateCommission()
+    //             },
+    //             error: function(error) {
+    //                 console.log(error.responseJSON.message);
+    //             }
+    //         })
+    //     }
+    // })
 
-    $("#sub_type").change(function() {
+    $("#adders").change(function() {
         if ($(this).val() != "") {
             $.ajax({
                 method: "POST",
                 url: "{{ route('get.adders') }}",
                 data: {
                     _token: "{{ csrf_token() }}",
-                    subadder: $(this).val(),
-                    adder: $("#adders").val(),
+                    // subadder: $(this).val(),
+                    adder: $(this).val(),
                 },
                 dataType: 'json',
                 success: function(response) {
@@ -519,10 +519,10 @@
 
         let rowLength = $('#adderTable tbody').find('tr').length;
         let adders_id = $("#adders").val();
-        let subadder_id = $("#sub_type").val();
+        // let subadder_id = $("#sub_type").val();
         let unit_id = $("#uom").val();
         let adders_name = $.trim($("#adders option:selected").text());
-        let subadder_name = $.trim($("#sub_type option:selected").text());
+        // let subadder_name = $.trim($("#sub_type option:selected").text());
         let unit_name = $.trim($("#uom option:selected").text());
         let amount = $("#amount").val();
         if (unit_id == 3) {
@@ -530,18 +530,18 @@
             let panelQty = $('#panel_qty').val();
             amount = amount * moduleQty ;//* panelQty;
         }
-        let result = checkExistence(adders_id, subadder_id, unit_id);
+        let result = checkExistence(adders_id, unit_id);
         if (result == false) {
             let newRow = "<tr id='row" + (rowLength + 1) + "'>" +
                 '<input type="hidden" value="' + adders_id + '" name="adders[]" />' +
-                '<input type="hidden" value="' + subadder_id + '" name="subadders[]" />' +
+                // '<input type="hidden" value="' + subadder_id + '" name="subadders[]" />' +
                 '<input type="hidden" value="' + unit_id + '" name="uom[]" />' +
                 '<input type="hidden" value="' + amount + '" name="amount[]" />' +
 
 
                 "<td>" + (rowLength + 1) + "</td>" +
                 "<td>" + adders_name + "</td>" +
-                "<td>" + subadder_name + "</td>" +
+                // "<td>" + subadder_name + "</td>" +
                 "<td>" + unit_name + "</td>" +
                 "<td>" + amount + "</td>" +
 
@@ -570,21 +570,21 @@
         calculateCommission();
     }
 
-    function editItem(id, addersId, subAdderId, uomId, amount) {
+    function editItem(id, addersId, uomId, amount) { //subAdderId
         $("#adders").val(addersId).change();
-        $("#sub_type").val(subAdderId).change()
+        // $("#sub_type").val(subAdderId).change()
         $("#uom").val(uomId).change();
         $("#amount").val(amount).change();
 
     }
-
-    function checkExistence(firstval, secondval, thirdval) {
+    //secondval
+    function checkExistence(firstval, thirdval) {
         let result = false;
         $("#adderTable tbody tr").each(function(index) {
             let first = $(this).children().eq(0).val();
-            let second = $(this).children().eq(1).val();
+            // let second = $(this).children().eq(1).val();
             let third = $(this).children().eq(2).val();
-            if (firstval == first && secondval == second && thirdval == third) {
+            if (firstval == first  && thirdval == third) { //&& secondval == second
                 result = true;
             } else {
                 result = false;
@@ -596,14 +596,14 @@
     function calculateAddersAmount() {
         let adders_amount = 0;
         $("#adderTable tbody tr").each(function(index) {
-            adders_amount += $(this).children().eq(8).text() * 1;
+            adders_amount += $(this).children().eq(6).text() * 1;
         });
         $("#adders_amount").val(adders_amount);
     }
 
     function emptyControls() {
         $("#adders").val('').change();
-        $("#sub_type").val('').change();
+        // $("#sub_type").val('').change();
         $("#uom").val('').change();
         $("#amount").val('');
     }

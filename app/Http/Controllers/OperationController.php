@@ -152,10 +152,10 @@ class OperationController extends Controller
     public function addersView(Request $request)
     {
         if ($request->id != "") {
-            $adder = Adder::with("type","subtype", "unit")->where("id", $request->id)->first();
+            $adder = Adder::with("type", "unit")->where("id", $request->id)->first();
         }
         return view("operations/adders/index", [
-            "adders" => Adder::with("type","subtype", "unit")->get(),
+            "adders" => Adder::with("type", "unit")->get(),
             "types" => AdderType::all(),
             "units" => AdderUnit::all(),
             "adder" => ($request->id != "" ? $adder : []),
@@ -165,11 +165,11 @@ class OperationController extends Controller
     public function addersStore(Request $request)
     {
         try {
-            $count = Adder::where("adder_type_id", $request->adder_type_id)->where("adder_sub_type_id", $request->adder_sub_type_id)->where("price", $request->price)->count();
+            $count = Adder::where("adder_type_id", $request->adder_type_id)->where("price", $request->price)->count();
             if ($count == 0) {
                 Adder::create([
                     "adder_type_id" => $request->adder_type_id,
-                    "adder_sub_type_id" => $request->adder_sub_type_id,
+                    // "adder_sub_type_id" => $request->adder_sub_type_id,
                     "adder_unit_id" => $request->adder_unit_id,
                     "price" => $request->price,
                 ]);
@@ -187,7 +187,7 @@ class OperationController extends Controller
         try {
             $adder = Adder::find($request->id);
             $adder->adder_type_id = $request->adder_type_id;
-            $adder->adder_sub_type_id = $request->adder_sub_type_id;
+            // $adder->adder_sub_type_id = $request->adder_sub_type_id;
             $adder->adder_unit_id = $request->adder_unit_id;
             $adder->price = $request->price;
             $adder->save();
@@ -206,6 +206,57 @@ class OperationController extends Controller
             return response()->json(["status" => 500]);
         }
     }
+
+    public function addersTypeView(Request $request)
+    {
+        if ($request->id != "") {
+            $adder = AdderType::where("id", $request->id)->first();
+        }
+        return view("operations/adder-type/index", [
+            "adders" => AdderType::all(),
+            "adder" => ($request->id != "" ? $adder : []),
+        ]);
+    }
+
+    public function addersTypeStore(Request $request)
+    {
+        try {
+            $count = AdderType::where("name", $request->name)->count();
+            if ($count == 0) {
+                AdderType::create([
+                    "name" => $request->name,
+                ]);
+                return redirect()->route("view.adder.types")->with("success", "Data Saved Successfully");
+            } else {
+                return redirect()->route("view.adder.types")->with("error", "Data already exists");
+            }
+        } catch (\Throwable $th) {
+            return redirect()->route("view.adder.types")->with("error", $th->getMessage());
+        }
+    }
+
+    public function addersTypeUpdate(Request $request)
+    {
+        try {
+            $adder = AdderType::find($request->id);
+            $adder->name = $request->name;
+            $adder->save();
+            return redirect()->route("view.adder.types");
+        } catch (\Throwable $th) {
+            return redirect()->route("view.adder.types")->with('error', $th->getMessage());
+        }
+    }
+
+    public function addersTypeDelete(Request $request)
+    {
+        try {
+            AdderType::where("id", $request->id)->delete();
+            return response()->json(["status" => 200]);
+        } catch (\Throwable $th) {
+            return response()->json(["status" => 500]);
+        }
+    }
+
 
     public function getSubTypes(Request $request)
     {

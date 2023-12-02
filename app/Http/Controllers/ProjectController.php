@@ -39,6 +39,7 @@ class ProjectController extends Controller
         if (auth()->user()->getRoleNames()[0] == "Manager" || auth()->user()->getRoleNames()[0] == "Employee") {
             $query->whereIn("id", EmployeeDepartment::whereIn("employee_id", Employee::where("user_id", auth()->user()->id)->pluck("id"))->pluck("department_id"));
         }
+        $query->where("id","!=",9);
         return $query->get();
     }
 
@@ -442,7 +443,7 @@ class ProjectController extends Controller
         $subdepartmentsQuery = SubDepartment::with("department");
         if (auth()->user()->getRoleNames()[0] == "Sales Person") {
             $query->whereHas("customer", function ($query) {
-                $query->where("sales_partner_id", auth()->user()->id);
+                $query->where("sales_partner_id", auth()->user()->sales_partner_id);
             });
         } else if (auth()->user()->getRoleNames()[0] == "Manager") {
             $query->whereIn("department_id", EmployeeDepartment::whereIn("employee_id", Employee::where("user_id", auth()->user()->id)->pluck("id"))->pluck("department_id"));

@@ -14,7 +14,7 @@ return new class extends Migration
         Schema::create('adders', function (Blueprint $table) {
             $table->id();
             $table->integer("adder_type_id");
-            $table->integer("adder_sub_type_id");
+            // $table->integer("adder_sub_type_id");
             $table->integer("adder_unit_id");
             $table->double("price",18,2)->nullable();
             $table->softDeletes();

@@ -100,6 +100,25 @@
                         @enderror
                     </div>
                 </div>
+                <div class="col-sm-3" id="salesPartnerDiv" style="{{!empty($user) && $user->user_type_id == 3 ? 'display:block' : 'display:none'}}">
+                    <div class="form-group">
+                        <label>Sales Partner</label>
+                        <select id="sales_partner_id" name="sales_partner_id" class="form-control select2 @error('sales_partner_id') is-invalid @enderror" style="width: 100%;">
+                            <option value="">Select Partner</option>
+                            @foreach ($partners as $partner)
+                            <option {{!empty($user) && $partner->id == $user->sales_partner_id  ? "selected" : ""}} value="{{ $partner->id }}">
+                                {{ $partner->name }}
+                            </option>
+
+                            @endforeach
+                        </select>
+                        @error('sales_partner_id')
+                        <span class="invalid-feedback" role="alert">
+                            <strong>{{ $message }}</strong>
+                        </span>
+                        @enderror
+                    </div>
+                </div>
 
                 <div class="col-sm-4">
                     <div class="form-group">
@@ -120,6 +139,7 @@
                         @enderror
                     </div>
                 </div>
+                
                 <div class="col-sm-4 mb-2">
                     <div class="form-group">
                         <label for="formFileMultipleoneone" class="form-label">Image</label>
@@ -180,4 +200,16 @@
         </table>
     </div>
 </div>
+@endsection
+
+@section("scripts")
+<script type="text/javascript">
+    $("#user_type_id").change(function(){
+        if ($(this).val() == 3) {
+            $("#salesPartnerDiv").css("display","block")
+        }else{
+            $("#salesPartnerDiv").css("display","none")
+        }
+    })
+</script>
 @endsection

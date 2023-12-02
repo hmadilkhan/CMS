@@ -35,7 +35,7 @@
                     <div class="text-danger message mt-2">{{$message}}</div>
                     @enderror
                 </div>
-                <div class="col-sm-4">
+                <!-- <div class="col-sm-4">
                     <label class="form-label">Sub Types</label>
                     <select class="form-select select2" aria-label="Default select Sub Type" id="adder_sub_type_id" name="adder_sub_type_id">
                         <option value="">Select Sub Type</option>
@@ -43,7 +43,7 @@
                     @error("adder_sub_type_id")
                     <div class="text-danger message mt-2">{{$message}}</div>
                     @enderror
-                </div>
+                </div> -->
                 <div class="col-sm-4">
                     <label class="form-label">Units</label>
                     <select class="form-select select2" aria-label="Default select Unit" id="adder_unit_id" name="adder_unit_id">
@@ -94,7 +94,7 @@
                 <tr>
                     <th>No.</th>
                     <th>Type</th>
-                    <th>Sub Type</th>
+                    <!-- <th>Sub Type</th> -->
                     <th>Unit</th>
                     <th>Price</th>
                     <th>Actions</th>
@@ -105,7 +105,7 @@
                 <tr>
                     <td>{{ ++$key }}</td>
                     <td>{{ $adderList->type->name }}</td>
-                    <td>{{$adderList->subtype->name}}</td>
+                    {{--<td>{{$adderList->subtype->name}}</td>--}}
                     <td>{{ $adderList->unit->name }}</td>
                     <td>{{ $adderList->price }}</td>
                     <td class="text-center">
@@ -163,33 +163,30 @@
             }
         });
     }
-    $("#adder_type_id").change(function() {
-        getSubTypes();
-    });
+    // $("#adder_type_id").change(function() {
+    //     getSubTypes();
+    // });
 
-    function getSubTypes()
-    {
-        let adder_sub_type_id = "{{!empty($adder) ? $adder->adder_sub_type_id: ''}}";
-        $.ajax({
-            method: "POST",
-            url: "{{ route('get.sub.types') }}",
-            data: {
-                _token: "{{csrf_token()}}",
-                id: $("#adder_type_id").val()
-            },
-            success: function(response) {
-                console.log(response);
-                $("#adder_sub_type_id").empty();
-                if (response.status == 200) {
-                    $.each(response.subtypes, function(index, item) {
-                        $('#adder_sub_type_id').append($('<option '+(adder_sub_type_id != "" && adder_sub_type_id ==  item.id ? 'selected' : '')+' value="' + item.id + '">' + item.name + '</option>'));
-                    });
-                }
-            }
-        });
-    }
-    @if(!empty($adder))
-        getSubTypes()
-    @endif
+    // function getSubTypes()
+    // {
+    //     let adder_sub_type_id = "{{!empty($adder) ? $adder->adder_sub_type_id: ''}}";
+    //     $.ajax({
+    //         method: "POST",
+    //         url: "{{ route('get.sub.types') }}",
+    //         data: {
+    //             _token: "{{csrf_token()}}",
+    //             id: $("#adder_type_id").val()
+    //         },
+    //         success: function(response) {
+    //             console.log(response);
+    //             $("#adder_sub_type_id").empty();
+    //             if (response.status == 200) {
+    //                 $.each(response.subtypes, function(index, item) {
+    //                     $('#adder_sub_type_id').append($('<option '+(adder_sub_type_id != "" && adder_sub_type_id ==  item.id ? 'selected' : '')+' value="' + item.id + '">' + item.name + '</option>'));
+    //                 });
+    //             }
+    //         }
+    //     });
+    // }
 </script>
 @endsection

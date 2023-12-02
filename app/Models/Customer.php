@@ -29,9 +29,14 @@ class Customer extends Model
         return $this->belongsTo(InverterType::class,"inverter_type_id","id");
     }
 
+    // public function salespartner()
+    // {
+    //     return $this->belongsTo(User::class,"sales_partner_id","id");
+    // }
+
     public function salespartner()
     {
-        return $this->belongsTo(User::class,"sales_partner_id","id");
+        return $this->belongsTo(SalesPartner::class,"sales_partner_id","id");
     }
 
     public function project()
@@ -52,7 +57,7 @@ class Customer extends Model
     public function scopeGetCustomers($query) 
     {
         if ($this->getRoleName() == "Sales Person") {
-            return $query->where("sales_partner_id",auth()->user()->id);
+            return $query->where("sales_partner_id",auth()->user()->sales_partner_id);
         }
         
     }

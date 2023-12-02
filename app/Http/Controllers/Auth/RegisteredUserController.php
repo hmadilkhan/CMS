@@ -3,17 +3,14 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
+use App\Models\SalesPartner;
 use App\Models\User;
 use App\Models\UserType;
-use App\Providers\RouteServiceProvider;
 use Illuminate\Auth\Events\Registered;
-use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rules;
-use Illuminate\View\View;
 use Spatie\Permission\Models\Role;
 use App\Traits\MediaTrait;
 
@@ -31,6 +28,7 @@ class RegisteredUserController extends Controller
             "rolenames" =>  ($request->id != "" ? $this->getRoleNames($request->id) : []),
             "users" => User::with("type")->get(),
             "types" => UserType::all(),
+            "partners" => SalesPartner::all(),
         ]);
     }
 
@@ -63,6 +61,7 @@ class RegisteredUserController extends Controller
             'password' => Hash::make($request->password),
             'username' => $request->username,
             'user_type_id' => $request->user_type_id,
+            'sales_partner_id' => $request->sales_partner_id,
             'phone' => $request->phone,
             'image' => (!empty($result) ? $result["fileName"] : ""),
         ]);
@@ -78,6 +77,7 @@ class RegisteredUserController extends Controller
             'name' => $request->name,
             'email' => $request->email,
             'user_type_id' => $request->user_type_id,
+            'sales_partner_id' => $request->sales_partner_id,
             'phone' => $request->phone,
             "image" => (!empty($result) ? $result["fileName"] : $request->previous_logo),
         ]);

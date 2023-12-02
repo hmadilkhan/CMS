@@ -23,4 +23,12 @@ class AuroraService
         ])
         ->get("https://api.aurorasolar.com/tenants/04310f24-7edd-4f58-bc7a-60a90532afda/projects/f2aac222-a7cb-434f-8936-97f894fca42f/agreements");
     }
+
+    public function test()
+    {
+        return Http::post("https://testsolencrm.com/api/get-signed-project",[
+            "id" => 1,
+            "name" => "Aurora"
+        ]);
+    }
 }

@@ -10,7 +10,7 @@ class AuroraController extends Controller
 {
     public function index(AuroraService $auroraService)
     {
-        return $auroraService->getProjectAgreements();
+        return $auroraService->test();
     }
 
     public function saveProject(Request $request)

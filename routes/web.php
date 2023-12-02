@@ -136,6 +136,12 @@ Route::middleware('auth')->group(function () {
          Route::post('/adders-update', 'addersUpdate')->name("adders.update");
          Route::post('/adders-delete', 'addersDelete')->name("adders.delete");
          Route::post('/get-sub-types', 'getSubTypes')->name("get.sub.types");
+
+         // ADDERS TYPE VIEW
+         Route::get('/view-adder-type/{id?}', 'addersTypeView')->name("view.adder.types");
+         Route::post('/adder-type-store', 'addersTypeStore')->name("adder.type.store");
+         Route::post('/adders-type-update', 'addersTypeUpdate')->name("adder.type.update");
+         Route::post('/adders-type-delete', 'addersTypeDelete')->name("adder.type.delete");
     });
 
     Route::controller(InverterTypeController::class)->group(function () {
