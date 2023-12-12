@@ -1,6 +1,6 @@
 <!-- Body: Header -->
 <div class="header">
-    <nav class="navbar py-4">
+   {{-- <nav class="navbar py-4">
         <div class="container-xxl">
 
             <!-- header rightbar icon -->
@@ -58,5 +58,5 @@
             </div>
 
         </div>
-    </nav>
+    </nav>--}}
 </div>

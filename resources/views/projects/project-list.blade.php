@@ -1,11 +1,3 @@
-<style>
-    .custom-card-body {
-        min-height: 300px;
-        min-width: 100px;
-        margin-right: 5px;
-    }
-</style>
-
 @foreach($subdepartments as $subdepartment)
 <div class="container-fluid py-2">
     <div class="card border-0 mb-4 no-bg">
@@ -19,24 +11,19 @@
         })->values(); @endphp
         @if(count($collections) > 0)
         @foreach($collections as $project)
-        <div class="col-xxl-4 col-xl-4 col-lg-4 col-md-4 col-sm-4 " style="margin-right: 5px;">
+        <div class="col-xxl-3 col-xl-3 col-lg-3 col-md-3 col-sm-3 border border-dark border-rounded border-2 " style="margin-right: 5px;cursor:pointer;" onclick="showProject('{{$project->id}}')" >
             <div class="card">
                 <div class="card-body">
-                    <div class="d-flex align-items-center justify-content-between profile-av pe-xl-4 pe-md-2 pe-sm-4 pe-4 w220">
+                    <div class="d-flex align-items-center justify-content-between profile-av pe-xl-4 pe-md-4 pe-sm-4 pe-4 ">
                         <img src="{{($project->customer->salespartner->image != '' ? (asset('storage/users/'.$project->customer->salespartner->image)) : (asset('assets/images/profile_av.png')))}}" alt="" class="avatar xl rounded-circle img-thumbnail shadow-sm">
+                        <h3 class="mb-0 fw-bold  fs-6 " style="margin-left:7px;">{{$project->project_name}}</h3>
                     </div>
-                    <h6 class="mb-0 fw-bold d-block fs-6 mt-2">{{$project->department->name}}</h6>
-                    <div class="d-flex align-items-center justify-content-between mt-1">
-                        <div class="lesson_name">
-                        </div>
-                    </div>
-
                     <div class="row g-2 pt-4">
-                        <div class="col-12 d-flex align-items-center">
+                        {{--<div class="col-12 d-flex align-items-center">
                             <div class="">
                                 <h3 class="mb-0 fw-bold  fs-6  mb-2">{{$project->project_name}}</h3>
                             </div>
-                        </div>
+                        </div>--}}
                         <div class="col-6">
                             <div class="d-flex align-items-center">
                                 <i class="icofont-ui-calendar"></i>
@@ -75,20 +62,13 @@
                         <div class="col-12">
                             <h4 class="small fw-bold mb-2 mt-2">Progress</h4>
                             <div class="progress">
-                                <div class="progress-bar" role="progressbar" style="width: {{$project->department_id/8*100}}%;" aria-valuenow="{{$project->department_id/8*100}}" aria-valuemin="0" aria-valuemax="100">{{$project->department_id/8*100}}%</div>
+                                <div class="progress-bar p-2" role="progressbar" style="width: {{$project->department_id/8*100}}%;" aria-valuenow="{{$project->department_id/8*100}}" aria-valuemin="0" aria-valuemax="100">{{$project->department_id/8*100}}%</div>
                             </div>
                         </div>
                     </div>
 
-                    <div class="dividers-block"></div>
-                    <div class="d-flex align-items-center justify-content-between mb-2">
-                        <a href="{{route('projects.show',$project->id)}}" class="btn btn-dark btn-set-task w-sm-100"><i class="icofont-eye me-2 fs-6"></i>Details</a>
-                    </div>
-                    <hr/>
-                    <h6 class="mb-0 fw-bold d-block fs-6 mt-2">Project Notes</h6>
-                    <hr/>
                     @if(!empty($project->notes))
-                    <ul class="list-group list-group-flush">
+                    <ul class="list-group list-group-flush fs-6">
                         @if($project->notes->assign_to_notes != "")
                         <li class="list-group-item">{{$project->notes->assign_to_notes}}</li>
                         @endif
@@ -98,6 +78,7 @@
                 </div>
             </div>
         </div>
+  
         @endforeach
         @else
         <div class="col-xxl-12 col-xl-12 col-lg-12 col-md-12 col-sm-12 ">
@@ -180,6 +161,11 @@
             }
         })
     });
+
+    function showProject(id)
+    {
+        window.open("{{url('projects')}}"+"/"+id)
+    }
 </script>
 <!-- <div class="row g-3 gy-5 py-3 row-deck">
     @foreach($projects as $project)

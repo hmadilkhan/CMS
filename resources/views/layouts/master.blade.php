@@ -55,6 +55,7 @@
                     className: 'dt-body-right'
                 }]
             });
+        $(".sidebar").addClass("sidebar-mini")
     </script>
     @yield("scripts")
 </body>

@@ -1,6 +1,6 @@
 <div class="sidebar px-4 py-4 py-md-5 me-0">
     <div class="d-flex flex-column h-100">
-        <a href="index.html" class="mb-0 brand-icon">
+        <a href="{{route('dashboard')}}" class="mb-0 brand-icon">
             <span class="logo-icon">
                 <svg width="35" height="35" fill="currentColor" class="bi bi-clipboard-check" viewBox="0 0 16 16">
                     <path fill-rule="evenodd" d="M10.854 7.146a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708 0l-1.5-1.5a.5.5 0 1 1 .708-.708L7.5 9.793l2.646-2.647a.5.5 0 0 1 .708 0z" />
@@ -8,8 +8,9 @@
                     <path d="M9.5 1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-3a.5.5 0 0 1-.5-.5v-1a.5.5 0 0 1 .5-.5h3zm-3-1A1.5 1.5 0 0 0 5 1.5v1A1.5 1.5 0 0 0 6.5 4h3A1.5 1.5 0 0 0 11 2.5v-1A1.5 1.5 0 0 0 9.5 0h-3z" />
                 </svg>
             </span>
-            <span class="logo-text">CRM</span>
+            <span class="logo-text">{{auth()->user()->name}}</span>
         </a>
+        <small >{{auth()->user()->name}}</small>
         <!-- Menu: main ul -->
 
         <ul class="menu-list flex-grow-1 mt-3">
@@ -92,6 +93,12 @@
                 </a>
             </li>
             @endcan
+
+            <li class="collapsed">
+                <a class="m-link " href="{{route('profile.logout')}}">
+                    <i class="icofont-logout fs-5"></i> <span>Logout</span> <span class=" ms-auto text-end fs-5"></span>
+                </a>
+            </li>
         </ul>
 
 
