@@ -456,6 +456,9 @@ class ProjectController extends Controller
             $query->where("department_id", $request->id);
             $subdepartmentsQuery->where("department_id", $request->id);
         }
+        if ($request->id == "all") {
+            $subdepartmentsQuery->groupBy("department_id");
+        }
         return [
             "projects" => $query->get(),
             "subdepartments" => $subdepartmentsQuery->get(),
