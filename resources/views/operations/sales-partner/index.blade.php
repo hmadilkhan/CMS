@@ -17,9 +17,10 @@
     </div>
     <div class="card-body">
         <!-- ADD NEW PRODUCT PART START -->
-        <form method="POST" action="{{ !empty($partner) ? route('sales.partner.update',$partner->id) :  route('sales.partner.store') }}">
+        <form method="POST" action="{{ !empty($partner) ? route('sales.partner.update',$partner->id) :  route('sales.partner.store') }}" enctype="multipart/form-data">
             @csrf
             <input type="hidden" name="id" value="{{ !empty($partner) ? $partner->id : '' }}" />
+            <input type="hidden" name="previous_logo" value="{{ !empty($partner) ? $partner->image : '' }}" />
             <div class="row g-3  mb-3 align-items-center">
                
                 <div class="col-sm-4 ">
@@ -32,6 +33,12 @@
                     </span>
                     @enderror
                     <!-- </div> -->
+                </div>
+                <div class="col-sm-4 mb-2">
+                    <div class="form-group">
+                        <label for="formFileMultipleoneone" class="form-label">Image</label>
+                        <input class="form-control" type="file" id="formFileMultipleoneone" name="file">
+                    </div>
                 </div>
                 <div class="col-4 mt-3">
                     <label></label>
@@ -57,6 +64,7 @@
             <thead>
                 <tr>
                     <th>No.</th>
+                    <th>Image</th>
                     <th>Name</th>
                     <th>Actions</th>
                 </tr>
@@ -65,6 +73,7 @@
                 @foreach ($partners as $key => $partnerList)
                 <tr>
                     <td>{{ ++$key }}</td>
+                    <td><img width="50" height="50" class="rounded" src="{{($partnerList->image != '' ? asset('storage/salespartners/'.$partnerList->image) : (asset('assets/images/profile_av.png')))}}"/></td>
                     <td>{{ $partnerList->name }}</td>
                     <td class="text-center">
                         <a style="cursor: pointer;" data-toggle="tooltip" title="Edit" href="{{ route('sales.partner.types',$partnerList->id)}}">

@@ -55,6 +55,11 @@
                     className: 'dt-body-right'
                 }]
             });
+        $(".sidebar").hover(function(){
+            $(".sidebar").removeClass("sidebar-mini")
+        },function(){
+            $(".sidebar").addClass("sidebar-mini")
+        })
         $(".sidebar").addClass("sidebar-mini")
     </script>
     @yield("scripts")

@@ -15,7 +15,7 @@
             <div class="card">
                 <div class="card-body">
                     <div class="d-flex align-items-center  profile-av pe-xl-4 pe-md-4 pe-sm-4 pe-4 ">
-                        <img src="{{($project->customer->salespartner->image != '' ? (asset('storage/users/'.$project->customer->salespartner->image)) : (asset('assets/images/profile_av.png')))}}" alt="" class="avatar lg rounded-circle img-thumbnail shadow-sm">
+                        <img src="{{($project->customer->salespartner->image != '' ? (asset('storage/salespartners/'.$project->customer->salespartner->image)) : (asset('assets/images/profile_av.png')))}}" alt="" class="avatar lg rounded-circle img-thumbnail shadow-sm">
                         <h3 class="mb-0 fw-bold fs-6 mx-3">{{$project->project_name}}</h3>
                     </div>
                     <div class="row g-2 pt-4">
@@ -164,7 +164,7 @@
 
     function showProject(id)
     {
-        window.open("{{url('projects')}}"+"/"+id)
+        window.location.href = "{{url('projects')}}"+"/"+id;
     }
 </script>
 <!-- <div class="row g-3 gy-5 py-3 row-deck">

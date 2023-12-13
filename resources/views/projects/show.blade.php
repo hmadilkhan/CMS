@@ -35,7 +35,7 @@
         <div class="card">
             <div class="card-body">
                 <ul class="nav nav-tabs px-3 border-bottom-0" role="tablist">
-                    <li class="nav-item"><a class="nav-link active" data-bs-toggle="tab" href="#default" role="tab">Default</a></li>
+                    <li class="nav-item"><a class="nav-link active" data-bs-toggle="tab" href="#default" role="tab">Action Menu</a></li>
                     <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#customer" role="tab">Customer</a></li>
                     <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#salespartner" role="tab">Sales Partner</a></li>
                     <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#adders" role="tab">Adders</a></li>

@@ -12,12 +12,13 @@ use App\Models\InverterTypeRate;
 use App\Models\LoanApr;
 use App\Models\LoanTerm;
 use App\Models\SalesPartner;
+use App\Traits\MediaTrait;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\Request;
 
 class OperationController extends Controller
 {
-
+    use MediaTrait;
     public function changeRedlineCostView(Request $request)
     {
         return view("operations/redline/redlinecostchange", [
@@ -284,8 +285,10 @@ class OperationController extends Controller
         try {
             $count = SalesPartner::where("name", $request->name)->count();
             if ($count == 0) {
+                $result = $this->uploads($request->file, 'salespartners/',"");
                 SalesPartner::create([
                     "name" => $request->name,
+                    'image' => (!empty($result) ? $result["fileName"] : ""),
                 ]);
                 return redirect()->route("sales.partner.types")->with("success", "Data Saved Successfully");
             } else {
@@ -299,8 +302,10 @@ class OperationController extends Controller
     public function salesPartnerUpdate(Request $request)
     {
         try {
+            $result = $this->uploads($request->file, 'salespartners/', $request->previous_logo);
             $salesPartner = SalesPartner::find($request->id);
             $salesPartner->name = $request->name;
+            $salesPartner->image = (!empty($result) ? $result["fileName"] : $request->previous_logo);
             $salesPartner->save();
             return redirect()->route("sales.partner.types");
         } catch (\Throwable $th) {
