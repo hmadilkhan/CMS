@@ -289,6 +289,8 @@ class OperationController extends Controller
                 SalesPartner::create([
                     "name" => $request->name,
                     'image' => (!empty($result) ? $result["fileName"] : ""),
+                    "email" => $request->email,
+                    "phone" => $request->phone,
                 ]);
                 return redirect()->route("sales.partner.types")->with("success", "Data Saved Successfully");
             } else {
@@ -305,6 +307,8 @@ class OperationController extends Controller
             $result = $this->uploads($request->file, 'salespartners/', $request->previous_logo);
             $salesPartner = SalesPartner::find($request->id);
             $salesPartner->name = $request->name;
+            $salesPartner->email = $request->email;
+            $salesPartner->phone = $request->phone;
             $salesPartner->image = (!empty($result) ? $result["fileName"] : $request->previous_logo);
             $salesPartner->save();
             return redirect()->route("sales.partner.types");

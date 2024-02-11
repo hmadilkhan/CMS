@@ -75,6 +75,7 @@ class CustomerController extends Controller
             // 'adders' => 'required',
             'commission' => 'required',
             'dealer_fee' => 'required',
+            'sales_partner_user_id' => 'required',
         ]);
 
         try {
@@ -133,6 +134,7 @@ class CustomerController extends Controller
                 "sub_department_id" => $subdepartment->id,
                 "description" =>  $request->notes,
                 "office_cost" => (!empty($officeCost) ? $officeCost->cost : ""),
+                "sales_partner_user_id" => $request->sales_partner_user_id,
             ]);
             Task::create([
                 "project_id" => $project->id,
@@ -165,12 +167,13 @@ class CustomerController extends Controller
         return view("customer.edit", [
             "customer" => $customer,
             "financeoptions" => FinanceOption::all(),
-            "partners" =>  User::filterByRole('Sales Person')->get(),
+            "partners" =>  SalesPartner::all(),
             "inverter_types" => InverterType::all(),
             "battery_types" => BatteryType::all(),
             "modules" => ModuleType::all(),
             "adders" => AdderType::all(),
             "uoms" => AdderUnit::all(),
+            "users" => User::where("sales_partner_id", $customer->sales_partner_id)->get(),
         ]);
     }
 
@@ -207,7 +210,7 @@ class CustomerController extends Controller
                         $customer->adders()->create([
                             "customer_id" => $customer->id,
                             "adder_type_id" => $request->adders[$i],
-                            "adder_sub_type_id" => $request->subadders[$i],
+                            // "adder_sub_type_id" => $request->subadders[$i],
                             "adder_unit_id" => $request->uom[$i],
                             "amount" => $request->amount[$i],
                         ]);
@@ -226,6 +229,11 @@ class CustomerController extends Controller
                 "dealer_fee" => $request->dealer_fee,
                 "dealer_fee_amount" => $request->dealer_fee_amount,
             ]);
+            if ($request->sales_partner_user_id != "") {
+                $customer->project()->update([
+                    "sales_partner_user_id" => $request->sales_partner_user_id
+                ]);
+            }
             DB::commit();
             return redirect()->route("customers.index");
         } catch (\Throwable $th) {
@@ -318,6 +326,16 @@ class CustomerController extends Controller
         try {
             $types = ModuleType::where("id", $request->id)->first();
             return response()->json(["status" => 200, "types" => $types]);
+        } catch (\Throwable $th) {
+            return response()->json(["status" => 200, "message" => $th->getMessage()]);
+        }
+    }
+
+    public function getSalesPartnerUsers(Request $request)
+    {
+        try {
+            $users = User::where("sales_partner_id", $request->id)->get();
+            return response()->json(["status" => 200, "users" => $users]);
         } catch (\Throwable $th) {
             return response()->json(["status" => 200, "message" => $th->getMessage()]);
         }

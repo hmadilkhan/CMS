@@ -95,12 +95,15 @@
                     @enderror
                 </div>
                 <div class="col-sm-4">
-                    <label for="code" class="form-label">Panel Qty</label>
-                    <input type="text" class="form-control" id="panel_qty" name="panel_qty" placeholder="Panel Qty" onblur="getRedlineCost()">
-                    @error("panel_qty")
+                    <label class="form-label">Sales Partner User</label>
+                    <select class="form-select select2" aria-label="Default select Sales Partner" id="sales_partner_user_id" name="sales_partner_user_id">
+                        <option value="">Select Sales Partner User</option>
+                    </select>
+                    @error("sales_partner_user_id")
                     <div class="text-danger message mt-2">{{$message}}</div>
                     @enderror
                 </div>
+
                 <div class="col-sm-4">
                     <label class="form-label">Module Type</label>
                     <select class="form-select select2" aria-label="Default select Module Type" id="module_type_id" name="module_type_id" onchange="getRedlineCost()">
@@ -131,7 +134,14 @@
                 </div>
 
                 <div class="col-sm-4">
-                    <!-- <label class="form-label">Battery Type</label>
+                    <label for="code" class="form-label">Panel Qty</label>
+                    <input type="text" class="form-control" id="panel_qty" name="panel_qty" placeholder="Panel Qty" onblur="getRedlineCost()">
+                    @error("panel_qty")
+                    <div class="text-danger message mt-2">{{$message}}</div>
+                    @enderror
+                </div>
+                <!-- <div class="col-sm-4"> -->
+                <!-- <label class="form-label">Battery Type</label>
                     <select class="form-select select2" aria-label="Default select Battery Type" id="battery_type_id" name="battery_type_id">
                         <option value="">Select Battery Type</option>
                         @foreach ($battery_types as $battery)
@@ -143,7 +153,7 @@
                     @error("battery_type_id")
                     <div class="text-danger message mt-2">{{$message}}</div>
                     @enderror -->
-                </div>
+                <!-- </div> -->
                 <div class="col-sm-4 mb-3">
                     <label for="exampleFormControlInput877" class="form-label">System Size</label>
                     <input type="text" class="form-control" id="module_qty" name="module_qty" placeholder="System Size">
@@ -197,7 +207,7 @@
                 </div> -->
                 <div class="col-sm-3 mb-3">
                     <label for="uom" class="form-label">UOM</label>
-                    <select class="form-select select2" aria-label="Default select UOM" id="uom" >
+                    <select class="form-select select2" aria-label="Default select UOM" id="uom">
                         <option value="">Select UOM</option>
                         @foreach ($uoms as $uom)
                         <option value="{{ $uom->id }}">
@@ -528,7 +538,7 @@
         if (unit_id == 3) {
             let moduleQty = $('#module_qty').val();
             let panelQty = $('#panel_qty').val();
-            amount = amount * moduleQty ;//* panelQty;
+            amount = amount * moduleQty; //* panelQty;
         }
         let result = checkExistence(adders_id, unit_id);
         if (result == false) {
@@ -584,7 +594,7 @@
             let first = $(this).children().eq(0).val();
             // let second = $(this).children().eq(1).val();
             let third = $(this).children().eq(2).val();
-            if (firstval == first  && thirdval == third) { //&& secondval == second
+            if (firstval == first && thirdval == third) { //&& secondval == second
                 result = true;
             } else {
                 result = false;
@@ -611,8 +621,7 @@
     // $("#module_type_id").change(function() {
     //     modulesType($(this).val());
     // });
-    function modulesType(id)
-    {
+    function modulesType(id) {
         if (id != "") {
             $("#inverter_type_id").prop("disabled", false)
             $.ajax({
@@ -634,5 +643,26 @@
             $("#inverter_type_id").prop("disabled", true)
         }
     }
+
+    $("#sales_partner_id").change(function() {
+        $('#sales_partner_user_id').empty();
+        $.ajax({
+            method: "POST",
+            url: "{{ route('get.salespartnets.users') }}",
+            data: {
+                _token: "{{ csrf_token() }}",
+                id: $(this).val(),
+            },
+            dataType: 'json',
+            success: function(response) {
+                $.each(response.users, function(i, user) {
+                    $('#sales_partner_user_id').append($('<option  value="' + user.id + '">' + user.name + '</option>'));
+                });
+            },
+            error: function(error) {
+                console.log(error.responseJSON.message);
+            }
+        })
+    })
 </script>
 @endsection

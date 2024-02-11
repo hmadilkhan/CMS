@@ -74,7 +74,7 @@ class EmployeeController extends Controller
                 'username' => $request->username,
                 'user_type_id' => 2, // 2 is for Employee
             ]);
-            $user->syncRoles($request->roles);
+            $user->assignRole($request->roles);
             // foreach ($request->roles as $key => $value) {
             //     $user->syncRoles($value);
             // }

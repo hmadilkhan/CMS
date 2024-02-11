@@ -39,7 +39,7 @@ class ProjectController extends Controller
         if (auth()->user()->getRoleNames()[0] == "Manager" || auth()->user()->getRoleNames()[0] == "Employee") {
             $query->whereIn("id", EmployeeDepartment::whereIn("employee_id", Employee::where("user_id", auth()->user()->id)->pluck("id"))->pluck("department_id"));
         }
-        $query->where("id","!=",9);
+        $query->where("id", "!=", 9);
         return $query->get();
     }
 
@@ -96,7 +96,7 @@ class ProjectController extends Controller
      */
     public function show(Project $project)
     {
-        $task = Task::whereIn("status", ["In-Progress", "Hold","Cancelled"])->where("project_id", $project->id)->first();
+        $task = Task::whereIn("status", ["In-Progress", "Hold", "Cancelled"])->where("project_id", $project->id)->first();
         $departments = Department::whereIn("id", Task::where("project_id", $project->id)->whereNotIn("department_id", Department::where("id", ">", $task->department_id)->take(1)->pluck("id"))->groupBy("department_id")->orderBy("department_id")->pluck("department_id"))->get();
         $fwdDepartments =  array_merge($departments->toArray(), Department::where("id", ">", $task->department_id)->take(1)->get()->toArray());
         // return Project::with("task", "customer", "department","logs", "subdepartment", "assignedPerson", "assignedPerson.employee")->where("id", $project->id)->first();
@@ -177,7 +177,7 @@ class ProjectController extends Controller
         ];
 
         if ($request->stage == "forward" && $request->forward != $project->department_id) {
-            
+
             $validationArray = array_merge($validationArray, [
                 'utility_company' => 'required_if:forward,2',
                 'ntp_approval_date' => 'required_if:forward,2',
@@ -245,14 +245,14 @@ class ProjectController extends Controller
         try {
             // $project = Project::findOrFail($request->id);
 
-            if ($request->stage == "forward" && $request->alreadyuploaded == 0 && ($project->department_id != $request->forward)) {
-                if (!empty($request->file)) {
-                    foreach ($request->file as $key => $file) {
-                        $result = $this->uploads($file, 'projects/');
-                        array_push($filesArray, $result);
-                    }
-                }
-            }
+            // if ($request->stage == "forward" && $request->alreadyuploaded == 0 && ($project->department_id != $request->forward)) {
+            //     if (!empty($request->file)) {
+            //         foreach ($request->file as $key => $file) {
+            //             $result = $this->uploads($file, 'projects/');
+            //             array_push($filesArray, $result);
+            //         }
+            //     }
+            // }
             DB::beginTransaction();
             if ($request->stage == "forward" && $request->forward == $project->department_id) {
                 $project->department_id = $request->forward;
@@ -271,35 +271,37 @@ class ProjectController extends Controller
                 DB::commit();
                 return redirect()->route("projects.index");
             }
-            if ($request->stage == "forward" && $request->alreadyuploaded == 0) {
+            // if ($request->stage == "forward" && $request->alreadyuploaded == 0) {
 
-                $task = Task::findOrFail($request->taskid);
-                if (!empty($request->file)) {
-                    foreach ($filesArray as $key => $file) {
-                        ProjectFile::create([
-                            "project_id" => $project->id,
-                            "task_id" => $task->id,
-                            "department_id" => $project->department_id,
-                            "filename" => $file["fileName"],
-                        ]);
-                    }
-                }
-                $logsCount = ProjectCallLog::where("project_id", $project->id)->where("department_id", $request->forward)->count();
-                if ($request->forward != 1 && $request->forward != 8 && $logsCount == 0) {
-                    ProjectCallLog::create([
-                        "project_id" => $project->id,
-                        "department_id" => $project->department_id,
-                        "call_no" => $request->call_no_1,
-                        "notes" => $request->notes_1,
-                    ]);
-                    ProjectCallLog::create([
-                        "project_id" => $project->id,
-                        "department_id" => $project->department_id,
-                        "call_no" => $request->call_no_2,
-                        "notes" => $request->notes_2,
-                    ]);
-                }
-            }
+                // $task = Task::findOrFail($request->taskid);
+                // if (!empty($request->file)) {
+                //     foreach ($filesArray as $key => $file) {
+                //         ProjectFile::create([
+                //             "project_id" => $project->id,
+                //             "task_id" => $task->id,
+                //             "department_id" => $project->department_id,
+                //             "filename" => $file["fileName"],
+                //         ]);
+                //     }
+                // }
+                /* THIS CODE IS COMMENTED HERE BECAUSE WE MAKE IT INDEPENDENT IN saveCallLogs FUNCTION */
+
+                // $logsCount = ProjectCallLog::where("project_id", $project->id)->where("department_id", $request->forward)->count();
+                // if ($request->forward != 1 && $request->forward != 8 && $logsCount == 0) {
+                //     ProjectCallLog::create([
+                //         "project_id" => $project->id,
+                //         "department_id" => $project->department_id,
+                //         "call_no" => $request->call_no_1,
+                //         "notes" => $request->notes_1,
+                //     ]);
+                //     ProjectCallLog::create([
+                //         "project_id" => $project->id,
+                //         "department_id" => $project->department_id,
+                //         "call_no" => $request->call_no_2,
+                //         "notes" => $request->notes_2,
+                //     ]);
+                // }
+            // }
             $updateItems = [
                 "department_id" => ($request->stage == "forward" ? $request->forward : $request->back),
                 "sub_department_id" => $request->sub_department,
@@ -387,6 +389,59 @@ class ProjectController extends Controller
         }
     }
 
+    public function saveCallLogs(Request $request)
+    {
+        try {
+            DB::beginTransaction();
+            $project = Project::findOrFail($request->id);
+            $logsCount = ProjectCallLog::where("project_id", $project->id)->where("department_id", $project->department_id)->count();
+            // if ($request->forward != 1 && $request->forward != 8 && $logsCount == 0) {
+            ProjectCallLog::create([
+                "project_id" => $project->id,
+                "department_id" => $project->department_id,
+                "call_no" => $request->call_no_1,
+                "notes" => $request->notes_1,
+            ]);
+            // }
+            DB::commit();
+            return redirect()->route("projects.show", $project->id);
+        } catch (\Throwable $th) {
+            DB::rollBack();
+            return $th->getMessage();
+        }
+    }
+
+    public function saveProjectFiles(Request $request)
+    {
+        $filesArray = [];
+        try {
+            DB::beginTransaction();
+            $project = Project::findOrFail($request->id);
+            if (!empty($request->file)) {
+                foreach ($request->file as $key => $file) {
+                    $result = $this->uploads($file, 'projects/');
+                    array_push($filesArray, $result);
+                }
+            }
+            $task = Task::findOrFail($request->taskid);
+            if (!empty($request->file)) {
+                foreach ($filesArray as $key => $file) {
+                    ProjectFile::create([
+                        "project_id" => $project->id,
+                        "task_id" => $task->id,
+                        "department_id" => $project->department_id,
+                        "filename" => $file["fileName"],
+                    ]);
+                }
+            }
+            DB::commit();
+            return redirect()->route("projects.show", $project->id);
+        } catch (\Throwable $th) {
+            DB::rollBack();
+            return $th->getMessage();
+        }
+    }
+
     public function assignTaskToEmployee(Request $request)
     {
 
@@ -431,8 +486,8 @@ class ProjectController extends Controller
         ]);
         try {
             Task::where("project_id", $request->project_id)
-            // ->where("status", "In-Progress")
-            ->update(["status" => $request->status, "notes" => $request->reason]);
+                // ->where("status", "In-Progress")
+                ->update(["status" => $request->status, "notes" => $request->reason]);
             return redirect()->route("projects.show", $request->project_id);
         } catch (\Throwable $th) {
             return redirect()->route("projects.show", $request->project_id);
@@ -444,9 +499,10 @@ class ProjectController extends Controller
         $query = Project::with("customer", "customer.salespartner", "department", "subdepartment", "assignedPerson", "assignedPerson.employee", "task", "notes");
         $subdepartmentsQuery = SubDepartment::with("department");
         if (auth()->user()->getRoleNames()[0] == "Sales Person") {
-            $query->whereHas("customer", function ($query) {
-                $query->where("sales_partner_id", auth()->user()->sales_partner_id);
-            });
+            $query->where("sales_partner_user_id",auth()->user()->id);
+            // $query->whereHas("customer", function ($query) {
+            //     $query->where("sales_partner_id", auth()->user()->sales_partner_id);
+            // });
         } else if (auth()->user()->getRoleNames()[0] == "Manager") {
             $query->whereIn("department_id", EmployeeDepartment::whereIn("employee_id", Employee::where("user_id", auth()->user()->id)->pluck("id"))->pluck("department_id"));
             $subdepartmentsQuery->whereIn("department_id", EmployeeDepartment::whereIn("employee_id", Employee::where("user_id", auth()->user()->id)->pluck("id"))->pluck("department_id"));
@@ -567,7 +623,7 @@ class ProjectController extends Controller
                 ]);
             }
         } catch (\Throwable $th) {
-           return $th->getMessage();
+            return $th->getMessage();
         }
     }
 }

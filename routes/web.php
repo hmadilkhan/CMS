@@ -104,10 +104,13 @@ Route::middleware('auth')->group(function () {
     Route::post('get-adders', [App\Http\Controllers\CustomerController::class, 'getAdderDetails'])->name('get.adders');
     Route::post('get-module-types', [App\Http\Controllers\CustomerController::class, 'getModulTypevalue'])->name('get.module.types');
     Route::post('delete-customer', [App\Http\Controllers\CustomerController::class, 'destroy'])->name('delete.customer');
+    Route::post('get-sales-partner-users', [App\Http\Controllers\CustomerController::class, 'getSalesPartnerUsers'])->name('get.salespartnets.users');
 
     Route::post('project-list', [App\Http\Controllers\ProjectController::class, 'getProjectList'])->name('projects.list');
     Route::post('get-sub-departments', [App\Http\Controllers\ProjectController::class, 'getSubDepartments'])->name('get.sub.departments');
     Route::post('projects-move', [App\Http\Controllers\ProjectController::class, 'projectMove'])->name('projects.move');
+    Route::post('project-call-logs', [App\Http\Controllers\ProjectController::class, 'saveCallLogs'])->name('projects.call.logs');
+    Route::post('save-project-files', [App\Http\Controllers\ProjectController::class, 'saveProjectFiles'])->name('projects.files');
     Route::post('projects-adders', [App\Http\Controllers\ProjectController::class, 'projectAdders'])->name('projects.adders');
     Route::post('projects-assign-to-employee', [App\Http\Controllers\ProjectController::class, 'assignTaskToEmployee'])->name('projects.assign');
     Route::post('projects-status', [App\Http\Controllers\ProjectController::class, 'projectStatus'])->name('projects.status');

@@ -38,8 +38,10 @@
                     <li class="nav-item"><a class="nav-link active" data-bs-toggle="tab" href="#default" role="tab">Action Menu</a></li>
                     <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#customer" role="tab">Customer</a></li>
                     <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#salespartner" role="tab">Sales Partner</a></li>
+                    @if(auth()->user()->getRoleNames()[0] == "Manager" or auth()->user()->getRoleNames()[0] == "Admin" or auth()->user()->getRoleNames()[0] == "Super Admin")
                     <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#adders" role="tab">Adders</a></li>
                     <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#financial" role="tab">FInancial</a></li>
+                    @endif
                 </ul>
             </div>
         </div>
@@ -151,60 +153,133 @@
             </div>
         </div>
         @can("Project Move")
-        <div class="card card-info mt-2">
-            <div class="card-body">
-                <div class="row clearfix">
-                    <div class="col-md-12">
-                        <div class="card border-0 mb-4 no-bg">
-                            <div class="card-header py-3 px-0 d-sm-flex align-items-center  justify-content-between border-bottom">
-                                <h3 class=" fw-bold flex-fill mb-0 mt-sm-0">Call Logs</h3>
+        <div class="row">
+            <div class="col-md-4">
+                <div class="card card-info mt-2">
+                    <div class="card-body">
+                        <div class="row clearfix">
+                            <div class="col-md-12">
+                                <div class="card border-0 mb-4 no-bg">
+                                    <div class="card-header py-3 px-0 d-sm-flex align-items-center  justify-content-between border-bottom">
+                                        <h3 class=" fw-bold flex-fill mb-0 mt-sm-0">Call Logs</h3>
+                                    </div>
+                                </div>
+                            </div>
+                            <form id="call-log-form" method="post" action="{{route('projects.call.logs')}}">
+                                @csrf
+                                <input type="hidden" name="id" value="{{$project->id}}">
+                                <input type="hidden" name="taskid" value="{{$task->id}}">
+
+                                <div class="row g-3 mb-3">
+                                    <div class="col-md-12">
+                                        <div class="col-sm-12 mb-3">
+                                            <label for="call_no" class="form-label">Select Call</label>
+                                            <select class="form-select select2" aria-label="Default Select call" id="call_no" name="call_no">
+                                                <option value="">Select Call</option>
+                                                <option {{old("call_no") != "" && old("call_no") == 'yes'  ? 'selected' : '' }} value="1">Call No 1</option>
+                                                <option {{old("call_no") != "" && old("call_no") == 'no'  ? 'selected' : '' }} value="2">Call No 2</option>
+                                            </select>
+                                            <div id="call_no_message" class="text-danger message mt-2"></div>
+                                        </div>
+                                        <div class="col-sm-12 mb-3">
+                                            <label for="call_no_1" class="form-label">Did You Call ?</label>
+                                            <select class="form-select select2" aria-label="Default select options" id="call_no_1" name="call_no_1">
+                                                <option value="">Select Options</option>
+                                                <option {{old("call_no_1") != "" && old("call_no_1") == 'yes'  ? 'selected' : '' }} value="yes">Yes</option>
+                                                <option {{old("call_no_1") != "" && old("call_no_1") == 'no'  ? 'selected' : '' }} value="no">Customer Not Responding</option>
+                                            </select>
+                                            <div id="call_no_1_message" class="text-danger message mt-2"></div>
+                                        </div>
+                                        <div class="col-sm-12 mb-3">
+                                            <label for="notes_1" class="form-label">Comments:</label>
+                                            <input type="text" class="form-control" id="notes_1" name="notes_1" value="{{old('notes_1')}}" />
+                                            <div id="notes_1_message" class="text-danger message mt-2"></div>
+                                        </div>
+
+                                    </div>
+                                    <!-- <div class="col-md-6">
+                                    <div class="col-sm-8 mb-3">
+                                        <label for="call_no_2" class="form-label">Call No 2</label>
+                                        <select class="form-select select2" aria-label="Default select Call No 1" id="call_no_2" name="call_no_2">
+                                            <option value="">Select Call</option>
+                                            <option {{old("call_no_2") != "" && old("call_no_2") == 'yes'  ? 'selected' : '' }} value="yes">Yes</option>
+                                            <option {{old("call_no_2") != "" && old("call_no_2") == 'no'  ? 'selected' : '' }} value="no">Customer Not Responding</option>
+                                        </select>
+                                        <div id="call_no_2_message" class="text-danger message mt-2"></div>
+                                    </div>
+                                    <div class="col-sm-8 mb-3">
+                                        <label for="notes_2" class="form-label">Comments:</label>
+                                        <input type="text" class="form-control" id="notes_2" name="notes_2" value="{{old('notes_2')}}" />
+                                        <div id="notes_2_message" class="text-danger message mt-2"></div>
+                                    </div>
+                                </div> -->
+                                    <div class="col-sm-12 mb-3">
+                                        <button type="button" class="btn btn-dark me-1 mt-1 w-sm-100" id="saveCallLogs"><i class="icofont-arrow-left me-2 fs-6"></i>Submit</button>
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- <div class="col-md-4">
+                <div class="card card-info mt-2">
+                    <div class="card-body">
+                        <div class="row clearfix">
+                            <div class="col-md-12">
+                                <div class="card border-0 mb-4 no-bg">
+                                    <div class="card-header py-3 px-0 d-sm-flex align-items-center  justify-content-between border-bottom">
+                                        <h3 class=" fw-bold flex-fill mb-0 mt-sm-0">Notes</h3>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
-                    <form id="form" method="post" action="{{route('projects.move')}}" enctype="multipart/form-data">
-                        @csrf
-                        <input type="hidden" name="id" value="{{$project->id}}">
-                        <input type="hidden" name="taskid" value="{{$task->id}}">
-                        <input type="hidden" name="length" value="{{$project->department->document_length}}">
-                        <input type="hidden" name="alreadyuploaded" value="{{count($filesCount)}}">
+                </div>
+            </div> -->
+            <div class="col-md-4">
+                <div class="card card-info mt-2">
+                    <div class="card-body">
+                        <div class="row clearfix">
+                            <div class="col-md-12">
+                                <div class="card border-0 mb-4 no-bg">
+                                    <div class="card-header py-3 px-0 d-sm-flex align-items-center  justify-content-between border-bottom">
+                                        <h3 class=" fw-bold flex-fill mb-0 mt-sm-0">Files</h3>
+                                    </div>
+                                </div>
+                            </div>.
+                            <form id="files-form" method="post" action="{{route('projects.files')}}" enctype="multipart/form-data">
+                                @csrf
+                                <input type="hidden" name="id" value="{{$project->id}}">
+                                <input type="hidden" name="taskid" value="{{$task->id}}">
 
-                        <div class="row g-3 mb-3">
-                            <div class="col-md-6">
-                                <div class="col-sm-8 mb-3">
-                                    <label for="call_no_1" class="form-label">Call No 1</label>
-                                    <select class="form-select select2" aria-label="Default select Call No 1" id="call_no_1" name="call_no_1">
-                                        <option value="">Select Call</option>
-                                        <option {{old("call_no_1") != "" && old("call_no_1") == 'yes'  ? 'selected' : '' }} value="yes">Yes</option>
-                                        <option {{old("call_no_1") != "" && old("call_no_1") == 'no'  ? 'selected' : '' }} value="no">Customer Not Responding</option>
-                                    </select>
-                                    <div id="call_no_1_message" class="text-danger message mt-2"></div>
+                                <div class="row g-3 mb-3">
+                                    <div class="col-md-12 mb-3">
+                                        <label for="formFileMultipleoneone" class="form-label" id="requiredfiles">Required Files</label>
+                                        <input class="form-control" type="file" id="file" name="file[]" accept=".png,.jpg,.pdf" multiple>
+                                        @error("file")
+                                        <div id="file_message" class="text-danger message mt-2">{{$message}}</div>
+                                        @enderror
+                                        <div id="file_message" class="text-danger message mt-2"></div>
+                                    </div>
+                                    <div class="col-sm-12 mb-3">
+                                        <button type="button" class="btn btn-dark me-1 mt-1 w-sm-100" id="saveFiles"><i class="icofont-arrow-left me-2 fs-6"></i>Submit</button>
+                                    </div>
                                 </div>
-                                <div class="col-sm-8 mb-3">
-                                    <label for="notes_1" class="form-label">Comments:</label>
-                                    <input type="text" class="form-control" id="notes_1" name="notes_1" value="{{old('notes_1')}}" />
-                                    <div id="notes_1_message" class="text-danger message mt-2"></div>
-                                </div>
-
-                            </div>
-                            <div class="col-md-6">
-                                <div class="col-sm-8 mb-3">
-                                    <label for="call_no_2" class="form-label">Call No 2</label>
-                                    <select class="form-select select2" aria-label="Default select Call No 1" id="call_no_2" name="call_no_2">
-                                        <option value="">Select Call</option>
-                                        <option {{old("call_no_2") != "" && old("call_no_2") == 'yes'  ? 'selected' : '' }} value="yes">Yes</option>
-                                        <option {{old("call_no_2") != "" && old("call_no_2") == 'no'  ? 'selected' : '' }} value="no">Customer Not Responding</option>
-                                    </select>
-                                    <div id="call_no_2_message" class="text-danger message mt-2"></div>
-                                </div>
-                                <div class="col-sm-8 mb-3">
-                                    <label for="notes_2" class="form-label">Comments:</label>
-                                    <input type="text" class="form-control" id="notes_2" name="notes_2" value="{{old('notes_2')}}" />
-                                    <div id="notes_2_message" class="text-danger message mt-2"></div>
-                                </div>
-                            </div>
+                            </form>
                         </div>
+                    </div>
+                </div>
+            </div>
 
-
+        </div>
+        <div class="card card-info mt-2">
+            <div class="card-body">
+                <div class="row clearfix">
+                    <form id="form" method="post" action="{{route('projects.move')}}" enctype="multipart/form-data">
+                    <input type="hidden" name="id" value="{{$project->id}}">
+                    <input type="hidden" name="taskid" value="{{$task->id}}">
+                        @csrf
                         <div class="col-md-12">
                             <div class="card border-0 mb-4 no-bg">
                                 <div class="card-header py-3 px-0 d-sm-flex align-items-center  justify-content-between border-bottom">
@@ -283,17 +358,17 @@
                                 <div class="text-danger message mt-2">{{$message}}</div>
                                 @enderror
                             </div>
-                            <div class="col-sm-3 mb-3">
+                            <!-- <div class="col-sm-3 mb-3">
                                 <label for="formFileMultipleoneone" class="form-label" id="requiredfiles">Required Files</label>
                                 <input class="form-control" type="file" id="file" name="file[]" accept=".png,.jpg,.pdf" multiple>
                                 @error("file")
                                 <div id="file_message" class="text-danger message mt-2">{{$message}}</div>
                                 @enderror
                                 <div id="file_message" class="text-danger message mt-2"></div>
-                            </div>
+                            </div> -->
 
-                            <div id="fieldDiv"></div>
-                            <div class="col-sm-12 mb-3">
+                            <div id="fieldDiv" class="mt-2"></div>
+                            <div class="col-sm-12 mb-3 mt-2">
                                 <label for="formFileMultipleoneone" class="form-label">Notes</label>
                                 <textarea class="form-control" rows="3" name="notes"></textarea>
                                 @error("notes")
@@ -487,7 +562,7 @@
                     <div class="row g-4 mb-3">
                         <div class="col-sm-3 mt-5">
                             <div class="col-sm-12 mb-1">
-                                <label for="adders" class="form-label">Adders</label><br/>
+                                <label for="adders" class="form-label">Adders</label><br />
                                 <select style="width: 100%;" class="form-select select2" aria-label="Default select Adders" id="adders" name="adders">
                                     <option value="">Select Adders</option>
                                     @foreach ($adders as $adder)
@@ -499,7 +574,7 @@
                             </div>
                         </div>
                         <div class="col-sm-3 mt-5">
-                            <label for="uom" class="form-label">UOM</label><br/>
+                            <label for="uom" class="form-label">UOM</label><br />
                             <select style="width: 100%;" class="form-control select2" aria-label="Default select UOM" id="uom">
                                 <option value="">Select UOM</option>
                                 @foreach ($uoms as $uom)
@@ -715,33 +790,33 @@
         // alert((stage == "forward" && alreadyUploaded == 0 && (project != $("#forward").val())))
 
         if (project != 1 && project != 8 && logs == 0 && stage == "forward") {
-            if ($("#call_no_1").val() == "") {
-                $("#call_no_1").focus();
-                $("#call_no_1_message").html("Please select the desired option");
-            } else if ($("#notes_1").val() == "") {
-                $("#notes_1").focus();
-                $("#notes_1_message").html("Please enter notes");
-            } else if ($("#call_no_2").val() == "") {
-                $("#call_no_2").focus();
-                $("#call_no_2_message").html("Please select the desired option");
-            } else if ($("#notes_2").val() == "") {
-                $("#notes_2").focus();
-                $("#notes_2_message").html("Please enter notes");
-            } else {
+            // if ($("#call_no_1").val() == "") {
+            //     $("#call_no_1").focus();
+            //     $("#call_no_1_message").html("Please select the desired option");
+            // } else if ($("#notes_1").val() == "") {
+            //     $("#notes_1").focus();
+            //     $("#notes_1_message").html("Please enter notes");
+            // } else if ($("#call_no_2").val() == "") {
+            //     $("#call_no_2").focus();
+            //     $("#call_no_2_message").html("Please select the desired option");
+            // } else if ($("#notes_2").val() == "") {
+            //     $("#notes_2").focus();
+            //     $("#notes_2_message").html("Please enter notes");
+            // } else {
 
-                if (stage == "forward" && (currentproject != $("#forward").val())) { //&& alreadyUploaded == 0
-                    $("#form").submit();
-                    /* THIS CODE IS COMMENTED BECAUSE OF THE REQUIREMENT THAT FILES NOT MANDATORY*/
-                    // if (fileCount == totalCount) {
-                    //     $("#file_message").html('')
-                    //     $("#form").submit();
-                    // } else {
-                    //     $("#file_message").html("Please select total " + totalCount + " files");
-                    // }
-                } else {
-                    $("#form").submit();
-                }
+            if (stage == "forward" && (currentproject != $("#forward").val())) { //&& alreadyUploaded == 0
+                $("#form").submit();
+                /* THIS CODE IS COMMENTED BECAUSE OF THE REQUIREMENT THAT FILES NOT MANDATORY*/
+                // if (fileCount == totalCount) {
+                //     $("#file_message").html('')
+                //     $("#form").submit();
+                // } else {
+                //     $("#file_message").html("Please select total " + totalCount + " files");
+                // }
+            } else {
+                $("#form").submit();
             }
+            // }
         } else {
             if (stage == "forward" && (currentproject != $("#forward").val())) { //&& alreadyUploaded == 0
                 $("#form").submit();
@@ -759,6 +834,62 @@
         }
 
     });
+
+    $("#saveCallLogs").click(function() {
+        $("#call_no_message").html("");
+        $("#call_no_1_message").html("");
+        $("#notes_1_message").html("");
+        if ($("#call_no").val() == "") {
+            $("#call_no").focus();
+            $("#call_no_message").html("Please Select Call No");
+        } else if ($("#call_no_1").val() == "") {
+            $("#call_no_1").focus();
+            $("#call_no_1_message").html("Please select the desired option");
+        } else if ($("#notes_1").val() == "") {
+            $("#notes_1").focus();
+            $("#notes_1_message").html("Please enter results of the call");
+            // } else if ($("#call_no_2").val() == "") {
+            //     $("#call_no_2").focus();
+            //     $("#call_no_2_message").html("Please select the desired option");
+            // } else if ($("#notes_2").val() == "") {
+            //     $("#notes_2").focus();
+            //     $("#notes_2_message").html("Please enter notes");
+        } else {
+            $("#call-log-form").submit();
+        }
+    })
+
+    $("#saveFiles").click(function() {
+        $("#file_message").html('')
+        let fileCount = $("[name='file[]']").prop("files").length;
+        let stage = $('input[name="stage"]:checked').val()
+        // let totalCount = $("#" + $("#forward").val() + "_length").val(); //"{{$project->department->document_length}}";
+        let alreadyUploaded = "{{count($filesCount)}}";
+        // let currentproject = "{{$project->department->id}}";
+        // let project = $("#forward").val();
+        // let logs = $("#{{$project->id}}_log_count").val()
+        let departmentLength = "{{$project->department->document_length}}";
+        let balance = departmentLength - alreadyUploaded;
+        console.log("Balance", balance);
+        if (fileCount <= balance) {
+            // console.log("everthing is good");
+            if (balance > 0) {
+                // console.log("File Count", fileCount);
+                // console.log("Already Uploaded", alreadyUploaded);
+                // console.log("Logs",logs);
+                // console.log("Department Length", "{{$project->department->document_length}}");
+                $("#files-form").submit();
+            }
+        } else {
+            // console.log("Only " + balance + " files can be selected");
+            if (balance == 0) {
+                $("#file_message").html("All files are already selected. No files will be uploaded")
+            }else{
+                $("#file_message").html("Only " + balance + " files can be selected")
+            }
+        }
+
+    })
 
     $("#adders").change(function() {
         if ($(this).val() != "") {

@@ -34,6 +34,39 @@
                     @enderror
                     <!-- </div> -->
                 </div>
+                <div class="col-sm-4 ">
+                    <!-- <div class="form-group"> -->
+                    <label>Sales Partner Name</label>
+                    <input type="text" class="form-control @error('name') is-invalid @enderror" id="name" name="name" placeholder="Enter Name" value="{{ !empty($partner) ? $partner->name : old('name') }}">
+                    @error('name')
+                    <span class="invalid-feedback" role="alert">
+                        <strong>{{ $message }}</strong>
+                    </span>
+                    @enderror
+                    <!-- </div> -->
+                </div>
+                <div class="col-sm-4 ">
+                    <!-- <div class="form-group"> -->
+                    <label>Email</label>
+                    <input type="email" class="form-control @error('email') is-invalid @enderror" id="email" name="email" placeholder="Enter Email" value="{{ !empty($partner) ? $partner->email : old('email') }}">
+                    @error('email')
+                    <span class="invalid-feedback" role="alert">
+                        <strong>{{ $message }}</strong>
+                    </span>
+                    @enderror
+                    <!-- </div> -->
+                </div>
+                <div class="col-sm-4 ">
+                    <!-- <div class="form-group"> -->
+                    <label>Phone</label>
+                    <input type="text" class="form-control @error('phone') is-invalid @enderror" id="phone" name="phone" placeholder="Enter Phone" value="{{ !empty($partner) ? $partner->phone : old('phone') }}">
+                    @error('phone')
+                    <span class="invalid-feedback" role="alert">
+                        <strong>{{ $message }}</strong>
+                    </span>
+                    @enderror
+                    <!-- </div> -->
+                </div>
                 <div class="col-sm-4 mb-2">
                     <div class="form-group">
                         <label for="formFileMultipleoneone" class="form-label">Image</label>
@@ -66,6 +99,8 @@
                     <th>No.</th>
                     <th>Image</th>
                     <th>Name</th>
+                    <th>Email</th>
+                    <th>Phone</th>
                     <th>Actions</th>
                 </tr>
             </thead>
@@ -75,6 +110,8 @@
                     <td>{{ ++$key }}</td>
                     <td><img width="50" height="50" class="rounded" src="{{($partnerList->image != '' ? asset('storage/salespartners/'.$partnerList->image) : (asset('assets/images/profile_av.png')))}}"/></td>
                     <td>{{ $partnerList->name }}</td>
+                    <td>{{ $partnerList->email }}</td>
+                    <td>{{ $partnerList->phone }}</td>
                     <td class="text-center">
                         <a style="cursor: pointer;" data-toggle="tooltip" title="Edit" href="{{ route('sales.partner.types',$partnerList->id)}}">
                             <i class="icofont-pencil text-warning"></i></a>

@@ -47,14 +47,14 @@
                 </div>
                 <div class="col-sm-4 mb-3">
                     <label for="exampleFormControlInput877" class="form-label">State</label>
-                    <input type="text" class="form-control" id="state" name="state" placeholder="State"  value="{{$customer->state}}">
+                    <input type="text" class="form-control" id="state" name="state" placeholder="State" value="{{$customer->state}}">
                     @error("state")
                     <div class="text-danger message mt-2">{{$message}}</div>
                     @enderror
                 </div>
                 <div class="col-sm-4 mb-3">
                     <label for="exampleFormControlInput877" class="form-label">Zip Code</label>
-                    <input type="text" class="form-control" id="zipcode" name="zipcode" placeholder="Zip Code"  value="{{$customer->zipcode}}">
+                    <input type="text" class="form-control" id="zipcode" name="zipcode" placeholder="Zip Code" value="{{$customer->zipcode}}">
                     @error("zipcode")
                     <div class="text-danger message mt-2">{{$message}}</div>
                     @enderror
@@ -86,9 +86,9 @@
                     <select class="form-select select2" aria-label="Default select Sales Partner" id="sales_partner_id" name="sales_partner_id">
                         <option value="">Select Sales Partner</option>
                         @foreach ($partners as $partner)
-                            <option {{$customer->sales_partner_id == $partner->id ? 'selected' : ''}} value="{{ $partner->id }}">
-                                {{ $partner->name }}
-                            </option>
+                        <option {{$customer->sales_partner_id == $partner->id ? 'selected' : ''}} value="{{ $partner->id }}">
+                            {{ $partner->name }}
+                        </option>
                         @endforeach
                     </select>
                     @error("sales_partner_id")
@@ -96,12 +96,20 @@
                     @enderror
                 </div>
                 <div class="col-sm-4">
-                    <label for="code" class="form-label">Panel Qty</label>
-                    <input type="text" class="form-control" id="panel_qty" name="panel_qty" placeholder="Panel Qty" onblur="getRedlineCost()" value="{{$customer->panel_qty}}">
-                    @error("panel_qty")
+                    <label class="form-label">Sales Partner User</label>
+                    <select class="form-select select2" aria-label="Default select Sales Partner" id="sales_partner_user_id" name="sales_partner_user_id">
+                        <option value="">Select Sales Partner User</option>
+                        @foreach ($users as $user)
+                        <option {{$customer->project->sales_partner_user_id == $user->id ? 'selected' : ''}} value="{{ $user->id }}">
+                            {{ $user->name }}
+                        </option>
+                        @endforeach
+                    </select>
+                    @error("sales_partner_user_id")
                     <div class="text-danger message mt-2">{{$message}}</div>
                     @enderror
                 </div>
+
                 <div class="col-sm-4">
                     <label class="form-label">Module Type</label>
                     <select class="form-select select2" aria-label="Default select Module Type" id="module_type_id" name="module_type_id">
@@ -132,7 +140,15 @@
                 </div>
 
                 <div class="col-sm-4">
-                    <!-- <label class="form-label">Battery Type</label>
+                    <label for="code" class="form-label">Panel Qty</label>
+                    <input type="text" class="form-control" id="panel_qty" name="panel_qty" placeholder="Panel Qty" onblur="getRedlineCost()" value="{{$customer->panel_qty}}">
+                    @error("panel_qty")
+                    <div class="text-danger message mt-2">{{$message}}</div>
+                    @enderror
+                </div>
+
+                <!-- <div class="col-sm-4"> -->
+                <!-- <label class="form-label">Battery Type</label>
                     <select class="form-select select2" aria-label="Default select Battery Type" id="battery_type_id" name="battery_type_id">
                         <option value="">Select Battery Type</option>
                         @foreach ($battery_types as $battery)
@@ -144,7 +160,7 @@
                     @error("battery_type_id")
                     <div class="text-danger message mt-2">{{$message}}</div>
                     @enderror -->
-                </div>
+                <!-- </div> -->
                 <div class="col-sm-4 mb-3">
                     <label for="exampleFormControlInput877" class="form-label">System Size</label>
                     <input type="text" class="form-control" id="module_qty" name="module_qty" placeholder="System Size" value="{{$customer->module_value}}">
@@ -198,7 +214,7 @@
                 </div> -->
                 <div class="col-sm-3 mb-3">
                     <label for="uom" class="form-label">UOM</label>
-                    <select class="form-select select2" aria-label="Default select UOM" id="uom" >
+                    <select class="form-select select2" aria-label="Default select UOM" id="uom">
                         <option value="">Select UOM</option>
                         @foreach ($uoms as $uom)
                         <option value="{{ $uom->id }}">
@@ -518,7 +534,7 @@
                 data: {
                     _token: "{{ csrf_token() }}",
                     // subadder: $(this).val(),
-                    adder:  $(this).val(),
+                    adder: $(this).val(),
                 },
                 dataType: 'json',
                 success: function(response) {
@@ -544,7 +560,7 @@
         if (unit_id == 3) {
             let moduleQty = $('#module_qty').val();
             let panelQty = $('#panel_qty').val();
-            amount = amount * moduleQty ;//* panelQty;
+            amount = amount * moduleQty; //* panelQty;
         }
         let result = checkExistence(adders_id, unit_id);
         if (result == false) {
@@ -624,8 +640,8 @@
     $("#module_type_id").change(function() {
         modulesType($(this).val());
     });
-    function modulesType(id)
-    {
+
+    function modulesType(id) {
         if (id != "") {
             $("#inverter_type_id").prop("disabled", false)
             $.ajax({
