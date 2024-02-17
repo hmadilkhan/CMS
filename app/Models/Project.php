@@ -52,4 +52,9 @@ class Project extends Model
     {
         return $this->belongsTo(Task::class,"id","project_id")->orderBy("id","DESC")->take(1);
     }
+
+    public function departmentnotes()
+    {
+        return $this->hasMany(DepartmentNote::class,"project_id","id");
+    }
 }

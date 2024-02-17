@@ -116,6 +116,7 @@ Route::middleware('auth')->group(function () {
     Route::post('projects-status', [App\Http\Controllers\ProjectController::class, 'projectStatus'])->name('projects.status');
     Route::get('projects-list', [App\Http\Controllers\ProjectController::class, 'getProjects'])->name('projects');
     Route::post('get-departments-fields', [App\Http\Controllers\ProjectController::class, 'getDepartmentFields'])->name('get.departments.fields');
+    Route::post('save-department-notes', [App\Http\Controllers\ProjectController::class, 'saveDepartmentNotes'])->name('department.notes');
     
 
     Route::controller(OperationController::class)->group(function () {

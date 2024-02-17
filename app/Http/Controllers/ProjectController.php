@@ -6,6 +6,7 @@ use App\Models\AdderType;
 use App\Models\AdderUnit;
 use App\Models\Customer;
 use App\Models\Department;
+use App\Models\DepartmentNote;
 use App\Models\Employee;
 use App\Models\EmployeeDepartment;
 use App\Models\Project;
@@ -99,9 +100,9 @@ class ProjectController extends Controller
         $task = Task::whereIn("status", ["In-Progress", "Hold", "Cancelled"])->where("project_id", $project->id)->first();
         $departments = Department::whereIn("id", Task::where("project_id", $project->id)->whereNotIn("department_id", Department::where("id", ">", $task->department_id)->take(1)->pluck("id"))->groupBy("department_id")->orderBy("department_id")->pluck("department_id"))->get();
         $fwdDepartments =  array_merge($departments->toArray(), Department::where("id", ">", $task->department_id)->take(1)->get()->toArray());
-        // return Project::with("task", "customer", "department","logs", "subdepartment", "assignedPerson", "assignedPerson.employee")->where("id", $project->id)->first();
+        // return Project::with("task", "customer", "department","logs", "subdepartment", "assignedPerson", "assignedPerson.employee","departmentnotes")->where("id", $project->id)->first();
         return view("projects.show", [
-            "project" => Project::with("task", "customer", "department", "logs", "subdepartment", "assignedPerson", "assignedPerson.employee")->where("id", $project->id)->first(),
+            "project" => Project::with("task", "customer", "department", "logs", "subdepartment", "assignedPerson", "assignedPerson.employee","departmentnotes")->where("id", $project->id)->first(),
             "task" => $task,
             "backdepartments" => Department::where("id", "<", $task->department_id)->get(),
             "forwarddepartments" => (object)$fwdDepartments, //Department::whereIn("id", Task::where("project_id", $project->id)->pluck("department_id"))->get(),
@@ -624,6 +625,25 @@ class ProjectController extends Controller
             }
         } catch (\Throwable $th) {
             return $th->getMessage();
+        }
+    }
+
+    public function saveDepartmentNotes(Request $request)
+    {
+        $validated = $request->validate([
+            'department_notes' => 'required',
+        ]);
+        try {
+            DepartmentNote::create([
+                "project_id" => $request->project_id, 
+                "task_id" => $request->taskid, 
+                "department_id" => $request->department_id,
+                "notes" => $request->department_notes
+            ]);
+            return redirect()->route("projects.show", $request->project_id);
+        } catch (\Throwable $th) {
+            return $th->getMessage();
+            return redirect()->route("projects.show", $request->project_id);
         }
     }
 }

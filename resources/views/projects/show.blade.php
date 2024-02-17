@@ -222,7 +222,7 @@
                     </div>
                 </div>
             </div>
-            <!-- <div class="col-md-4">
+            <div class="col-md-4">
                 <div class="card card-info mt-2">
                     <div class="card-body">
                         <div class="row clearfix">
@@ -232,11 +232,29 @@
                                         <h3 class=" fw-bold flex-fill mb-0 mt-sm-0">Notes</h3>
                                     </div>
                                 </div>
+                                <form method="post" action="{{route('department.notes')}}">
+                                    <div class="row flex flex-column g-3 mb-3">
+                                        @csrf
+                                        <input type="hidden" name="project_id" value="{{$project->id}}">
+                                        <input type="hidden" name="taskid" value="{{$task->id}}">
+                                        <input type="hidden" name="department_id" value="{{$project->department_id}}">
+                                        <div class="col-sm-12 mb-1">
+                                            <label for="formFileMultipleoneone" class="form-label">Department Notes</label>
+                                            <textarea class="form-control" rows="3" name="department_notes"></textarea>
+                                            @error("department_notes")
+                                            <div class="text-danger message mt-1">{{$message}}</div>
+                                            @enderror
+                                        </div>
+                                        <div class="col-sm-12 mb-1">
+                                            <button type="submit" class="btn btn-dark me-1 w-sm-100"><i class="icofont-arrow-left me-2 fs-6"></i>Submit</button>
+                                        </div>
+                                    </div>
+                                </form>
                             </div>
                         </div>
                     </div>
                 </div>
-            </div> -->
+            </div>
             <div class="col-md-4">
                 <div class="card card-info mt-2">
                     <div class="card-body">
@@ -277,8 +295,8 @@
             <div class="card-body">
                 <div class="row clearfix">
                     <form id="form" method="post" action="{{route('projects.move')}}" enctype="multipart/form-data">
-                    <input type="hidden" name="id" value="{{$project->id}}">
-                    <input type="hidden" name="taskid" value="{{$task->id}}">
+                        <input type="hidden" name="id" value="{{$project->id}}">
+                        <input type="hidden" name="taskid" value="{{$task->id}}">
                         @csrf
                         <div class="col-md-12">
                             <div class="card border-0 mb-4 no-bg">
@@ -403,7 +421,7 @@
                         </div>
                     </div>
                     @php
-                    $filtered_collection = $project->task->filter(function ($item) use ($department) {
+                    $filtered_collection = $project->departmentnotes->filter(function ($item) use ($department) {
                     return $item->department_id == $department->id;
                     })->values();
 
@@ -884,7 +902,7 @@
             // console.log("Only " + balance + " files can be selected");
             if (balance == 0) {
                 $("#file_message").html("All files are already selected. No files will be uploaded")
-            }else{
+            } else {
                 $("#file_message").html("Only " + balance + " files can be selected")
             }
         }
