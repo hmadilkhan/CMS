@@ -70,6 +70,7 @@ class ProjectController extends Controller
         ]);
         try {
             DB::beginTransaction();
+            $code = Project::orderBy("id","DESC")->first("code");
             $subdepartment = SubDepartment::where("department_id", 1)->first();
             $project = Project::create(array_merge(
                 $request->except(["assigntask"]),

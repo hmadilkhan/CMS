@@ -383,7 +383,7 @@
                                 <div id="file_message" class="text-danger message mt-2">{{$message}}</div>
                                 @enderror
                                 <div id="file_message" class="text-danger message mt-2"></div>
-                            </div> -->
+                            </div> 
 
                             <div id="fieldDiv" class="mt-2"></div>
                             <div class="col-sm-12 mb-3 mt-2">
@@ -392,7 +392,7 @@
                                 @error("notes")
                                 <div class="text-danger message mt-2">{{$message}}</div>
                                 @enderror
-                            </div>
+                            </div>-->
                             <div class="col-sm-12 mb-3">
                                 <button type="button" class="btn btn-dark me-1 mt-1 w-sm-100" id="saveProject"><i class="icofont-arrow-left me-2 fs-6"></i>Submit</button>
                             </div>

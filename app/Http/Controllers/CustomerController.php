@@ -135,6 +135,7 @@ class CustomerController extends Controller
                 "description" =>  $request->notes,
                 "office_cost" => (!empty($officeCost) ? $officeCost->cost : ""),
                 "sales_partner_user_id" => $request->sales_partner_user_id,
+                "code" => $this->generateProjectCode(),
             ]);
             Task::create([
                 "project_id" => $project->id,
@@ -157,6 +158,17 @@ class CustomerController extends Controller
     public function show(Customer $customer)
     {
         //
+    }
+
+    public function generateProjectCode()
+    {
+        $project = Project::orderBy("id","DESC")->first("code");
+        if($project->code == ""){
+            $code = "1001";
+            return $code;
+        }else{
+            return $project->code+1;
+        }
     }
 
     /**

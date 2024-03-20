@@ -26,7 +26,18 @@
                         </div>--}}
                         <div class="col-6">
                             <div class="d-flex align-items-center">
-                                <i class="icofont-ui-calendar"></i>
+                                <i class="icofont-code-alt"></i>
+                                <span class="ms-2">Project Code</span>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="d-flex align-items-center">
+                                <span class="ms-2 text-success">{{$project->code}}</span>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="d-flex align-items-center">
+                                <i class="icofont-ui-user"></i>
                                 <span class="ms-2">Sales Partner</span>
                             </div>
                         </div>

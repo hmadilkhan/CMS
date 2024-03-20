@@ -21,6 +21,7 @@
                     <thead>
                         <tr>
                             <th>No.</th>
+                            <th>Code #</th>
                             <th>Project Name</th>
                             <th>Sales Partner</th>
                             <th>Employee</th>
@@ -34,6 +35,7 @@
                         @foreach ($projects as $key => $project)
                         <tr>
                             <td>{{ ++$key }}</td>
+                            <td>{{ $project->code }}</td>
                             <td>{{ $project->project_name }}</td>
                             <td>{{ $project->customer->salespartner->name }}</td>
                             <td>{{ $project->assignedPerson[0]->employee->name }}</td>
