@@ -25,10 +25,11 @@ use Illuminate\Support\Facades\Route;
 | be assigned to the "web" middleware group. Make something great!
 |
 */
+
 Route::get('/storage-link', function () {
-    $targetFolder = storage_path("app/public"); 
-    $linkFolder = $_SERVER['DOCUMENT_ROOT']."/storage";
-    symlink($targetFolder,$linkFolder);
+    $targetFolder = storage_path("app/public");
+    $linkFolder = $_SERVER['DOCUMENT_ROOT'] . "/storage";
+    symlink($targetFolder, $linkFolder);
 });
 
 Route::get('/', function () {
@@ -46,6 +47,8 @@ Route::get('/about', function () {
 Route::get('/track-your-project', function () {
     return view('track-your-project');
 });
+
+Route::get('/get-track-project', [App\Http\Controllers\ProjectController::class, 'getWebsiteProject']);
 
 
 Route::post('store-ticket', [App\Http\Controllers\NewTicketController::class, 'store'])->name("store.ticket");
@@ -88,7 +91,7 @@ Route::middleware('auth')->group(function () {
     Route::resource('projects', ProjectController::class);
     Route::resource('module-types', ModuleTypeController::class);
     Route::resource('office-costs', OfficeCostController::class);
-    
+
     Route::resource('tools', ToolController::class);
     Route::get('tools-index/{id?}', [App\Http\Controllers\ToolController::class, 'index'])->name('tools.index');
     Route::post('tools-delete', [App\Http\Controllers\ToolController::class, 'toolDelete'])->name('tools.delete');
@@ -117,7 +120,6 @@ Route::middleware('auth')->group(function () {
     Route::get('projects-list', [App\Http\Controllers\ProjectController::class, 'getProjects'])->name('projects');
     Route::post('get-departments-fields', [App\Http\Controllers\ProjectController::class, 'getDepartmentFields'])->name('get.departments.fields');
     Route::post('save-department-notes', [App\Http\Controllers\ProjectController::class, 'saveDepartmentNotes'])->name('department.notes');
-    
 
     // ADDERS CONTROLLER
     Route::post('adders-store', [App\Http\Controllers\AdderController::class, 'store'])->name('adders.store');
@@ -131,7 +133,7 @@ Route::middleware('auth')->group(function () {
         Route::post('/redlinecost-store', 'redlineStore')->name("redlinecost.store");
         Route::post('/redlinecost-update', 'redlineUpdate')->name("redlinecost.update");
         Route::post('/redlinecost-delete', 'redlineDelete')->name("redlinecost.delete");
-        
+
         // DEALER FEE
         Route::get('/view-dealer-fee/{id?}', 'dealerFeeView')->name("view-dealer-fee");
         Route::post('/dealerfee-store', 'dealerFeeStore')->name("dealerfee.store");
@@ -139,24 +141,24 @@ Route::middleware('auth')->group(function () {
         Route::post('/dealerfee-delete', 'dealerFeeDelete')->name("dealerfee.delete");
         Route::post('/get-fianance-option', 'getFinanceOption')->name("finance.option");
 
-         // ADDERS VIEW
-         Route::get('/view-adder/{id?}', 'addersView')->name("view-adders");
-         Route::post('/adder-store', 'addersStore')->name("adder.store");
-         Route::post('/adders-update', 'addersUpdate')->name("adders.update");
-         Route::post('/adders-delete', 'addersDelete')->name("adders.delete");
-         Route::post('/get-sub-types', 'getSubTypes')->name("get.sub.types");
+        // ADDERS VIEW
+        Route::get('/view-adder/{id?}', 'addersView')->name("view-adders");
+        Route::post('/adder-store', 'addersStore')->name("adder.store");
+        Route::post('/adders-update', 'addersUpdate')->name("adders.update");
+        Route::post('/adders-delete', 'addersDelete')->name("adders.delete");
+        Route::post('/get-sub-types', 'getSubTypes')->name("get.sub.types");
 
-         // ADDERS TYPE VIEW
-         Route::get('/view-adder-type/{id?}', 'addersTypeView')->name("view.adder.types");
-         Route::post('/adders-type-store', 'addersTypeStore')->name("adder.type.store");
-         Route::post('/adders-type-update', 'addersTypeUpdate')->name("adder.type.update");
-         Route::post('/adders-type-delete', 'addersTypeDelete')->name("adder.type.delete");
+        // ADDERS TYPE VIEW
+        Route::get('/view-adder-type/{id?}', 'addersTypeView')->name("view.adder.types");
+        Route::post('/adders-type-store', 'addersTypeStore')->name("adder.type.store");
+        Route::post('/adders-type-update', 'addersTypeUpdate')->name("adder.type.update");
+        Route::post('/adders-type-delete', 'addersTypeDelete')->name("adder.type.delete");
 
-         // SALES PARTNERS VIEW
-         Route::get('/sales-partner-type/{id?}', 'salesPartnerView')->name("sales.partner.types");
-         Route::post('/sales-partner-store', 'salesPartnerStore')->name("sales.partner.store");
-         Route::post('/sales-partner-update', 'salesPartnerUpdate')->name("sales.partner.update");
-         Route::post('/sales-partner-delete', 'salesPartnerDelete')->name("sales.partner.delete");
+        // SALES PARTNERS VIEW
+        Route::get('/sales-partner-type/{id?}', 'salesPartnerView')->name("sales.partner.types");
+        Route::post('/sales-partner-store', 'salesPartnerStore')->name("sales.partner.store");
+        Route::post('/sales-partner-update', 'salesPartnerUpdate')->name("sales.partner.update");
+        Route::post('/sales-partner-delete', 'salesPartnerDelete')->name("sales.partner.delete");
     });
 
     Route::controller(InverterTypeController::class)->group(function () {
@@ -184,4 +186,4 @@ Route::middleware('auth')->group(function () {
     Route::post('change-ticket-status', [App\Http\Controllers\NewTicketController::class, 'changeStatus'])->name("change.ticket.status");
 });
 
-require __DIR__.'/auth.php';
+require __DIR__ . '/auth.php';
