@@ -39,7 +39,7 @@
                     <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#customer" role="tab">Customer</a></li>
                     <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#salespartner" role="tab">Sales Partner</a></li>
                     @if(auth()->user()->getRoleNames()[0] == "Manager" or auth()->user()->getRoleNames()[0] == "Admin" or auth()->user()->getRoleNames()[0] == "Super Admin")
-                    <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#adders" role="tab">Adders</a></li>
+                    <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#addersDiv" role="tab">Adders</a></li>
                     <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#financial" role="tab">FInancial</a></li>
                     @endif
                 </ul>
@@ -383,17 +383,17 @@
                                 <div id="file_message" class="text-danger message mt-2">{{$message}}</div>
                                 @enderror
                                 <div id="file_message" class="text-danger message mt-2"></div>
-                            </div> 
+                            </div> -->
 
                             <div id="fieldDiv" class="mt-2"></div>
-                            <div class="col-sm-12 mb-3 mt-2">
+                            <!--<div class="col-sm-12 mb-3 mt-2">
                                 <label for="formFileMultipleoneone" class="form-label">Notes</label>
                                 <textarea class="form-control" rows="3" name="notes"></textarea>
                                 @error("notes")
                                 <div class="text-danger message mt-2">{{$message}}</div>
                                 @enderror
                             </div>-->
-                            <div class="col-sm-12 mb-3">
+                            <div class="col-sm-12 mb-3 mt-3">
                                 <button type="button" class="btn btn-dark me-1 mt-1 w-sm-100" id="saveProject"><i class="icofont-arrow-left me-2 fs-6"></i>Submit</button>
                             </div>
                         </div>
@@ -565,7 +565,7 @@
             </div>
         </div>
     </div>
-    <div class="tab-pane fade" id="adders" role="tabpanel">
+    <div class="tab-pane fade" id="addersDiv" role="tabpanel">
         <div class="card mt-1">
             <div class="card-body">
                 <div class="card-header py-3 px-0 d-sm-flex align-items-center  border-bottom">
@@ -623,7 +623,6 @@
                             <tr>
                                 <th>No.</th>
                                 <th>Adder</th>
-                                <!-- <th>Sub Adders</th> -->
                                 <th>Unit</th>
                                 <th>Amount</th>
                                 <th>Actions</th>
@@ -639,11 +638,10 @@
                                 <input type="hidden" value="{{$adder->amount}}" name="amount[]" />
                                 <td>{{$index}}</td>
                                 <td>{{$adder->type->name}}</td>
-                                {{-- <td>{{$adder->subtype->name}}</td> --}}
                                 <td>{{$adder->unit->name}}</td>
                                 <td>{{$adder->amount}}</td>
                                 <td>
-                                    <i style='cursor: pointer;' class='icofont-trash text-danger' onClick="deleteItem('{{$index}}')"> Delete</i>
+                                    <i style='cursor: pointer;' class='icofont-trash text-danger' onClick="deleteItem('{{$index}}','{{$adder->id}}')"> Delete</i>
                                 </td>
                             </tr>
                             @endforeach
@@ -709,6 +707,24 @@
     </div>
 </div>
 
+<div class="modal fade" id="dremoveadders" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-md modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title  fw-bold" id="dremovetaskLabel"> Remove Adder?</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body justify-content-center flex-column d-flex">
+                <i class="icofont-ui-rate-remove text-danger display-2 text-center mt-2"></i>
+                <p class="mt-4 fs-5 text-center">This will be permanently remove from Adders</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-danger color-fff">Remove</button>
+            </div>
+        </div>
+    </div>
+</div>
 
 </div>
 </div><!-- Row End -->
@@ -913,19 +929,16 @@
         if ($(this).val() != "") {
             $.ajax({
                 method: "POST",
-                url: "{{ route('get.sub.adders') }}",
+                url: "{{ route('get.adders') }}",
                 data: {
                     _token: "{{ csrf_token() }}",
-                    id: $(this).val(),
+                    // subadder: $(this).val(),
+                    adder: $(this).val(),
                 },
                 dataType: 'json',
                 success: function(response) {
-                    $('#sub_type').empty();
-                    $('#sub_type').append($('<option value="">Select Sub Type</soption>'));
-                    $.each(response.subadders, function(i, subtype) {
-                        $('#sub_type').append($('<option  value="' + subtype.id + '">' + subtype.name + '</option>'));
-                    });
-                    calculateCommission()
+                    $("#uom").val(response.adders.adder_unit_id).change();
+                    $("#amount").val(response.adders.price);
                 },
                 error: function(error) {
                     console.log(error.responseJSON.message);
@@ -971,38 +984,119 @@
         }
         let result = checkExistence(adders_id, subadder_id, unit_id);
         if (result == false) {
-            let newRow = "<tr id='row" + (rowLength + 1) + "'>" +
-                '<input type="hidden" value="' + adders_id + '" name="adders[]" />' +
-                '<input type="hidden" value="' + subadder_id + '" name="subadders[]" />' +
-                '<input type="hidden" value="' + unit_id + '" name="uom[]" />' +
-                '<input type="hidden" value="' + amount + '" name="amount[]" />' +
-
-
-                "<td>" + (rowLength + 1) + "</td>" +
-                "<td>" + adders_name + "</td>" +
-                "<td>" + subadder_name + "</td>" +
-                "<td>" + unit_name + "</td>" +
-                "<td>" + amount + "</td>" +
-
-                "<td colspan='4'>&nbsp;&nbsp;<i style='cursor: pointer;' class='icofont-trash text-danger' onClick=deleteItem(" +
-                (rowLength + 1) + ")>Delete</i></td>" +
-                "</tr>";
-
-            $("#adderTable > tbody").append(newRow);
-            calculateAddersAmount();
+            addAdderToDB("{{$project->customer->id}}", adders_id, unit_id, amount);
             emptyControls();
         } else {
             alert("already added")
         }
     });
 
-    function addToTable() {
 
+    function deleteItem(id, adderId) {
+        Swal.fire({
+            title: 'Are you sure?',
+            text: "You won't be able to revert this!",
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#3085d6',
+            cancelButtonColor: '#d33',
+            confirmButtonText: 'Yes, delete it!'
+        }).then((result) => {
+            if (result.isConfirmed) {
+
+                $.ajax({
+                    url: "{{ route('adders.remove') }}",
+                    method: "POST",
+                    data: {
+                        _token: "{{ csrf_token() }}",
+                        id: adderId,
+                        customer_id: "{{$project->customer->id}}",
+                    },
+                    dataType: 'json',
+                    success: function(response) {
+                        if (response.status == 200) {
+                            Swal.fire(
+                                'Deleted!',
+                                'Adder has been deleted.',
+                                'success'
+                            )
+                            // $("#row" + id).remove();
+                            populateAddersTable(response.adders);
+                        }
+                    },
+                    error: function(error) {
+                        Swal.fire(
+                            'Error!',
+                            'Some error occurred :)',
+                            'error'
+                        )
+                    }
+                });
+            }
+            if (result.dismiss) {
+                Swal.fire(
+                    'Cancelled!',
+                    'Adder is safe :)',
+                    'error'
+                )
+            }
+        })
     }
 
-    function deleteItem(id) {
-        $("#row" + id).remove();
-        calculateAddersAmount();
+    function addAdderToDB(customerId, adderTypeId, adderUnitId, amount) {
+        $.ajax({
+            url: "{{ route('adders.store') }}",
+            method: "POST",
+            data: {
+                _token: "{{ csrf_token() }}",
+                customer_id: customerId,
+                adder_type_id: adderTypeId,
+                adder_unit_id: adderUnitId,
+                amount: amount,
+            },
+            dataType: 'json',
+            success: function(response) {
+                if (response.status == 200) {
+                    Swal.fire(
+                        'Deleted!',
+                        'Adders has been added.',
+                        'success'
+                    )
+                    populateAddersTable(response.adders)
+                }
+            },
+            error: function(error) {
+                Swal.fire(
+                    'Error!',
+                    'Some error occurred :)',
+                    'error'
+                )
+            }
+        });
+    }
+
+    function populateAddersTable(adders) {
+        $("#adderTable > tbody").empty();
+        $.each(adders, function(index, item) {
+            let newRow = "<tr id='row" + (index + 1) + "'>" +
+                '<input type="hidden" value="' + item.adder_type_id + '" name="adders[]" />' +
+                '<input type="hidden" value="' + item.adder_sub_type_id + '" name="subadders[]" />' +
+                '<input type="hidden" value="' + item.adder_unit_id + '" name="uom[]" />' +
+                '<input type="hidden" value="' + item.amount + '" name="amount[]" />' +
+
+
+                "<td>" + (index + 1) + "</td>" +
+                "<td>" + item.type.name + "</td>" +
+                "<td>" + item.unit.name + "</td>" +
+                "<td>" + item.amount + "</td>" +
+
+                "<td colspan='4'><i style='cursor: pointer;' class='icofont-trash text-danger' onClick=deleteItem(" +
+                (index + 1) + "," + item.id + ")>&nbsp;&nbsp;Delete</i></td>" +
+                "</tr>";
+
+            $("#adderTable > tbody").append(newRow);
+        });
+
     }
 
     function editItem(id, addersId, subAdderId, uomId, amount) {

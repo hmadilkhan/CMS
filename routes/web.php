@@ -119,6 +119,11 @@ Route::middleware('auth')->group(function () {
     Route::post('save-department-notes', [App\Http\Controllers\ProjectController::class, 'saveDepartmentNotes'])->name('department.notes');
     
 
+    // ADDERS CONTROLLER
+    Route::post('adders-store', [App\Http\Controllers\AdderController::class, 'store'])->name('adders.store');
+    Route::post('adders-update', [App\Http\Controllers\AdderController::class, 'update'])->name('adders.update');
+    Route::post('adders-remove', [App\Http\Controllers\AdderController::class, 'destroy'])->name('adders.remove');
+
     Route::controller(OperationController::class)->group(function () {
         // REDLINE COST
         Route::get('/view-redline-cost/{id?}', 'changeRedlineCostView')->name("view-redline-cost");

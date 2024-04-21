@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\AdderType;
 use App\Models\AdderUnit;
 use App\Models\Customer;
+use App\Models\CustomerAdder;
 use App\Models\Department;
 use App\Models\DepartmentNote;
 use App\Models\Employee;
