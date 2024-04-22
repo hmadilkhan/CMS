@@ -43,7 +43,7 @@
                 $totalActualMaterialCost += $customer->project->actual_material_cost;
                 $totalActualLaborCost += $customer->project->actual_labor_cost;
                 $profitAmount = $customer->finances->redline_costs + $customer->finances->adders - $actualJob;
-                $profitPercentage = $profitAmount / $customer->finances->redline_costs;
+                $profitPercentage = $profitAmount / $customer->finances->redline_costs + $customer->finances->adders;
                 $totalProfitAmount += $profitAmount;
                 $totalProfitPercentage += $profitPercentage;
                 ?>
@@ -73,8 +73,8 @@
                     <td class="fw-bold">{{number_format($totalActualMaterialCost,2)}}</td> 
                     <td class="fw-bold">{{number_format($totalActualLaborCost,2)}}</td> 
                     <td class="fw-bold">{{number_format($totalActualJob,2)}}</td> 
-                    <td class="fw-bold">{{number_format($totalRedlineCosts - $totalActualJob ,2)}}</td> 
-                    <td class="fw-bold">{{number_format((($totalRedlineCosts + $totalAddersAmount - $totalActualJob) / $totalRedlineCosts) * 100,2)}}%</td> 
+                    <td class="fw-bold">{{number_format($totalProfitAmount ,2)}}</td> 
+                    <td class="fw-bold">{{number_format(totalProfitPercentage,2)}}%</td> 
                 </tr>
             </tbody>
         </table>
