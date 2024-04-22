@@ -70,9 +70,9 @@
                     <td class="fw-bold">{{number_format($totalRedlineCosts,2)}}</td>
                     <td class="fw-bold">{{number_format($totalAddersAmount,2)}}</td>
                     <td class="fw-bold">{{number_format($totalCommissionAmount,2)}}</td> 
-                    <td class="fw-bold">{{number_format($totalCommissionAmount,2)}}</td> 
                     <td class="fw-bold">{{number_format($totalActualMaterialCost,2)}}</td> 
                     <td class="fw-bold">{{number_format($totalActualLaborCost,2)}}</td> 
+                    <td class="fw-bold">{{number_format($totalActualJob,2)}}</td> 
                     <td class="fw-bold">{{number_format($totalRedlineCosts - $totalActualJob ,2)}}</td> 
                     <td class="fw-bold">{{number_format((($totalRedlineCosts + $totalAddersAmount - $totalActualJob) / $totalRedlineCosts) * 100,2)}}%</td> 
                 </tr>
