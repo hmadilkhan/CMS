@@ -77,7 +77,7 @@ class CustomerController extends Controller
             'dealer_fee' => 'required',
             'sales_partner_user_id' => 'required',
         ]);
-
+        
         try {
             DB::beginTransaction();
             // Customer::create($request->except(["finance_option_id", "contract_amount", "redline_costs", "adders", "commission", "dealer_fee","loan_term_id","loan_apr_id","dealer_fee_amount"]));
@@ -163,7 +163,8 @@ class CustomerController extends Controller
     public function generateProjectCode()
     {
         $project = Project::orderBy("id","DESC")->first("code");
-        if($project->code == ""){
+        
+        if(empty($project)){
             $code = "1001";
             return $code;
         }else{

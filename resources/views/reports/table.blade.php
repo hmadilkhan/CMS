@@ -42,8 +42,8 @@
                 $totalActualJob += $actualJob;
                 $totalActualMaterialCost += $customer->project->actual_material_cost;
                 $totalActualLaborCost += $customer->project->actual_labor_cost;
-                $profitAmount = $customer->finances->redline_costs + $customer->finances->adders - $actualJob;
-                $profitPercentage = $profitAmount / $customer->finances->redline_costs;
+                $profitAmount = $customer->finances->redline_costs + ($customer->finances->adders - $actualJob);
+                $profitPercentage = $profitAmount / ($customer->finances->redline_costs  + $customer->finances->adders);
                 $totalProfitAmount += $profitAmount;
                 $totalProfitPercentage += $profitPercentage;
                 ?>
@@ -60,7 +60,7 @@
                     <td>{{number_format($customer->project->actual_labor_cost,2) }}</td>
                     <td>{{number_format($actualJob,2) }}</td>
                     <td>{{number_format($profitAmount,2) }}</td>
-                    <td>{{number_format($profitPercentage * 100,2) }}</td>
+                    <td>{{number_format($profitPercentage * 100,2) }}%</td>
                 </tr>
                 @endforeach
                 <tr>
@@ -70,11 +70,11 @@
                     <td class="fw-bold">{{number_format($totalRedlineCosts,2)}}</td>
                     <td class="fw-bold">{{number_format($totalAddersAmount,2)}}</td>
                     <td class="fw-bold">{{number_format($totalCommissionAmount,2)}}</td> 
-                    <td class="fw-bold">{{number_format($totalCommissionAmount,2)}}</td> 
                     <td class="fw-bold">{{number_format($totalActualMaterialCost,2)}}</td> 
                     <td class="fw-bold">{{number_format($totalActualLaborCost,2)}}</td> 
-                    <td class="fw-bold">{{number_format($totalRedlineCosts - $totalActualJob ,2)}}</td> 
-                    <td class="fw-bold">{{number_format((($totalRedlineCosts + $totalAddersAmount - $totalActualJob) / $totalRedlineCosts) * 100,2)}}%</td> 
+                    <td class="fw-bold">{{number_format($totalActualJob,2)}}</td> 
+                    <td class="fw-bold">{{number_format($totalProfitAmount ,2)}}</td> 
+                    <td class="fw-bold">{{number_format($totalProfitPercentage * 100,2)}}%</td> 
                 </tr>
             </tbody>
         </table>
