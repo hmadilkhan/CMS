@@ -38,7 +38,7 @@
                 <div class="col-sm-3">
                     <div class="form-group">
                         <label>Phone</label>
-                        <input  type="text" class="form-control @error('phone') is-invalid @enderror" id="phone" name="phone" placeholder="Enter Phone">
+                        <input type="text" class="form-control @error('phone') is-invalid @enderror" id="phone" name="phone" placeholder="Enter Phone">
                         @error('phone')
                         <span class="invalid-feedback" role="alert">
                             <strong>{{ $message }}</strong>
@@ -139,7 +139,7 @@
                         @enderror
                     </div>
                 </div>
-                
+
                 <div class="col-sm-4 mb-2">
                     <div class="form-group">
                         <label for="formFileMultipleoneone" class="form-label">Image</label>
@@ -200,16 +200,57 @@
         </table>
     </div>
 </div>
+<!-- Modal  Delete Folder/ File-->
+<div class="modal fade" id="deleteproject" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-md modal-dialog-scrollable">
+        <input type="hidden" id="deleteId" />
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title  fw-bold" id="deleteprojectLabel"> Delete item Permanently?</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body justify-content-center flex-column d-flex">
+                <i class="icofont-ui-delete text-danger display-2 text-center mt-2"></i>
+                <p class="mt-4 fs-5 text-center">You can only delete this item Permanently</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-danger color-fff" onclick="deleteModuleTpe()">Delete</button>
+            </div>
+        </div>
+    </div>
+</div>
 @endsection
 
 @section("scripts")
 <script type="text/javascript">
-    $("#user_type_id").change(function(){
+    $("#user_type_id").change(function() {
         if ($(this).val() == 3) {
-            $("#salesPartnerDiv").css("display","block")
-        }else{
-            $("#salesPartnerDiv").css("display","none")
+            $("#salesPartnerDiv").css("display", "block")
+        } else {
+            $("#salesPartnerDiv").css("display", "none")
         }
     })
+
+    function deleteUser(id) {
+        $("#deleteId").val(id);
+        $("#deleteproject").modal("show")
+    }
+
+    function deleteModuleTpe() {
+        $.ajax({
+            method: "POST",
+            url: "{{ route('delete.user') }}",
+            data: {
+                _token: "{{csrf_token()}}",
+                id: $("#deleteId").val()
+            },
+            success: function(response) {
+                if (response.status == 200) {
+                    location.reload();
+                }
+            }
+        });
+    }
 </script>
 @endsection

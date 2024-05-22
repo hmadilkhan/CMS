@@ -64,13 +64,13 @@
                 <!-- Menu: Sub menu ul -->
                 <ul class="sub-menu collapse {{ (Route::currentRouteName() == 'module-types.index' or Route::currentRouteName() == 'view-redline-cost' or Route::currentRouteName() == 'view-dealer-fee' or Route::currentRouteName() == 'tools.index' or Route::currentRouteName() == 'office-costs.index' or Route::currentRouteName() == 'view-adders' or Route::currentRouteName() == 'view.adder.types' or Route::currentRouteName() == 'view-inverter-type' or Route::currentRouteName() == 'sales.partner.types' ) ? 'show' : '' }}" id="module-types">
                     <li><a class="ms-link {{ Route::currentRouteName() == 'module-types.index' ? 'active' : '' }}" href="{{route('module-types.index')}}"><span>Module Types</span></a></li>
-                    <li><a class="ms-link {{ Route::currentRouteName() == 'view-redline-cost' ? 'active' : '' }}" href="{{route('view-redline-cost')}}"><span>Redline Cost</span></a></li>
                     <li><a class="ms-link {{ Route::currentRouteName() == 'view-dealer-fee' ? 'active' : '' }}" href="{{route('view-dealer-fee')}}"><span>Dealer Fee</span></a></li>
                     <li><a class="ms-link {{ Route::currentRouteName() == 'tools.index' ? 'active' : '' }}" href="{{route('tools.index')}}"><span>Tools</span></a></li>
                     <li><a class="ms-link {{ Route::currentRouteName() == 'office-costs.index' ? 'active' : '' }}" href="{{route('office-costs.index')}}"><span>Office Cost</span></a></li>
                     <li><a class="ms-link {{ Route::currentRouteName() == 'view-adders' ? 'active' : '' }}" href="{{route('view-adders')}}"><span>Adders</span></a></li>
                     <li><a class="ms-link {{ Route::currentRouteName() == 'view.adder.types' ? 'active' : '' }}" href="{{route('view.adder.types')}}"><span>Adder Types</span></a></li>
                     <li><a class="ms-link {{ Route::currentRouteName() == 'view-inverter-type' ? 'active' : '' }}" href="{{route('view-inverter-type')}}"><span>Inverter Types</span></a></li>
+                    <li><a class="ms-link {{ Route::currentRouteName() == 'view-redline-cost' ? 'active' : '' }}" href="{{route('view-redline-cost')}}"><span>Inverter Base Cost</span></a></li>
                     <li><a class="ms-link {{ Route::currentRouteName() == 'sales.partner.types' ? 'active' : '' }}" href="{{route('sales.partner.types')}}"><span>Sales Partners</span></a></li>
                 </ul>
             </li>

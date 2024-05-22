@@ -105,22 +105,8 @@
                 </div>
 
                 <div class="col-sm-4">
-                    <label class="form-label">Module Type</label>
-                    <select class="form-select select2" aria-label="Default select Module Type" id="module_type_id" name="module_type_id" onchange="getRedlineCost()">
-                        <option value="">Select Module Type</option>
-                        @foreach ($modules as $module)
-                        <option value="{{ $module->id }}">
-                            {{ $module->name }}
-                        </option>
-                        @endforeach
-                    </select>
-                    @error("module_type_id")
-                    <div class="text-danger message mt-2">{{$message}}</div>
-                    @enderror
-                </div>
-                <div class="col-sm-4">
                     <label class="form-label">Inverter Type</label>
-                    <select disabled class="form-select select2" aria-label="Default select Inverter Type" id="inverter_type_id" name="inverter_type_id" onchange="getRedlineCost()">
+                    <select  class="form-select select2" aria-label="Default select Inverter Type" id="inverter_type_id" name="inverter_type_id" onchange="getRedlineCost()">
                         <option value="">Select Inverter Type</option>
                         @foreach ($inverter_types as $inverter)
                         <option value="{{ $inverter->id }}">
@@ -132,6 +118,22 @@
                     <div class="text-danger message mt-2">{{$message}}</div>
                     @enderror
                 </div>
+
+                <div class="col-sm-4">
+                    <label class="form-label">Module Type</label>
+                    <select class="form-select select2" aria-label="Default select Module Type" id="module_type_id" name="module_type_id" onchange="getRedlineCost()">
+                        <option value="">Select Module Type</option>
+                        @foreach ($modules as $module)
+                        <option value="{{ $module->id }}">
+                            {{ $module->inverter->name." ".$module->name }}
+                        </option>
+                        @endforeach
+                    </select>
+                    @error("module_type_id")
+                    <div class="text-danger message mt-2">{{$message}}</div>
+                    @enderror
+                </div>
+                
 
                 <div class="col-sm-4">
                     <label for="code" class="form-label">Panel Qty</label>
@@ -419,12 +421,12 @@
             }
         })
     }
-
+    var baseCost = 0;
     function getRedlineCost() {
         let panelQty = $("#panel_qty").val();
         let inverterType = $("#inverter_type_id").val();
         modulesType($("#module_type_id").val());
-        if (panelQty != "" && inverterType != "") {
+        
             $.ajax({
                 method: "POST",
                 url: "{{ route('get.redline.cost') }}",
@@ -436,21 +438,40 @@
                 dataType: 'json',
                 success: function(response) {
                     $('#redline_costs').val('');
-                    let moduleQty = $('#module_qty').val();
-                    let panelQty = $('#panel_qty').val();
+                    if (response.modules.length > 0) {
+                        $("#module_type_id").empty();
+                        $('#module_type_id').append($('<option  value="">Select Module Type</option>'));
+                        $.each(response.modules, function(i, user) {
+                            $('#module_type_id').append($('<option  value="' + user.id + '">' + user.name + '</option>'));
+                        });                    
+                    }
+                    baseCost = response.redlinecost;
+                    // console.log(response.redlinecost);
+                    // let moduleQty = $('#module_qty').val();
+                    // let panelQty = $('#panel_qty').val();
                     let redlinecost = response.redlinecost;
-                    let redline = panelQty * moduleQty * redlinecost
-                    $('#redline_costs').val(redline);
-                    $('#module_qty').val(panelQty * moduleQty);
+                    $('#redline_costs').val(redlinecost);
 
                 },
                 error: function(error) {
                     console.log(error.responseJSON.message);
                 }
             })
-        }
+            setTimeout(() => {
+                if (panelQty != "" && inverterType != "") {
+                    let moduleQty = $("#module_qty").val();
+                    $("#module_qty").val(panelQty * moduleQty);
+                    let redlinecost = baseCost + (panelQty * moduleCost);
+                    console.log("Redline Cost",redlinecost);
+                    $("#redline_costs").val(redlinecost);
+                    console.log(baseCost);
+                }
+            }, 2000);
+        // }
         calculateCommission()
     }
+
+    
 
     function dealerFee(value) {
         let dealerFee = (value != undefined ? value : parseFloat($("#dealer_fee").val()));
@@ -476,31 +497,6 @@
         let commission = contractAmount - dealerFeeAmount - redlineFee - adders;
         $("#commission").val(commission.toFixed(2));
     }
-
-    // $("#adders").change(function() {
-    //     if ($(this).val() != "") {
-    //         $.ajax({
-    //             method: "POST",
-    //             url: "{{ route('get.sub.adders') }}",
-    //             data: {
-    //                 _token: "{{ csrf_token() }}",
-    //                 id: $(this).val(),
-    //             },
-    //             dataType: 'json',
-    //             success: function(response) {
-    //                 $('#sub_type').empty();
-    //                 $('#sub_type').append($('<option value="">Select Loan Apr</soption>'));
-    //                 $.each(response.subadders, function(i, subtype) {
-    //                     $('#sub_type').append($('<option  value="' + subtype.id + '">' + subtype.name + '</option>'));
-    //                 });
-    //                 calculateCommission()
-    //             },
-    //             error: function(error) {
-    //                 console.log(error.responseJSON.message);
-    //             }
-    //         })
-    //     }
-    // })
 
     $("#adders").change(function() {
         if ($(this).val() != "") {
@@ -540,6 +536,11 @@
             let panelQty = $('#panel_qty').val();
             amount = amount * moduleQty; //* panelQty;
         }
+        if (unit_id == 5) {
+            let moduleQty = $('#module_qty').val();
+            let panelQty = $('#panel_qty').val();
+            amount = amount * panelQty; //* panelQty;
+        }
         let result = checkExistence(adders_id, unit_id);
         if (result == false) {
             let newRow = "<tr id='row" + (rowLength + 1) + "'>" +
@@ -565,14 +566,7 @@
         } else {
             alert("already added")
         }
-
-
-
     });
-
-    function addToTable() {
-
-    }
 
     function deleteItem(id) {
         $("#row" + id).remove();
@@ -621,6 +615,7 @@
     // $("#module_type_id").change(function() {
     //     modulesType($(this).val());
     // });
+    var moduleCost = 0;
     function modulesType(id) {
         if (id != "") {
             $("#inverter_type_id").prop("disabled", false)
@@ -630,9 +625,11 @@
                 data: {
                     _token: "{{ csrf_token() }}",
                     id: id,
+                    inverterTypeId : $("#inverter_type_id").val()
                 },
                 dataType: 'json',
                 success: function(response) {
+                    moduleCost = response.types.amount;
                     $("#module_qty").val(response.types.value);
                 },
                 error: function(error) {
@@ -640,7 +637,7 @@
                 }
             })
         } else {
-            $("#inverter_type_id").prop("disabled", true)
+            // $("#inverter_type_id").prop("disabled", true)
         }
     }
 

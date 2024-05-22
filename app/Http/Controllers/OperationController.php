@@ -11,6 +11,7 @@ use App\Models\InverterType;
 use App\Models\InverterTypeRate;
 use App\Models\LoanApr;
 use App\Models\LoanTerm;
+use App\Models\ModuleType;
 use App\Models\SalesPartner;
 use App\Traits\MediaTrait;
 use Illuminate\Contracts\View\View;
@@ -40,8 +41,7 @@ class OperationController extends Controller
     {
         try {
             $inverterTypeRate = InverterTypeRate::find($request->id);
-            $inverterTypeRate->panels_qty = $request->panel_qty;
-            $inverterTypeRate->redline_cost = $request->redline_cost;
+            $inverterTypeRate->base_cost = $request->base_cost;
             $inverterTypeRate->save();
             return redirect()->route("view-redline-cost");
         } catch (\Throwable $th) {
@@ -53,16 +53,14 @@ class OperationController extends Controller
     public function redlineStore(Request $request)
     {
         $validated = $request->validate([
-            'panel_qty' => 'required',
             'reason' => 'required_if:status,Cancelled|integer',
         ]);
         try {
-            $count = InverterTypeRate::where("inverter_type_id", $request->inverter_type_id)->where("panels_qty", $request->panel_qty)->count();
+            $count = InverterTypeRate::where("inverter_type_id", $request->inverter_type_id)->count();
             if ($count == 0) {
                 InverterTypeRate::create([
                     "inverter_type_id" => $request->inverter_type_id,
-                    "panels_qty" => $request->panel_qty,
-                    "redline_cost" => $request->redline_cost,
+                    "base_cost" => $request->base_cost,
                 ]);
                 return redirect()->route("view-redline-cost")->with("success", "Data Saved Successfully");
             } else {

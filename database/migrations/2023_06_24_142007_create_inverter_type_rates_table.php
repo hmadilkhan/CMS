@@ -14,8 +14,7 @@ return new class extends Migration
         Schema::create('inverter_type_rates', function (Blueprint $table) {
             $table->id();
             $table->integer("inverter_type_id");
-            $table->integer("panels_qty");
-            $table->float("redline_cost");
+            $table->float("base_cost");
             $table->softDeletes();
             $table->timestamps();
         });

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\InverterType;
 use App\Models\ModuleType;
 use Illuminate\Http\Request;
 
@@ -13,7 +14,8 @@ class ModuleTypeController extends Controller
     public function index()
     {
         return view("module-types.index",[
-            "types" => ModuleType::all(),
+            "types" => ModuleType::with("inverter")->get(),
+            "inverterTypes" => InverterType::all(),
             "type" => [],
         ]);
     }
@@ -33,6 +35,7 @@ class ModuleTypeController extends Controller
     {
         $validated = $request->validate([
             'name' => 'required',
+            'inverter_type_id' => 'required',
             'value' => 'required',
         ]);
         try {
@@ -59,6 +62,7 @@ class ModuleTypeController extends Controller
     {
         return view("module-types.index",[
             "types" => ModuleType::all(),
+            "inverterTypes" => InverterType::all(),
             "type" => $moduleType,
         ]);
     }
@@ -75,6 +79,8 @@ class ModuleTypeController extends Controller
         try {
             $moduleType->name = $request->name;
             $moduleType->value = $request->value;
+            $moduleType->amount = $request->amount;
+            $moduleType->inverter_type_id = $request->inverter_type_id;
             $moduleType->save();
             return redirect()->route("module-types.index");
         } catch (\Throwable $th) {
@@ -88,6 +94,11 @@ class ModuleTypeController extends Controller
      */
     public function destroy(ModuleType $moduleType)
     {
-        //
+        try {
+            $moduleType->delete();
+            return response()->json(["status" => 200,"message" => "Module Type Deleted"]);
+        } catch (\Throwable $th) {
+            return response()->json(["status" => 500,"message" => "Module Type not deleted","error" => $th->getMessage()]);
+        }
     }
 }

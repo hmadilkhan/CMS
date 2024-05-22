@@ -305,8 +305,10 @@ class CustomerController extends Controller
     public function getRedlineCost(Request $request)
     {
         try {
-            $cost = InverterTypeRate::where("inverter_type_id", $request->inverterType)->where("panels_qty", $request->qty)->first("redline_cost");
-            return response()->json(["status" => 200, "redlinecost" => $cost->redline_cost]);
+            // $cost = InverterTypeRate::where("inverter_type_id", $request->inverterType)->where("panels_qty", $request->qty)->first("redline_cost");
+            $cost = InverterTypeRate::where("inverter_type_id", $request->inverterType)->first("base_cost");
+            $modules = ModuleType::where("inverter_type_id",$request->inverterType)->get();
+            return response()->json(["status" => 200, "redlinecost" => $cost->base_cost, "modules" => $modules]);
         } catch (\Throwable $th) {
             return response()->json(["status" => 200, "message" => $th->getMessage()]);
         }
@@ -337,7 +339,7 @@ class CustomerController extends Controller
     public function getModulTypevalue(Request $request)
     {
         try {
-            $types = ModuleType::where("id", $request->id)->first();
+            $types = ModuleType::where("id", $request->id)->where("inverter_type_id", $request->inverterTypeId)->first();
             return response()->json(["status" => 200, "types" => $types]);
         } catch (\Throwable $th) {
             return response()->json(["status" => 200, "message" => $th->getMessage()]);

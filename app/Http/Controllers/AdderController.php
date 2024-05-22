@@ -41,10 +41,12 @@ class AdderController extends Controller
                     "adder_unit_id" => $request->adder_unit_id,
                     "amount" => $request->amount,
                 ]);
-    
+                $finance = CustomerFinance::where("customer_id", $request->customer_id)->first();
                 $addersAmount = CustomerAdder::where("customer_id", $request->customer_id)->sum("amount");
+                $commission = $finance->contract_amount - $finance->dealer_fee_amount -  $finance->redline_costs - $addersAmount;
                 CustomerFinance::where("customer_id", $request->customer_id)->update([
-                    "adders" => $addersAmount
+                    "adders" => $addersAmount,
+                    "commission" => $commission,
                 ]);
                 $addersList = CustomerAdder::with("type","unit")->where("customer_id", $request->customer_id)->get();
             }
@@ -88,9 +90,12 @@ class AdderController extends Controller
         DB::beginTransaction();
         try {
             CustomerAdder::where("id", $request->id)->delete();
+            $finance = CustomerFinance::where("customer_id", $request->customer_id)->first();
             $addersAmount = CustomerAdder::where("customer_id", $request->customer_id)->sum("amount");
+            $commission = $finance->contract_amount - $finance->dealer_fee_amount -  $finance->redline_costs - $addersAmount;
             CustomerFinance::where("customer_id", $request->customer_id)->update([
-                "adders" => $addersAmount
+                "adders" => $addersAmount,
+                "commission" => $commission,
             ]);
             $addersList = CustomerAdder::with("type","unit")->where("customer_id", $request->customer_id)->get();
             DB::commit();

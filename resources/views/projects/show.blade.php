@@ -982,6 +982,10 @@
             let panelQty = $('#panel_qty').val();
             amount = amount * moduleQty; //* panelQty;
         }
+        if (unit_id == 5) {
+            let panelQty = $('#panel_qty').val();
+            amount = amount * panelQty; //* panelQty;
+        }
         let result = checkExistence(adders_id, subadder_id, unit_id);
         if (result == false) {
             addAdderToDB("{{$project->customer->id}}", adders_id, unit_id, amount);
@@ -1058,7 +1062,7 @@
             success: function(response) {
                 if (response.status == 200) {
                     Swal.fire(
-                        'Deleted!',
+                        'Added!',
                         'Adders has been added.',
                         'success'
                     )

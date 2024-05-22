@@ -13,7 +13,7 @@
 @endif
 <div class="card card-info">
     <div class="card-header">
-        <h4 class="card-title">Change Redline Cost</h4>
+        <h4 class="card-title">Inverter Base Cost</h4>
     </div>
     <div class="card-body">
         <!-- ADD NEW PRODUCT PART START -->
@@ -35,22 +35,11 @@
                     <div class="text-danger message mt-2">{{$message}}</div>
                     @enderror
                 </div>
-                <div class="col-sm-4 ">
-                    <!-- <div class="form-group"> -->
-                    <label>Panel Qty</label>
-                    <input type="text" class="form-control @error('panel_qty') is-invalid @enderror" id="panel_qty" name="panel_qty" placeholder="Enter Panel Qty" value="{{ !empty($redline) ? $redline->panels_qty : old('panel_qty') }}">
-                    @error('panel_qty')
-                    <span class="invalid-feedback" role="alert">
-                        <strong>{{ $message }}</strong>
-                    </span>
-                    @enderror
-                    <!-- </div> -->
-                </div>
                 <div class="col-sm-4">
                     <!-- <div class="form-group"> -->
-                    <label>Redline Cost</label>
-                    <input type="text" class="form-control @error('redline_cost') is-invalid @enderror" id="redline_cost" name="redline_cost" placeholder="Enter Redline Cost" value="{{ !empty($redline) ? $redline->redline_cost : old('redline_cost') }}">
-                    @error('redline_cost')
+                    <label>Base Cost</label>
+                    <input type="text" class="form-control @error('base_cost') is-invalid @enderror" id="base_cost" name="base_cost" placeholder="Enter Redline Cost" value="{{ !empty($redline) ? $redline->base_cost : old('base_cost') }}">
+                    @error('base_cost')
                     <span class="invalid-feedback" role="alert">
                         <strong>{{ $message }}</strong>
                     </span>
@@ -74,16 +63,15 @@
 </div>
 <div class="card mt-3">
     <div class="card-header">
-        <h4 class="card-title">Redline Cost List</h3>
+        <h4 class="card-title">Base Cost List</h3>
     </div>
     <div class="card-body">
-        <table id="example1" class="table table-bordered table-striped datatable">
+        <table id="example1" class="table table-bordered table-striped datatable table-responsive">
             <thead>
                 <tr>
                     <th>No.</th>
                     <th>Inverter</th>
-                    <th>Panel Qty</th>
-                    <th>Redline Cost</th>
+                    <th>Base Cost</th>
                     <th>Actions</th>
                 </tr>
             </thead>
@@ -92,8 +80,7 @@
                 <tr>
                     <td>{{ ++$key }}</td>
                     <td>{{ $list->inverter->name }}</td>
-                    <td>{{ $list->panels_qty }}</td>
-                    <td>{{ $list->redline_cost }}</td>
+                    <td>{{ $list->base_cost }}</td>
                     <td class="text-center">
                         <a style="cursor: pointer;" data-toggle="tooltip" title="Edit" href="{{ route('view-redline-cost',$list->id)}}">
                             <i class="icofont-pencil text-warning"></i></a>
@@ -148,32 +135,25 @@
             }
         });
     }
-    $("#inverter_type_id").change(function() {
-        $.ajax({
-            method: "POST",
-            url: "{{ route('get-redline-cost') }}",
-            data: {
-                _token: "{{csrf_token()}}",
-                inverter_type_id: $(this).val()
-            },
-            success: function(response) {
-                $("#example1 tbody").empty();
-                $.each(response.redlinecostlist, function(index, value) {
-                    console.log(value);
-                    // let row = "<tr>"+
-                    //     "<td>"+(++index)+"</td>"+
-                    //     "<td>"+value.inverter.name+"</td>"+
-                    //     "<td>"+value.panel_qty+"</td>"+
-                    //     "<td>"+value.redline_cost+"</td>"+
-                    //     "<td></td>";
-                    // $("#example1 tbody").append(row)
-                });
+    // $("#inverter_type_id").change(function() {
+    //     $.ajax({
+    //         method: "POST",
+    //         url: "{{ route('get-redline-cost') }}",
+    //         data: {
+    //             _token: "{{csrf_token()}}",
+    //             inverter_type_id: $(this).val()
+    //         },
+    //         success: function(response) {
+    //             $("#example1 tbody").empty();
+    //             $.each(response.redlinecostlist, function(index, value) {
+    //                 console.log(value);
+    //             });
 
-            },
-            error: function(error) {
-                console.log(error.responseJSON.message);
-            }
-        })
-    })
+    //         },
+    //         error: function(error) {
+    //             console.log(error.responseJSON.message);
+    //         }
+    //     })
+    // })
 </script>
 @endsection

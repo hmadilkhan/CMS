@@ -18,7 +18,7 @@ class ReportController extends Controller
 
     public function getProfitabilityReport(Request $request)
     {
-        $customer = Customer::with("salespartner","finances","project")->whereBetween("sold_date",[$request->from,$request->to]);
+        $customer = Customer::with("salespartner","finances","project")->whereBetween("solar_install_date",[$request->from,$request->to]);
         if ($request->sales_partner_id != "") {
             $customer->where("sales_partner_id",$request->sales_partner_id);
         }

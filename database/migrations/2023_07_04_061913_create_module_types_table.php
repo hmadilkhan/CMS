@@ -13,8 +13,10 @@ return new class extends Migration
     {
         Schema::create('module_types', function (Blueprint $table) {
             $table->id();
+            $table->integer("inverter_type_id");
             $table->string("name");
             $table->float("value");
+            $table->float("amount");
             $table->softDeletes();
             $table->timestamps();
         });
