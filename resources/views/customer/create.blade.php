@@ -106,7 +106,7 @@
 
                 <div class="col-sm-4">
                     <label class="form-label">Inverter Type</label>
-                    <select  class="form-select select2" aria-label="Default select Inverter Type" id="inverter_type_id" name="inverter_type_id" onchange="getRedlineCost()">
+                    <select class="form-select select2" aria-label="Default select Inverter Type" id="inverter_type_id" name="inverter_type_id" onchange="getRedlineCost()">
                         <option value="">Select Inverter Type</option>
                         @foreach ($inverter_types as $inverter)
                         <option value="{{ $inverter->id }}">
@@ -121,7 +121,7 @@
 
                 <div class="col-sm-4">
                     <label class="form-label">Module Type</label>
-                    <select class="form-select select2" aria-label="Default select Module Type" id="module_type_id" name="module_type_id" onchange="getRedlineCost()">
+                    <select class="form-select select2" aria-label="Default select Module Type" id="module_type_id" name="module_type_id" onchange="calculateSystemSize()">
                         <option value="">Select Module Type</option>
                         @foreach ($modules as $module)
                         <option value="{{ $module->id }}">
@@ -133,11 +133,11 @@
                     <div class="text-danger message mt-2">{{$message}}</div>
                     @enderror
                 </div>
-                
+
 
                 <div class="col-sm-4">
                     <label for="code" class="form-label">Panel Qty</label>
-                    <input type="text" class="form-control" id="panel_qty" name="panel_qty" placeholder="Panel Qty" onblur="getRedlineCost()">
+                    <input type="text" class="form-control" id="panel_qty" name="panel_qty" placeholder="Panel Qty" onblur="calculateSystemSizeAmount()">
                     @error("panel_qty")
                     <div class="text-danger message mt-2">{{$message}}</div>
                     @enderror
@@ -341,6 +341,8 @@
 @endsection
 @section("scripts")
 <script>
+    var moduleCost = 0;
+    var systemSize = 0;
     $(document).ready(function() {
         $(".loandiv").css("display", "none");
     });
@@ -422,56 +424,104 @@
         })
     }
     var baseCost = 0;
+
     function getRedlineCost() {
         let panelQty = $("#panel_qty").val();
         let inverterType = $("#inverter_type_id").val();
-        modulesType($("#module_type_id").val());
-        
+        // modulesType($("#module_type_id").val());
+
+        $.ajax({
+            method: "POST",
+            url: "{{ route('get.redline.cost') }}",
+            data: {
+                _token: "{{ csrf_token() }}",
+                qty: panelQty,
+                inverterType: inverterType,
+            },
+            dataType: 'json',
+            success: function(response) {
+                $('#redline_costs').val('');
+                if (response.modules.length > 0) {
+                    $("#module_type_id").empty();
+                    $('#module_type_id').append($('<option  value="">Select Module Type</option>'));
+                    $.each(response.modules, function(i, user) {
+                        $('#module_type_id').append($('<option  value="' + user.id + '">' + user.name + '</option>'));
+                    });
+                }
+                baseCost = response.redlinecost;
+                // console.log(response.redlinecost);
+                // let moduleQty = $('#module_qty').val();
+                // let panelQty = $('#panel_qty').val();
+                let redlinecost = response.redlinecost;
+                $('#redline_costs').val(redlinecost);
+
+            },
+            error: function(error) {
+                console.log(error.responseJSON.message);
+            }
+        })
+        setTimeout(() => {
+            if (panelQty != "" && inverterType != "") {
+                let moduleQty = $("#module_qty").val();
+                $("#module_qty").val(panelQty * moduleQty);
+                let redlinecost = baseCost + (panelQty * moduleCost);
+                console.log("Redline Cost", redlinecost);
+                $("#redline_costs").val(redlinecost);
+                console.log(baseCost);
+            }
+        }, 2000);
+        // }
+        calculateCommission()
+    }
+
+    function modulesType(id) {
+        if (id != "") {
+            $("#inverter_type_id").prop("disabled", false)
             $.ajax({
                 method: "POST",
-                url: "{{ route('get.redline.cost') }}",
+                url: "{{ route('get.module.types') }}",
                 data: {
                     _token: "{{ csrf_token() }}",
-                    qty: panelQty,
-                    inverterType: inverterType,
+                    id: id,
+                    inverterTypeId: $("#inverter_type_id").val()
                 },
                 dataType: 'json',
                 success: function(response) {
-                    $('#redline_costs').val('');
-                    if (response.modules.length > 0) {
-                        $("#module_type_id").empty();
-                        $('#module_type_id').append($('<option  value="">Select Module Type</option>'));
-                        $.each(response.modules, function(i, user) {
-                            $('#module_type_id').append($('<option  value="' + user.id + '">' + user.name + '</option>'));
-                        });                    
-                    }
-                    baseCost = response.redlinecost;
-                    // console.log(response.redlinecost);
-                    // let moduleQty = $('#module_qty').val();
-                    // let panelQty = $('#panel_qty').val();
-                    let redlinecost = response.redlinecost;
-                    $('#redline_costs').val(redlinecost);
-
+                    moduleCost = response.types.amount;
+                    systemSize = response.types.value;
+                    $("#module_qty").val(response.types.value);
                 },
                 error: function(error) {
                     console.log(error.responseJSON.message);
                 }
             })
-            setTimeout(() => {
-                if (panelQty != "" && inverterType != "") {
-                    let moduleQty = $("#module_qty").val();
-                    $("#module_qty").val(panelQty * moduleQty);
-                    let redlinecost = baseCost + (panelQty * moduleCost);
-                    console.log("Redline Cost",redlinecost);
-                    $("#redline_costs").val(redlinecost);
-                    console.log(baseCost);
-                }
-            }, 2000);
-        // }
-        calculateCommission()
+        } else {
+            // $("#inverter_type_id").prop("disabled", true)
+        }
     }
 
-    
+
+    function calculateSystemSize() {
+        let moduleQty = $("#module_qty").val();
+        modulesType($("#module_type_id").val());
+        let panelQty = $("#panel_qty").val();
+        let inverterType = $("#inverter_type_id").val();
+
+        $("#module_qty").val(panelQty * systemSize);
+        let redlinecost = baseCost + (panelQty * moduleCost);
+        console.log("Redline Cost", redlinecost);
+        $("#redline_costs").val(redlinecost);
+        console.log("Base Cost",baseCost);
+    }
+
+    function calculateSystemSizeAmount() {
+        let panelQty = $("#panel_qty").val();
+        let moduleQty = $("#module_qty").val();
+        $("#module_qty").val(panelQty * systemSize);
+        let redlinecost = baseCost + (panelQty * moduleCost);
+        $("#redline_costs").val(redlinecost);
+    }
+
 
     function dealerFee(value) {
         let dealerFee = (value != undefined ? value : parseFloat($("#dealer_fee").val()));
@@ -612,34 +662,8 @@
         $("#amount").val('');
     }
 
-    // $("#module_type_id").change(function() {
-    //     modulesType($(this).val());
-    // });
-    var moduleCost = 0;
-    function modulesType(id) {
-        if (id != "") {
-            $("#inverter_type_id").prop("disabled", false)
-            $.ajax({
-                method: "POST",
-                url: "{{ route('get.module.types') }}",
-                data: {
-                    _token: "{{ csrf_token() }}",
-                    id: id,
-                    inverterTypeId : $("#inverter_type_id").val()
-                },
-                dataType: 'json',
-                success: function(response) {
-                    moduleCost = response.types.amount;
-                    $("#module_qty").val(response.types.value);
-                },
-                error: function(error) {
-                    console.log(error.responseJSON.message);
-                }
-            })
-        } else {
-            // $("#inverter_type_id").prop("disabled", true)
-        }
-    }
+
+
 
     $("#sales_partner_id").change(function() {
         $('#sales_partner_user_id').empty();
