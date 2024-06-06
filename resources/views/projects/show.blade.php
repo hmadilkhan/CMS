@@ -658,7 +658,8 @@
     <div class="tab-pane fade" id="financial" role="tabpanel">
         <div class="card mt-1">
             <div class="card-body">
-                @if(auth()->user()->getRoleNames()[0] == "Manager" or auth()->user()->getRoleNames()[0] == "Admin" or auth()->user()->getRoleNames()[0] == "Super Admin")
+                {{-- @if(auth()->user()->getRoleNames()[0] == "Manager" or auth()->user()->getRoleNames()[0] == "Admin" or auth()->user()->getRoleNames()[0] == "Super Admin") --}}
+                @can('View Financial Details')
                 <div class="card-header py-3 px-0 d-sm-flex align-items-center  justify-content-between border-bottom">
                     <h3 class=" fw-bold flex-fill mb-0 mt-sm-0" data-bs-toggle="collapse" data-bs-target="#finance" aria-expanded="false" aria-controls="finance">Financial Details</h3>
                 </div>
@@ -705,7 +706,8 @@
                 <div class="col-sm-12 mb-3">
                     <button type="submit" class="btn btn-dark me-1 mt-1 w-sm-100"><i class="icofont-arrow-left me-2 fs-6"></i>Submit</button>
                 </div>
-                @endif
+                {{-- @endif --}}
+                @endcan
             </div>
         </div>
     </div>
