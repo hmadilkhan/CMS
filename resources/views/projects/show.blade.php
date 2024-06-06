@@ -38,10 +38,14 @@
                     <li class="nav-item"><a class="nav-link active" data-bs-toggle="tab" href="#default" role="tab">Action Menu</a></li>
                     <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#customer" role="tab">Customer</a></li>
                     <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#salespartner" role="tab">Sales Partner</a></li>
-                    @if(auth()->user()->getRoleNames()[0] == "Manager" or auth()->user()->getRoleNames()[0] == "Sales Manager" or auth()->user()->getRoleNames()[0] == "Admin" or auth()->user()->getRoleNames()[0] == "Super Admin")
-                    <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#addersDiv" role="tab">Adders</a></li>
-                    <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#financial" role="tab">FInancial</a></li>
-                    @endif
+                    {{-- @if(auth()->user()->getRoleNames()[0] == "Manager" or auth()->user()->getRoleNames()[0] == "Sales Manager" or auth()->user()->getRoleNames()[0] == "Admin" or auth()->user()->getRoleNames()[0] == "Super Admin") --}}
+                    @can('View Adder Details')
+                        <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#addersDiv" role="tab">Adders</a></li>
+                    @endcan
+                    @can('View Financial Details')
+                        <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#financial" role="tab">FInancial</a></li>
+                    @endcan
+                    {{-- @endif --}}
                 </ul>
             </div>
         </div>
