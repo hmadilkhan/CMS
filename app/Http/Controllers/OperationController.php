@@ -115,6 +115,12 @@ class OperationController extends Controller
 
     public function dealerFeeStore(Request $request)
     {
+        $validated = $request->validate([
+            'loan_term_id' => 'required',
+            'finance_option_id' => 'required',
+            'apr' => 'required',
+            'dealer_fee' => 'required',
+        ]);
         try {
             $count = LoanApr::where("loan_term_id", $request->loan_term_id)->where("finance_option_id", $request->finance_option_id)->count();
             if ($count == 0) {
