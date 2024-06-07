@@ -347,7 +347,7 @@
         $(".loandiv").css("display", "none");
     });
     $("#finance_option_id").change(function() {
-        if ($(this).val() != 1) {
+        if ($(this).val() != 1 || $(this).val() != 5) {
             $(".loandiv").css("display", "block");
             $.ajax({
                 method: "POST",
