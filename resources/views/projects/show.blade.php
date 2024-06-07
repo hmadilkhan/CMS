@@ -137,24 +137,26 @@
                 </div>
             </div>
             @endif
-            <div class="col-md-4">
-                <div class="card">
-                    <div class="card-body">
-                        <div class="col-sm-12 py-3 px-5">
-                            <div class="card-header px-0 d-sm-flex align-items-center   border-bottom">
-                                <h5 class=" fw-bold flex-fill mb-0 mt-sm-0">Department Tools</h5>
-                            </div>
-                            <div class="row flex flex-column g-3 mb-3">
-                                <ul class="list-group list-group-custom">
-                                    @foreach($tools as $tool)
-                                    <li class="list-group-item light-primary-bg"><a target="_blank" href="{{asset('storage/tools/'.$tool->file)}}" class="ml-3">{{$tool->name}}</a></li>
-                                    @endforeach
-                                </ul>
+            @can('Department Tools')
+                <div class="col-md-4">
+                    <div class="card">
+                        <div class="card-body">
+                            <div class="col-sm-12 py-3 px-5">
+                                <div class="card-header px-0 d-sm-flex align-items-center   border-bottom">
+                                    <h5 class=" fw-bold flex-fill mb-0 mt-sm-0">Department Tools</h5>
+                                </div>
+                                <div class="row flex flex-column g-3 mb-3">
+                                    <ul class="list-group list-group-custom">
+                                        @foreach($tools as $tool)
+                                        <li class="list-group-item light-primary-bg"><a target="_blank" href="{{asset('storage/tools/'.$tool->file)}}" class="ml-3">{{$tool->name}}</a></li>
+                                        @endforeach
+                                    </ul>
+                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
-            </div>
+            @endcan
         </div>
         @can("Project Move")
         <div class="row">
@@ -201,7 +203,7 @@
                                         </div>
 
                                     </div>
-                                    <!-- <div class="col-md-6">
+                                     {{-- <div class="col-md-6">
                                     <div class="col-sm-8 mb-3">
                                         <label for="call_no_2" class="form-label">Call No 2</label>
                                         <select class="form-select select2" aria-label="Default select Call No 1" id="call_no_2" name="call_no_2">
@@ -216,7 +218,7 @@
                                         <input type="text" class="form-control" id="notes_2" name="notes_2" value="{{old('notes_2')}}" />
                                         <div id="notes_2_message" class="text-danger message mt-2"></div>
                                     </div>
-                                </div> -->
+                                </div>  --}}
                                     <div class="col-sm-12 mb-3">
                                         <button type="button" class="btn btn-dark me-1 mt-1 w-sm-100" id="saveCallLogs"><i class="icofont-arrow-left me-2 fs-6"></i>Submit</button>
                                     </div>
@@ -380,23 +382,23 @@
                                 <div class="text-danger message mt-2">{{$message}}</div>
                                 @enderror
                             </div>
-                            <!-- <div class="col-sm-3 mb-3">
+                            {{-- <div class="col-sm-3 mb-3">
                                 <label for="formFileMultipleoneone" class="form-label" id="requiredfiles">Required Files</label>
                                 <input class="form-control" type="file" id="file" name="file[]" accept=".png,.jpg,.pdf" multiple>
                                 @error("file")
                                 <div id="file_message" class="text-danger message mt-2">{{$message}}</div>
                                 @enderror
                                 <div id="file_message" class="text-danger message mt-2"></div>
-                            </div> -->
+                            </div> --}}
 
                             <div id="fieldDiv" class="mt-2"></div>
-                            <!--<div class="col-sm-12 mb-3 mt-2">
+                            {{--<div class="col-sm-12 mb-3 mt-2">
                                 <label for="formFileMultipleoneone" class="form-label">Notes</label>
                                 <textarea class="form-control" rows="3" name="notes"></textarea>
                                 @error("notes")
                                 <div class="text-danger message mt-2">{{$message}}</div>
                                 @enderror
-                            </div>-->
+                            </div>--}}
                             <div class="col-sm-12 mb-3 mt-3">
                                 <button type="button" class="btn btn-dark me-1 mt-1 w-sm-100" id="saveProject"><i class="icofont-arrow-left me-2 fs-6"></i>Submit</button>
                             </div>

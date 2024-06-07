@@ -33,7 +33,8 @@ Route::get('/storage-link', function () {
 });
 
 Route::get('/', function () {
-    return view('welcome');
+    // return view('welcome');
+    return view('auth.login');
 });
 
 Route::get('/contact', function () {

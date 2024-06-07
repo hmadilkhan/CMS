@@ -54,10 +54,12 @@
         <label for="permitting_submittion_date" class="form-label">Permit Submission Date</label>
         <input disabled class="form-control" type="date" value="{{$project->permitting_submittion_date}}">
     </div>
+    @can('Actual Permit Fee')
     <div class="col-sm-6 mb-3 ">
         <label for="actual_permit_fee" class="form-label">Actual Permit Fee</label>
         <input disabled class="form-control" type="text" value="{{$project->actual_permit_fee}}">
     </div>
+    @endcan
     <div class="col-sm-6 mb-3 ">
         <label for="permitting_approval_date" class="form-label">Permit Approval Date</label>
         <input disabled class="form-control" type="date" value="{{$project->permitting_approval_date}}">
@@ -74,14 +76,18 @@
     @endif
     @endif
     @if($department->id == 5)
+    @can('Actual Labor Cost')
     <div class="col-sm-6 mb-3 ">
         <label for="actual_labor_cost" class="form-label">Actual Labor Cost</label>
         <input disabled class="form-control" type="text" value="{{$project->actual_labor_cost}}">
     </div>
+    @endcan
+    @can('Actual Material Cost')
     <div class="col-sm-6 mb-3 ">
         <label for="actual_material_cost" class="form-label">Actual Material Cost</label>
         <input disabled class="form-control" type="text" value="{{$project->actual_material_cost}}">
     </div>
+    @endcan
     <div class="col-sm-6 mb-3 ">
         <label for="solar_install_date" class="form-label">Solar Install Date </label>
         <input disabled class="form-control" type="date" value="{{$project->solar_install_date}}">
