@@ -212,7 +212,7 @@ class OperationController extends Controller
         if ($request->id != "") {
             $finance = FinanceOption::where("id", $request->id)->first();
         }
-        return view("operations/finance-option/index", [
+        return view("operations/finance-options/index", [
             "financeOptions" => FinanceOption::all(),
             "finance" => ($request->id != "" ? $finance : []),
         ]);
