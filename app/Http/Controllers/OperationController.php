@@ -116,7 +116,7 @@ class OperationController extends Controller
     public function dealerFeeStore(Request $request)
     {
         try {
-            $count = LoanApr::where("loan_term_id", $request->loan_term_id)->where("apr", $request->apr)->where("apr", $request->dealer_fee)->count();
+            $count = LoanApr::where("loan_term_id", $request->loan_term_id)->where("finance_option_id", $request->finance_option_id)->where("apr", $request->apr)->where("dealer_fee", $request->dealer_fee)->count();
             if ($count == 0) {
                 LoanApr::create([
                     "loan_term_id" => $request->loan_term_id,

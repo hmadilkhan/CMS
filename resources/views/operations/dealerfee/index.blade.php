@@ -40,7 +40,7 @@
                     <select class="form-select select2" aria-label="Default select Finance Option" id="finance_option_id" name="finance_option_id">
                         <option value="">Select Finance Option</option>
                         @foreach ($financing as $finance)
-                        <option {{(!empty($loan) && $loan->loan->finance->id == $finance->id ? 'selected' : '')}} value="{{ $finance->id }}">
+                        <option {{(!empty($loan) && $loan->finance_option_id == $finance->id ? 'selected' : '')}} value="{{ $finance->id }}">
                             {{ $finance->name }}
                         </option>
                         @endforeach
@@ -166,24 +166,24 @@
             }
         });
     }
-    $("#loan_term_id").change(function() {
-        $.ajax({
-            method: "POST",
-            url: "{{ route('finance.option') }}",
-            data: {
-                _token: "{{csrf_token()}}",
-                id: $(this).val()
-            },
-            success: function(response) {
-                console.log(response);
-                $("#finance_option_id").empty();
-                if (response.status == 200) {
-                    $.each(response.finances,function(index,item){
-                        $('#finance_option_id').append($('<option  value="' + item.id + '">' + item.name + '</option>'));
-                    });
-                }
-            }
-        });
-    });
+    // $("#loan_term_id").change(function() {
+    //     $.ajax({
+    //         method: "POST",
+    //         url: "{{ route('finance.option') }}",
+    //         data: {
+    //             _token: "{{csrf_token()}}",
+    //             id: $(this).val()
+    //         },
+    //         success: function(response) {
+    //             console.log(response);
+    //             $("#finance_option_id").empty();
+    //             if (response.status == 200) {
+    //                 $.each(response.finances,function(index,item){
+    //                     $('#finance_option_id').append($('<option  value="' + item.id + '">' + item.name + '</option>'));
+    //                 });
+    //             }
+    //         }
+    //     });
+    // });
 </script>
 @endsection
