@@ -65,7 +65,7 @@
                     <td>{{ ++$key }}</td>
                     <td>{{ $financeOption->name }}</td>
                     <td class="text-center">
-                        <a style="cursor: pointer;" data-toggle="tooltip" title="Edit" href="{{ route('view.adder.types',$financeOption->id)}}">
+                        <a style="cursor: pointer;" data-toggle="tooltip" title="Edit" href="{{ route('finance.option.types',$financeOption->id)}}">
                             <i class="icofont-pencil text-warning"></i></a>
                         <a style="cursor: pointer;" data-toggle="tooltip" title="Delete" class="ml-2" onclick="deleteDealerModal('{{ $financeOption->id }}')">
                             <i class="icofont-trash text-danger"></i></a>
