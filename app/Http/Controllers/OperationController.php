@@ -16,6 +16,7 @@ use App\Models\SalesPartner;
 use App\Traits\MediaTrait;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class OperationController extends Controller
 {
@@ -87,9 +88,10 @@ class OperationController extends Controller
             $loan = LoanApr::with("loan", "loan.finance")->where("id", $request->id)->first();
         }
         return view("operations/dealerfee/index", [
-            "dealerfeelist" => LoanApr::with("loan", "loan.finance")->get(),
+            "dealerfeelist" => LoanApr::with("loan", "finance")->get(),
             "terms" => LoanTerm::groupBy("year")->orderBy("id","asc")->get(),
-            "financing" => ($request->id != "" ? FinanceOption::whereIn("id", LoanTerm::where("year", $loan->loan->year)->pluck("finance_option_id"))->get() : [] ),
+            // "financing" => ($request->id != "" ? FinanceOption::whereIn("id", LoanTerm::where("year", $loan->loan->year)->pluck("finance_option_id"))->get() : [] ),
+            "financing" => FinanceOption::all(),
             "loan" => ($request->id != "" ? $loan : []),
         ]);
     }
@@ -118,6 +120,7 @@ class OperationController extends Controller
             if ($count == 0) {
                 LoanApr::create([
                     "loan_term_id" => $request->loan_term_id,
+                    "finance_option_id" => $request->finance_option_id,
                     "apr" => $request->apr,
                     "dealer_fee" => $request->dealer_fee,
                 ]);
@@ -222,15 +225,28 @@ class OperationController extends Controller
     {
         try {
             $count = FinanceOption::where("name", $request->name)->count();
+            
             if ($count == 0) {
-                FinanceOption::create([
+                DB::beginTransaction();
+                $finance = FinanceOption::create([
                     "name" => $request->name,
                 ]);
+                LoanTerm::create([
+                    "finance_option_id" => $finance->id,
+                    "year" => '10 Years',
+                ]);
+                LoanTerm::create([
+                    "finance_option_id" => $finance->id,
+                    "year" => '25 Years',
+                ]);
+                DB::commit();
                 return redirect()->route("finance.option.types")->with("success", "Data Saved Successfully");
             } else {
+                DB::rollBack();
                 return redirect()->route("finance.option.types")->with("error", "Data already exists");
             }
         } catch (\Throwable $th) {
+
             return redirect()->route("finance.option.types")->with("error", $th->getMessage());
         }
     }
@@ -250,9 +266,13 @@ class OperationController extends Controller
     public function financeOptionDelete(Request $request)
     {
         try {
+            DB::beginTransaction();
+            LoanTerm::where("finance_option_id",$request->id)->delete();
             FinanceOption::where("id", $request->id)->delete();
+            DB::commit();
             return response()->json(["status" => 200]);
         } catch (\Throwable $th) {
+            DB::rollBack();
             return response()->json(["status" => 500]);
         }
     }

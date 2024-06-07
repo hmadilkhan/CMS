@@ -14,4 +14,8 @@ class LoanApr extends Model
     public function loan() : BelongsTo {
         return $this->belongsTo(LoanTerm::class,"loan_term_id","id");
     }
+
+    public function finance() : BelongsTo {
+        return $this->belongsTo(FinanceOption::class,"finance_option_id","id");
+    }
 }

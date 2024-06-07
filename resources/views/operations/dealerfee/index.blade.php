@@ -97,8 +97,8 @@
                     <th>No.</th>
                     <th>Loan Term</th>
                     <th>Finance Option</th>
-                    <th>Panel Qty</th>
-                    <th>Redline Cost</th>
+                    <th>APR</th>
+                    <th>Dealer Fee %</th>
                     <th>Actions</th>
                 </tr>
             </thead>
@@ -107,7 +107,8 @@
                 <tr>
                     <td>{{ ++$key }}</td>
                     <td>{{ $list->loan->year }}</td>
-                    <td>{{(!empty($list->loan->finance) ? $list->loan->finance->name : '') }}</td>
+                    {{-- <td>{{(!empty($list->loan->finance) ? $list->loan->finance->name : '') }}</td> --}}
+                    <td>{{$list->finance->name }}</td>
                     <td>{{ $list->apr }}</td>
                     <td>{{ $list->dealer_fee }}</td>
                     <td class="text-center">
