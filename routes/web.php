@@ -155,6 +155,12 @@ Route::middleware('auth')->group(function () {
         Route::post('/adders-type-update', 'addersTypeUpdate')->name("adder.type.update");
         Route::post('/adders-type-delete', 'addersTypeDelete')->name("adder.type.delete");
 
+        // FINANCE OPTION VIEW
+        Route::get('/view-finance-option/{id?}', 'financeOptionView')->name("finance.option.types");
+        Route::post('/finance-option-store', 'financeOptionStore')->name("finance.option.store");
+        Route::post('/finance-option-update', 'financeOptionUpdate')->name("finance.option.update");
+        Route::post('/finance-option-delete', 'financeOptionDelete')->name("finance.option.delete");
+
         // SALES PARTNERS VIEW
         Route::get('/sales-partner-type/{id?}', 'salesPartnerView')->name("sales.partner.types");
         Route::post('/sales-partner-store', 'salesPartnerStore')->name("sales.partner.store");

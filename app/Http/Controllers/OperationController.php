@@ -207,6 +207,56 @@ class OperationController extends Controller
         }
     }
 
+    public function financeOptionView(Request $request)
+    {
+        if ($request->id != "") {
+            $finance = FinanceOption::where("id", $request->id)->first();
+        }
+        return view("operations/adder-type/index", [
+            "financeOptions" => FinanceOption::all(),
+            "finance" => ($request->id != "" ? $finance : []),
+        ]);
+    }
+
+    public function financeOptionStore(Request $request)
+    {
+        try {
+            $count = FinanceOption::where("name", $request->name)->count();
+            if ($count == 0) {
+                FinanceOption::create([
+                    "name" => $request->name,
+                ]);
+                return redirect()->route("finance.option.types")->with("success", "Data Saved Successfully");
+            } else {
+                return redirect()->route("finance.option.types")->with("error", "Data already exists");
+            }
+        } catch (\Throwable $th) {
+            return redirect()->route("finance.option.types")->with("error", $th->getMessage());
+        }
+    }
+
+    public function financeOptionUpdate(Request $request)
+    {
+        try {
+            $adder = FinanceOption::find($request->id);
+            $adder->name = $request->name;
+            $adder->save();
+            return redirect()->route("finance.option.types");
+        } catch (\Throwable $th) {
+            return redirect()->route("finance.option.types")->with('error', $th->getMessage());
+        }
+    }
+
+    public function financeOptionDelete(Request $request)
+    {
+        try {
+            FinanceOption::where("id", $request->id)->delete();
+            return response()->json(["status" => 200]);
+        } catch (\Throwable $th) {
+            return response()->json(["status" => 500]);
+        }
+    }
+
     public function addersTypeView(Request $request)
     {
         if ($request->id != "") {
@@ -256,7 +306,6 @@ class OperationController extends Controller
             return response()->json(["status" => 500]);
         }
     }
-
 
     public function getSubTypes(Request $request)
     {

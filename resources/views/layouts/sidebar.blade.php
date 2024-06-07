@@ -59,10 +59,10 @@
             @endcan
             @can('User Management')
             <li class="collapsed">
-                <a class="m-link {{ (Route::currentRouteName() == 'module-types.index' or Route::currentRouteName() == 'view-redline-cost' or Route::currentRouteName() == 'view-dealer-fee' or Route::currentRouteName() == 'tools.index' or Route::currentRouteName() == 'office-costs.index' or Route::currentRouteName() == 'view-adders' or Route::currentRouteName() == 'view.adder.types' or Route::currentRouteName() == 'view-inverter-type' or Route::currentRouteName() == 'sales.partner.types' ) ? 'show' : '' }}" data-bs-toggle="collapse" data-bs-target="#module-types" href="#">
+                <a class="m-link {{ (Route::currentRouteName() == 'module-types.index' or Route::currentRouteName() == 'view-redline-cost' or Route::currentRouteName() == 'view-dealer-fee' or Route::currentRouteName() == 'tools.index' or Route::currentRouteName() == 'office-costs.index' or Route::currentRouteName() == 'view-adders' or Route::currentRouteName() == 'view.adder.types' or Route::currentRouteName() == 'view-inverter-type' or Route::currentRouteName() == 'sales.partner.types' or Route::currentRouteName() == 'finance.option.types' ) ? 'show' : '' }}" data-bs-toggle="collapse" data-bs-target="#module-types" href="#">
                     <i class="icofont-briefcase"></i><span>Operations</span> <span class="arrow icofont-dotted-down ms-auto text-end fs-5"></span></a>
                 <!-- Menu: Sub menu ul -->
-                <ul class="sub-menu collapse {{ (Route::currentRouteName() == 'module-types.index' or Route::currentRouteName() == 'view-redline-cost' or Route::currentRouteName() == 'view-dealer-fee' or Route::currentRouteName() == 'tools.index' or Route::currentRouteName() == 'office-costs.index' or Route::currentRouteName() == 'view-adders' or Route::currentRouteName() == 'view.adder.types' or Route::currentRouteName() == 'view-inverter-type' or Route::currentRouteName() == 'sales.partner.types' ) ? 'show' : '' }}" id="module-types">
+                <ul class="sub-menu collapse {{ (Route::currentRouteName() == 'module-types.index' or Route::currentRouteName() == 'view-redline-cost' or Route::currentRouteName() == 'view-dealer-fee' or Route::currentRouteName() == 'tools.index' or Route::currentRouteName() == 'office-costs.index' or Route::currentRouteName() == 'view-adders' or Route::currentRouteName() == 'view.adder.types' or Route::currentRouteName() == 'view-inverter-type' or Route::currentRouteName() == 'sales.partner.types' or Route::currentRouteName() == 'finance.option.types' ) ? 'show' : '' }}" id="module-types">
                     <li><a class="ms-link {{ Route::currentRouteName() == 'module-types.index' ? 'active' : '' }}" href="{{route('module-types.index')}}"><span>Module Types</span></a></li>
                     <li><a class="ms-link {{ Route::currentRouteName() == 'view-dealer-fee' ? 'active' : '' }}" href="{{route('view-dealer-fee')}}"><span>Dealer Fee</span></a></li>
                     <li><a class="ms-link {{ Route::currentRouteName() == 'tools.index' ? 'active' : '' }}" href="{{route('tools.index')}}"><span>Tools</span></a></li>
@@ -72,6 +72,7 @@
                     <li><a class="ms-link {{ Route::currentRouteName() == 'view-inverter-type' ? 'active' : '' }}" href="{{route('view-inverter-type')}}"><span>Inverter Types</span></a></li>
                     <li><a class="ms-link {{ Route::currentRouteName() == 'view-redline-cost' ? 'active' : '' }}" href="{{route('view-redline-cost')}}"><span>Inverter Base Cost</span></a></li>
                     <li><a class="ms-link {{ Route::currentRouteName() == 'sales.partner.types' ? 'active' : '' }}" href="{{route('sales.partner.types')}}"><span>Sales Partners</span></a></li>
+                    <li><a class="ms-link {{ Route::currentRouteName() == 'finance.option.types' ? 'active' : '' }}" href="{{route('finance.option.types')}}"><span>Finance Options</span></a></li>
                 </ul>
             </li>
             @endcan
