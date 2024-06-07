@@ -116,7 +116,7 @@ class OperationController extends Controller
     public function dealerFeeStore(Request $request)
     {
         try {
-            $count = LoanApr::where("loan_term_id", $request->loan_term_id)->where("finance_option_id", $request->finance_option_id)->where("apr", $request->apr)->where("dealer_fee", $request->dealer_fee)->count();
+            $count = LoanApr::where("loan_term_id", $request->loan_term_id)->where("finance_option_id", $request->finance_option_id)->count();
             if ($count == 0) {
                 LoanApr::create([
                     "loan_term_id" => $request->loan_term_id,
@@ -126,7 +126,7 @@ class OperationController extends Controller
                 ]);
                 return redirect()->route("view-dealer-fee")->with("success", "Data Saved Successfully");
             } else {
-                return redirect()->route("view-dealer-fee")->with("error", "Data already exists");
+                return redirect()->route("view-dealer-fee")->with("error", "Loan term already exists. Please update");
             }
         } catch (\Throwable $th) {
             return redirect()->route("view-dealer-fee")->with("error", $th->getMessage());
