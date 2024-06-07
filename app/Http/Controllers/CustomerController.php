@@ -285,7 +285,7 @@ class CustomerController extends Controller
     public function getLoanAprs(Request $request)
     {
         try {
-            $aprs = LoanApr::where("loan_term_id", $request->id)->get();
+            $aprs = LoanApr::where("loan_term_id", $request->id)->where("finance_option_id", $request->finance_option_id)->get();
             return response()->json(["status" => 200, "aprs" => $aprs]);
         } catch (\Throwable $th) {
             return response()->json(["status" => 200, "message" => $th->getMessage()]);

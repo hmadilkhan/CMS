@@ -403,6 +403,7 @@
                 data: {
                     _token: "{{ csrf_token() }}",
                     id: $(this).val(),
+                    finance_option_id: $("#finance_option_id").val()
                 },
                 dataType: 'json',
                 success: function(response) {
