@@ -1104,13 +1104,10 @@
             <div class="tab-pane fade" id="communication" role="tabpanel">
                 <div class="card mt-1">
                     <div class="card-body">
-                        {{-- <link href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css"
-                            rel="stylesheet" /> --}}
-
                         <div class="container">
                             <div class="row clearfix">
                                 <div class="col-lg-12">
-                                    <div class="card chat-app">
+                                    <div class="card">
                                         <div class="chat">
                                             <div class="chat-history">
                                                 <ul class="m-b-0">
@@ -1128,11 +1125,8 @@
                                             </div>
                                             <div class="chat-message clearfix">
                                                 <div class="input-group mb-0">
-                                                    <div class="input-group-prepend">
-                                                        <span class="input-group-text"><i class="fa fa-send"></i></span>
-                                                    </div>
-                                                    <input type="text" class="form-control"
-                                                        placeholder="Enter text here...">
+                                                    <input type="text" class="form-control" placeholder="Enter text here...">
+                                                    <div class="input-group-prepend"><span class="input-group-text"><i class="fa fa-send"></i></span></div>
                                                 </div>
                                             </div>
                                         </div>
