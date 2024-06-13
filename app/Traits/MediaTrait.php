@@ -9,10 +9,11 @@ trait MediaTrait {
 	
 	public function uploads($file, $path, $previousImage="")
     {
-        return $file;
         if($file) {
+            
 			$this->removeImage($path,$previousImage);
             $fileName   = time() ."-". str_replace(' ', '',$file->getClientOriginalName());
+            // return response()->json(["filename" => $fileName]);
             Storage::disk('public')->put($path . $fileName, File::get($file));
 			$file_size = $this->fileSize($file);
 			// $file->move(public_path('images/'.$path), $fileName);

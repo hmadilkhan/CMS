@@ -1175,7 +1175,7 @@
                                     </div>
                                     <div class="mb-1">
                                         <label for="exampleFormControlInput877" class="form-label">Attachments</label>
-                                        <input type="file" multiple class="form-control" id="file" name="files">
+                                        <input type="file" multiple class="form-control" id="image" name="images[]">
                                         <div id="name_message" class="text-danger message mt-2"></div>
                                     </div>
                                 </div>
@@ -1248,12 +1248,12 @@
             // fd.append('file', files);
             $.ajax({
                 url: '{{route("send.email")}}',
-                headers: {'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')},
                 type: 'POST',
                 data:new FormData(this),
+                dataType:'JSON',
                 contentType: false,
-                processData: false,
-                cache: false,
+			    cache: false,
+			    processData: false,
                 success: function(response) {
                     console.log(response);
                     // if (response != 0) {

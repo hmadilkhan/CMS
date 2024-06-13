@@ -363,24 +363,13 @@ class CustomerController extends Controller
 
     public function sendEmail(Request $request)
     {
-        return $this->uploads($request->file, 'emails');;
+        // return $this->uploads($request->file, 'emails');;
         // return count($request->files);
-        foreach ($request->files  as $value) {
-            return $value;
-            // $this->uploads($file, 'emails/');
+        foreach ($request->images  as $file) {
+            return $this->uploads($file, 'emails/');
         }
         return $request;
-        // return dispatch(new SendEmailJob());
         dispatch(new SendEmailJob($request));
-        // SendEmailJob::dispatch()->onQueue('emails');
-        // $data = [];
-        // Mail::send(['html' => 'mail.test-email'], $data, function ($message) use ($data) {
 
-        //     $message->to('hmadilkhan@gmail.com', 'John')
-
-        //         ->subject("This is test Queue.");
-
-        //     $message->from('dealreview@testsolencrm.com', 'LaravelQueue');
-        // });
     }
 }
