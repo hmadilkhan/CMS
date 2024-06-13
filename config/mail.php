@@ -114,6 +114,10 @@ return [
             'password' => env('MAIL_PASSWORD'),
             'timeout' => null,
             'auth_mode' => null,
+            'from' => [
+                'address' => env('MAIL_FROM_ADDRESS', 'info@example.com'),
+                'name' => env('MAIL_FROM_NAME', 'Example'),
+            ],
         ],
 
         // This is the second configuration, used to send info messages

@@ -9,6 +9,7 @@ trait MediaTrait {
 	
 	public function uploads($file, $path, $previousImage="")
     {
+        return $file;
         if($file) {
 			$this->removeImage($path,$previousImage);
             $fileName   = time() ."-". str_replace(' ', '',$file->getClientOriginalName());

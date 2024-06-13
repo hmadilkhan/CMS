@@ -2,6 +2,7 @@
 
 namespace App\Jobs;
 
+use App\Mail\TestEmail;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldBeUnique;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -18,9 +19,9 @@ class SendEmailJob implements ShouldQueue
     /**
      * Create a new job instance.
      */
-    public function __construct($details)
+    public function __construct()
     {
-        $this->details = $details;
+        // $this->details = $details;
     }
 
     /**
@@ -30,17 +31,19 @@ class SendEmailJob implements ShouldQueue
     {
         // Here mailer function use for sending emails with different account. This account defines in mail.php and .env file.
         // Mail::mailer('info')->to($recipient)->send(new OrderShipped($order));
+        // Mail::to("hmadilkhan@gmail.com")->send(new TestEmail());
+        Mail::mailer('info')->to("hmadilkhan@gmail.com")->send(new TestEmail());
+        // $data = $this->details;
+        // $data = [];
 
-        $data = $this->details;
+        // Mail::send(['html' => 'demo_email_template'], $data, function ($message) use ($data) {
 
-        Mail::send(['html' => 'demo_email_template'], $data, function ($message) use ($data) {
+        //     $message->to('hmadilkhan@gmail.com', 'John')
 
-            $message->to('receiver@gmail.com', 'John')
+        //         ->subject("This is test Queue.");
 
-                ->subject("This is test Queue.");
-
-            $message->from('info@demo.com', 'LaravelQueue');
-        });
+        //     // $message->from('info@demo.com', 'LaravelQueue');
+        // });
         
         // This needs to be run to process the queue and if we want to do this automatically then we need to do this by scheduling this commands on the server side.        
         //PHP artisan queue:listen

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Jobs\SendEmailJob;
 use App\Models\Adder;
 use App\Models\AdderSubType;
 use App\Models\AdderType;
@@ -22,11 +23,15 @@ use App\Models\SalesPartner;
 use App\Models\SubDepartment;
 use App\Models\Task;
 use App\Models\User;
+use App\Traits\MediaTrait;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Mail;
 
 class CustomerController extends Controller
 {
+    use MediaTrait;
     /**
      * Display a listing of the resource.
      */
@@ -44,7 +49,7 @@ class CustomerController extends Controller
     {
         return view("customer.create", [
             "financeoptions" => FinanceOption::all(),
-            "partners" => SalesPartner::all(),//User::filterByRole('Sales Person')->get(),
+            "partners" => SalesPartner::all(), //User::filterByRole('Sales Person')->get(),
             "inverter_types" => InverterType::all(),
             "battery_types" => BatteryType::all(),
             "modules" => ModuleType::all(),
@@ -77,7 +82,7 @@ class CustomerController extends Controller
             'dealer_fee' => 'required',
             'sales_partner_user_id' => 'required',
         ]);
-        
+
         try {
             DB::beginTransaction();
             // Customer::create($request->except(["finance_option_id", "contract_amount", "redline_costs", "adders", "commission", "dealer_fee","loan_term_id","loan_apr_id","dealer_fee_amount"]));
@@ -162,13 +167,13 @@ class CustomerController extends Controller
 
     public function generateProjectCode()
     {
-        $project = Project::orderBy("id","DESC")->first("code");
-        
-        if(empty($project)){
+        $project = Project::orderBy("id", "DESC")->first("code");
+
+        if (empty($project)) {
             $code = "1001";
             return $code;
-        }else{
-            return $project->code+1;
+        } else {
+            return $project->code + 1;
         }
     }
 
@@ -307,7 +312,7 @@ class CustomerController extends Controller
         try {
             // $cost = InverterTypeRate::where("inverter_type_id", $request->inverterType)->where("panels_qty", $request->qty)->first("redline_cost");
             $cost = InverterTypeRate::where("inverter_type_id", $request->inverterType)->first("base_cost");
-            $modules = ModuleType::where("inverter_type_id",$request->inverterType)->get();
+            $modules = ModuleType::where("inverter_type_id", $request->inverterType)->get();
             return response()->json(["status" => 200, "redlinecost" => $cost->base_cost, "modules" => $modules]);
         } catch (\Throwable $th) {
             return response()->json(["status" => 200, "message" => $th->getMessage()]);
@@ -328,8 +333,8 @@ class CustomerController extends Controller
     {
         try {
             $adders = Adder::where("adder_type_id", $request->adder)
-                    //  ->where("adder_sub_type_id", $request->subadder)
-                     ->first();
+                //  ->where("adder_sub_type_id", $request->subadder)
+                ->first();
             return response()->json(["status" => 200, "adders" => $adders]);
         } catch (\Throwable $th) {
             return response()->json(["status" => 200, "message" => $th->getMessage()]);
@@ -354,5 +359,28 @@ class CustomerController extends Controller
         } catch (\Throwable $th) {
             return response()->json(["status" => 200, "message" => $th->getMessage()]);
         }
+    }
+
+    public function sendEmail(Request $request)
+    {
+        return $this->uploads($request->file, 'emails');;
+        // return count($request->files);
+        foreach ($request->files  as $value) {
+            return $value;
+            // $this->uploads($file, 'emails/');
+        }
+        return $request;
+        // return dispatch(new SendEmailJob());
+        dispatch(new SendEmailJob($request));
+        // SendEmailJob::dispatch()->onQueue('emails');
+        // $data = [];
+        // Mail::send(['html' => 'mail.test-email'], $data, function ($message) use ($data) {
+
+        //     $message->to('hmadilkhan@gmail.com', 'John')
+
+        //         ->subject("This is test Queue.");
+
+        //     $message->from('dealreview@testsolencrm.com', 'LaravelQueue');
+        // });
     }
 }
