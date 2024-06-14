@@ -3,3 +3,6 @@ Password : Deal@247
 
 Email : sitesurvey@testsolencrm.com
 Password : Site@247
+
+Email : info@testsolencrm.com
+Password : Dawood#12

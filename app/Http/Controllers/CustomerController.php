@@ -26,6 +26,7 @@ use App\Models\User;
 use App\Traits\MediaTrait;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Mail\Mailables\Attachment;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
 
@@ -363,13 +364,20 @@ class CustomerController extends Controller
 
     public function sendEmail(Request $request)
     {
+        $attachments = [];
+        $details = [
+            "subject" => $request->subject,
+            "body" => $request->content,
+        ];
         // return $this->uploads($request->file, 'emails');;
         // return count($request->files);
-        foreach ($request->images  as $file) {
-            return $this->uploads($file, 'emails/');
+        if (count($request->images) > 0) {
+            foreach ($request->images  as $file) {
+                $savedFile = $this->uploads($file, 'emails/');
+                // array_push($attachments,$savedFile['fileName']);
+            }
         }
-        return $request;
-        dispatch(new SendEmailJob($request));
+        dispatch(new SendEmailJob($details,$attachments));
 
     }
 }

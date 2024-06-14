@@ -1158,6 +1158,9 @@
                     </div>
                     <form id="emailform" method="POST" enctype="multipart/form-data">
                         @csrf
+                        <input type="hidden" name="project_id" value="{{ $project->id }}">
+                        <input type="hidden" name="customer_id" value="{{ $project->customer_id }}">
+                        <input type="hidden" name="department_id" value="{{$project->department_id}}" />
                         <div class="modal-body">
                             <div class="deadline-form" id="empform">
                                 <div class="row g-3 mb-3">
@@ -1242,10 +1245,6 @@
 
         $("#emailform").submit(function(e) {
             e.preventDefault();
-            // alert();
-            // var fd = new FormData();
-            // var files = $('#file')[0].files[0];
-            // fd.append('file', files);
             $.ajax({
                 url: '{{route("send.email")}}',
                 type: 'POST',
