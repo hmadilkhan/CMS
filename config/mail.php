@@ -115,8 +115,8 @@ return [
             'timeout' => null,
             'auth_mode' => null,
             'from' => [
-                'address' => env('MAIL_FROM_ADDRESS', 'info@example.com'),
-                'name' => env('MAIL_FROM_NAME', 'Example'),
+                'address' => env('MAIL_FROM_ADDRESS', 'dealreview@testsolencrm.com'),
+                'name' => env('MAIL_FROM_NAME', 'Solen Energy Co - Deal Review'),
             ],
         ],
 
@@ -131,8 +131,8 @@ return [
             'timeout' => null,
             'auth_mode' => null,
             'from' => [
-                'address' => env('INFO_MAIL_FROM_ADDRESS', 'info@example.com'),
-                'name' => env('MAIL_FROM_NAME', 'Example'),
+                'address' => env('INFO_MAIL_FROM_ADDRESS', 'sitesurvey@testsolencrm.com'),
+                'name' => env('MAIL_FROM_NAME', 'Solen Energy Co. - Site Survey'),
             ],
         ],
         // add more configurations if needed

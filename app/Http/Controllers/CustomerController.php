@@ -374,9 +374,10 @@ class CustomerController extends Controller
         if (count($request->images) > 0) {
             foreach ($request->images  as $file) {
                 $savedFile = $this->uploads($file, 'emails/');
-                // array_push($attachments,$savedFile['fileName']);
+                array_push($attachments,$savedFile['fileName']);
             }
         }
+        // return $attachments;
         dispatch(new SendEmailJob($details,$attachments));
 
     }
