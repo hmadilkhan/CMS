@@ -53,9 +53,9 @@ class SendEmailJob implements ShouldQueue
                 "file" => $file,
             ]);
         }
-        if ($this->details['department_id'] == 2) {
+        if ($this->details['department_id'] == 1) {
             Mail::to("hmadilkhan@gmail.com")->send(new TestEmail($this->details, $this->uploadedFiles));
-        }elseif ($this->details['department_id'] == 1) {
+        }elseif ($this->details['department_id'] == 2) {
             Mail::mailer('info')->to("hmadilkhan@gmail.com")->send(new TestEmail($this->details, $this->uploadedFiles));
         }
 
