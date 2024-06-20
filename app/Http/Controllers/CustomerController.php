@@ -364,10 +364,24 @@ class CustomerController extends Controller
 
     public function sendEmail(Request $request)
     {
+        // config(['mail.mailers.info.username' => 'dealreview@testsolencrm.com']);
+        // config(['mail.mailers.info.password' => 'Deal@247']);
+        // config(['mail.mailers.info.from.address' => 'dealreview@testsolencrm.com']);
+        // config(['mail.mailers.info.from.name' => 'Solen Energy Co. - Deal Review']);
+
+        // config(['mail.mailers.info.username' => 'sitesurvey@testsolencrm.com']);
+        // config(['mail.mailers.info.password' => 'Site@247']);
+        // config(['mail.mailers.info.from.address' => 'sitesurvey@testsolencrm.com']);
+        // config(['mail.mailers.info.from.name' => 'Solen Energy Co. - Site Survey']);
+        
+        // dump(config('mail.mailers.info'));
         $attachments = [];
         $details = [
             "subject" => $request->subject,
             "body" => $request->content,
+            "project_id" => $request->project_id,
+            "department_id" => $request->department_id,
+            "customer_id" => $request->customer_id,
         ];
         // return $this->uploads($request->file, 'emails');;
         // return count($request->files);

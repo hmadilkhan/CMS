@@ -34,51 +34,33 @@ class SendEmailJob implements ShouldQueue
      */
     public function handle(): void
     {
-        env('INFO_MAIL_HOST', 'smtp.hostinger.com');
-        env('INFO_MAIL_PORT', 465);
-        env('INFO_MAIL_ENCRYPTION', 'tls');
-        env('INFO_MAIL_USERNAME','dealreview@testsolencrm.com');
-        env('INFO_MAIL_PASSWORD','Deal@247');
-        // env('INFO_MAIL_USERNAME','sitesurvey@testsolencrm.com');
-        // env('INFO_MAIL_PASSWORD','Site@247');
-        env('INFO_MAIL_FROM_ADDRESS', 'dealreview@testsolencrm.com');
-        env('MAIL_FROM_NAME', 'Solen Energy Co. - Deal Review');
-        // env('INFO_MAIL_FROM_ADDRESS', 'sitesurvey@testsolencrm.com');
-        // env('MAIL_FROM_NAME', 'Solen Energy Co. - Site Survey');
 
         // Here mailer function use for sending emails with different account. This account defines in mail.php and .env file.
         // Mail::mailer('info')->to($recipient)->send(new OrderShipped($order));
-        // Mail::to("hmadilkhan@gmail.com")->send(new TestEmail($this->details,$this->uploadedFiles));
+
         // Mail::to("info@testsolencrm.com")->send(new TestEmail($this->details,$this->uploadedFiles));
-        // $email = Email::create([
-        //     "project_id" => $this->details['project_id'],
-        //     "department_id" => $this->details['department_id'],
-        //     "customer_id" => $this->details['customer_id'],
-        //     "subject" => $this->details['subject'],
-        //     "body" => $this->details['content'],
-        // ]);
-        // foreach ($this->uploadedFiles as $key => $file) {
-        //     EmailAttachment::create([
-        //         "email_id" => $email->id,
-        //         "file" => $file,
-        //     ]);
-        // }
-        Mail::mailer('info')->to("info@testsolencrm.com")->send(new TestEmail($this->details, $this->uploadedFiles));
-        // $data = $this->details;
-        // $data = [];
 
-        // Mail::send([], $data, function ($message) use ($data) {
-
-        // $message->to('info@testsolencrm.com', 'Muhammad Adil Khan')
-        //     ->subject($data['subject'])
-        //     ->text("Hi, Welcome User !");
-        // ->setBody('<h1>Hi, welcome user!</h1>', 'text/html'); // assuming text/plain;
-        // $message->attach(public_path('/uploads/tritech.png'));
-
-        // $message->from('info@demo.com', 'LaravelQueue');
-        // });
+        $email = Email::create([
+            "project_id" => $this->details['project_id'],
+            "department_id" => $this->details['department_id'],
+            "customer_id" => $this->details['customer_id'],
+            "subject" => $this->details['subject'],
+            "body" => $this->details['body'],
+        ]);
+        foreach ($this->uploadedFiles as $key => $file) {
+            EmailAttachment::create([
+                "email_id" => $email->id,
+                "file" => $file,
+            ]);
+        }
+        if ($this->details['department_id'] == 2) {
+            Mail::to("hmadilkhan@gmail.com")->send(new TestEmail($this->details, $this->uploadedFiles));
+        }elseif ($this->details['department_id'] == 1) {
+            Mail::mailer('info')->to("hmadilkhan@gmail.com")->send(new TestEmail($this->details, $this->uploadedFiles));
+        }
 
         // This needs to be run to process the queue and if we want to do this automatically then we need to do this by scheduling this commands on the server side.        
         //PHP artisan queue:listen
+        // php artisan queue:restart
     }
 }
