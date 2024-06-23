@@ -722,22 +722,22 @@
             {{--<div class="col-sm-4 mb-3">
                 @foreach ($logs as $key => $log)
                 <label for="formFileMultipleoneone" class="form-label fw-bold flex-fill mb-2 mt-sm-0">Call No {{ ++$key }} :
-                    {{ $log->call_no == 'no' ? 'Customer not responding' : $log->call_no }} </label>
-                <textarea class="form-control" disabled rows="3">{{ $log->notes }}</textarea>
-                @endforeach
-            </div>--}}
-            <div class="col-sm-6 mb-3">
-                <label for="formFileMultipleoneone" class="form-label fw-bold flex-fill mb-2 mt-sm-0">Files</label>
-                <ul class="list-group list-group-custom">
-                    @foreach ($files as $file)
-                    <!-- <label class="badge bg-light"> <a target="_blank" href="{{ asset('storage/projects/' . $file->filename) }}" class="ml-3">{{ $file->filename }}</a></label> -->
-                    <li class="list-group-item light-primary-bg"><a target="_blank" href="{{ asset('storage/projects/' . $file->filename) }}" class="ml-3">{{ $file->filename }}</a></li>
-                    @endforeach
-                </ul>
-            </div>
+            {{ $log->call_no == 'no' ? 'Customer not responding' : $log->call_no }} </label>
+            <textarea class="form-control" disabled rows="3">{{ $log->notes }}</textarea>
             @endforeach
+        </div>--}}
+        <div class="col-sm-6 mb-3">
+            <label for="formFileMultipleoneone" class="form-label fw-bold flex-fill mb-2 mt-sm-0">Files</label>
+            <ul class="list-group list-group-custom">
+                @foreach ($files as $file)
+                <!-- <label class="badge bg-light"> <a target="_blank" href="{{ asset('storage/projects/' . $file->filename) }}" class="ml-3">{{ $file->filename }}</a></label> -->
+                <li class="list-group-item light-primary-bg"><a target="_blank" href="{{ asset('storage/projects/' . $file->filename) }}" class="ml-3">{{ $file->filename }}</a></li>
+                @endforeach
+            </ul>
         </div>
-    </div>`
+        @endforeach
+    </div>
+</div>`
 </div>
 </div>
 <div class="tab-pane fade" id="customer" role="tabpanel">
@@ -1038,7 +1038,7 @@
                                 </div>
                             </div>
                         </div>
-                        <div class="col-md-6" id="call_script"></div>
+                        <div class="col-md-6" id="call_script" style="font-size: 15px;text-align: justify;text-justify: inter-word;"></div>
 
                     </div>
                     <div class="card card-info mt-2">
@@ -1669,12 +1669,23 @@
                 // $("#call_script").text(function() {
                 //     return $(this).text().replace("auth()->user()->name", "{{auth()->user()->name}}");
                 // });
-                // $("#call_script").html(function() {
-
-                //     // Replace 'ok' with string you want to change, you can delete 'hello everyone' to remove the text
-                //     return $(this).html().replace("auth()->user()->name", "{{auth()->user()->name}}");
-
-                // });
+                let customer_name = "{{$project->customer->first_name.' '.$project->customer->last_name }}";
+                let salespartner = "{{$project->customer->salespartner->name}}";
+                $('#call_script').html(function(i,old) {
+                    return old
+                    .replace("user_name", "<b>{{auth()->user()->name}}</b>")
+                    .replace("company_name", "<b>Solen Energy Co.</b>")
+                    .replace("customer_name", "<b>"+customer_name+"</b>")
+                    .replace("customer_name_1", "<b>"+customer_name+"</b>")
+                    .replace("salespartner_name", "<b>"+salespartner+"</b>")
+                    .replace("salespartner_name_1", "<b>"+salespartner+"</b>")
+                    // let text = $(this).html();
+                    // let customer_name = "{{$project->customer->first_name.' '.$project->customer->last_name }}"
+                    // console.log(customer_name);
+                    // $(this).html(text.replace("user_name", "<b>{{auth()->user()->name}}</b>"));
+                    // $(this).html(text.replace("company_name", "<b>Solen Energy Co.</b>"));
+                    // $(this).html(text.replace("customer_name", "<b>"+customer_name+"</b>"));
+                });
 
             },
             error: function(error) {
