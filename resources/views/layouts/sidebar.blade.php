@@ -79,11 +79,12 @@
 
             @can('Reports')
             <li class="collapsed">
-                <a class="m-link {{ (Route::currentRouteName() == 'reports.profit' ) ? 'show' : '' }}" data-bs-toggle="collapse" data-bs-target="#reports" href="#">
+                <a class="m-link {{ (Route::currentRouteName() == 'reports.profit' or Route::currentRouteName() == 'forecast.report'  ) ? 'show' : '' }}" data-bs-toggle="collapse" data-bs-target="#reports" href="#">
                     <i class="icofont-briefcase"></i><span>Reports</span> <span class="arrow icofont-dotted-down ms-auto text-end fs-5"></span></a>
                 <!-- Menu: Sub menu ul -->
-                <ul class="sub-menu collapse {{ (Route::currentRouteName() == 'reports.profit'  ) ? 'show' : '' }}" id="reports">
+                <ul class="sub-menu collapse {{ (Route::currentRouteName() == 'reports.profit' or Route::currentRouteName() == 'forecast.report'  ) ? 'show' : '' }}" id="reports">
                     <li><a class="ms-link {{ Route::currentRouteName() == 'reports.profit' ? 'active' : '' }}" href="{{route('reports.profit')}}"><span>Profitability Report</span></a></li>
+                    <li><a class="ms-link {{ Route::currentRouteName() == 'forecast.report' ? 'active' : '' }}" href="{{route('forecast.report')}}"><span>Forecast Report</span></a></li>
                 </ul>
             </li>
             @endcan

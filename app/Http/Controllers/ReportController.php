@@ -29,5 +29,19 @@ class ReportController extends Controller
         ]);
     }
 
+    public function forecastReport()
+    {
+        return view("reports.forecast.forecast");
+    }
+
+    public function getForecastReport(Request $request)
+    {
+        $customer = Customer::with("salespartner","finances","project")->whereBetween("sold_date",[$request->from,$request->to]);
+        
+        return view("reports.forecast.forecast_table",[
+            "customers" => $customer->get(),
+        ]);
+    }
+
 
 }

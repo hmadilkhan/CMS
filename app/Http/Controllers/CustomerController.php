@@ -385,7 +385,7 @@ class CustomerController extends Controller
         ];
         // return $this->uploads($request->file, 'emails');;
         // return count($request->files);
-        if (count($request->images) > 0) {
+        if (!empty($request->images) && count($request->images) > 0) {
             foreach ($request->images  as $file) {
                 $savedFile = $this->uploads($file, 'emails/');
                 array_push($attachments,$savedFile['fileName']);

@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Models\AdderType;
 use App\Models\AdderUnit;
+use App\Models\Call;
+use App\Models\CallScript;
 use App\Models\Customer;
 use App\Models\CustomerAdder;
 use App\Models\Department;
@@ -99,12 +101,13 @@ class ProjectController extends Controller
      */
     public function show(Project $project)
     {
+        // return Project::with("task", "customer", "department", "logs","logs.call", "subdepartment", "assignedPerson", "assignedPerson.employee","departmentnotes")->where("id", $project->id)->first();
         $task = Task::whereIn("status", ["In-Progress", "Hold", "Cancelled"])->where("project_id", $project->id)->first();
         $departments = Department::whereIn("id", Task::where("project_id", $project->id)->whereNotIn("department_id", Department::where("id", ">", $task->department_id)->take(1)->pluck("id"))->groupBy("department_id")->orderBy("department_id")->pluck("department_id"))->get();
         $fwdDepartments =  array_merge($departments->toArray(), Department::where("id", ">", $task->department_id)->take(1)->get()->toArray());
         // return Project::with("task", "customer", "department","logs", "subdepartment", "assignedPerson", "assignedPerson.employee","departmentnotes")->where("id", $project->id)->first();
         return view("projects.show", [
-            "project" => Project::with("task", "customer", "department", "logs", "subdepartment", "assignedPerson", "assignedPerson.employee","departmentnotes")->where("id", $project->id)->first(),
+            "project" => Project::with("task", "customer", "department", "logs","logs.call", "subdepartment", "assignedPerson", "assignedPerson.employee","departmentnotes")->where("id", $project->id)->first(),
             "task" => $task,
             "backdepartments" => Department::where("id", "<", $task->department_id)->get(),
             "forwarddepartments" => (object)$fwdDepartments, //Department::whereIn("id", Task::where("project_id", $project->id)->pluck("department_id"))->get(),
@@ -113,7 +116,8 @@ class ProjectController extends Controller
             "employees" => $this->getEmployees($project->department_id),
             "adders" => AdderType::all(),
             "uoms" => AdderUnit::all(),
-            "tools" => Tool::where("department_id", $project->department_id)->get()
+            "tools" => Tool::where("department_id", $project->department_id)->get(),
+            "calls" => Call::all(),
         ]);
     }
 
@@ -402,7 +406,7 @@ class ProjectController extends Controller
             ProjectCallLog::create([
                 "project_id" => $project->id,
                 "department_id" => $project->department_id,
-                "call_no" => $request->call_no_1,
+                "call_no" => $request->call_no,
                 "notes" => $request->notes_1,
             ]);
             // }
@@ -647,5 +651,16 @@ class ProjectController extends Controller
             return $th->getMessage();
             return redirect()->route("projects.show", $request->project_id);
         }
+    }
+
+    public function getCallScript(Request $request)
+    {
+        $script = CallScript::where("call_id",$request->call)->where("department_id",$request->department)->first();
+        return view("projects.partial.call_script",[
+            "callScript" => $script,
+            "department" => $request->department,
+            "callId" => $request->call,
+            "project" => Project::with("task", "customer","customer.salespartner", "department", "logs", "subdepartment", "assignedPerson", "assignedPerson.employee")->where("id", $request->project)->first()
+        ]);
     }
 }
