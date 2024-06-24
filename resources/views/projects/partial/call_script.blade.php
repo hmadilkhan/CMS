@@ -1,4 +1,4 @@
-{!! $callScript->script !!}
+{!! !empty($callScript) ? $callScript->script : 'No Script Found.' !!}
 {{--<div class="content">
     @if($department == 1 && $callId == 1)
     <label style="font-size: 15px;text-align: justify;text-justify: inter-word;">Hello this is <span style="font-weight:bold">{{auth()->user()->name}}</span> calling from <span style="font-weight:bold">Solen Energy Co.</span> may I speak to <span style="font-weight:bold">{{$project->customer->first_name.' '.$project->customer->last_name}}</span>.</br></br>

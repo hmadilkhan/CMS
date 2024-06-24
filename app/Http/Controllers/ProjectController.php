@@ -655,12 +655,20 @@ class ProjectController extends Controller
 
     public function getCallScript(Request $request)
     {
-        $script = CallScript::where("call_id",$request->call)->where("department_id",$request->department)->first();
+        $project =  Project::with("task", "customer","customer.salespartner", "department", "logs", "subdepartment", "assignedPerson", "assignedPerson.employee")->where("id", $request->project)->first();
+        
+        $count = CallScript::where("call_id",$request->call)->where("department_id",$request->department)->where("extra_filter","hoa")->count();
+        $script = CallScript::query();
+        $script->where("call_id",$request->call)->where("department_id",$request->department);
+        if ( $project->hoa == "yes" && $count > 0 ) {
+            $script->where("extra_filter","hoa");
+        }
+
         return view("projects.partial.call_script",[
-            "callScript" => $script,
+            "callScript" => $script->first(),
             "department" => $request->department,
             "callId" => $request->call,
-            "project" => Project::with("task", "customer","customer.salespartner", "department", "logs", "subdepartment", "assignedPerson", "assignedPerson.employee")->where("id", $request->project)->first()
+            "project" => $project
         ]);
     }
 }
