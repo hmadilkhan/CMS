@@ -44,8 +44,8 @@
                 <tr>
                     <td colspan="4" class="text-center"><h4 class="fw-bold mt-3">Total</h4></td>
                     <td class="fw-bold">{{number_format($totalContractAmount,2)}}</td>
-                    <td class="fw-bold">{{number_format($totalDealerFee,2)}}</td>
                     <td class="fw-bold">{{number_format($totalCommissionAmount,2)}}</td> 
+                    <td class="fw-bold">{{number_format($totalDealerFee,2)}}</td>
                     <td class="fw-bold">{{number_format($totalNetAmount ,2)}}</td> 
                 </tr>
             </tbody>
