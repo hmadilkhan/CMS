@@ -266,7 +266,14 @@
             overflow-x: auto
         }
     }
+
+    .main-container {
+        width: 650px;
+        /* margin-left: auto;
+        margin-right: auto; */
+    }
 </style>
+<link rel="stylesheet" href="https://cdn.ckeditor.com/ckeditor5/42.0.0/ckeditor5.css">
 <div class="card card-info">
     <div class="card-body">
         <div class="row clearfix">
@@ -992,7 +999,6 @@
                 <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#emails" role="tab">Emails</a></li>
             </ul>
             <div class="tab-content">
-
                 <div class="tab-pane fade show active" id="calls" role="tabpanel">
                     <div class="row">
                         <div class="col-md-4">
@@ -1083,6 +1089,60 @@
                 </div>
                 <div class="tab-pane fade" id="emails" role="tabpanel">
                     <div class="container">
+                        <form id="emailform" method="post" enctype="multipart/form-data">>
+                            @csrf
+                            <input type="hidden" name="project_id" value="{{ $project->id }}">
+                            <input type="hidden" name="customer_id" value="{{ $project->customer_id }}">
+                            <input type="hidden" name="department_id" value="{{$project->department_id}}" />
+                            <div class="row">
+                                <div class="col-md-4">
+                                    <div class="card card-info mt-2">
+                                        <div class="card-body">
+                                            <div class="row clearfix">
+                                                <div class="col-md-12">
+                                                    <div class="card border-0 mb-4 no-bg">
+                                                        <div class="card-header py-3 px-0 d-sm-flex align-items-center  justify-content-between border-bottom">
+                                                            <h3 class=" fw-bold flex-fill mb-0 mt-sm-0 m-4">Emails</h3>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div class="row g-3 mb-3">
+                                                    <div class="col-md-12">
+                                                        <div class="col-sm-12 mb-3">
+                                                            <label for="email_no" class="form-label">Select Email</label><br />
+                                                            <select class=" form-control select2" style="width: 100%;" aria-label="Default Select call" id="email_no" name="email_no">
+                                                                <option value="">Select Email</option>
+                                                                @foreach($emailTypes as $emailType)
+                                                                <option value="{{$emailType->id}}">{{$emailType->name}}</option>
+                                                                @endforeach
+                                                            </select>
+                                                            <div id="email_no_message" class="text-danger message mt-2"></div>
+                                                        </div>
+                                                        <div class="col-md-12 mb-1">
+                                                            <label for="exampleFormControlInput877" class="form-label">Subject</label>
+                                                            <input type="text" class="form-control" id="subject" name="subject" placeholder="Enter Subject" value="">
+                                                            <div id="name_message" class="text-danger message mt-2"></div>
+                                                        </div>
+                                                        <div class="mb-1">
+                                                            <label for="exampleFormControlInput877" class="form-label">Attachments</label>
+                                                            <input type="file" multiple class="form-control" id="image" name="images[]">
+                                                            <div id="name_message" class="text-danger message mt-2"></div>
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-sm-12 mb-3">
+                                                        <button type="submit" class="btn btn-dark me-1 mt-1 w-sm-100" id="saveCallLogs"><i class="icofont-arrow-left me-2 fs-6"></i>Submit</button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="col-md-6 main-container" style="font-size: 15px;text-align: justify;text-justify: inter-word;">
+                                    <textarea id="editor" name="content" class="form-control" rows="5"></textarea>
+                                </div>
+                            </div>
+                        </form>
                         <div class="row clearfix">
                             <div class="col-lg-12">
                                 <div class="card">
@@ -1126,7 +1186,7 @@
                 <h5 class="modal-title  fw-bold" id="createprojectlLabel"> Send Email</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <form id="emailform" method="POST" enctype="multipart/form-data">
+            <form id="emailform1" method="POST" enctype="multipart/form-data">
                 @csrf
                 <input type="hidden" name="project_id" value="{{ $project->id }}">
                 <input type="hidden" name="customer_id" value="{{ $project->customer_id }}">
@@ -1185,7 +1245,47 @@
 </div>
 </div>
 
+<script type="importmap">
+    {
+                "imports": {
+                    "ckeditor5": "https://cdn.ckeditor.com/ckeditor5/42.0.0/ckeditor5.js",
+                    "ckeditor5/": "https://cdn.ckeditor.com/ckeditor5/42.0.0/"
+                }
+            }
+        </script>
+<script type="module">
+    import {
+        ClassicEditor,
+        Essentials,
+        Paragraph,
+        Bold,
+        Italic,
+        Font
+    } from 'ckeditor5';
 
+    ClassicEditor
+        .create(document.querySelector('#editor'), {
+            plugins: [Essentials, Paragraph, Bold, Italic, Font],
+            toolbar: [
+                'undo', 'redo', '|', 'bold', 'italic', '|',
+                'fontSize', 'fontFamily', 'fontColor', 'fontBackgroundColor'
+            ]
+        })
+        .then(editor => {
+            window.editor = editor;
+        })
+        .catch(error => {
+            // console.log(error);
+        });
+</script>
+<!-- A friendly reminder to run on a server, remove this during the integration. -->
+<script>
+    window.onload = function() {
+        if (window.location.protocol === "file:") {
+            alert("This sample requires an HTTP server. Please serve this file with a web server.");
+        }
+    };
+</script>
 @endsection
 @section('scripts')
 <script>
@@ -1671,14 +1771,14 @@
                 // });
                 let customer_name = "{{$project->customer->first_name.' '.$project->customer->last_name }}";
                 let salespartner = "{{$project->customer->salespartner->name}}";
-                $('#call_script').html(function(i,old) {
+                $('#call_script').html(function(i, old) {
                     return old
-                    .replace("user_name", "<b>{{auth()->user()->name}}</b>")
-                    .replace("company_name", "<b>Solen Energy Co.</b>")
-                    .replace("customer_name", "<b>"+customer_name+"</b>")
-                    .replace("customer_name_1", "<b>"+customer_name+"</b>")
-                    .replace("salespartner_name", "<b>"+salespartner+"</b>")
-                    .replace("salespartner_name_1", "<b>"+salespartner+"</b>")
+                        .replace("user_name", "<b>{{auth()->user()->name}}</b>")
+                        .replace("company_name", "<b>Solen Energy Co.</b>")
+                        .replace("customer_name", "<b>" + customer_name + "</b>")
+                        .replace("customer_name_1", "<b>" + customer_name + "</b>")
+                        .replace("salespartner_name", "<b>" + salespartner + "</b>")
+                        .replace("salespartner_name_1", "<b>" + salespartner + "</b>")
                     // let text = $(this).html();
                     // let customer_name = "{{$project->customer->first_name.' '.$project->customer->last_name }}"
                     // console.log(customer_name);
@@ -1687,6 +1787,40 @@
                     // $(this).html(text.replace("customer_name", "<b>"+customer_name+"</b>"));
                 });
 
+            },
+            error: function(error) {
+                Swal.fire(
+                    'Error!',
+                    'Some error occurred :)',
+                    'error'
+                )
+            }
+        });
+    })
+
+    $("#email_no").change(function() {
+        $.ajax({
+            url: "{{ route('projects.email.script') }}",
+            method: "POST",
+            data: {
+                _token: "{{ csrf_token() }}",
+                emailType: $(this).val(),
+                department: "{{$project->department_id}}",
+                project: "{{$project->id}}",
+            },
+            success: function(response) {
+                // console.log(response);
+                // $("#editor").empty();
+                // $("#editor").text(response);
+                window.editor.setData(response);
+                let customer_name = "{{$project->customer->first_name.' '.$project->customer->last_name }}";
+                let salespartner = "{{$project->customer->salespartner->name}}";
+                let customerreplace = window.editor.getData();
+                let customer_replaced_text = customerreplace.replace("customer_name", "<b>" + customer_name + "</b>");
+                window.editor.setData(customer_replaced_text);
+                let data = window.editor.getData();
+                let replaced_text1 = data.replace("salespartner_name", "<b>" + salespartner + "</b>");
+                window.editor.setData(replaced_text1);
             },
             error: function(error) {
                 Swal.fire(

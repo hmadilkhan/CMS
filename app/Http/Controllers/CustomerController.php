@@ -383,16 +383,12 @@ class CustomerController extends Controller
             "department_id" => $request->department_id,
             "customer_id" => $request->customer_id,
         ];
-        // return $this->uploads($request->file, 'emails');;
-        // return count($request->files);
         if (!empty($request->images) && count($request->images) > 0) {
             foreach ($request->images  as $file) {
                 $savedFile = $this->uploads($file, 'emails/');
                 array_push($attachments,$savedFile['fileName']);
             }
         }
-        // return $attachments;
         dispatch(new SendEmailJob($details,$attachments));
-
     }
 }

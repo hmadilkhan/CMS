@@ -117,6 +117,7 @@ Route::middleware('auth')->group(function () {
     Route::post('projects-move', [App\Http\Controllers\ProjectController::class, 'projectMove'])->name('projects.move');
     Route::post('project-call-logs', [App\Http\Controllers\ProjectController::class, 'saveCallLogs'])->name('projects.call.logs');
     Route::post('project-call-script', [App\Http\Controllers\ProjectController::class, 'getCallScript'])->name('projects.call.script');
+    Route::post('project-email-script', [App\Http\Controllers\ProjectController::class, 'getEmailScript'])->name('projects.email.script');
     Route::post('save-project-files', [App\Http\Controllers\ProjectController::class, 'saveProjectFiles'])->name('projects.files');
     Route::post('projects-adders', [App\Http\Controllers\ProjectController::class, 'projectAdders'])->name('projects.adders');
     Route::post('projects-assign-to-employee', [App\Http\Controllers\ProjectController::class, 'assignTaskToEmployee'])->name('projects.assign');

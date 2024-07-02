@@ -10,6 +10,8 @@ use App\Models\Customer;
 use App\Models\CustomerAdder;
 use App\Models\Department;
 use App\Models\DepartmentNote;
+use App\Models\EmailScript;
+use App\Models\EmailType;
 use App\Models\Employee;
 use App\Models\EmployeeDepartment;
 use App\Models\Project;
@@ -118,6 +120,7 @@ class ProjectController extends Controller
             "uoms" => AdderUnit::all(),
             "tools" => Tool::where("department_id", $project->department_id)->get(),
             "calls" => Call::all(),
+            "emailTypes" => EmailType::all(),
         ]);
     }
 
@@ -669,6 +672,25 @@ class ProjectController extends Controller
             "department" => $request->department,
             "callId" => $request->call,
             "project" => $project
+        ]);
+    }
+
+    public function getEmailScript(Request $request)
+    {
+        $project =  Project::where("id", $request->project)->first();
+        
+        $count = EmailScript::where("email_type_id",$request->emailType)->where("department_id",$request->department)->where("extra_filter","hoa")->count();
+        $script = EmailScript::query();
+        $script->where("email_type_id",$request->emailType)->where("department_id",$request->department);
+        if ( $project->hoa == "yes" && $count > 0 ) {
+            $script->where("extra_filter","hoa");
+        }
+
+        return view("projects.partial.email_script",[
+            "emailScript" => $script->first(),
+            // "department" => $request->department,
+            // "emailTypeId" => $request->email_type,
+            // "project" => $project
         ]);
     }
 }
