@@ -392,3 +392,41 @@ class CustomerController extends Controller
         dispatch(new SendEmailJob($details,$attachments));
     }
 }
+/*
+public function index()
+    {
+        // Mailbox::from('info@testsolencrm.com', function (InboundEmail $email) {
+        //     return $email;
+        // });
+        $client = Client::account('default');
+        if (!$client->isConnected()) {
+            $client->connect();
+        }
+
+        // DB::select();
+
+        // return $messages;
+        $folders = $client->getFolders($hierarchical = true);
+        foreach ($folders as $key => $folder) {
+            $query = $folder->query();
+            // $messages = $query->from('hmadilkhan@gmail.com')->get();
+            $messages = $query->all()->get();
+            return $messages;
+            foreach ($messages as $key => $message) {
+                // echo $message->hasAttachments();
+                // echo $message->getSubject();
+                // return $message->getBodies();
+                $attachments = $message->getAttachments();
+                foreach ($attachments as $attachment) {
+                    $attachment->save($path = public_path('/'), $filename = null);
+                    // if (!empty($attachment)) {
+                    //     # code...
+                    // }
+                }
+                echo $message->getTextBody()."</br>";
+            }
+        }
+        // return $folders;
+         
+    }
+*/

@@ -6,6 +6,11 @@ use App\Models\Adder;
 use App\Models\AdderSubType;
 use App\Models\AdderType;
 use App\Models\AdderUnit;
+use App\Models\Call;
+use App\Models\CallScript;
+use App\Models\Department;
+use App\Models\EmailScript;
+use App\Models\EmailType;
 use App\Models\FinanceOption;
 use App\Models\InverterType;
 use App\Models\InverterTypeRate;
@@ -399,4 +404,128 @@ class OperationController extends Controller
             return response()->json(["status" => 500]);
         }
     }
+
+    /************************************CALL SCRIPTS STARTS **************************************************************/
+
+    public function callScriptList(Request $request)
+    {
+        if ($request->id != "") {
+            $script = CallScript::with("call","department")->where("id", $request->id)->first();
+        }
+        return view("operations/call-scripts/index", [
+            "calls" => Call::all(),
+            "departments" => Department::all(),
+            "callScripts" => CallScript::with("call","department")->get(),
+            "script" => ($request->id != "" ? $script : []),
+        ]);
+    }
+
+    public function callScriptStore(Request $request)
+    {
+        try {
+            $count = CallScript::where("call_id", $request->call)->where("department_id", $request->department)->count();
+            if ($count == 0) {
+                CallScript::create([
+                    "call_id" => $request->call,
+                    "department_id" => $request->department,
+                    "extra_filter" => $request->extra,
+                    "script" => $request->script,
+                ]);
+                return redirect()->route("call.scripts.list")->with("success", "Data Saved Successfully");
+            } else {
+                return redirect()->route("call.scripts.list")->with("error", "Data already exists");
+            }
+        } catch (\Throwable $th) {
+            return redirect()->route("call.scripts.list")->with("error", $th->getMessage());
+        }
+    }
+
+    public function callScriptUpdate(Request $request)
+    {
+        try {
+            $callScript = CallScript::find($request->id);
+            $callScript->call_id = $request->call;
+            $callScript->department_id = $request->department;
+            $callScript->extra_filter = $request->extra;
+            $callScript->script = $request->script;
+            $callScript->save();
+            return redirect()->route("call.scripts.list");
+        } catch (\Throwable $th) {
+            return redirect()->route("call.scripts.list")->with('error', $th->getMessage());
+        }
+    }
+
+    public function callScriptDelete(Request $request)
+    {
+        try {
+            CallScript::where("id", $request->id)->delete();
+            return response()->json(["status" => 200]);
+        } catch (\Throwable $th) {
+            return response()->json(["status" => 500]);
+        }
+    }
+
+    /************************************ CALL SCRIPTS ENDS **************************************************************/
+
+    /************************************ EMAIL SCRIPTS STARTS **************************************************************/
+
+    public function emailScriptList(Request $request)
+    {
+        if ($request->id != "") {
+            $script = EmailScript::with("email","department")->where("id", $request->id)->first();
+        }
+        return view("operations/email-scripts/index", [
+            "emailTypes" => EmailType::all(),
+            "departments" => Department::all(),
+            "emailScripts" => EmailScript::with("email","department")->get(),
+            "script" => ($request->id != "" ? $script : []),
+        ]);
+    }
+
+    public function emailScriptStore(Request $request)
+    {
+        try {
+            $count = EmailScript::where("email_type_id", $request->email_type_id)->where("department_id", $request->department)->count();
+            if ($count == 0) {
+                EmailScript::create([
+                    "email_type_id" => $request->email_type_id,
+                    "department_id" => $request->department,
+                    "extra_filter" => $request->extra,
+                    "script" => $request->script,
+                ]);
+                return redirect()->route("email.scripts.list")->with("success", "Data Saved Successfully");
+            } else {
+                return redirect()->route("email.scripts.list")->with("error", "Data already exists");
+            }
+        } catch (\Throwable $th) {
+            return redirect()->route("email.scripts.list")->with("error", $th->getMessage());
+        }
+    }
+
+    public function emailScriptUpdate(Request $request)
+    {
+        try {
+            $emailScript = EmailScript::find($request->id);
+            $emailScript->email_type_id = $request->email_type_id;
+            $emailScript->department_id = $request->department;
+            $emailScript->extra_filter = $request->extra;
+            $emailScript->script = $request->script;
+            $emailScript->save();
+            return redirect()->route("email.scripts.list");
+        } catch (\Throwable $th) {
+            return redirect()->route("email.scripts.list")->with('error', $th->getMessage());
+        }
+    }
+
+    public function emailScriptDelete(Request $request)
+    {
+        try {
+            EmailScript::where("id", $request->id)->delete();
+            return response()->json(["status" => 200]);
+        } catch (\Throwable $th) {
+            return response()->json(["status" => 500]);
+        }
+    }
+
+    /************************************ EMAIL SCRIPTS ENDS **************************************************************/
 }

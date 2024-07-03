@@ -16,7 +16,7 @@ return new class extends Migration
             $table->integer("call_id");
             $table->integer("department_id");
             $table->text("script");
-            $table->string("extra_filter");
+            $table->string("extra_filter")->nullable();
             $table->softDeletes();
             $table->timestamps();
         });

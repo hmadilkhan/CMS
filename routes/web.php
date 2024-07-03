@@ -170,6 +170,18 @@ Route::middleware('auth')->group(function () {
         Route::post('/sales-partner-store', 'salesPartnerStore')->name("sales.partner.store");
         Route::post('/sales-partner-update', 'salesPartnerUpdate')->name("sales.partner.update");
         Route::post('/sales-partner-delete', 'salesPartnerDelete')->name("sales.partner.delete");
+
+        // CALL SCRIPTS
+        Route::get('/view-call-scripts/{id?}', 'callScriptList')->name("call.scripts.list");
+        Route::post('/call-scripts-store', 'callScriptStore')->name("call.scripts.store");
+        Route::post('/call-scripts-update', 'callScriptUpdate')->name("call.scripts.update");
+        Route::post('/call-scripts-delete', 'callScriptDelete')->name("call.scripts.delete");
+
+         // Email SCRIPTS
+         Route::get('/view-email-scripts/{id?}', 'emailScriptList')->name("email.scripts.list");
+         Route::post('/email-scripts-store', 'emailScriptStore')->name("email.scripts.store");
+         Route::post('/email-scripts-update', 'emailScriptUpdate')->name("email.scripts.update");
+         Route::post('/email-scripts-delete', 'emailScriptDelete')->name("email.scripts.delete");
     });
 
     Route::controller(InverterTypeController::class)->group(function () {
