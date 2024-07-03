@@ -364,32 +364,39 @@ class CustomerController extends Controller
 
     public function sendEmail(Request $request)
     {
-        // config(['mail.mailers.info.username' => 'dealreview@testsolencrm.com']);
-        // config(['mail.mailers.info.password' => 'Deal@247']);
-        // config(['mail.mailers.info.from.address' => 'dealreview@testsolencrm.com']);
-        // config(['mail.mailers.info.from.name' => 'Solen Energy Co. - Deal Review']);
+        try {
+            //code...
 
-        // config(['mail.mailers.info.username' => 'sitesurvey@testsolencrm.com']);
-        // config(['mail.mailers.info.password' => 'Site@247']);
-        // config(['mail.mailers.info.from.address' => 'sitesurvey@testsolencrm.com']);
-        // config(['mail.mailers.info.from.name' => 'Solen Energy Co. - Site Survey']);
-        
-        // dump(config('mail.mailers.info'));
-        $attachments = [];
-        $details = [
-            "subject" => $request->subject,
-            "body" => $request->content,
-            "project_id" => $request->project_id,
-            "department_id" => $request->department_id,
-            "customer_id" => $request->customer_id,
-        ];
-        if (!empty($request->images) && count($request->images) > 0) {
-            foreach ($request->images  as $file) {
-                $savedFile = $this->uploads($file, 'emails/');
-                array_push($attachments,$savedFile['fileName']);
+            // config(['mail.mailers.info.username' => 'dealreview@testsolencrm.com']);
+            // config(['mail.mailers.info.password' => 'Deal@247']);
+            // config(['mail.mailers.info.from.address' => 'dealreview@testsolencrm.com']);
+            // config(['mail.mailers.info.from.name' => 'Solen Energy Co. - Deal Review']);
+
+            // config(['mail.mailers.info.username' => 'sitesurvey@testsolencrm.com']);
+            // config(['mail.mailers.info.password' => 'Site@247']);
+            // config(['mail.mailers.info.from.address' => 'sitesurvey@testsolencrm.com']);
+            // config(['mail.mailers.info.from.name' => 'Solen Energy Co. - Site Survey']);
+
+            // dump(config('mail.mailers.info'));
+            $attachments = [];
+            $details = [
+                "subject" => $request->subject,
+                "body" => $request->content,
+                "project_id" => $request->project_id,
+                "department_id" => $request->department_id,
+                "customer_id" => $request->customer_id,
+            ];
+            if (!empty($request->images) && count($request->images) > 0) {
+                foreach ($request->images  as $file) {
+                    $savedFile = $this->uploads($file, 'emails/');
+                    array_push($attachments, $savedFile['fileName']);
+                }
             }
+            dispatch(new SendEmailJob($details, $attachments));
+            return response()->json(["status" => 200, "message" => "Email has been sent"]);
+        } catch (\Throwable $th) {
+            return response()->json(["status" => 500, "message" => "Error : " . $th->getMessage()]);
         }
-        dispatch(new SendEmailJob($details,$attachments));
     }
 }
 /*

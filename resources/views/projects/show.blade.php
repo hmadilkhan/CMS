@@ -1089,7 +1089,7 @@
                 </div>
                 <div class="tab-pane fade" id="emails" role="tabpanel">
                     <div class="container">
-                        <form id="emailform" method="post" enctype="multipart/form-data">>
+                        <form id="emailform" method="post" enctype="multipart/form-data">
                             @csrf
                             <input type="hidden" name="project_id" value="{{ $project->id }}">
                             <input type="hidden" name="customer_id" value="{{ $project->customer_id }}">
@@ -1310,28 +1310,44 @@
     function openEmailModal() {
         $("#createemail").modal("show");
     }
-
-    $("#emailform").submit(function(e) {
-        e.preventDefault();
-        $.ajax({
-            url: '{{route("send.email")}}',
-            type: 'POST',
-            data: new FormData(this),
-            dataType: 'JSON',
-            contentType: false,
-            cache: false,
-            processData: false,
-            success: function(response) {
-                console.log(response);
-                // if (response != 0) {
-                //     $("#img").attr("src", response);
-                //     $(".preview img").show(); // Display image element
-                // } else {
-                //     alert('file not uploaded');
-                // }
-            },
+    setTimeout(function() {
+        $("#emailform").submit(function(e) {
+            e.preventDefault();
+            $.ajax({
+                url: '{{route("send.email")}}',
+                type: 'POST',
+                data: new FormData(this),
+                dataType: 'JSON',
+                contentType: false,
+                cache: false,
+                processData: false,
+                success: function(response) {
+                    if (response.status == 200) {
+                        $("#subject").text('');
+                        $("#editor").text('');
+                        $("#email_type_id").val('').change();
+                        Swal.fire(
+                            'Sent!',
+                            response.message,
+                            'success'
+                        )
+                    } else {
+                        Swal.fire(
+                            'Failed!',
+                            response.message,
+                            'error'
+                        )
+                    }
+                    // if (response != 0) {
+                    //     $("#img").attr("src", response);
+                    //     $(".preview img").show(); // Display image element
+                    // } else {
+                    //     alert('file not uploaded');
+                    // }
+                },
+            });
         });
-    });
+    }, 2000);
 
     $("#forward").change(function() {
         let totalCount = $("#" + $("#forward").val() + "_length").val();
