@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Customer;
 use App\Models\Department;
 use App\Models\Email;
 use App\Models\EmailAttachment;
@@ -61,6 +62,7 @@ class ImapController extends Controller
     {
         try {
             $departments = Department::all();
+            $customer = Customer::findOrFail($request->customer_id);
             foreach ($departments as $key => $department) {
                 $account = ImapAccount::where("department_id", $department->id)->first();
                 if (!empty($account)) {
@@ -70,7 +72,7 @@ class ImapController extends Controller
                         $folders = $client->getFolders();
                         foreach ($folders as $key => $folder) {
                             $query = $folder->query();
-                            $messages = $query->from('hmadilkhan@gmail.com')->get();
+                            $messages = $query->from($customer->email)->get();
                             foreach ($messages as $key => $message) {
                                 $count = Email::where("message_id", $message->message_id)->count();
                                 if ($count == 0) {

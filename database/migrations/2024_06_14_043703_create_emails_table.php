@@ -17,7 +17,7 @@ return new class extends Migration
             $table->integer("department_id");
             $table->integer("customer_id");
             $table->string("subject");
-            $table->string("body");
+            $table->longText("body");
             $table->timestamps();
         });
     }
