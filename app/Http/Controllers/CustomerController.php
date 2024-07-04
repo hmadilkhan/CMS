@@ -385,6 +385,7 @@ class CustomerController extends Controller
                 "project_id" => $request->project_id,
                 "department_id" => $request->department_id,
                 "customer_id" => $request->customer_id,
+                "customer_email" => $request->customer_email,
             ];
             if (!empty($request->images) && count($request->images) > 0) {
                 foreach ($request->images  as $file) {

@@ -57,4 +57,9 @@ class Project extends Model
     {
         return $this->hasMany(DepartmentNote::class,"project_id","id");
     }
+
+    public function emails()
+    {
+        return $this->hasMany(Email::class,"project_id","id");
+    }
 }

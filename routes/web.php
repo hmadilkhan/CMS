@@ -213,6 +213,8 @@ Route::middleware('auth')->group(function () {
 
     // IMAP SETUP
     Route::get('fetch-emails', [App\Http\Controllers\ImapController::class, 'fetchEmails']);
+    Route::post('show-emails', [App\Http\Controllers\ImapController::class, 'showEmails'])->name("show.emails");
+    Route::post('fetch-emails', [App\Http\Controllers\ImapController::class, 'fetchDepartmentMails'])->name("fetch.emails");
 });
 
 require __DIR__ . '/auth.php';

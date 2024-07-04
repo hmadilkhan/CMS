@@ -65,6 +65,25 @@ return [
             "extensions" => []
         ],
 
+        'sitesurvey' => [// account identifier
+            'host'  => env('SITE_IMAP_HOST', 'localhost'),
+            'port'  => env('SITE_IMAP_PORT', 993),
+            'protocol'  => env('SITE_IMAP_PROTOCOL', 'imap'), //might also use imap, [pop3 or nntp (untested)]
+            'encryption'    => env('SITE_IMAP_ENCRYPTION', 'ssl'), // Supported: false, 'ssl', 'tls', 'notls', 'starttls'
+            'validate_cert' => env('SITE_IMAP_VALIDATE_CERT', true),
+            'username' => env('SITE_IMAP_USERNAME', 'root@example.com'),
+            'password' => env('SITE_IMAP_PASSWORD', ''),
+            'authentication' => env('SITE_IMAP_AUTHENTICATION', null),
+            'proxy' => [
+                'socket' => null,
+                'request_fulluri' => false,
+                'username' => null,
+                'password' => null,
+            ],
+            "timeout" => 30,
+            "extensions" => []
+        ],
+
         /*
         'gmail' => [ // account identifier
             'host' => 'imap.gmail.com',

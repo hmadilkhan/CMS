@@ -138,6 +138,21 @@ return [
         // add more configurations if needed
     ],
 
+
+    'imap' => [
+        // This is the default configuration
+        'default' => [
+            'transport' => 'imap',
+            'host' => env('IMAP_HOST', 'imap.hostinger.com'),
+            'port' => env('IMAP_PORT', 993),
+            'encryption' => env('IMAP_ENCRYPTION', 'ssl'),
+            'username' => env('IMAP_USERNAME'),
+            'password' => env('IMAP_PASSWORD'),
+            'account' => env('IMAP_DEFAULT_ACCOUNT','default'),
+            'protocol' => env('IMAP_PROTOCOL','imap'),
+        ],
+    ],
+
     /*
     |--------------------------------------------------------------------------
     | Markdown Mail Settings

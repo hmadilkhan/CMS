@@ -54,9 +54,9 @@ class SendEmailJob implements ShouldQueue
             ]);
         }
         if ($this->details['department_id'] == 1) {
-            Mail::to("aptechadil@gmail.com")->send(new TestEmail($this->details, $this->uploadedFiles));
+            Mail::to($this->details['customer_email'])->send(new TestEmail($this->details, $this->uploadedFiles));
         }elseif ($this->details['department_id'] == 2) {
-            Mail::mailer('info')->to("aptechadil@gmail.com")->send(new TestEmail($this->details, $this->uploadedFiles));
+            Mail::mailer('info')->to($this->details['customer_email'])->send(new TestEmail($this->details, $this->uploadedFiles));
         }
 
         // This needs to be run to process the queue and if we want to do this automatically then we need to do this by scheduling this commands on the server side.        

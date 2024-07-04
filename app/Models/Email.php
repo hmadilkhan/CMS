@@ -10,4 +10,9 @@ class Email extends Model
     use HasFactory;
 
     protected $guarded = [];
+
+    public function attachments()
+    {
+        return $this->hasMany(EmailAttachment::class,"email_id","id");
+    }
 }
