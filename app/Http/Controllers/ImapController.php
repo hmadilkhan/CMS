@@ -80,7 +80,7 @@ class ImapController extends Controller
                                         "department_id" => $department->id,
                                         "customer_id" => $request->customer_id,
                                         "subject" => $message->getSubject(),
-                                        "body" => $message->getHTMLBody(),
+                                        "body" => $message->getTextBody(),
                                         "message_id" => $message->message_id,
                                     ]);
                                     if ($message->getAttachments()->count() > 0) {
