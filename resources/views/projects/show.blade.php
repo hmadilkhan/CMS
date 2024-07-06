@@ -720,7 +720,7 @@
                     <label for="formFileMultipleoneone" class="form-label fw-bold flex-fill mb-2 mt-sm-0">Department Notes</label>
                     @foreach ($filtered_collection as $value)
                     @if ($value->notes != '')
-                    <textarea class="form-control" disabled rows="3">{{ $value->notes }}</textarea>
+                    <textarea class="form-control" disabled rows="3">{{ $value->notes }} {{!empty($value->user) ? ("( Added by ".$value->user->name.")") : ''}}</textarea>
                     @endif
                     @endforeach
                 </div>
@@ -1000,6 +1000,7 @@
             </ul>
             <div class="tab-content">
                 <div class="tab-pane fade show active" id="calls" role="tabpanel">
+                    @if (!in_array("Sales Person",auth()->user()->getRoleNames()->toArray()))
                     <div class="row">
                         <div class="col-md-4">
                             <div class="card card-info mt-2">
@@ -1050,6 +1051,7 @@
                         <div class="col-md-6" id="call_script" style="font-size: 15px;text-align: justify;text-justify: inter-word;"></div>
 
                     </div>
+                    @endif
                     <div class="card card-info mt-2">
                         <div class="card-body">
                             <div class="row clearfix">
@@ -1094,6 +1096,7 @@
                 </div>
                 <div class="tab-pane fade" id="emails" role="tabpanel">
                     <div class="container">
+                        @if (!in_array("Sales Person",auth()->user()->getRoleNames()->toArray()))
                         <form id="emailform" method="post" enctype="multipart/form-data">
                             @csrf
                             <input type="hidden" name="project_id" value="{{ $project->id }}">
@@ -1153,6 +1156,7 @@
                                 </div>
                             </div>
                         </form>
+                        @endif
                         <div class="card-header py-3 px-0 d-sm-flex align-items-center  justify-content-between border-bottom">
 
                             <a class="btn  text-white me-1 mt-1 w-sm-100" id="openemployee"></a>
@@ -1803,9 +1807,6 @@
                 // console.log(response);
                 $("#call_script").empty();
                 $("#call_script").html(response);
-                // $("#call_script").text(function() {
-                //     return $(this).text().replace("auth()->user()->name", "{{ auth()->user()->name }}");
-                // });
                 let customer_name =
                     "{{ $project->customer->first_name . ' ' . $project->customer->last_name }}";
                 let salespartner = "{{ $project->customer->salespartner->name }}";
@@ -1847,9 +1848,6 @@
                 project: "{{ $project->id }}",
             },
             success: function(response) {
-                // console.log(response);
-                // $("#editor").empty();
-                // $("#editor").text(response);
                 window.editor.setData(response);
                 let customer_name =
                     "{{ $project->customer->first_name . ' ' . $project->customer->last_name }}";
@@ -1858,10 +1856,18 @@
                 let customer_replaced_text = customerreplace.replace("customer_name", "<b>" +
                     customer_name + "</b>");
                 window.editor.setData(customer_replaced_text);
-                let data = window.editor.getData();
-                let replaced_text1 = data.replace("salespartner_name", "<b>" + salespartner +
+                let customerreplace_1 = window.editor.getData();
+                let customer_replaced_text_1 = customerreplace_1.replace("customer_name_1", "<b>" +
+                    customer_name + "</b>");
+                window.editor.setData(customer_replaced_text_1);
+                let salespartnerName = window.editor.getData();
+                let sales_partner_text = salespartnerName.replace("salespartner_name", "<b>" + salespartner +
                     "</b>");
-                window.editor.setData(replaced_text1);
+                window.editor.setData(sales_partner_text);
+                let salespartnerName1 = window.editor.getData();
+                let sales_partner_text1 = salespartnerName1.replace("salespartner_name_1", "<b>" + salespartner +
+                    "</b>");
+                window.editor.setData(sales_partner_text1);
             },
             error: function(error) {
                 Swal.fire(
@@ -1876,6 +1882,11 @@
 
     function fetchEmails() {
         $("#emailDiv").empty();
+        let loadingDiv = '<div class="card-header py-3 px-0 d-sm-flex align-items-center  justify-content-between border-bottom">' +
+            '<h3 class=" fw-bold flex-fill mb-0 mt-sm-0 text-center fs-10 text-uppercase">' +
+            'Fetching Emails. Please Wait.........' +
+            '</h3></div>';
+        $("#emailDiv").append(loadingDiv);
         $.ajax({
             method: "POST",
             url: "{{ route('fetch.emails') }}",
@@ -1885,7 +1896,7 @@
                 customer_id: "{{ $project->customer_id }}",
             },
             success: function(response) {
-                console.log(response);
+
                 if (response.status == 200) {
                     showEmails("{{ $project->id }}");
                 }
@@ -1905,7 +1916,6 @@
                 project_id: projectId,
             },
             success: function(response) {
-                console.log(response);
                 $("#emailDiv").empty();
                 $("#emailDiv").html(response);
             },

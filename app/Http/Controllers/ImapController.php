@@ -113,7 +113,7 @@ class ImapController extends Controller
 
     public function showEmails(Request $request)
     {
-        $project = Project::with("emails","emails.attachments")->where("id",$request->project_id)->first();
+        $project = Project::with("emails","emails.attachments","emails.user")->where("id",$request->project_id)->first();
 
         return view("projects.partial.show-emails",[
             "project" => $project,

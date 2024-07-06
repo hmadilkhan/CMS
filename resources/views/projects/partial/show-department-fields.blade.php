@@ -8,12 +8,6 @@
         <label for="ntp_approval_date" class="form-label">NTP Approval Date</label>
         <input disabled class="form-control" type="date" value="{{$project->ntp_approval_date}}">
     </div>
-    @endif
-    @if($department->id == 2)
-    <div class="col-sm-6 mb-3">
-        <label for="site_survey_link" class="form-label">Site Survey Link</label>
-        <input disabled class="form-control" type="text" value="{{$project->site_survey_link}}">
-    </div>
     <div class="col-sm-6 ">
         <label for="hoa" class="form-label">HOA</label>
         <input disabled class="form-control" type="text" value="{{$project->hoa}}">
@@ -24,6 +18,13 @@
         <input disabled class="form-control" type="text" value="{{$project->hoa_phone_number}}">
     </div>
     @endif
+    @endif
+    @if($department->id == 2)
+    <div class="col-sm-6 mb-3">
+        <label for="site_survey_link" class="form-label">Site Survey Link</label>
+        <input disabled class="form-control" type="text" value="{{$project->site_survey_link}}">
+    </div>
+
     @endif
     @if($department->id == 3)
     <div class="col-sm-6 ">
@@ -111,7 +112,7 @@
     </div>
     <div class="col-sm-6 mb-3 ">
         <label for="final_inspection_date" class="form-label">Final Inspection Date</label>
-        <input disabled class="form-control" type="date"  value="{{$project->final_inspection_date}}">
+        <input disabled class="form-control" type="date" value="{{$project->final_inspection_date}}">
     </div>
     @endif
     @if($department->id == 7)

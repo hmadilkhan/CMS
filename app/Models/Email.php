@@ -13,6 +13,11 @@ class Email extends Model
 
     public function attachments()
     {
-        return $this->hasMany(EmailAttachment::class,"email_id","id");
+        return $this->hasMany(EmailAttachment::class, "email_id", "id");
+    }
+
+    public function user()
+    {
+        return $this->belongsTo(User::class, "user_id", "id");
     }
 }

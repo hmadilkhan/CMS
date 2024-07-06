@@ -39,7 +39,7 @@ class CustomerController extends Controller
     public function index()
     {
         return view("customer.index", [
-            "customers" => Customer::getCustomers()->get(),
+            "customers" => Customer::getCustomers()->latest()->get(),
         ]);
     }
 
@@ -102,6 +102,7 @@ class CustomerController extends Controller
                 "inverter_type_id" => $request->inverter_type_id,
                 "module_type_id" => $request->module_type_id,
                 "inverter_qty" => $request->inverter_qty,
+                "module_value" => $request->module_qty,
                 "module_value" => $request->module_qty,
                 "notes" => $request->notes,
             ]);
@@ -250,7 +251,7 @@ class CustomerController extends Controller
             ]);
             if ($request->sales_partner_user_id != "") {
                 $customer->project()->update([
-                    "sales_partner_user_id" => $request->sales_partner_user_id
+                    "sales_partner_user_id" => $request->sales_partner_user_id,
                 ]);
             }
             DB::commit();

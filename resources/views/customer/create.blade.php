@@ -72,7 +72,6 @@
                     <div class="text-danger message mt-2">{{$message}}</div>
                     @enderror
                 </div>
-
                 <div class="col-sm-4">
                     <label for="sold_date" class="form-label">Sold Date</label>
                     <input type="date" class="form-control" id="sold_date" name="sold_date" placeholder="Sold Date">
@@ -512,7 +511,7 @@
         let redlinecost = baseCost + (panelQty * moduleCost);
         console.log("Redline Cost", redlinecost);
         $("#redline_costs").val(redlinecost);
-        console.log("Base Cost",baseCost);
+        console.log("Base Cost", baseCost);
     }
 
     function calculateSystemSizeAmount() {

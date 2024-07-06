@@ -109,7 +109,7 @@ class ProjectController extends Controller
         $fwdDepartments =  array_merge($departments->toArray(), Department::where("id", ">", $task->department_id)->take(1)->get()->toArray());
         // return Project::with("task", "customer", "department","logs", "subdepartment", "assignedPerson", "assignedPerson.employee","departmentnotes")->where("id", $project->id)->first();
         return view("projects.show", [
-            "project" => Project::with("task", "customer", "department", "logs","logs.call", "subdepartment", "assignedPerson", "assignedPerson.employee","departmentnotes")->where("id", $project->id)->first(),
+            "project" => Project::with("task", "customer", "department", "logs","logs.call", "subdepartment", "assignedPerson", "assignedPerson.employee","departmentnotes","departmentnotes.user")->where("id", $project->id)->first(),
             "task" => $task,
             "backdepartments" => Department::where("id", "<", $task->department_id)->get(),
             "forwarddepartments" => (object)$fwdDepartments, //Department::whereIn("id", Task::where("project_id", $project->id)->pluck("department_id"))->get(),
@@ -191,11 +191,11 @@ class ProjectController extends Controller
             $validationArray = array_merge($validationArray, [
                 'utility_company' => 'required_if:forward,2',
                 'ntp_approval_date' => 'required_if:forward,2',
-                'site_survey_link' => 'required_if:forward,3',
-                'hoa' => 'required_if:forward,3',
+                'hoa' => 'required_if:forward,2',
                 'hoa_phone_number' => Rule::requiredIf(function () use ($request) {
-                    return $request->forward == 3 && !$request->hoa == "yes";
-                }), //'required_if:hoa,yes',
+                    return $request->forward == 2 && !$request->hoa == "yes";
+                }),
+                'site_survey_link' => 'required_if:forward,3',
                 'adders_approve_checkbox' => 'required_if:forward,4',
                 'mpu_required' => 'required_if:forward,4',
                 'meter_spot_request_date' => 'required_if:mpu_required,yes',
@@ -320,13 +320,15 @@ class ProjectController extends Controller
                 $updateItems = array_merge($updateItems, [
                     "utility_company" => $request->utility_company,
                     "ntp_approval_date" => $request->ntp_approval_date,
+                    "hoa" => $request->hoa,
+                    "hoa_phone_number" => $request->hoa_phone_number,
                 ]);
             }
             if ($request->forward == 3) {
                 $updateItems = array_merge($updateItems, [
                     "site_survey_link" => $request->site_survey_link,
-                    "hoa" => $request->hoa,
-                    "hoa_phone_number" => $request->hoa_phone_number,
+                    // "hoa" => $request->hoa,
+                    // "hoa_phone_number" => $request->hoa_phone_number,
                 ]);
             }
 
@@ -647,7 +649,8 @@ class ProjectController extends Controller
                 "project_id" => $request->project_id, 
                 "task_id" => $request->taskid, 
                 "department_id" => $request->department_id,
-                "notes" => $request->department_notes
+                "notes" => $request->department_notes,
+                "user_id" => auth()->user()->id,
             ]);
             return redirect()->route("projects.show", $request->project_id);
         } catch (\Throwable $th) {

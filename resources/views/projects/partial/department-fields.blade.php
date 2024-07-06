@@ -16,16 +16,6 @@
         @enderror
         <div id="ntp_approval_date_message" class="text-danger message mt-2"></div>
     </div>
-    @endif
-    @if($department == 3)
-    <div class="col-sm-3 mb-3 ">
-        <label for="site_survey_link" class="form-label" id="requiredfiles">Site Survey Link</label>
-        <input class="form-control" type="text" id="site_survey_link" name="site_survey_link" value="{{$project->site_survey_link}}">
-        @error("site_survey_link")
-        <div id="site_survey_link_message" class="text-danger message mt-2">{{$message}}</div>
-        @enderror
-        <div id="site_survey_link_message" class="text-danger message mt-2"></div>
-    </div>
     <div class="col-sm-3 ">
         <label for="hoa" class="form-label">HOA</label>
         <select class="form-select select2" aria-label="Default select HOA" id="hoa" name="hoa">
@@ -45,6 +35,17 @@
         @enderror
         <div id="hoa_phone_number_message" class="text-danger message mt-2"></div>
     </div>
+    @endif
+    @if($department == 3)
+    <div class="col-sm-3 mb-3 ">
+        <label for="site_survey_link" class="form-label" id="requiredfiles">Site Survey Link</label>
+        <input class="form-control" type="text" id="site_survey_link" name="site_survey_link" value="{{$project->site_survey_link}}">
+        @error("site_survey_link")
+        <div id="site_survey_link_message" class="text-danger message mt-2">{{$message}}</div>
+        @enderror
+        <div id="site_survey_link_message" class="text-danger message mt-2"></div>
+    </div>
+   
     @endif
     @if($department == 4)
     <div class="col-sm-3 ">
