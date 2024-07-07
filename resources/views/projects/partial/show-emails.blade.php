@@ -36,7 +36,7 @@ return $item->department_id == $department->id;
                                 <div class="text-start">{!! $email->body !!}</div>
                                 @if(!empty($email->attachments))
                                 @foreach($email->attachments as $attachment)
-                                <a href="{{asset('/storage/emails/'.$attachment->file)}}"><span class="badge bg-primary">{{$attachment->file}}</span></a>
+                                <a target="_blank" href="{{asset('/storage/emails/'.$attachment->file)}}"><span class="badge bg-primary">{{$attachment->file}}</span></a>
                                 @endforeach
                                 @endif
                             </div>
@@ -47,7 +47,7 @@ return $item->department_id == $department->id;
                                 <span class="message-data-time">10:12 AM, Today</span>
                             </div>
                             <div class="message my-message">
-                                {{ $email->subject }}</br>{{ $email->body }}
+                                {{ $email->subject }}</br>{{ $email->body }}</br>
                                 @if(!empty($email->attachments))
                                 @foreach($email->attachments as $attachment)
                                 <a href="{{asset('/storage/emails/'.$attachment->file)}}"><span class="badge bg-primary">{{$attachment->file}}</span></a>

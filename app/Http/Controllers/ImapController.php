@@ -90,7 +90,6 @@ class ImapController extends Controller
                                         foreach ($attachments as $attachment) {
                                             $attachment->save($path = public_path('/storage/emails/'), $filename = null);
                                             if (!empty($attachment)) {
-                                                echo $attachment->name;
                                                 EmailAttachment::create([
                                                     "email_id" => $email->id,
                                                     "file" => $attachment->name,

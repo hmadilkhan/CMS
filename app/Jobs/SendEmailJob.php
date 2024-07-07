@@ -5,6 +5,7 @@ namespace App\Jobs;
 use App\Mail\TestEmail;
 use App\Models\Email;
 use App\Models\EmailAttachment;
+use App\Models\EmailConfig;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldBeUnique;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -54,10 +55,15 @@ class SendEmailJob implements ShouldQueue
                 "file" => $file,
             ]);
         }
-        if ($this->details['department_id'] == 1) {
-            Mail::to($this->details['customer_email'])->send(new TestEmail($this->details, $this->uploadedFiles));
-        }elseif ($this->details['department_id'] == 2) {
-            Mail::mailer('info')->to($this->details['customer_email'])->send(new TestEmail($this->details, $this->uploadedFiles));
+        // if ($this->details['department_id'] == 1) {
+        //     Mail::to($this->details['customer_email'])->send(new TestEmail($this->details, $this->uploadedFiles));
+        // }elseif ($this->details['department_id'] == 2) {
+        //     Mail::mailer('info')->to($this->details['customer_email'])->send(new TestEmail($this->details, $this->uploadedFiles));
+        // }
+
+        $config = EmailConfig::where("department_id",$this->details['department_id'])->first();
+        if(!empty($config)){
+            Mail::mailer($config->mailer_name)->to($this->details['customer_email'])->send(new TestEmail($this->details, $this->uploadedFiles));
         }
 
         // This needs to be run to process the queue and if we want to do this automatically then we need to do this by scheduling this commands on the server side.        

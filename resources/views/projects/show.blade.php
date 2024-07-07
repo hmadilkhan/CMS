@@ -1143,7 +1143,7 @@
                                                         </div>
                                                     </div>
                                                     <div class="col-sm-12 mb-3">
-                                                        <button type="submit" class="btn btn-dark me-1 mt-1 w-sm-100" id="saveCallLogs"><i class="icofont-arrow-left me-2 fs-6"></i>Submit</button>
+                                                        <button id="btnEmail" type="submit" class="btn btn-dark me-1 mt-1 w-sm-100"><i class="icofont-arrow-left me-2 fs-6"></i>Send Email</button>
                                                     </div>
                                                 </div>
                                             </div>
@@ -1160,7 +1160,7 @@
                         <div class="card-header py-3 px-0 d-sm-flex align-items-center  justify-content-between border-bottom">
 
                             <a class="btn  text-white me-1 mt-1 w-sm-100" id="openemployee"></a>
-                            <a class="btn btn-dark me-1 mt-1 w-sm-100"><i class="icofont-refresh me-2 fs-6" onclick="fetchEmails()"></i>Refresh</a>
+                            <a class="btn btn-dark me-1 mt-1 w-sm-100" onclick="fetchEmails()"><i class="icofont-refresh me-2 fs-6" ></i>Refresh</a>
                         </div>
                         <div id="emailDiv"></div>
                         {{-- <div class="row clearfix">
@@ -1337,6 +1337,7 @@
     setTimeout(function() {
         $("#emailform").submit(function(e) {
             e.preventDefault();
+            $("#btnEmail").attr('disabled',true);
             $.ajax({
                 url: "{{ route('send.email') }}",
                 type: 'POST',
@@ -1356,20 +1357,20 @@
                             'success'
                         )
                         fetchEmails();
+                        $("#btnEmail").removeAttr("disabled");
                     } else {
                         Swal.fire(
                             'Failed!',
                             response.message,
                             'error'
                         )
+                        $("#btnEmail").removeAttr("disabled");
                     }
-                    // if (response != 0) {
-                    //     $("#img").attr("src", response);
-                    //     $(".preview img").show(); // Display image element
-                    // } else {
-                    //     alert('file not uploaded');
-                    // }
                 },
+                error: function(error) {
+                    console.log(error);
+                    $("#btnEmail").removeAttr("disabled");
+                }
             });
         });
     }, 3000);
@@ -1378,8 +1379,6 @@
         let totalCount = $("#" + $("#forward").val() + "_length").val();
         $("#requiredfiles").html(totalCount + " File Required");
         getSubDepartments($(this).val())
-        // $(".additionalFields").css("display","none");
-        // $(".fields_"+$(this).val()).css("display","block");
         getDepartmentsFields($(this).val())
     });
 
@@ -1887,6 +1886,7 @@
             'Fetching Emails. Please Wait.........' +
             '</h3></div>';
         $("#emailDiv").append(loadingDiv);
+        // console.log("");
         $.ajax({
             method: "POST",
             url: "{{ route('fetch.emails') }}",
@@ -1908,6 +1908,7 @@
     }
 
     function showEmails(projectId) {
+        console.log("");
         $.ajax({
             method: "POST",
             url: "{{ route('show.emails') }}",

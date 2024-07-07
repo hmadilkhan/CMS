@@ -110,8 +110,8 @@ return [
             'host' => env('MAIL_HOST', 'smtp.mailgun.org'),
             'port' => env('MAIL_PORT', 587),
             'encryption' => env('MAIL_ENCRYPTION', 'tls'),
-            'username' => env('MAIL_USERNAME'),
-            'password' => env('MAIL_PASSWORD'),
+            'username' => env('MAIL_USERNAME','dealreview@testsolencrm.com'),
+            'password' => env('MAIL_PASSWORD','Deal@247'),
             'timeout' => null,
             'auth_mode' => null,
             'from' => [
@@ -126,32 +126,138 @@ return [
             'host' => env('INFO_MAIL_HOST', 'smtp.mailgun.org'),
             'port' => env('INFO_MAIL_PORT', 587),
             'encryption' => env('INFO_MAIL_ENCRYPTION', 'tls'),
-            'username' => env('INFO_MAIL_USERNAME'),
-            'password' => env('INFO_MAIL_PASSWORD'),
+            'username' => env('INFO_MAIL_USERNAME','sitesurvey@testsolencrm.com'),
+            'password' => env('INFO_MAIL_PASSWORD','Site@247'),
             'timeout' => null,
             'auth_mode' => null,
             'from' => [
                 'address' => env('INFO_MAIL_FROM_ADDRESS', 'sitesurvey@testsolencrm.com'),
-                'name' => env('MAIL_FROM_NAME', 'Solen Energy Co. - Site Survey'),
+                'name' => env('INFO_MAIL_FROM_NAME', 'Site Survey'),
+            ],
+        ],
+
+        'dealreview' => [
+            'transport' => 'smtp',
+            'host' => env('DEALREVIEW_MAIL_HOST', 'smtp.mailgun.org'),
+            'port' => env('DEALREVIEW_MAIL_PORT', 587),
+            'encryption' => env('DEALREVIEW_MAIL_ENCRYPTION', 'tls'),
+            'username' => env('DEALREVIEW_MAIL_USERNAME','dealreview@solaroperations.info'),
+            'password' => env('DEALREVIEW_MAIL_PASSWORD','Deal@247'),
+            'timeout' => null,
+            'auth_mode' => null,
+            'from' => [
+                'address' => env('DEALREVIEW_MAIL_FROM_ADDRESS', 'dealreview@solaroperations.info'),
+                'name' => env('DEALREVIEW_MAIL_FROM_NAME', 'Deal Review'),
+            ],
+        ],
+
+        'sitesurvey' => [
+            'transport' => 'smtp',
+            'host' => env('SITESURVEY_MAIL_HOST', 'smtp.mailgun.org'),
+            'port' => env('SITESURVEY_MAIL_PORT', 587),
+            'encryption' => env('SITESURVEY_MAIL_ENCRYPTION', 'tls'),
+            'username' => env('SITESURVEY_MAIL_USERNAME','sitesurvey@solaroperations.info'),
+            'password' => env('SITESURVEY_MAIL_PASSWORD','Site@247'),
+            'timeout' => null,
+            'auth_mode' => null,
+            'from' => [
+                'address' => env('SITESURVEY_MAIL_FROM_ADDRESS', 'sitesurvey@solaroperations.info'),
+                'name' => env('SITESURVEY_MAIL_FROM_NAME', 'Site Survey'),
+            ],
+        ],
+
+        'engineering' => [
+            'transport' => 'smtp',
+            'host' => env('ENGINEERING_MAIL_HOST', 'smtp.mailgun.org'),
+            'port' => env('ENGINEERING_MAIL_PORT', 587),
+            'encryption' => env('ENGINEERING_MAIL_ENCRYPTION', 'tls'),
+            'username' => env('ENGINEERING_MAIL_USERNAME','engineering@solaroperations.info'),
+            'password' => env('ENGINEERING_MAIL_PASSWORD','Engr@247'),
+            'timeout' => null,
+            'auth_mode' => null,
+            'from' => [
+                'address' => env('ENGINEERING_MAIL_FROM_ADDRESS', 'engineering@solaroperations.info'),
+                'name' => env('ENGINEERING_MAIL_FROM_NAME', 'Engineering'),
+            ],
+        ],
+
+        'permitting' => [
+            'transport' => 'smtp',
+            'host' => env('PERMITTING_MAIL_HOST', 'smtp.mailgun.org'),
+            'port' => env('PERMITTING_MAIL_PORT', 587),
+            'encryption' => env('PERMITTING_MAIL_ENCRYPTION', 'tls'),
+            'username' => env('PERMITTING_MAIL_USERNAME','permitting@solaroperations.info'),
+            'password' => env('PERMITTING_MAIL_PASSWORD','Permit@247'),
+            'timeout' => null,
+            'auth_mode' => null,
+            'from' => [
+                'address' => env('PERMITTING_MAIL_FROM_ADDRESS', 'permitting@solaroperations.info'),
+                'name' => env('PERMITTING_MAIL_FROM_NAME', 'Permitting'),
+            ],
+        ],
+
+        'installation' => [
+            'transport' => 'smtp',
+            'host' => env('INSTALLATION_MAIL_HOST', 'smtp.mailgun.org'),
+            'port' => env('INSTALLATION_MAIL_PORT', 587),
+            'encryption' => env('INSTALLATION_MAIL_ENCRYPTION', 'tls'),
+            'username' => env('INSTALLATION_MAIL_USERNAME','installation@solaroperations.info'),
+            'password' => env('INSTALLATION_MAIL_PASSWORD','Install@247'),
+            'timeout' => null,
+            'auth_mode' => null,
+            'from' => [
+                'address' => env('INSTALLATION_MAIL_FROM_ADDRESS', 'installation@solaroperations.info'),
+                'name' => env('INSTALLATION_MAIL_FROM_NAME', 'Installation'),
+            ],
+        ],
+
+        'inspection' => [
+            'transport' => 'smtp',
+            'host' => env('INSPECTION_MAIL_HOST', 'smtp.mailgun.org'),
+            'port' => env('INSPECTION_MAIL_PORT', 587),
+            'encryption' => env('INSPECTION_MAIL_ENCRYPTION', 'tls'),
+            'username' => env('INSPECTION_MAIL_USERNAME','inspection@solaroperations.info'),
+            'password' => env('INSPECTION_MAIL_PASSWORD','Insp@247'),
+            'timeout' => null,
+            'auth_mode' => null,
+            'from' => [
+                'address' => env('INSPECTION_MAIL_FROM_ADDRESS', 'inspection@solaroperations.info'),
+                'name' => env('INSPECTION_MAIL_FROM_NAME', 'Inspection'),
+            ],
+        ],
+
+        'pto' => [
+            'transport' => 'smtp',
+            'host' => env('PTO_MAIL_HOST', 'smtp.mailgun.org'),
+            'port' => env('PTO_MAIL_PORT', 587),
+            'encryption' => env('PTO_MAIL_ENCRYPTION', 'tls'),
+            'username' => env('PTO_MAIL_USERNAME','pto@solaroperations.info'),
+            'password' => env('PTO_MAIL_PASSWORD','Pto@@247'),
+            'timeout' => null,
+            'auth_mode' => null,
+            'from' => [
+                'address' => env('PTO_MAIL_FROM_ADDRESS', 'pto@solaroperations.info'),
+                'name' => env('PTO_MAIL_FROM_NAME', 'PTO'),
+            ],
+        ],
+
+        'coc' => [
+            'transport' => 'smtp',
+            'host' => env('COC_MAIL_HOST', 'smtp.mailgun.org'),
+            'port' => env('COC_MAIL_PORT', 587),
+            'encryption' => env('COC_MAIL_ENCRYPTION', 'tls'),
+            'username' => env('COC_MAIL_USERNAME','coc@solaroperations.info'),
+            'password' => env('COC_MAIL_PASSWORD','Coc@@247'),
+            'timeout' => null,
+            'auth_mode' => null,
+            'from' => [
+                'address' => env('COC_MAIL_FROM_ADDRESS', 'coc@solaroperations.info'),
+                'name' => env('OOC_MAIL_FROM_NAME', 'COC'),
             ],
         ],
         // add more configurations if needed
     ],
 
-
-    'imap' => [
-        // This is the default configuration
-        'default' => [
-            'transport' => 'imap',
-            'host' => env('IMAP_HOST', 'imap.hostinger.com'),
-            'port' => env('IMAP_PORT', 993),
-            'encryption' => env('IMAP_ENCRYPTION', 'ssl'),
-            'username' => env('IMAP_USERNAME'),
-            'password' => env('IMAP_PASSWORD'),
-            'account' => env('IMAP_DEFAULT_ACCOUNT','default'),
-            'protocol' => env('IMAP_PROTOCOL','imap'),
-        ],
-    ],
 
     /*
     |--------------------------------------------------------------------------

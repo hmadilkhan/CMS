@@ -47,14 +47,14 @@ return [
     'accounts' => [
 
         'default' => [// account identifier
-            'host'  => env('IMAP_HOST', 'localhost'),
-            'port'  => env('IMAP_PORT', 993),
-            'protocol'  => env('IMAP_PROTOCOL', 'imap'), //might also use imap, [pop3 or nntp (untested)]
-            'encryption'    => env('IMAP_ENCRYPTION', 'ssl'), // Supported: false, 'ssl', 'tls', 'notls', 'starttls'
-            'validate_cert' => env('IMAP_VALIDATE_CERT', true),
-            'username' => env('IMAP_USERNAME', 'root@example.com'),
-            'password' => env('IMAP_PASSWORD', ''),
-            'authentication' => env('IMAP_AUTHENTICATION', null),
+            'host'  => env('DEALREVIEW_IMAP_HOST', 'localhost'),
+            'port'  => env('DEALREVIEW_IMAP_PORT', 993),
+            'protocol'  => env('DEALREVIEW_IMAP_PROTOCOL', 'imap'), //might also use imap, [pop3 or nntp (untested)]
+            'encryption'    => env('DEALREVIEW_IMAP_ENCRYPTION', 'ssl'), // Supported: false, 'ssl', 'tls', 'notls', 'starttls'
+            'validate_cert' => env('DEALREVIEW_IMAP_VALIDATE_CERT', true),
+            'username' => env('DEALREVIEW_IMAP_USERNAME', 'dealreview@solaroperations.info'),
+            'password' => env('DEALREVIEW_IMAP_PASSWORD', 'Deal@247'),
+            'authentication' => env('DEALREVIEW_IMAP_AUTHENTICATION', null),
             'proxy' => [
                 'socket' => null,
                 'request_fulluri' => false,
@@ -66,14 +66,129 @@ return [
         ],
 
         'sitesurvey' => [// account identifier
-            'host'  => env('SITE_IMAP_HOST', 'localhost'),
-            'port'  => env('SITE_IMAP_PORT', 993),
-            'protocol'  => env('SITE_IMAP_PROTOCOL', 'imap'), //might also use imap, [pop3 or nntp (untested)]
-            'encryption'    => env('SITE_IMAP_ENCRYPTION', 'ssl'), // Supported: false, 'ssl', 'tls', 'notls', 'starttls'
-            'validate_cert' => env('SITE_IMAP_VALIDATE_CERT', true),
-            'username' => env('SITE_IMAP_USERNAME', 'root@example.com'),
-            'password' => env('SITE_IMAP_PASSWORD', ''),
-            'authentication' => env('SITE_IMAP_AUTHENTICATION', null),
+            'host'  => env('SITESURVEY_IMAP_HOST', 'localhost'),
+            'port'  => env('SITESURVEY_IMAP_PORT', 993),
+            'protocol'  => env('SITESURVEY_IMAP_PROTOCOL', 'imap'), //might also use imap, [pop3 or nntp (untested)]
+            'encryption'    => env('SITESURVEY_IMAP_ENCRYPTION', 'ssl'), // Supported: false, 'ssl', 'tls', 'notls', 'starttls'
+            'validate_cert' => env('SITESURVEY_IMAP_VALIDATE_CERT', true),
+            'username' => env('SITESURVEY_IMAP_USERNAME', 'sitesurvey@solaroperations.info'),
+            'password' => env('SITESURVEY_IMAP_PASSWORD', 'Site@247'),
+            'authentication' => env('SITESURVEY_IMAP_AUTHENTICATION', null),
+            'proxy' => [
+                'socket' => null,
+                'request_fulluri' => false,
+                'username' => null,
+                'password' => null,
+            ],
+            "timeout" => 30,
+            "extensions" => []
+        ],
+
+        'engineering' => [// account identifier
+            'host'  => env('ENGINEERING_IMAP_HOST', 'localhost'),
+            'port'  => env('ENGINEERING_IMAP_PORT', 993),
+            'protocol'  => env('ENGINEERING_IMAP_PROTOCOL', 'imap'), //might also use imap, [pop3 or nntp (untested)]
+            'encryption'    => env('ENGINEERING_IMAP_ENCRYPTION', 'ssl'), // Supported: false, 'ssl', 'tls', 'notls', 'starttls'
+            'validate_cert' => env('ENGINEERING_IMAP_VALIDATE_CERT', true),
+            'username' => env('ENGINEERING_IMAP_USERNAME', 'engineering@solaroperations.info'),
+            'password' => env('ENGINEERING_IMAP_PASSWORD', 'Engr@247'),
+            'authentication' => env('ENGINEERING_IMAP_AUTHENTICATION', null),
+            'proxy' => [
+                'socket' => null,
+                'request_fulluri' => false,
+                'username' => null,
+                'password' => null,
+            ],
+            "timeout" => 30,
+            "extensions" => []
+        ],
+
+
+        'permitting' => [// account identifier
+            'host'  => env('PERMITTING_IMAP_HOST', 'localhost'),
+            'port'  => env('PERMITTING_IMAP_PORT', 993),
+            'protocol'  => env('PERMITTING_IMAP_PROTOCOL', 'imap'), //might also use imap, [pop3 or nntp (untested)]
+            'encryption'    => env('PERMITTING_IMAP_ENCRYPTION', 'ssl'), // Supported: false, 'ssl', 'tls', 'notls', 'starttls'
+            'validate_cert' => env('PERMITTING_IMAP_VALIDATE_CERT', true),
+            'username' => env('PERMITTING_IMAP_USERNAME', 'permitting@solaroperations.info'),
+            'password' => env('PERMITTING_IMAP_PASSWORD', 'Permit@247'),
+            'authentication' => env('PERMITTING_IMAP_AUTHENTICATION', null),
+            'proxy' => [
+                'socket' => null,
+                'request_fulluri' => false,
+                'username' => null,
+                'password' => null,
+            ],
+            "timeout" => 30,
+            "extensions" => []
+        ],
+
+        'installation' => [// account identifier
+            'host'  => env('INSTALLATION_IMAP_HOST', 'localhost'),
+            'port'  => env('INSTALLATION_IMAP_PORT', 993),
+            'protocol'  => env('INSTALLATION_IMAP_PROTOCOL', 'imap'), //might also use imap, [pop3 or nntp (untested)]
+            'encryption'    => env('INSTALLATION_IMAP_ENCRYPTION', 'ssl'), // Supported: false, 'ssl', 'tls', 'notls', 'starttls'
+            'validate_cert' => env('INSTALLATION_IMAP_VALIDATE_CERT', true),
+            'username' => env('INSTALLATION_IMAP_USERNAME', 'installation@solaroperations.info'),
+            'password' => env('INSTALLATION_IMAP_PASSWORD', 'Install@247'),
+            'authentication' => env('INSTALLATION_IMAP_AUTHENTICATION', null),
+            'proxy' => [
+                'socket' => null,
+                'request_fulluri' => false,
+                'username' => null,
+                'password' => null,
+            ],
+            "timeout" => 30,
+            "extensions" => []
+        ],
+
+        'inspection' => [// account identifier
+            'host'  => env('INSPECTION_IMAP_HOST', 'localhost'),
+            'port'  => env('INSPECTION_IMAP_PORT', 993),
+            'protocol'  => env('INSPECTION_IMAP_PROTOCOL', 'imap'), //might also use imap, [pop3 or nntp (untested)]
+            'encryption'    => env('INSPECTION_IMAP_ENCRYPTION', 'ssl'), // Supported: false, 'ssl', 'tls', 'notls', 'starttls'
+            'validate_cert' => env('INSPECTION_IMAP_VALIDATE_CERT', true),
+            'username' => env('INSPECTION_IMAP_USERNAME', 'inspection@solaroperations.info'),
+            'password' => env('INSPECTION_IMAP_PASSWORD', 'Insp@247'),
+            'authentication' => env('INSPECTION_IMAP_AUTHENTICATION', null),
+            'proxy' => [
+                'socket' => null,
+                'request_fulluri' => false,
+                'username' => null,
+                'password' => null,
+            ],
+            "timeout" => 30,
+            "extensions" => []
+        ],
+
+        'pto' => [// account identifier
+            'host'  => env('PTO_IMAP_HOST', 'localhost'),
+            'port'  => env('PTO_IMAP_PORT', 993),
+            'protocol'  => env('PTO_IMAP_PROTOCOL', 'imap'), //might also use imap, [pop3 or nntp (untested)]
+            'encryption'    => env('PTO_IMAP_ENCRYPTION', 'ssl'), // Supported: false, 'ssl', 'tls', 'notls', 'starttls'
+            'validate_cert' => env('PTO_IMAP_VALIDATE_CERT', true),
+            'username' => env('PTO_IMAP_USERNAME', 'pto@solaroperations.info'),
+            'password' => env('PTO_IMAP_PASSWORD', 'Pto@@247'),
+            'authentication' => env('PTO_IMAP_AUTHENTICATION', null),
+            'proxy' => [
+                'socket' => null,
+                'request_fulluri' => false,
+                'username' => null,
+                'password' => null,
+            ],
+            "timeout" => 30,
+            "extensions" => []
+        ],
+
+        'coc' => [// account identifier
+            'host'  => env('COC_IMAP_HOST', 'localhost'),
+            'port'  => env('COC_IMAP_PORT', 993),
+            'protocol'  => env('COC_IMAP_PROTOCOL', 'imap'), //might also use imap, [pop3 or nntp (untested)]
+            'encryption'    => env('COC_IMAP_ENCRYPTION', 'ssl'), // Supported: false, 'ssl', 'tls', 'notls', 'starttls'
+            'validate_cert' => env('COC_IMAP_VALIDATE_CERT', true),
+            'username' => env('COC_IMAP_USERNAME', 'coc@solaroperations.info'),
+            'password' => env('COC_IMAP_PASSWORD', 'Coc@@247'),
+            'authentication' => env('COC_IMAP_AUTHENTICATION', null),
             'proxy' => [
                 'socket' => null,
                 'request_fulluri' => false,
