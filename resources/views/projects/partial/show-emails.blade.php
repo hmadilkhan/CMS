@@ -44,13 +44,13 @@ return $item->department_id == $department->id;
                         @else
                         <li class="clearfix">
                             <div class="message-data">
-                                <span class="message-data-time">10:12 AM, Today</span>
+                                <span class="message-data-time">{{date("d M Y H:i a", strtotime($email->received_date))}}</span>
                             </div>
                             <div class="message my-message">
                                 {{ $email->subject }}</br>{{ $email->body }}</br>
                                 @if(!empty($email->attachments))
                                 @foreach($email->attachments as $attachment)
-                                <a href="{{asset('/storage/emails/'.$attachment->file)}}"><span class="badge bg-primary">{{$attachment->file}}</span></a>
+                                <a target="_blank" href="{{asset('/storage/emails/'.$attachment->file)}}"><span class="badge bg-primary">{{$attachment->file}}</span></a>
                                 @endforeach
                                 @endif
                             </div>

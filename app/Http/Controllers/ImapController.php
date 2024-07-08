@@ -20,7 +20,7 @@ class ImapController extends Controller
     public function fetchEmails(Request $request)
     {
         return $this->fetchDepartmentMails($request);
-        ini_set('memory_limit', '528M');
+        // ini_set('memory_limit', '528M');
         // config(['mail.imap.default.username' => 'dealreview@testsolencrm.com']);
         // config(['mail.imap.default.password' => 'Deal@247']);
         // config(['config.imap.accounts.default.username' => 'sitesurvey@testsolencrm.com']);
@@ -76,7 +76,6 @@ class ImapController extends Controller
                             foreach ($messages as $key => $message) {
                                 $count = Email::where("message_id", $message->message_id)->count();
                                 if ($count == 0) {
-                                    # code...
                                     $email = Email::create([
                                         "project_id" => $request->project_id,
                                         "department_id" => $department->id,
@@ -84,6 +83,7 @@ class ImapController extends Controller
                                         "subject" => $message->getSubject(),
                                         "body" => $message->getTextBody(),
                                         "message_id" => $message->message_id,
+                                        "received_date" => $message->getDate(),
                                     ]);
                                     if ($message->getAttachments()->count() > 0) {
                                         $attachments = $message->getAttachments();
