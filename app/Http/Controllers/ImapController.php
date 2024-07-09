@@ -97,6 +97,23 @@ class ImapController extends Controller
                                             }
                                         }
                                     }
+                                } else {
+                                    $email = Email::where("message_id", $message->message_id)->first();
+                                    Email::where("message_id", $message->message_id)->update(["received_date" => $message->getDate()]);
+
+                                    if ($message->getAttachments()->count() > 0) {
+                                        $attachments = $message->getAttachments();
+                                        foreach ($attachments as $attachment) {
+                                            EmailAttachment::where("email_id", $email->id)->where("file", $attachment->name)->count();
+                                            if ($count == 0) {
+                                                $attachment->save($path = public_path('/storage/emails/'), $filename = null);
+                                                EmailAttachment::create([
+                                                    "email_id" => $email->id,
+                                                    "file" => $attachment->name,
+                                                ]);
+                                            }
+                                        }
+                                    }
                                 }
                             }
                         }
@@ -112,9 +129,9 @@ class ImapController extends Controller
 
     public function showEmails(Request $request)
     {
-        $project = Project::with("emails","emails.attachments","emails.user")->where("id",$request->project_id)->first();
+        $project = Project::with("emails", "emails.attachments", "emails.user")->where("id", $request->project_id)->first();
 
-        return view("projects.partial.show-emails",[
+        return view("projects.partial.show-emails", [
             "project" => $project,
             "departments" => Department::all(),
         ]);
