@@ -1083,7 +1083,7 @@
                                 <input type="hidden" id="{{ $department->id }}_log_count" value="{{ count($logs) }}" />
 
                                 @foreach ($logs as $key => $log)
-                                <div class="col-sm-6 mb-3">
+                                <div class="col-sm-12 mb-3">
                                     <label for="formFileMultipleoneone" class="form-label fw-bold flex-fill mb-2 mt-sm-0">
                                         {{ $log->call->name }} :</label>
                                     <textarea class="form-control" disabled rows="3">{{ $log->notes }}</textarea>
