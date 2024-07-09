@@ -64,7 +64,7 @@ class ImapController extends Controller
     {
         try {
             $departments = Department::all();
-            $customer = Customer::findOrFail(23);//$request->customer_id
+            $customer = Customer::findOrFail($request->customer_id);//$request->customer_id
             foreach ($departments as $key => $department) {
                 $account = ImapAccount::where("department_id", $department->id)->first();
                 if (!empty($account)) {
@@ -79,7 +79,7 @@ class ImapController extends Controller
                                 $count = Email::where("message_id", $message->message_id)->count();
                                 if ($count == 0) {
                                     $email = Email::create([
-                                        "project_id" => 18,// $request->project_id,
+                                        "project_id" =>  $request->project_id,// $request->project_id,
                                         "department_id" => $department->id,
                                         "customer_id" => $request->customer_id,
                                         "subject" => $message->getSubject(),
