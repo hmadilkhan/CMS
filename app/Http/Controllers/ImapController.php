@@ -64,7 +64,7 @@ class ImapController extends Controller
     {
         try {
             $departments = Department::all();
-            $customer = Customer::findOrFail($request->customer_id);//$request->customer_id
+            $customer = Customer::findOrFail($request->customer_id); //$request->customer_id
             foreach ($departments as $key => $department) {
                 $account = ImapAccount::where("department_id", $department->id)->first();
                 if (!empty($account)) {
@@ -79,7 +79,7 @@ class ImapController extends Controller
                                 $count = Email::where("message_id", $message->message_id)->count();
                                 if ($count == 0) {
                                     $email = Email::create([
-                                        "project_id" =>  $request->project_id,// $request->project_id,
+                                        "project_id" =>  $request->project_id, // $request->project_id,
                                         "department_id" => $department->id,
                                         "customer_id" => $request->customer_id,
                                         "subject" => $message->getSubject(),
@@ -90,7 +90,9 @@ class ImapController extends Controller
                                     if ($message->getAttachments()->count() > 0) {
                                         $attachments = $message->getAttachments();
                                         foreach ($attachments as $attachment) {
-                                            $attachment->save($path = storage_path('public/emails'), $filename = null);
+                                            // $attachment->save($path = storage_path('public/emails'), $filename = null);
+                                            $filePath = 'public/emails/' . $attachment->name;
+                                            Storage::put($filePath, $attachment->content);
                                             if (!empty($attachment)) {
                                                 EmailAttachment::create([
                                                     "email_id" => $email->id,
@@ -102,15 +104,13 @@ class ImapController extends Controller
                                 } else {
 
                                     $email = Email::where("message_id", $message->message_id)->first();
-                                    Email::where("message_id", $message->message_id)->update(["received_date" => $message->getDate(),"updated_at" => date("Y-m-d H:i:s")]);
+                                    Email::where("message_id", $message->message_id)->update(["received_date" => $message->getDate(), "updated_at" => date("Y-m-d H:i:s")]);
 
                                     if ($message->getAttachments()->count() > 0) {
                                         $attachments = $message->getAttachments();
                                         foreach ($attachments as $attachment) {
                                             $attachmentCount = EmailAttachment::where("email_id", $email->id)->where("file", $attachment->name)->count();
                                             if ($attachmentCount == 0) {
-                                                // echo $attachment->file;
-                                                // $attachment->save(Storage::disk('public')->put("/emails" . $fileName, File::get($file)), $filename = null);
                                                 $filePath = 'public/emails/' . $attachment->name;
                                                 Storage::put($filePath, $attachment->content);
                                                 EmailAttachment::create([
