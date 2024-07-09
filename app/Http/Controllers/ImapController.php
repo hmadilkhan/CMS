@@ -10,7 +10,9 @@ use App\Models\ImapAccount;
 use App\Models\Project;
 use App\Traits\MediaTrait;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 use Webklex\IMAP\Facades\Client;
+use Illuminate\Support\Facades\File;
 use Webklex\PHPIMAP\Query\WhereQuery as query;
 
 class ImapController extends Controller
@@ -62,7 +64,7 @@ class ImapController extends Controller
     {
         try {
             $departments = Department::all();
-            $customer = Customer::findOrFail($request->customer_id);
+            $customer = Customer::findOrFail(23);//$request->customer_id
             foreach ($departments as $key => $department) {
                 $account = ImapAccount::where("department_id", $department->id)->first();
                 if (!empty($account)) {
@@ -77,7 +79,7 @@ class ImapController extends Controller
                                 $count = Email::where("message_id", $message->message_id)->count();
                                 if ($count == 0) {
                                     $email = Email::create([
-                                        "project_id" => $request->project_id,
+                                        "project_id" => 18,// $request->project_id,
                                         "department_id" => $department->id,
                                         "customer_id" => $request->customer_id,
                                         "subject" => $message->getSubject(),
@@ -107,7 +109,10 @@ class ImapController extends Controller
                                         foreach ($attachments as $attachment) {
                                             $attachmentCount = EmailAttachment::where("email_id", $email->id)->where("file", $attachment->name)->count();
                                             if ($attachmentCount == 0) {
-                                                $attachment->save($path = storage_path('public/emails'), $filename = null);
+                                                // echo $attachment->file;
+                                                // $attachment->save(Storage::disk('public')->put("/emails" . $fileName, File::get($file)), $filename = null);
+                                                $filePath = 'public/emails/' . $attachment->name;
+                                                Storage::put($filePath, $attachment->content);
                                                 EmailAttachment::create([
                                                     "email_id" => $email->id,
                                                     "file" => $attachment->name,
