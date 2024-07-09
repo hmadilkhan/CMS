@@ -88,7 +88,7 @@ class ImapController extends Controller
                                     if ($message->getAttachments()->count() > 0) {
                                         $attachments = $message->getAttachments();
                                         foreach ($attachments as $attachment) {
-                                            $attachment->save($path = public_path('/storage/emails/'), $filename = null);
+                                            $attachment->save($path = asset('/storage/emails/'), $filename = null);
                                             if (!empty($attachment)) {
                                                 EmailAttachment::create([
                                                     "email_id" => $email->id,
@@ -107,7 +107,7 @@ class ImapController extends Controller
                                         foreach ($attachments as $attachment) {
                                             $attachmentCount = EmailAttachment::where("email_id", $email->id)->where("file", $attachment->name)->count();
                                             if ($attachmentCount == 0) {
-                                                $attachment->save($path = public_path('/storage/emails/'), $filename = null);
+                                                $attachment->save($path = asset('/storage/emails/'), $filename = null);
                                                 EmailAttachment::create([
                                                     "email_id" => $email->id,
                                                     "file" => $attachment->name,
