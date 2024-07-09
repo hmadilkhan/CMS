@@ -98,14 +98,15 @@ class ImapController extends Controller
                                         }
                                     }
                                 } else {
+
                                     $email = Email::where("message_id", $message->message_id)->first();
-                                    Email::where("message_id", $message->message_id)->update(["received_date" => $message->getDate()]);
+                                    Email::where("message_id", $message->message_id)->update(["received_date" => $message->getDate(),"updated_at" => date("Y-m-d H:i:s")]);
 
                                     if ($message->getAttachments()->count() > 0) {
                                         $attachments = $message->getAttachments();
                                         foreach ($attachments as $attachment) {
-                                            EmailAttachment::where("email_id", $email->id)->where("file", $attachment->name)->count();
-                                            if ($count == 0) {
+                                            $attachmentCount = EmailAttachment::where("email_id", $email->id)->where("file", $attachment->name)->count();
+                                            if ($attachmentCount == 0) {
                                                 $attachment->save($path = public_path('/storage/emails/'), $filename = null);
                                                 EmailAttachment::create([
                                                     "email_id" => $email->id,
