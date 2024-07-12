@@ -63,6 +63,26 @@ return [
             ]) : [],
         ],
 
+        'wordpress' => [
+            'driver' => 'mysql',
+            'url' => env('DATABASE_URL'),
+            'host' => env('WORDPRESS_DB_HOST', '127.0.0.1'),
+            'port' => env('WORDPRESS_DB_PORT', '3306'),
+            'database' => env('WORDPRESS_DB_DATABASE', 'forge'),
+            'username' => env('WORDPRESS_DB_USERNAME', 'forge'),
+            'password' => env('WORDPRESS_DB_PASSWORD', ''),
+            'unix_socket' => env('WORDPRESS_DB_SOCKET', ''),
+            'charset' => 'utf8mb4',
+            'collation' => 'utf8mb4_unicode_ci',
+            'prefix' => '',
+            'prefix_indexes' => true,
+            'strict' => false,
+            'engine' => 'InnoDB',
+            'options' => extension_loaded('pdo_mysql') ? array_filter([
+                PDO::MYSQL_ATTR_SSL_CA => env('MYSQL_ATTR_SSL_CA'),
+            ]) : [],
+        ],
+
         'pgsql' => [
             'driver' => 'pgsql',
             'url' => env('DATABASE_URL'),

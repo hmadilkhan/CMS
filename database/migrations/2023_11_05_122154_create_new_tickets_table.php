@@ -15,7 +15,7 @@ return new class extends Migration
             $table->id();
             $table->string("name");
             $table->string("email");
-            $table->string("subject");
+            $table->string("address");
             $table->string("phone");
             $table->text("message");
             $table->string("status")->default("Pending");
