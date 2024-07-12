@@ -5,12 +5,14 @@ namespace App\Http\Controllers;
 use App\Models\NewTicket as ModelsNewTicket;
 use App\Notifications\NewTicket;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Notification;
 
 class NewTicketController extends Controller
 {
     public function index()
     {
+        Artisan::call('get:leads');
         return view("tickets.index",[
             "tickets" => ModelsNewTicket::all(),
         ]);

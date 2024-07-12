@@ -22,7 +22,7 @@
                             <th>Name</th>
                             <th>Email</th>
                             <th>Phone</th>
-                            <th>Subject</th>
+                            <th>Address</th>
                             <th>Message</th>
                             <th>Status</th>
                             <th>Actions</th>
@@ -35,7 +35,7 @@
                             <td>{{ $ticket->name }}</td>
                             <td>{{ $ticket->email }}</td>
                             <td>{{ $ticket->phone }}</td>
-                            <td>{{ $ticket->subject }}</td>
+                            <td>{{ $ticket->address }}</td>
                             <td>{{ $ticket->message }}</td>
                             <td>{{ $ticket->status }}</td>
                             <td class="text-center">
