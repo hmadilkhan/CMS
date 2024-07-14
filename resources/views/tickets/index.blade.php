@@ -3,54 +3,116 @@
 @section('content')
 <div class="body d-flex py-lg-3 py-md-2">
     <div class="container-xxl">
+
         <div class="row clearfix">
             <div class="col-md-12">
                 <div class="card border-0 mb-4 no-bg">
                     <div class="card-header py-3 px-0 d-sm-flex align-items-center  justify-content-between border-bottom">
                         <h3 class=" fw-bold flex-fill mb-0 mt-sm-0">Tickets</h3>
-                       
+
                     </div>
                 </div>
             </div>
         </div><!-- Row End -->
-        <div class="card mt-3">
-            <div class="card-body">
-                <table id="example1" class="table table-bordered table-striped datatable">
-                    <thead>
-                        <tr>
-                            <th>No.</th>
-                            <th>Name</th>
-                            <th>Email</th>
-                            <th>Phone</th>
-                            <th>Address</th>
-                            <th>Message</th>
-                            <th>Status</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @foreach ($tickets as $key => $ticket)
-                        <tr>
-                            <td>{{ ++$key }}</td>
-                            <td>{{ $ticket->name }}</td>
-                            <td>{{ $ticket->email }}</td>
-                            <td>{{ $ticket->phone }}</td>
-                            <td>{{ $ticket->address }}</td>
-                            <td>{{ $ticket->message }}</td>
-                            <td>{{ $ticket->status }}</td>
-                            <td class="text-center">
-                                @can("Change Ticket Status")
-                                <a style="cursor: pointer;" data-toggle="tooltip" title="Edit" onclick="deleteCustomerModal('{{$ticket->id}}')">
-                                    <i class="icofont-pencil text-warning fs-4"></i>
-                                </a>
-                                @endcan
-                            </td>
-                        </tr>
-                        @endforeach
-                    </tbody>
-                </table>
+        <div class="row clearfix mt-2">
+            <div class="col-md-12">
+                <div class="card">
+                    <div class="card-body">
+                        <ul class="nav nav-tabs px-3 border-bottom-0" role="tablist">
+                            <li class="nav-item"><a class="nav-link active" data-bs-toggle="tab" href="#pending" role="tab">Pending</a></li>
+                            <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#complete" role="tab">Completed</a></li>
+                        </ul>
+                    </div>
+                </div>
             </div>
-        </div> <!-- ROW END -->
+        </div>
+        <div class="tab-content">
+            <div class="tab-pane fade show active" id="pending" role="tabpanel">
+                <div class="card mt-3">
+                    <div class="card-body">
+                        <table id="example1" class="table table-bordered table-striped datatable">
+                            <thead>
+                                <tr>
+                                    <th>No.</th>
+                                    <th>Name</th>
+                                    <th>Email</th>
+                                    <th>Phone</th>
+                                    <th>Address</th>
+                                    <th>Message</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach ($tickets as $key => $ticket)
+                                @if($ticket->status == "Pending")
+                                <tr>
+                                    <td>{{ ++$key }}</td>
+                                    <td>{{ $ticket->name }}</td>
+                                    <td>{{ $ticket->email }}</td>
+                                    <td>{{ $ticket->phone }}</td>
+                                    <td>{{ $ticket->address }}</td>
+                                    <td>{{ $ticket->message }}</td>
+                                    <td>{{ $ticket->status }}</td>
+                                    <td class="text-center">
+                                        @can("Change Ticket Status")
+                                        <a style="cursor: pointer;" data-toggle="tooltip" title="Edit" onclick="deleteCustomerModal('{{$ticket->id}}')">
+                                            <i class="icofont-pencil text-warning fs-4"></i>
+                                        </a>
+                                        @endcan
+                                    </td>
+                                </tr>
+                                @endif
+                                @endforeach
+                            </tbody>
+                        </table>
+                    </div>
+                </div> <!-- ROW END -->
+            </div>
+            <div class="tab-pane fade show active" id="complete" role="tabpanel">
+                <div class="card mt-3">
+                    <div class="card-body">
+                        <table id="example1" class="table table-bordered table-striped datatable">
+                            <thead>
+                                <tr>
+                                    <th>No.</th>
+                                    <th>Name</th>
+                                    <th>Email</th>
+                                    <th>Phone</th>
+                                    <th>Address</th>
+                                    <th>Message</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach ($tickets as $key => $ticket)
+                                @if($ticket->status == "Done")
+                                <tr>
+                                    <td>{{ ++$key }}</td>
+                                    <td>{{ $ticket->name }}</td>
+                                    <td>{{ $ticket->email }}</td>
+                                    <td>{{ $ticket->phone }}</td>
+                                    <td>{{ $ticket->address }}</td>
+                                    <td>{{ $ticket->message }}</td>
+                                    <td>{{ $ticket->status }}</td>
+                                    <td class="text-center">
+                                        @can("Change Ticket Status")
+                                        <a style="cursor: pointer;" data-toggle="tooltip" title="Edit" onclick="deleteCustomerModal('{{$ticket->id}}')">
+                                            <i class="icofont-pencil text-warning fs-4"></i>
+                                        </a>
+                                        @endcan
+                                    </td>
+                                </tr>
+                                @endif
+                                @endforeach
+                            </tbody>
+                        </table>
+                    </div>
+                </div> <!-- ROW END -->
+            </div>
+        </div>
+
     </div>
 </div>
 <!-- Modal  Delete Folder/ File-->
