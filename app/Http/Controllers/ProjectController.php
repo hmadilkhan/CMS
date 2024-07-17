@@ -23,6 +23,7 @@ use App\Models\Tool;
 use App\Traits\MediaTrait;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Redis;
 use Illuminate\Validation\Rule;
 
 class ProjectController extends Controller
@@ -75,7 +76,7 @@ class ProjectController extends Controller
         ]);
         try {
             DB::beginTransaction();
-            $code = Project::orderBy("id","DESC")->first("code");
+            $code = Project::orderBy("id", "DESC")->first("code");
             $subdepartment = SubDepartment::where("department_id", 1)->first();
             $project = Project::create(array_merge(
                 $request->except(["assigntask"]),
@@ -109,7 +110,7 @@ class ProjectController extends Controller
         $fwdDepartments =  array_merge($departments->toArray(), Department::where("id", ">", $task->department_id)->take(1)->get()->toArray());
         // return Project::with("task", "customer", "department","logs", "subdepartment", "assignedPerson", "assignedPerson.employee","departmentnotes")->where("id", $project->id)->first();
         return view("projects.show", [
-            "project" => Project::with("task", "customer", "department", "logs","logs.call", "subdepartment", "assignedPerson", "assignedPerson.employee","departmentnotes","departmentnotes.user")->where("id", $project->id)->first(),
+            "project" => Project::with("task", "customer", "department", "logs", "logs.call", "subdepartment", "assignedPerson", "assignedPerson.employee", "departmentnotes", "departmentnotes.user")->where("id", $project->id)->first(),
             "task" => $task,
             "backdepartments" => Department::where("id", "<", $task->department_id)->get(),
             "forwarddepartments" => (object)$fwdDepartments, //Department::whereIn("id", Task::where("project_id", $project->id)->pluck("department_id"))->get(),
@@ -283,34 +284,34 @@ class ProjectController extends Controller
             }
             // if ($request->stage == "forward" && $request->alreadyuploaded == 0) {
 
-                // $task = Task::findOrFail($request->taskid);
-                // if (!empty($request->file)) {
-                //     foreach ($filesArray as $key => $file) {
-                //         ProjectFile::create([
-                //             "project_id" => $project->id,
-                //             "task_id" => $task->id,
-                //             "department_id" => $project->department_id,
-                //             "filename" => $file["fileName"],
-                //         ]);
-                //     }
-                // }
-                /* THIS CODE IS COMMENTED HERE BECAUSE WE MAKE IT INDEPENDENT IN saveCallLogs FUNCTION */
+            // $task = Task::findOrFail($request->taskid);
+            // if (!empty($request->file)) {
+            //     foreach ($filesArray as $key => $file) {
+            //         ProjectFile::create([
+            //             "project_id" => $project->id,
+            //             "task_id" => $task->id,
+            //             "department_id" => $project->department_id,
+            //             "filename" => $file["fileName"],
+            //         ]);
+            //     }
+            // }
+            /* THIS CODE IS COMMENTED HERE BECAUSE WE MAKE IT INDEPENDENT IN saveCallLogs FUNCTION */
 
-                // $logsCount = ProjectCallLog::where("project_id", $project->id)->where("department_id", $request->forward)->count();
-                // if ($request->forward != 1 && $request->forward != 8 && $logsCount == 0) {
-                //     ProjectCallLog::create([
-                //         "project_id" => $project->id,
-                //         "department_id" => $project->department_id,
-                //         "call_no" => $request->call_no_1,
-                //         "notes" => $request->notes_1,
-                //     ]);
-                //     ProjectCallLog::create([
-                //         "project_id" => $project->id,
-                //         "department_id" => $project->department_id,
-                //         "call_no" => $request->call_no_2,
-                //         "notes" => $request->notes_2,
-                //     ]);
-                // }
+            // $logsCount = ProjectCallLog::where("project_id", $project->id)->where("department_id", $request->forward)->count();
+            // if ($request->forward != 1 && $request->forward != 8 && $logsCount == 0) {
+            //     ProjectCallLog::create([
+            //         "project_id" => $project->id,
+            //         "department_id" => $project->department_id,
+            //         "call_no" => $request->call_no_1,
+            //         "notes" => $request->notes_1,
+            //     ]);
+            //     ProjectCallLog::create([
+            //         "project_id" => $project->id,
+            //         "department_id" => $project->department_id,
+            //         "call_no" => $request->call_no_2,
+            //         "notes" => $request->notes_2,
+            //     ]);
+            // }
             // }
             $updateItems = [
                 "department_id" => ($request->stage == "forward" ? $request->forward : $request->back),
@@ -511,7 +512,7 @@ class ProjectController extends Controller
         $query = Project::with("customer", "customer.salespartner", "department", "subdepartment", "assignedPerson", "assignedPerson.employee", "task", "notes");
         $subdepartmentsQuery = SubDepartment::with("department");
         if (auth()->user()->getRoleNames()[0] == "Sales Person") {
-            $query->where("sales_partner_user_id",auth()->user()->id);
+            $query->where("sales_partner_user_id", auth()->user()->id);
             // $query->whereHas("customer", function ($query) {
             //     $query->where("sales_partner_id", auth()->user()->sales_partner_id);
             // });
@@ -646,8 +647,8 @@ class ProjectController extends Controller
         ]);
         try {
             DepartmentNote::create([
-                "project_id" => $request->project_id, 
-                "task_id" => $request->taskid, 
+                "project_id" => $request->project_id,
+                "task_id" => $request->taskid,
                 "department_id" => $request->department_id,
                 "notes" => $request->department_notes,
                 "user_id" => auth()->user()->id,
@@ -661,16 +662,16 @@ class ProjectController extends Controller
 
     public function getCallScript(Request $request)
     {
-        $project =  Project::with("task", "customer","customer.salespartner", "department", "logs", "subdepartment", "assignedPerson", "assignedPerson.employee")->where("id", $request->project)->first();
-        
-        $count = CallScript::where("call_id",$request->call)->where("department_id",$request->department)->where("extra_filter","hoa")->count();
+        $project =  Project::with("task", "customer", "customer.salespartner", "department", "logs", "subdepartment", "assignedPerson", "assignedPerson.employee")->where("id", $request->project)->first();
+
+        $count = CallScript::where("call_id", $request->call)->where("department_id", $request->department)->where("extra_filter", "hoa")->count();
         $script = CallScript::query();
-        $script->where("call_id",$request->call)->where("department_id",$request->department);
-        if ( $project->hoa == "yes" && $count > 0 ) {
-            $script->where("extra_filter","hoa");
+        $script->where("call_id", $request->call)->where("department_id", $request->department);
+        if ($project->hoa == "yes" && $count > 0) {
+            $script->where("extra_filter", "hoa");
         }
 
-        return view("projects.partial.call_script",[
+        return view("projects.partial.call_script", [
             "callScript" => $script->first(),
             "department" => $request->department,
             "callId" => $request->call,
@@ -681,19 +682,35 @@ class ProjectController extends Controller
     public function getEmailScript(Request $request)
     {
         $project =  Project::where("id", $request->project)->first();
-        
-        $count = EmailScript::where("email_type_id",$request->emailType)->where("department_id",$request->department)->where("extra_filter","hoa")->count();
+
+        $count = EmailScript::where("email_type_id", $request->emailType)->where("department_id", $request->department)->where("extra_filter", "hoa")->count();
         $script = EmailScript::query();
-        $script->where("email_type_id",$request->emailType)->where("department_id",$request->department);
-        if ( $project->hoa == "yes" && $count > 0 ) {
-            $script->where("extra_filter","hoa");
+        $script->where("email_type_id", $request->emailType)->where("department_id", $request->department);
+        if ($project->hoa == "yes" && $count > 0) {
+            $script->where("extra_filter", "hoa");
         }
 
-        return view("projects.partial.email_script",[
+        return view("projects.partial.email_script", [
             "emailScript" => $script->first(),
             // "department" => $request->department,
             // "emailTypeId" => $request->email_type,
             // "project" => $project
         ]);
+    }
+
+    public function deleteFile(Request $request)
+    {
+        if ($request->id != "") {
+            try {
+                $file = ProjectFile::findOrFail($request->id);
+                $this->removeImage("",$file->filename);
+                $file->delete();
+                return response()->json(["status" => 200,"message" => "File delete successfully"]);
+            } catch (\Throwable $th) {
+                return response()->json(["status" => 500,"message" => "File not found"]);
+            }
+        }else{
+            return response()->json(["status" => 500,"message" => "File not found"]);
+        }
     }
 }
