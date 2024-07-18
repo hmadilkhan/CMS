@@ -483,9 +483,9 @@
                 let moduleQty = $("#module_qty").val();
                 $("#module_qty").val(panelQty * moduleQty);
                 let redlinecost = baseCost + (panelQty * moduleCost);
-                console.log("Redline Cost", redlinecost);
+                // console.log("Redline Cost", redlinecost);
                 $("#redline_costs").val(redlinecost);
-                console.log(baseCost);
+                // console.log(baseCost);
             }
         }, 2000);
         // }
@@ -669,7 +669,7 @@
                 },
                 dataType: 'json',
                 success: function(response) {
-                    console.log(response);
+                    // console.log(response);
                     moduleCost = response.types.amount;
                     systemSize = response.types.value;
                     $("#module_qty").val(response.types.value);
