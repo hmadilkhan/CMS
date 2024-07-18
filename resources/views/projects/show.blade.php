@@ -857,9 +857,7 @@
                 <input type="hidden" name="project_id" value="{{ $project->id }}">
                 <input type="hidden" name="customer_id" value="{{ $project->customer->id }}">
                 <input type="hidden" name="finance_option_id" value="{{ $project->customer->finances->finance->id }}">
-                @if (auth()->user()->getRoleNames()[0] == 'Manager' or
-                auth()->user()->getRoleNames()[0] == 'Admin' or
-                auth()->user()->getRoleNames()[0] == 'Super Admin')
+                @if(in_array("Manager",auth()->user()->getRoleNames()->toArray()) or in_array("Admin",auth()->user()->getRoleNames()->toArray()) or in_array("Super Admin",auth()->user()->getRoleNames()->toArray()))
                 <div class="row g-4 mb-3">
                     <div class="col-sm-3 mt-5">
                         <div class="col-sm-12 mb-1">
