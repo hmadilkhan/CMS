@@ -111,7 +111,7 @@
 
                 <div class="col-sm-4">
                     <label class="form-label">Module Type</label>
-                    <select class="form-select select2" aria-label="Default select Module Type" id="module_type_id" name="module_type_id">
+                    <select class="form-select select2" aria-label="Default select Module Type" id="module_type_id" name="module_type_id" onchange="calculateSystemSize()">
                         <option value="">Select Module Type</option>
                         @foreach ($modules as $module)
                         <option {{$customer->module_type_id == $module->id ? 'selected' : ''}} value="{{ $module->id }}">
@@ -140,7 +140,7 @@
 
                 <div class="col-sm-4">
                     <label for="code" class="form-label">Panel Qty</label>
-                    <input type="text" class="form-control" id="panel_qty" name="panel_qty" placeholder="Panel Qty" onblur="getRedlineCost()" value="{{$customer->panel_qty}}">
+                    <input type="text" class="form-control" id="panel_qty" name="panel_qty" placeholder="Panel Qty" onblur="calculateSystemSizeAmount()" value="{{$customer->panel_qty}}">
                     @error("panel_qty")
                     <div class="text-danger message mt-2">{{$message}}</div>
                     @enderror
@@ -362,6 +362,9 @@
 @endsection
 @section("scripts")
 <script>
+    var moduleCost = 0;
+    var systemSize = 0;
+    var baseCost = 0;
     $(document).ready(function() {
         $(".loandiv").css("display", "none");
     });
@@ -447,32 +450,45 @@
     function getRedlineCost() {
         let panelQty = $("#panel_qty").val();
         let inverterType = $("#inverter_type_id").val();
-        modulesType($("#module_type_id").val());
-        if (panelQty != "" && inverterType != "") {
-            $.ajax({
-                method: "POST",
-                url: "{{ route('get.redline.cost') }}",
-                data: {
-                    _token: "{{ csrf_token() }}",
-                    qty: panelQty,
-                    inverterType: inverterType,
-                },
-                dataType: 'json',
-                success: function(response) {
-                    $('#redline_costs').val('');
-                    let moduleQty = $('#module_qty').val();
-                    let panelQty = $('#panel_qty').val();
-                    let redlinecost = response.redlinecost;
-                    let redline = panelQty * moduleQty * redlinecost
-                    $('#redline_costs').val(redline);
-                    $('#module_qty').val(panelQty * moduleQty);
 
-                },
-                error: function(error) {
-                    console.log(error.responseJSON.message);
-                }
-            })
-        }
+        $.ajax({
+            method: "POST",
+            url: "{{ route('get.redline.cost') }}",
+            data: {
+                _token: "{{ csrf_token() }}",
+                qty: panelQty,
+                inverterType: inverterType,
+            },
+            dataType: 'json',
+            success: function(response) {
+                $('#redline_costs').val('');
+                // if (response.modules.length > 0) {
+                //     $("#module_type_id").empty();
+                //     $('#module_type_id').append($('<option  value="">Select Module Type</option>'));
+                //     $.each(response.modules, function(i, user) {
+                //         $('#module_type_id').append($('<option  value="' + user.id + '">' + user.name + '</option>'));
+                //     });
+                // }
+                baseCost = response.redlinecost;
+                let redlinecost = response.redlinecost;
+                $('#redline_costs').val(redlinecost);
+
+            },
+            error: function(error) {
+                console.log(error.responseJSON.message);
+            }
+        })
+        setTimeout(() => {
+            if (panelQty != "" && inverterType != "") {
+                let moduleQty = $("#module_qty").val();
+                $("#module_qty").val(panelQty * moduleQty);
+                let redlinecost = baseCost + (panelQty * moduleCost);
+                console.log("Redline Cost", redlinecost);
+                $("#redline_costs").val(redlinecost);
+                console.log(baseCost);
+            }
+        }, 2000);
+        // }
         calculateCommission()
     }
 
@@ -501,31 +517,30 @@
         $("#commission").val(commission.toFixed(2));
     }
 
-    // $("#adders").change(function() {
-    //     if ($(this).val() != "") {
-    //         $.ajax({
-    //             method: "POST",
-    //             url: "{{ route('get.sub.adders') }}",
-    //             data: {
-    //                 _token: "{{ csrf_token() }}",
-    //                 id: $(this).val(),
-    //             },
-    //             dataType: 'json',
-    //             success: function(response) {
-    //                 $('#sub_type').empty();
-    //                 $('#sub_type').append($('<option value="">Select Loan Apr</soption>'));
-    //                 $.each(response.subadders, function(i, subtype) {
-    //                     $('#sub_type').append($('<option  value="' + subtype.id + '">' + subtype.name + '</option>'));
-    //                 });
-    //                 calculateCommission()
-    //             },
-    //             error: function(error) {
-    //                 console.log(error.responseJSON.message);
-    //             }
-    //         })
-    //     }
-    // })
 
+    function calculateSystemSize() {
+        let moduleQty = $("#module_qty").val();
+        modulesType($("#module_type_id").val());
+        let panelQty = $("#panel_qty").val();
+        let inverterType = $("#inverter_type_id").val();
+
+        $("#module_qty").val(panelQty * systemSize);
+        let redlinecost = baseCost + (panelQty * moduleCost);
+        console.log("Redline Cost", redlinecost);
+        $("#redline_costs").val(redlinecost);
+        console.log("Base Cost", baseCost);
+    }
+
+    function calculateSystemSizeAmount() {
+        let panelQty = $("#panel_qty").val();
+        let moduleQty = $("#module_qty").val();
+        calculateSystemSize();
+        getRedlineCost();
+        $("#module_qty").val(panelQty * systemSize);
+        console.log(baseCost + " | " + panelQty + " | " + moduleCost);
+        let redlinecost = baseCost + (panelQty * moduleCost);
+        $("#redline_costs").val(redlinecost);
+    }
     $("#adders").change(function() {
         if ($(this).val() != "") {
             $.ajax({
@@ -650,9 +665,13 @@
                 data: {
                     _token: "{{ csrf_token() }}",
                     id: id,
+                    inverterTypeId: $("#inverter_type_id").val()
                 },
                 dataType: 'json',
                 success: function(response) {
+                    console.log(response);
+                    moduleCost = response.types.amount;
+                    systemSize = response.types.value;
                     $("#module_qty").val(response.types.value);
                 },
                 error: function(error) {
@@ -660,7 +679,7 @@
                 }
             })
         } else {
-            $("#inverter_type_id").prop("disabled", true)
+            // $("#inverter_type_id").prop("disabled", true)
         }
     }
 </script>
