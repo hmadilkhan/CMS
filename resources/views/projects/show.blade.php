@@ -491,6 +491,7 @@
     </div>
 </div>
 </div> --}}
+@can("Notes Section")
 <div class="col-md-4">
     <div class="card card-info mt-2">
         <div class="card-body">
@@ -525,6 +526,8 @@
         </div>
     </div>
 </div>
+@endcan
+@can("Files Section")
 <div class="col-md-4">
     <div class="card card-info mt-2">
         <div class="card-body">
@@ -560,6 +563,7 @@
         </div>
     </div>
 </div>
+@endcan
 
 </div>
 @can('Project Move')
