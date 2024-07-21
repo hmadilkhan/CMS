@@ -49,11 +49,9 @@ Route::get('/track-your-project', function () {
     return view('track-your-project');
 });
 
-Route::get('/get-track-project/{project_id}', [App\Http\Controllers\ProjectController::class, 'getWebsiteProject']);
-
-
 Route::post('store-ticket', [App\Http\Controllers\NewTicketController::class, 'store'])->name("store.ticket");
-Route::post('get-website-project', [App\Http\Controllers\ProjectController::class, 'getWebsiteProject'])->name('get.website.project');
+Route::get('check-website-project/{code}/{email}', [App\Http\Controllers\ProjectController::class, 'checkWebsiteProject'])->name('get.website.project');
+Route::get('/track-your-project/{project_id}', [App\Http\Controllers\ProjectController::class, 'trackYourProject']);
 
 Route::middleware('auth')->group(function () {
     Route::get('/dashboard', [App\Http\Controllers\HomeController::class, 'dashboard'])->name('dashboard');

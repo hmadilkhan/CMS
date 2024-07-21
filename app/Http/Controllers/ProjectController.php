@@ -22,8 +22,10 @@ use App\Models\Task;
 use App\Models\Tool;
 use App\Traits\MediaTrait;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Redis;
+use Illuminate\Support\Facades\URL;
 use Illuminate\Validation\Rule;
 
 class ProjectController extends Controller
@@ -614,19 +616,34 @@ class ProjectController extends Controller
         }
     }
 
-    public function getWebsiteProject(Request $request)
+    public function checkWebsiteProject(Request $request)
     {
-        $project = Project::where('code',$request->project_id)->first();
+        try {
+            $project = Project::with("customer")
+                        ->whereHas("customer",function($query) use ($request){
+                            $query->where("email",$request->email);
+                        })
+                       ->where('code', $request->code)->first();
+            return URL::to('/track-your-project/'.Crypt::encrypt($project->code));
+        } catch (\Throwable $th) {
+            return $th->getMessage();
+        }
+    }
+
+    public function trackYourProject(Request $request)
+    {
+        $request->project_id = Crypt::decrypt($request->project_id);    
+        $project = Project::where('code', $request->project_id)->first();
         $task = Task::whereIn("status", ["In-Progress", "Hold"])->where("project_id", $project->id)->first();
         $departments = Department::whereIn("id", Task::where("project_id", $project->id)->whereNotIn("department_id", Department::where("id", ">", $task->department_id)->take(1)->pluck("id"))->groupBy("department_id")->orderBy("department_id")->pluck("department_id"))->get();
         $fwdDepartments =  array_merge($departments->toArray(), Department::where("id", ">", $task->department_id)->take(1)->get()->toArray());
         try {
             if ($request->project_id) {
                 return view("projects.partial.website-project-details", [
-                    "project" => Project::with("task", "customer", "department", "logs", "subdepartment", "assignedPerson", "assignedPerson.employee")->where('code',$request->project_id)->first(),
+                    "project" => Project::with("task", "customer", "department", "logs", "subdepartment", "assignedPerson", "assignedPerson.employee")->where('code', $request->project_id)->first(),
                     "task" => $task,
                     "backdepartments" => Department::where("id", "<", $task->department_id)->get(),
-                    "forwarddepartments" => (object)$fwdDepartments, 
+                    "forwarddepartments" => (object)$fwdDepartments,
                     "filesCount" => ProjectFile::where("project_id", $project->id)->where("department_id", $project->department_id)->get(),
                     "departments" => Department::all(),
                     "employees" => $this->getEmployees($project->department_id),
@@ -703,14 +720,14 @@ class ProjectController extends Controller
         if ($request->id != "") {
             try {
                 $file = ProjectFile::findOrFail($request->id);
-                $this->removeImage("",$file->filename);
+                $this->removeImage("", $file->filename);
                 $file->delete();
-                return response()->json(["status" => 200,"message" => "File delete successfully"]);
+                return response()->json(["status" => 200, "message" => "File delete successfully"]);
             } catch (\Throwable $th) {
-                return response()->json(["status" => 500,"message" => "File not found"]);
+                return response()->json(["status" => 500, "message" => "File not found"]);
             }
-        }else{
-            return response()->json(["status" => 500,"message" => "File not found"]);
+        } else {
+            return response()->json(["status" => 500, "message" => "File not found"]);
         }
     }
 }
