@@ -616,17 +616,17 @@ class ProjectController extends Controller
 
     public function getWebsiteProject(Request $request)
     {
-        $project = Project::findOrFail($request->project_id);
+        $project = Project::where('code',$request->project_id)->first();
         $task = Task::whereIn("status", ["In-Progress", "Hold"])->where("project_id", $project->id)->first();
         $departments = Department::whereIn("id", Task::where("project_id", $project->id)->whereNotIn("department_id", Department::where("id", ">", $task->department_id)->take(1)->pluck("id"))->groupBy("department_id")->orderBy("department_id")->pluck("department_id"))->get();
         $fwdDepartments =  array_merge($departments->toArray(), Department::where("id", ">", $task->department_id)->take(1)->get()->toArray());
         try {
             if ($request->project_id) {
                 return view("projects.partial.website-project-details", [
-                    "project" => Project::with("task", "customer", "department", "logs", "subdepartment", "assignedPerson", "assignedPerson.employee")->where("id", $project->id)->first(),
+                    "project" => Project::with("task", "customer", "department", "logs", "subdepartment", "assignedPerson", "assignedPerson.employee")->where('code',$request->project_id)->first(),
                     "task" => $task,
                     "backdepartments" => Department::where("id", "<", $task->department_id)->get(),
-                    "forwarddepartments" => (object)$fwdDepartments, //Department::whereIn("id", Task::where("project_id", $project->id)->pluck("department_id"))->get(),
+                    "forwarddepartments" => (object)$fwdDepartments, 
                     "filesCount" => ProjectFile::where("project_id", $project->id)->where("department_id", $project->department_id)->get(),
                     "departments" => Department::all(),
                     "employees" => $this->getEmployees($project->department_id),

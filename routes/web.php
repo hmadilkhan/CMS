@@ -49,7 +49,7 @@ Route::get('/track-your-project', function () {
     return view('track-your-project');
 });
 
-Route::get('/get-track-project', [App\Http\Controllers\ProjectController::class, 'getWebsiteProject']);
+Route::get('/get-track-project/{project_id}', [App\Http\Controllers\ProjectController::class, 'getWebsiteProject']);
 
 
 Route::post('store-ticket', [App\Http\Controllers\NewTicketController::class, 'store'])->name("store.ticket");
