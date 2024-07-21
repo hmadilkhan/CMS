@@ -620,19 +620,20 @@ class ProjectController extends Controller
     {
         try {
             $project = Project::with("customer")
-                        ->whereHas("customer",function($query) use ($request){
-                            $query->where("email",$request->email);
-                        })
-                       ->where('code', $request->code)->first();
-            return URL::to('/track-your-project/'.Crypt::encrypt($project->code));
+                ->whereHas("customer", function ($query) use ($request) {
+                    $query->where("email", $request->email);
+                })
+                ->where('code', $request->code)->first();
+            $url = URL::to('/track-your-project/' . Crypt::encrypt($project->code));
+            return response()->json(["status" => 200, "url" => $url]);
         } catch (\Throwable $th) {
-            return $th->getMessage();
+            return response()->json(["status" => 500, "error" => $th->getMessage()]);
         }
     }
 
     public function trackYourProject(Request $request)
     {
-        $request->project_id = Crypt::decrypt($request->project_id);    
+        $request->project_id = Crypt::decrypt($request->project_id);
         $project = Project::where('code', $request->project_id)->first();
         $task = Task::whereIn("status", ["In-Progress", "Hold"])->where("project_id", $project->id)->first();
         $departments = Department::whereIn("id", Task::where("project_id", $project->id)->whereNotIn("department_id", Department::where("id", ">", $task->department_id)->take(1)->pluck("id"))->groupBy("department_id")->orderBy("department_id")->pluck("department_id"))->get();
