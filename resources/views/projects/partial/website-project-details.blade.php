@@ -531,7 +531,7 @@
             function showEmails(projectId) {
                 $.ajax({
                     method: "POST",
-                    url: "{{ route('show.emails') }}",
+                    url: "{{ route('show.website.emails') }}",
                     data: {
                         _token: "{{ csrf_token() }}",
                         project_id: projectId,

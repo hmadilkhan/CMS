@@ -52,6 +52,7 @@ Route::get('/track-your-project', function () {
 Route::post('store-ticket', [App\Http\Controllers\NewTicketController::class, 'store'])->name("store.ticket");
 Route::get('check-website-project/{code}/{email}', [App\Http\Controllers\ProjectController::class, 'checkWebsiteProject'])->name('get.website.project');
 Route::get('/track-your-project/{project_id}', [App\Http\Controllers\ProjectController::class, 'trackYourProject']);
+Route::post('show-website-emails', [App\Http\Controllers\ImapController::class, 'showEmails'])->name("show.website.emails");
 
 Route::middleware('auth')->group(function () {
     Route::get('/dashboard', [App\Http\Controllers\HomeController::class, 'dashboard'])->name('dashboard');
