@@ -513,11 +513,12 @@ class ProjectController extends Controller
     {
         $query = Project::with("customer", "customer.salespartner", "department", "subdepartment", "assignedPerson", "assignedPerson.employee", "task", "notes");
         $subdepartmentsQuery = SubDepartment::with("department");
-        if (in_array("Sales Person",auth()->user()->getRoleNames()->toArray()) or in_array("Sales Manager",auth()->user()->getRoleNames()->toArray())) {
+        if (in_array("Sales Manager",auth()->user()->getRoleNames()->toArray())) {
+            $query->whereHas("customer",function($q){
+                return $q->where("sales_partner_id",auth()->user()->sales_partner_id);
+            });
+        } else if (in_array("Sales Person",auth()->user()->getRoleNames()->toArray())) {
             $query->where("sales_partner_user_id", auth()->user()->id);
-            // $query->whereHas("customer", function ($query) {
-            //     $query->where("sales_partner_id", auth()->user()->sales_partner_id);
-            // });
         } else if (auth()->user()->getRoleNames()[0] == "Manager") {
             $query->whereIn("department_id", EmployeeDepartment::whereIn("employee_id", Employee::where("user_id", auth()->user()->id)->pluck("id"))->pluck("department_id"));
             $subdepartmentsQuery->whereIn("department_id", EmployeeDepartment::whereIn("employee_id", Employee::where("user_id", auth()->user()->id)->pluck("id"))->pluck("department_id"));
