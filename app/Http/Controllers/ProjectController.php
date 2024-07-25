@@ -513,7 +513,7 @@ class ProjectController extends Controller
     {
         $query = Project::with("customer", "customer.salespartner", "department", "subdepartment", "assignedPerson", "assignedPerson.employee", "task", "notes");
         $subdepartmentsQuery = SubDepartment::with("department");
-        if (auth()->user()->getRoleNames()[0] == "Sales Person") {
+        if (in_array("Sales Person",auth()->user()->getRoleNames()->toArray()) or in_array("Sales Manager",auth()->user()->getRoleNames()->toArray())) {
             $query->where("sales_partner_user_id", auth()->user()->id);
             // $query->whereHas("customer", function ($query) {
             //     $query->where("sales_partner_id", auth()->user()->sales_partner_id);

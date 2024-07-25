@@ -86,6 +86,7 @@ class ImapController extends Controller
                                         "body" => $message->getTextBody(),
                                         "message_id" => $message->message_id,
                                         "received_date" => $message->getDate(),
+                                        "is_view" => 1,
                                     ]);
                                     if ($message->getAttachments()->count() > 0) {
                                         $attachments = $message->getAttachments();
