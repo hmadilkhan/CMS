@@ -6,6 +6,40 @@
             <div class="card mb-3">
                 <div class="card-header py-3 d-flex justify-content-between align-items-center">
                     <div class="info-header">
+                        <h6 class="mb-0 fw-bold ">New Emails Received</h6>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <table id="myProjectTable" class="table table-hover align-middle mb-0" style="width:100%">
+                        <thead>
+                            <tr>
+                                <th>No.</th>
+                                <th>Customer Name</th>
+                                <th>Customer email</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach ($emails as $key => $email)
+                            <tr>
+                                <td>{{ ++$key }}</td>
+                                <td>{{ $email->customer->first_name." ".$email->customer->last_name }}</td>
+                                <td>{{ $email->customer->email }}</td>
+                                <td>
+                                    <a style="cursor: pointer;" data-toggle="tooltip" title="Edit" href="{{route('projects.show',$email->project->id)}}">
+                                        <i class="icofont-eye text-primary fs-4"></i></a>
+                                </td>
+                            </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-12">
+            <div class="card mb-3">
+                <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                    <div class="info-header">
                         <h6 class="mb-0 fw-bold ">{{((auth()->user()->getRoleNames()[0] != "Super Admin" and auth()->user()->getRoleNames()[0] != "Admin") ? 'Project Assigned to Me' : 'Projects Information')}}</h6>
                     </div>
                 </div>
@@ -48,6 +82,7 @@
                 </div>
             </div>
         </div>
+
     </div><!-- Row End -->
 </div>
 @section('scripts')
