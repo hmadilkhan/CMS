@@ -7,9 +7,9 @@ use App\Models\AdderUnit;
 use App\Models\Call;
 use App\Models\CallScript;
 use App\Models\Customer;
-use App\Models\CustomerAdder;
 use App\Models\Department;
 use App\Models\DepartmentNote;
+use App\Models\Email;
 use App\Models\EmailScript;
 use App\Models\EmailType;
 use App\Models\Employee;
@@ -24,7 +24,6 @@ use App\Traits\MediaTrait;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Redis;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Validation\Rule;
 
@@ -36,6 +35,7 @@ class ProjectController extends Controller
      */
     public function index(Request $request)
     {
+        // return $this->projectQuery($request);
         return view("projects.index", [
             "customers" => Customer::all(),
             "departments" => $this->departmentQuery(),
@@ -106,13 +106,13 @@ class ProjectController extends Controller
      */
     public function show(Project $project)
     {
-        // return Project::with("task", "customer", "department", "logs","logs.call", "subdepartment", "assignedPerson", "assignedPerson.employee","departmentnotes")->where("id", $project->id)->first();
+        $project = Project::with("task", "customer", "department", "logs", "logs.call", "subdepartment", "assignedPerson", "assignedPerson.employee", "departmentnotes", "departmentnotes.user")->where("id", $project->id)->first();
         $task = Task::whereIn("status", ["In-Progress", "Hold", "Cancelled"])->where("project_id", $project->id)->first();
         $departments = Department::whereIn("id", Task::where("project_id", $project->id)->whereNotIn("department_id", Department::where("id", ">", $task->department_id)->take(1)->pluck("id"))->groupBy("department_id")->orderBy("department_id")->pluck("department_id"))->get();
         $fwdDepartments =  array_merge($departments->toArray(), Department::where("id", ">", $task->department_id)->take(1)->get()->toArray());
-        // return Project::with("task", "customer", "department","logs", "subdepartment", "assignedPerson", "assignedPerson.employee","departmentnotes")->where("id", $project->id)->first();
+        Email::where("project_id",$project->id)->where("department_id",$project->department_id)->update(["is_view" => 0]);
         return view("projects.show", [
-            "project" => Project::with("task", "customer", "department", "logs", "logs.call", "subdepartment", "assignedPerson", "assignedPerson.employee", "departmentnotes", "departmentnotes.user")->where("id", $project->id)->first(),
+            "project" => $project,
             "task" => $task,
             "backdepartments" => Department::where("id", "<", $task->department_id)->get(),
             "forwarddepartments" => (object)$fwdDepartments, //Department::whereIn("id", Task::where("project_id", $project->id)->pluck("department_id"))->get(),

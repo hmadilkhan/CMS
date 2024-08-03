@@ -50,7 +50,8 @@ class Project extends Model
 
     public function notes()
     {
-        return $this->belongsTo(Task::class,"id","project_id")->orderBy("id","DESC")->take(1);
+        // return $this->belongsTo(Task::class,"id","project_id")->orderBy("id","DESC")->take(1);
+        return $this->hasOne(Task::class)->latestOfMany();
     }
 
     public function departmentnotes()
