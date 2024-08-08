@@ -30,7 +30,9 @@
                         @enderror
                     </div>
                     <div class="col-sm-3">
-                        <button class="btn btn-primary mt-4 float-right" type="button" onclick="generateReport()">Submit</button>
+                        <button class="btn btn-primary mt-4 float-right" type="button" onclick="generateReport()"><i class="icofont-save"></i> Submit</button>
+                        <button class="btn btn-success mt-4 float-right text-white" style="background-color: green" type="button" onclick="excelExport()"><i class="icofont-file-excel"></i> Excel Export</button>
+                        <button class="btn btn-danger mt-4 float-right text-white" type="button" onclick="pdfExport()"><i class="icofont-file-pdf"></i> PDF Export</button>
                     </div>
                 </div>
             </div>
@@ -59,13 +61,19 @@
                     to: $("#to_date").val(),
                 },
                 success: function(response) {
-                    console.log(response);
                     $("#reporttable").empty();
                     $("#reporttable").html(response);
 
                 }
             })
         }
+    }
+
+    function excelExport(){
+        window.open("{{url('forecast-report-excel-export')}}"+"/"+$("#from_date").val()+"/"+$("#to_date").val());
+    }
+    function pdfExport(){
+        window.open("{{url('forecast-report-pdf-export')}}"+"/"+$("#from_date").val()+"/"+$("#to_date").val());
     }
 </script>
 @endsection

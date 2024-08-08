@@ -177,11 +177,11 @@ Route::middleware('auth')->group(function () {
         Route::post('/call-scripts-update', 'callScriptUpdate')->name("call.scripts.update");
         Route::post('/call-scripts-delete', 'callScriptDelete')->name("call.scripts.delete");
 
-         // Email SCRIPTS
-         Route::get('/view-email-scripts/{id?}', 'emailScriptList')->name("email.scripts.list");
-         Route::post('/email-scripts-store', 'emailScriptStore')->name("email.scripts.store");
-         Route::post('/email-scripts-update', 'emailScriptUpdate')->name("email.scripts.update");
-         Route::post('/email-scripts-delete', 'emailScriptDelete')->name("email.scripts.delete");
+        // Email SCRIPTS
+        Route::get('/view-email-scripts/{id?}', 'emailScriptList')->name("email.scripts.list");
+        Route::post('/email-scripts-store', 'emailScriptStore')->name("email.scripts.store");
+        Route::post('/email-scripts-update', 'emailScriptUpdate')->name("email.scripts.update");
+        Route::post('/email-scripts-delete', 'emailScriptDelete')->name("email.scripts.delete");
     });
 
     Route::controller(InverterTypeController::class)->group(function () {
@@ -194,9 +194,13 @@ Route::middleware('auth')->group(function () {
     Route::controller(ReportController::class)->group(function () {
         Route::get('/reports-profilt', 'profitabilityReport')->name("reports.profit");
         Route::post('/reports-profilt', 'getProfitabilityReport')->name("reports.profit");
+        Route::get('/profitable-report-excel-export/{from}/{to}', 'getProfitableReportExport')->name("profitable.report.excel.export");
+        Route::get('/profitable-report-pdf-export/{from}/{to}', 'getProfitableReportPdfExport')->name("profitable.report.pdf.export");
         // FORECAST REPORT
         Route::get('/forecast-report', 'forecastReport')->name("forecast.report");
         Route::post('/forecast-report', 'getForecastReport')->name("forecast.report");
+        Route::get('/forecast-report-excel-export/{from}/{to}', 'getForecastReportExport')->name("forecast.report.excel.export");
+        Route::get('/forecast-report-pdf-export/{from}/{to}', 'getForecastReportPdfExport')->name("forecast.report.pdf.export");
     });
 
     Route::controller(AuroraController::class)->group(function () {
