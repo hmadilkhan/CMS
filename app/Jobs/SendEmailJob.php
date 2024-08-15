@@ -21,13 +21,15 @@ class SendEmailJob implements ShouldQueue
 
     protected $details;
     protected $uploadedFiles = [];
+    protected $ccEmails = [];
     /**
      * Create a new job instance.
      */
-    public function __construct($details, $files)
+    public function __construct($details, $files,$ccEmails = [])
     {
         $this->details = $details;
         $this->uploadedFiles = $files;
+        $this->ccEmails = $ccEmails;
     }
 
     /**
@@ -63,7 +65,7 @@ class SendEmailJob implements ShouldQueue
 
         $config = EmailConfig::where("department_id",$this->details['department_id'])->first();
         if(!empty($config)){
-            Mail::mailer($config->mailer_name)->to($this->details['customer_email'])->send(new TestEmail($this->details, $this->uploadedFiles));
+            Mail::mailer($config->mailer_name)->to($this->details['customer_email'])->send(new TestEmail($this->details, $this->uploadedFiles,$this->ccEmails));
         }
 
         // This needs to be run to process the queue and if we want to do this automatically then we need to do this by scheduling this commands on the server side.        

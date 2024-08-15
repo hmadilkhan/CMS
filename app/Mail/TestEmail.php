@@ -18,15 +18,17 @@ class TestEmail extends Mailable
     public $body;
     public $uploadedFiles = [];
     public $sendAttachments = [];
+    public $ccEmails = [];
 
     /**
      * Create a new message instance.
      */
-    public function __construct($details, $files)
+    public function __construct($details, $files,$ccEmails = [])
     {
         $this->subject = $details['subject'];
         $this->body = $details['body'];
         $this->uploadedFiles = $files;
+        $this->ccEmails = $ccEmails;
     }
 
     /**
@@ -62,5 +64,28 @@ class TestEmail extends Mailable
            array_push($this->sendAttachments, Attachment::fromPath(asset("/storage/emails/".$file)));
         }
         return $this->sendAttachments;
+    }
+
+     /**
+     * Build the message.
+     *
+     * @return $this
+     */
+    public function build()
+    {
+        $email = $this->subject($this->subject)
+                      ->view('mail.test-email', ['body' => $this->body]);
+
+        // Add CC recipients
+        if (!empty($this->ccEmails)) {
+            $email->cc($this->ccEmails);
+        }
+
+        // Attach files
+        foreach ($this->attachments() as $attachment) {
+            $email->attach($attachment->path());
+        }
+
+        return $email;
     }
 }

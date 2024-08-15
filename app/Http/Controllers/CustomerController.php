@@ -366,20 +366,8 @@ class CustomerController extends Controller
     public function sendEmail(Request $request)
     {
         try {
-            //code...
-
-            // config(['mail.mailers.info.username' => 'dealreview@testsolencrm.com']);
-            // config(['mail.mailers.info.password' => 'Deal@247']);
-            // config(['mail.mailers.info.from.address' => 'dealreview@testsolencrm.com']);
-            // config(['mail.mailers.info.from.name' => 'Solen Energy Co. - Deal Review']);
-
-            // config(['mail.mailers.info.username' => 'sitesurvey@testsolencrm.com']);
-            // config(['mail.mailers.info.password' => 'Site@247']);
-            // config(['mail.mailers.info.from.address' => 'sitesurvey@testsolencrm.com']);
-            // config(['mail.mailers.info.from.name' => 'Solen Energy Co. - Site Survey']);
-
-            // dump(config('mail.mailers.info'));
             $attachments = [];
+            $ccEmails = [];
             $details = [
                 "subject" => $request->subject,
                 "body" => $request->content,
@@ -388,17 +376,38 @@ class CustomerController extends Controller
                 "customer_id" => $request->customer_id,
                 "customer_email" => $request->customer_email,
             ];
+            
+            if ($request->ccEmails != "") {
+                $ccEmails = $this->handleCommaSeparatedValues($request->ccEmails);
+            }
             if (!empty($request->images) && count($request->images) > 0) {
                 foreach ($request->images  as $file) {
                     $savedFile = $this->uploads($file, 'emails/');
                     array_push($attachments, $savedFile['fileName']);
                 }
             }
-            dispatch(new SendEmailJob($details, $attachments));
+            dispatch(new SendEmailJob($details, $attachments, $ccEmails));
             return response()->json(["status" => 200, "message" => "Email has been sent"]);
         } catch (\Throwable $th) {
             return response()->json(["status" => 500, "message" => "Error : " . $th->getMessage()]);
         }
+    }
+
+    function handleCommaSeparatedValues($input)
+    {
+        // Check if the input contains a comma
+        if (strpos($input, ',') !== false) {
+            // Explode the string into an array of values
+            $values = explode(',', $input);
+
+            // Trim whitespace around each value
+            $values = array_map('trim', $values);
+        } else {
+            // If no comma, treat it as a normal string
+            $values = [$input];
+        }
+
+        return $values;
     }
 }
 /*

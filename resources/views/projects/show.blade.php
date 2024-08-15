@@ -272,6 +272,37 @@
             /* margin-left: auto;
                 margin-right: auto; */
         }
+        .tags-input {
+            border: 1px solid #ced4da;
+            padding: 5px;
+            border-radius: 4px;
+            display: flex;
+            flex-wrap: wrap;
+            cursor: text;
+        }
+        .tags-input input {
+            border: none;
+            outline: none;
+            flex-grow: 1;
+            min-width: 150px;
+        }
+        .tag {
+            background-color: #007bff;
+            color: white;
+            padding: 5px 10px;
+            margin: 2px;
+            border-radius: 3px;
+            display: inline-flex;
+            align-items: center;
+        }
+        .tag i {
+            margin-left: 5px;
+            cursor: pointer;
+        }
+        .invalid-feedback {
+            display: none;
+            color: red;
+        }
     </style>
     <link rel="stylesheet" href="https://cdn.ckeditor.com/ckeditor5/42.0.0/ckeditor5.css">
     <div class="card card-info">
@@ -1268,6 +1299,14 @@
                                                                                 class="text-danger message mt-2"></div>
                                                                         </div>
                                                                         <div class="col-md-12 mb-1">
+                                                                            <div class="mb-3">
+                                                                                <label for="ccEmails" class="form-label">CC Emails</label>
+                                                                                <div class="tags-input" id="ccEmails"></div>
+                                                                                <input type="hidden" name="ccEmails" id="ccEmailsHidden">
+                                                                                <div class="invalid-feedback" id="emailError">Please enter valid email addresses separated by commas.</div>
+                                                                            </div>
+                                                                        </div>
+                                                                        <div class="col-md-12 mb-1">
                                                                             <label for="exampleFormControlInput877"
                                                                                 class="form-label">Subject</label>
                                                                             <input type="text" class="form-control"
@@ -1526,6 +1565,7 @@
                             $("#subject").val('');
                             window.editor.setData('');
                             $("#email_no").val('').change();
+                            $("#ccEmails").val('');
                             Swal.fire(
                                 'Sent!',
                                 response.message,
@@ -2123,5 +2163,62 @@
                 }
             });
         }
+        document.addEventListener('DOMContentLoaded', function () {
+            const tagsInput = document.querySelector('.tags-input');
+            const input = document.createElement('input');
+            const hiddenInput = document.getElementById('ccEmailsHidden');
+            const form = document.getElementById('emailForm');
+            const emailError = document.getElementById('emailError');
+
+            tagsInput.appendChild(input);
+
+            function createTag(email) {
+                const tag = document.createElement('span');
+                tag.classList.add('tag');
+                tag.textContent = email;
+
+                const closeIcon = document.createElement('i');
+                closeIcon.classList.add('bi', 'bi-x');
+                closeIcon.addEventListener('click', () => {
+                    tagsInput.removeChild(tag);
+                    updateHiddenInput();
+                });
+
+                tag.appendChild(closeIcon);
+                tagsInput.insertBefore(tag, input);
+
+                updateHiddenInput();
+            }
+
+            function updateHiddenInput() {
+                const tags = document.querySelectorAll('.tag');
+                const emails = Array.from(tags).map(tag => tag.textContent.trim());
+                hiddenInput.value = emails.join(',');
+            }
+
+            function validateEmails(emails) {
+                const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+                return emails.every(email => emailPattern.test(email));
+            }
+
+            input.addEventListener('keydown', function (e) {
+                if (e.key === 'Enter' || e.key === ',') {
+                    e.preventDefault();
+                    const email = input.value.trim();
+                    if (email && validateEmails([email])) {
+                        createTag(email);
+                        input.value = '';
+                        emailError.style.display = 'none';
+                    } else {
+                        emailError.style.display = 'block';
+                    }
+                }
+            });
+
+            tagsInput.addEventListener('click', () => {
+                input.focus();
+            });
+
+        });
     </script>
 @endsection
