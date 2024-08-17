@@ -51,36 +51,31 @@
                     <td>{{ ++$key }}</td>
                     <td>{{$customer->first_name." ".$customer->last_name }}</td>
                     <td>{{$customer->salespartner->name }}</td>
-                    <td>{{number_format($customer->finances->contract_amount,2) }}</td>
-                    <td>{{number_format($customer->finances->dealer_fee_amount,2) }}</td>
-                    <td>{{number_format($customer->finances->redline_costs,2) }}</td>
-                    <td>{{number_format($customer->finances->adders,2) }}</td>
-                    <td>{{number_format($customer->finances->commission,2) }}</td>
-                    <td>{{number_format($customer->project->actual_material_cost,2) }}</td>
-                    <td>{{number_format($customer->project->actual_labor_cost,2) }}</td>
-                    <td>{{number_format($actualJob,2) }}</td>
-                    <td>{{number_format($profitAmount,2) }}</td>
+                    <td>$ {{number_format($customer->finances->contract_amount,2) }}</td>
+                    <td>$ {{number_format($customer->finances->dealer_fee_amount,2) }}</td>
+                    <td>$ {{number_format($customer->finances->redline_costs,2) }}</td>
+                    <td>$ {{number_format($customer->finances->adders,2) }}</td>
+                    <td>$ {{number_format($customer->finances->commission,2) }}</td>
+                    <td>$ {{number_format($customer->project->actual_material_cost,2) }}</td>
+                    <td>$ {{number_format($customer->project->actual_labor_cost,2) }}</td>
+                    <td>$ {{number_format($actualJob,2) }}</td>
+                    <td>$ {{number_format($profitAmount,2) }}</td>
                     <td>{{number_format($profitPercentage * 100,2) }}%</td>
                 </tr>
                 @endforeach
                 <tr>
                     <td colspan="3" class="text-center"><h4 class="fw-bold mt-3">Total</h4></td>
-                    <td class="fw-bold">{{number_format($totalContractAmount,2)}}</td>
-                    <td class="fw-bold">{{number_format($totalDealerFee,2)}}</td>
-                    <td class="fw-bold">{{number_format($totalRedlineCosts,2)}}</td>
-                    <td class="fw-bold">{{number_format($totalAddersAmount,2)}}</td>
-                    <td class="fw-bold">{{number_format($totalCommissionAmount,2)}}</td> 
-                    <td class="fw-bold">{{number_format($totalActualMaterialCost,2)}}</td> 
-                    <td class="fw-bold">{{number_format($totalActualLaborCost,2)}}</td> 
-                    <td class="fw-bold">{{number_format($totalActualJob,2)}}</td> 
-                    <td class="fw-bold">{{number_format($totalProfitAmount ,2)}}</td> 
+                    <td class="fw-bold">$ {{number_format($totalContractAmount,2)}}</td>
+                    <td class="fw-bold">$ {{number_format($totalDealerFee,2)}}</td>
+                    <td class="fw-bold">$ {{number_format($totalRedlineCosts,2)}}</td>
+                    <td class="fw-bold">$ {{number_format($totalAddersAmount,2)}}</td>
+                    <td class="fw-bold">$ {{number_format($totalCommissionAmount,2)}}</td> 
+                    <td class="fw-bold">$ {{number_format($totalActualMaterialCost,2)}}</td> 
+                    <td class="fw-bold">$ {{number_format($totalActualLaborCost,2)}}</td> 
+                    <td class="fw-bold">$ {{number_format($totalActualJob,2)}}</td> 
+                    <td class="fw-bold">$ {{number_format($totalProfitAmount ,2)}}</td> 
                     <td class="fw-bold">{{number_format($totalProfitPercentage * 100,2)}}%</td> 
                 </tr>
-            </tbody>
-        </table>
-        <table class="table table-bordered table-striped datatable">
-            <tbody>
-                
             </tbody>
         </table>
     </div>

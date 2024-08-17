@@ -29,7 +29,7 @@
                         <div id="to_message" class="text-danger message mt-2">{{$message}}</div>
                         @enderror
                     </div>
-                    <div class="col-sm-3">
+                    <div class="col-sm-4">
                         <button class="btn btn-primary mt-4 float-right" type="button" onclick="generateReport()"><i class="icofont-save"></i> Submit</button>
                         <button class="btn btn-success mt-4 float-right text-white" style="background-color: green" type="button" onclick="excelExport()"><i class="icofont-file-excel"></i> Excel Export</button>
                         <button class="btn btn-danger mt-4 float-right text-white" type="button" onclick="pdfExport()"><i class="icofont-file-pdf"></i> PDF Export</button>

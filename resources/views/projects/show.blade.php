@@ -1039,7 +1039,7 @@
                                             <td>{{ $index }}</td>
                                             <td>{{ $adder->type->name }}</td>
                                             <td>{{ $adder->unit->name }}</td>
-                                            <td>{{ $adder->amount }}</td>
+                                            <td>$ {{number_format($adder->amount,2) }}</td>
                                             <td>
                                                 <i style='cursor: pointer;' class='icofont-trash text-danger'
                                                     onClick="deleteItem('{{ $index }}','{{ $adder->id }}')">
@@ -1085,25 +1085,25 @@
                                 <div class="col-sm-3 ">
                                     <label for="contract_amount" class="form-label">Contract Amount</label>
                                     <input type="text" class="form-control"
-                                        value="{{ $project->customer->finances->contract_amount }}" id="contract_amount"
+                                        value="$ {{number_format($project->customer->finances->contract_amount,2) }}" id="contract_amount"
                                         name="contract_amount">
                                 </div>
                                 <div class="col-sm-3 ">
                                     <label for="redline_costs" class="form-label">Redline Costs</label>
                                     <input type="text" class="form-control"
-                                        value="{{ $project->customer->finances->redline_costs }}" id="redline_costs"
+                                        value="$ {{number_format($project->customer->finances->redline_costs,2) }}" id="redline_costs"
                                         name="redline_costs">
                                 </div>
                                 <div class="col-sm-3 ">
                                     <label for="adders" class="form-label">Adders</label>
                                     <input type="text" class="form-control"
-                                        value="{{ $project->customer->finances->adders }}" id="adders_amount"
+                                        value="$ {{ number_format($project->customer->finances->adders,2) }}" id="adders_amount"
                                         name="adders_amount">
                                 </div>
                                 <div class="col-sm-3 ">
                                     <label for="commission" class="form-label">Commission</label>
                                     <input type="text" class="form-control"
-                                        value="{{ $project->customer->finances->commission }}" id="commission"
+                                        value="$ {{number_format($project->customer->finances->commission,2) }}" id="commission"
                                         name="commission">
                                 </div>
                                 <div class="col-sm-3 ">
@@ -1115,7 +1115,7 @@
                                 <div class="col-sm-3 ">
                                     <label for="dealer_fee_amount" class="form-label">Dealer Fee Amount</label>
                                     <input type="text" class="form-control"
-                                        value="{{ $project->customer->finances->dealer_fee_amount }}" id="dealer_fee_amount"
+                                        value="$ {{ number_format($project->customer->finances->dealer_fee_amount,2) }}" id="dealer_fee_amount"
                                         name="dealer_fee_amount">
                                 </div>
                             </div>

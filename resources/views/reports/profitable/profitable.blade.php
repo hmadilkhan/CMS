@@ -16,10 +16,10 @@
             <div class="card mt-1">
                 <div class="card-body">
                     <div class="row g-3 mb-3">
-                        <div class="col-sm-3">
+                        <div class="col-sm-3 mt-4">
                             <label class="form-label">Sales Partner</label>
                             <select class="form-select select2" aria-label="Default select Sales Partner"
-                                id="sales_partner_id" name="sales_partner_id">
+                                id="sales_partner_id" name="sales_partner_id" style="width:100%">
                                 <option value="">Select Sales Partner</option>
                                 @foreach ($partners as $partner)
                                     <option value="{{ $partner->id }}">
@@ -31,7 +31,7 @@
                                 <div id="salespartner_message" class="text-danger message mt-2">{{ $message }}</div>
                             @enderror
                         </div>
-                        <div class="col-sm-3 mb-3">
+                        <div class="col-sm-2 mb-3">
                             <label for="from_date" class="form-label">From </label>
                             <input type="date" class="form-control" id="from_date" name="from_date"
                                 placeholder="Enter From Date">
@@ -39,7 +39,7 @@
                                 <div id="from_message" class="text-danger message mt-2">{{ $message }}</div>
                             @enderror
                         </div>
-                        <div class="col-sm-3 mb-3">
+                        <div class="col-sm-2 mb-3">
                             <label for="to_date" class="form-label">To </label>
                             <input type="date" class="form-control" id="to_date" name="to_date"
                                 placeholder="Enter From Date">
@@ -47,7 +47,7 @@
                                 <div id="to_message" class="text-danger message mt-2">{{ $message }}</div>
                             @enderror
                         </div>
-                        <div class="col-sm-3">
+                        <div class="col-sm-4">
                             <button class="btn btn-primary mt-4 float-right" type="button" onclick="generateReport()"><i
                                     class="icofont-save"></i> Submit</button>
                             <button class="btn btn-success mt-4 float-right text-white" style="background-color: green"

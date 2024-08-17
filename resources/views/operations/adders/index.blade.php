@@ -107,7 +107,7 @@
                     <td>{{ $adderList->type->name }}</td>
                     {{--<td>{{$adderList->subtype->name}}</td>--}}
                     <td>{{ $adderList->unit->name }}</td>
-                    <td>{{ $adderList->price }}</td>
+                    <td>$ {{ number_format($adderList->price,2) }}</td>
                     <td class="text-center">
                         <a style="cursor: pointer;" data-toggle="tooltip" title="Edit" href="{{ route('view-adders',$adderList->id)}}">
                             <i class="icofont-pencil text-warning"></i></a>

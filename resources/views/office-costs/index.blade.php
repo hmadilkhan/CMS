@@ -52,7 +52,7 @@
                 @foreach ($costs as $key => $cost)
                 <tr>
                     <td>{{ ++$key }}</td>
-                    <td>{{ $cost->cost }}</td>
+                    <td>$ {{ number_format($cost->cost,2) }}</td>
                 </tr>
                 @endforeach
             </tbody>

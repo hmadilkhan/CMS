@@ -80,7 +80,7 @@
                 <tr>
                     <td>{{ ++$key }}</td>
                     <td>{{ $list->inverter->name }}</td>
-                    <td>{{ $list->base_cost }}</td>
+                    <td>$ {{ number_format($list->base_cost,2) }}</td>
                     <td class="text-center">
                         <a style="cursor: pointer;" data-toggle="tooltip" title="Edit" href="{{ route('view-redline-cost',$list->id)}}">
                             <i class="icofont-pencil text-warning"></i></a>
