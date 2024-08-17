@@ -5,7 +5,7 @@
             <h3 class=" fw-bold flex-fill mb-0 mt-sm-0">{{$subdepartment->name}}</h3>
         </div>
     </div>
-    <div class="d-flex flex-row flex-nowrap">
+    <div class="d-flex flex-row flex-nowrap overflow-auto">
         @php $collections = $projects->filter(function ($item) use ($subdepartment) {
         return $item->sub_department_id == $subdepartment->id;
         })->values(); @endphp
