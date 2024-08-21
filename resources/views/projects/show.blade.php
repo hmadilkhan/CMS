@@ -1732,35 +1732,25 @@
         })
 
         $("#saveFiles").click(function() {
-            $("#file_message").html('')
-            let fileCount = $("[name='file[]']").prop("files").length;
-            let stage = $('input[name="stage"]:checked').val()
-            // let totalCount = $("#" + $("#forward").val() + "_length").val(); //"{{ $project->department->document_length }}";
-            let alreadyUploaded = "{{ count($filesCount) }}";
-            // let currentproject = "{{ $project->department->id }}";
-            // let project = $("#forward").val();
-            // let logs = $("#{{ $project->id }}_log_count").val()
-            let departmentLength = "{{ $project->department->document_length }}";
-            let balance = departmentLength - alreadyUploaded;
-            console.log("Balance", balance);
-            if (fileCount <= balance) {
-                // console.log("everthing is good");
-                if (balance > 0) {
-                    // console.log("File Count", fileCount);
-                    // console.log("Already Uploaded", alreadyUploaded);
-                    // console.log("Logs",logs);
-                    // console.log("Department Length", "{{ $project->department->document_length }}");
-                    $("#files-form").submit();
-                }
-            } else {
-                // console.log("Only " + balance + " files can be selected");
-                if (balance == 0) {
-                    $("#file_message").html("All files are already selected. No files will be uploaded")
-                } else {
-                    $("#file_message").html("Only " + balance + " files can be selected")
-                }
-            }
+            $("#files-form").submit();
 
+            // $("#file_message").html('')
+            // let fileCount = $("[name='file[]']").prop("files").length;
+            // let stage = $('input[name="stage"]:checked').val()
+            // let alreadyUploaded = "{{ count($filesCount) }}";
+            // let departmentLength = "{{ $project->department->document_length }}";
+            // let balance = departmentLength - alreadyUploaded;
+            // if (fileCount <= balance) {
+            //     if (balance > 0) {
+            //         $("#files-form").submit();
+            //     }
+            // } else {
+            //     if (balance == 0) {
+            //         $("#file_message").html("All files are already selected. No files will be uploaded")
+            //     } else {
+            //         $("#file_message").html("Only " + balance + " files can be selected")
+            //     }
+            // }
         })
 
         $("#adders").change(function() {
