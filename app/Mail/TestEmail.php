@@ -60,8 +60,8 @@ class TestEmail extends Mailable
     public function attachments(): array
     {
         foreach ($this->uploadedFiles as $key => $file) {
-           array_push($this->sendAttachments, Attachment::fromPath(public_path("/storage/emails/$file")));
-        //    array_push($this->sendAttachments, Attachment::fromPath(asset("/storage/emails/".$file)));
+        //    array_push($this->sendAttachments, Attachment::fromPath(public_path("/storage/emails/$file")));
+           array_push($this->sendAttachments, Attachment::fromPath(asset("/storage/emails/".$file)));
         }
         return $this->sendAttachments;
     }
@@ -83,7 +83,7 @@ class TestEmail extends Mailable
 
         // Attach files
         foreach ($this->attachments() as $attachment) {
-            $email->attach($attachment->path());
+            $email->attach($attachment);
         }
 
         return $email;
