@@ -20,6 +20,7 @@
             </thead>
             <tbody>
                 <?php 
+                $totalCount = 0;
                 $totalContractAmount = 0;
                 $totalDealerFee = 0;
                 $totalRedlineCosts = 0;
@@ -33,6 +34,7 @@
                 ?>
                 @foreach ($customers as $key => $customer)
                 <?php 
+                $totalCount ++;
                 $totalContractAmount += $customer->finances->contract_amount;
                 $totalDealerFee += $customer->finances->dealer_fee_amount;
                 $totalRedlineCosts += $customer->finances->redline_costs;
@@ -74,7 +76,7 @@
                     <td class="fw-bold">$ {{number_format($totalActualLaborCost,2)}}</td> 
                     <td class="fw-bold">$ {{number_format($totalActualJob,2)}}</td> 
                     <td class="fw-bold">$ {{number_format($totalProfitAmount ,2)}}</td> 
-                    <td class="fw-bold">{{number_format($totalProfitPercentage * 100,2)}}%</td> 
+                    <td class="fw-bold">{{number_format((($totalProfitPercentage /$totalCount) * 100),2)}}%</td> 
                 </tr>
             </tbody>
         </table>
