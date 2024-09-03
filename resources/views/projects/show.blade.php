@@ -801,7 +801,8 @@
                                             class="form-label fw-bold flex-fill mb-2 mt-sm-0">Department Notes</label>
                                         @foreach ($filtered_collection as $value)
                                             @if ($value->notes != '')
-                                                <textarea class="form-control" disabled rows="3">{{ $value->notes }} {{ !empty($value->user) ? '( Added by ' . $value->user->name . ')' : '' }}</textarea>
+                                                {{-- <textarea class="form-control" disabled rows="3">{{ $value->notes }} {{ !empty($value->user) ? '( Added by ' . $value->user->name . ')' : '' }}</textarea> --}}
+                                                <label class="form-control" disabled rows="3">{{ $value->notes }} {{ !empty($value->user) ? '( Added by ' . $value->user->name . ')' : '' }}</label>
                                             @endif
                                         @endforeach
                                     </div>
