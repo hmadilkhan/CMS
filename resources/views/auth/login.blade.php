@@ -7,7 +7,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
     
     <title>Solen Energy Construction - Signin</title>
-    <link rel="icon" href="{{asset('favicon.ico')}}" type="image/x-icon"> <!-- Favicon-->
+    <link rel="icon" href="{{asset('storage/favicon.ico')}}" type="image/x-icon"> <!-- Favicon-->
     <!-- project css file  -->
     <link rel="stylesheet" href="{{asset('assets/css/my-task.style.min.css')}}">
 </head>
@@ -38,7 +38,7 @@
                             </div>
                             <!-- Image block -->
                             <div class="">
-                                <img src="{{asset('assets/images/login-img.svg')}}" alt="login-img">
+                                <img src="{{asset('storage/images/login-img.svg')}}" alt="login-img">
                             </div>
                         </div>
                     </div>

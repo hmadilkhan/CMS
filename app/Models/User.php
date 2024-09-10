@@ -27,6 +27,8 @@ class User extends Authenticatable
         'image',
         'phone',
         'sales_partner_id',
+        'overwrite_base_price',
+        'overwrite_panel_price',
     ];
 
     protected $with = ['roles'];

@@ -2,187 +2,95 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Department;
 use App\Models\Employee;
-use App\Models\EmployeeDepartment;
-use App\Models\User;
-use App\Traits\MediaTrait;
+use App\Services\EmployeeService;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Hash;
-use Illuminate\Validation\Rules;
-use Spatie\Permission\Models\Role;
-use Symfony\Component\HttpFoundation\JsonResponse;
+use App\Http\Requests\StoreEmployeeRequest;
+use App\Http\Requests\UpdateEmployeeRequest;
 
 class EmployeeController extends Controller
 {
-    use MediaTrait;
+    protected $employeeService;
+
+    public function __construct(EmployeeService $employeeService)
+    {
+        $this->employeeService = $employeeService;
+    }
+
     /**
-     * Display a listing of the resource.
+     * Display a listing of the employees.
      */
     public function index()
     {
-        // $employee = Employee::with("user")
-        // ->whereHas("user.roles",function($query){
-        //     $query->whereIn("name", ["Employee"]);
-        // })
-        // ->whereHas("department",function($query){
-        //     $query->whereIn("department_id", [2]);
-        // })
-        // ->get();
-        // return $employee;
-
-        // return Employee::with("user","user.roles","department")->get();
-        return view("employees.index", [
-            "employees" => Employee::with("department")->get(),
-        ]);
+        $employees = $this->employeeService->getAllEmployeesWithDepartments();
+        return view("employees.index", compact('employees'));
     }
 
     /**
-     * Show the form for creating a new resource.
+     * Show the form for creating a new employee.
      */
     public function create()
     {
-        return view("employees.form", [
-            "employee" => [],
-            "roles" => Role::all(),
-            "departments" => Department::all(),
-        ]);
+        $data = $this->employeeService->getFormCreateData();
+        return view("employees.form", $data);
     }
 
     /**
-     * Store a newly created resource in storage.
+     * Store a newly created employee.
      */
-    public function store(Request $request)
+    public function store(StoreEmployeeRequest $request)
     {
-        $validated = $request->validate([
-            'code' => 'required',
-            'departments' => 'required',
-            'name' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'string', 'email', 'max:255', 'unique:' . User::class],
-            'username' => ['required', 'string', 'max:255', 'unique:' . User::class],
-            'password' => ['required', 'confirmed', Rules\Password::defaults()],
-        ]);
-
         try {
-            DB::beginTransaction();
-            $result = $this->uploads($request->file, 'employees/');
-            $user = User::create([
-                'name' => $request->name,
-                'email' => $request->email,
-                'password' => Hash::make($request->password),
-                'username' => $request->username,
-                'user_type_id' => 2, // 2 is for Employee
-            ]);
-            $user->assignRole($request->roles);
-            // foreach ($request->roles as $key => $value) {
-            //     $user->syncRoles($value);
-            // }
-            $employee = Employee::create(
-                array_merge(
-                    $request->except(["file", "id", "previous_logo", "roles", "username", "password", "password_confirmation", "user_id","departments"]),
-                    [
-                        "user_id" => $user->id,
-                        "image" => (!empty($result) ? $result["fileName"] : ""),
-                    ]
-                )
-            );
-            foreach ($request->departments as $key => $value) {
-                EmployeeDepartment::create([
-                    "employee_id" => $employee->id,
-                    "department_id" => $value,
-                ]);
-            }
-            DB::commit();
-            return response()->json(["status" => 200, "messsage" => "Employee created successfully"]);
-        } catch (\Throwable $th) {
-            DB::rollBack();
-            return response()->json(["status" => 500, "messsage" => $th->getMessage()]);
+            $employee = $this->employeeService->createEmployee($request);
+            return response()->json(["status" => 200, "message" => "Employee created successfully"]);
+        } catch (\Exception $e) {
+            return response()->json(["status" => 500, "message" => $e->getMessage()]);
         }
     }
 
     /**
-     * Display the specified resource.
-     */
-    public function show(Employee $employee)
-    {
-        //
-    }
-
-    /**
-     * Show the form for editing the specified resource.
+     * Show the form for editing an employee.
      */
     public function edit(Employee $employee)
     {
-        return view("employees.form", [
-            "employee" => $employee,
-            "roles" => Role::all(),
-            "departments" => Department::all(),
-        ]);
+        $data = $this->employeeService->getFormEditData($employee);
+        return view("employees.form", $data);
     }
 
     /**
-     * Update the specified resource in storage.
+     * Update the employee.
      */
-    public function update(Request $request, Employee $employee)
+    public function update(UpdateEmployeeRequest $request, Employee $employee)
     {
         try {
-            DB::beginTransaction();
-            $result = $this->uploads($request->file, 'employees/', $request->previous_logo);
-            User::where("id", $request->user_id)->update([
-                'name' => $request->name,
-                'email' => $request->email,
-            ]);
-            $user = User::findOrFail($request->user_id);
-            $user->syncRoles($request->roles);
-            $employee->update(
-                array_merge(
-                    $request->except(["file", "id", "previous_logo", "roles", "username", "password", "password_confirmation", "user_id","departments"]),
-                    [
-                        "user_id" => $request->user_id,
-                        "image" => (!empty($result) ? $result["fileName"] : $request->previous_logo),
-                    ]
-                )
-            );
-            EmployeeDepartment::where("employee_id",$employee->id)->delete();
-            foreach ($request->departments as $key => $value) {
-                EmployeeDepartment::create([
-                    "employee_id" => $employee->id,
-                    "department_id" => $value,
-                ]);
-            }
-            DB::commit();
-            return response()->json(["status" => 200, "messsage" => "Employee updated successfully"]);
-        } catch (\Throwable $th) {
-            DB::rollBack();
-            return response()->json(["status" => 500, "messsage" => $th->getMessage()]);
+            $this->employeeService->updateEmployee($employee, $request->validated());
+            return response()->json(["status" => 200, "message" => "Employee updated successfully"]);
+        } catch (\Exception $e) {
+            return response()->json(["status" => 500, "message" => $e->getMessage()]);
         }
     }
 
     /**
-     * Remove the specified resource from storage.
+     * Remove the employee.
      */
     public function destroy(Employee $employee)
     {
         try {
-            $employee->delete();
-            return response()->json(["status" => 200]);
-        } catch (\Throwable $th) {
-            return response()->json(["status" => 500]);
+            $this->employeeService->deleteEmployee($employee);
+            return response()->json(["status" => 200, "message" => "Employee deleted successfully"]);
+        } catch (\Exception $e) {
+            return response()->json(["status" => 500, "message" => $e->getMessage()]);
         }
     }
 
-    function getDepartmentEmployees(Request $request){
-        if ($request->id != "") {
-            $employees = Employee::with("user")
-            ->whereHas("user.roles",function($query){
-                $query->whereIn("name", ["Employee"]);
-            })
-            ->whereHas("department",function($query) use ($request){
-                $query->whereIn("department_id", [$request->id]);
-            })
-            ->get();
-            return response()->json(["status" => 200,"employees" => $employees]);
+    /**
+     * Get employees by department.
+     */
+    public function getDepartmentEmployees(Request $request)
+    {
+        if ($request->id) {
+            $employees = $this->employeeService->getEmployeesByDepartment($request->id);
+            return response()->json(["status" => 200, "employees" => $employees]);
         }
     }
 }
