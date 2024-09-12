@@ -18,6 +18,7 @@ use App\Models\LoanApr;
 use App\Models\LoanTerm;
 use App\Models\ModuleType;
 use App\Models\SalesPartner;
+use App\Models\User;
 use App\Traits\MediaTrait;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\Request;
@@ -94,7 +95,7 @@ class OperationController extends Controller
         }
         return view("operations/dealerfee/index", [
             "dealerfeelist" => LoanApr::with("loan", "finance")->get(),
-            "terms" => LoanTerm::groupBy("year")->orderBy("id","asc")->get(),
+            "terms" => LoanTerm::groupBy("year")->orderBy("id", "asc")->get(),
             // "financing" => ($request->id != "" ? FinanceOption::whereIn("id", LoanTerm::where("year", $loan->loan->year)->pluck("finance_option_id"))->get() : [] ),
             "financing" => FinanceOption::all(),
             "loan" => ($request->id != "" ? $loan : []),
@@ -104,8 +105,8 @@ class OperationController extends Controller
     public function dealerFeeUpdate(Request $request)
     {
         try {
-            $year = LoanTerm::where("id",$request->loan_term_id)->first();
-            $loan = LoanTerm::where("finance_option_id",$request->finance_option_id)->where("year",$year->year)->first();
+            $year = LoanTerm::where("id", $request->loan_term_id)->first();
+            $loan = LoanTerm::where("finance_option_id", $request->finance_option_id)->where("year", $year->year)->first();
             $loanApr = LoanApr::find($request->id);
             // $loanApr->loan_term_id = $request->loan_term_id;
             $loanApr->loan_term_id = $loan->id;
@@ -236,7 +237,7 @@ class OperationController extends Controller
     {
         try {
             $count = FinanceOption::where("name", $request->name)->count();
-            
+
             if ($count == 0) {
                 DB::beginTransaction();
                 $finance = FinanceOption::create([
@@ -278,7 +279,7 @@ class OperationController extends Controller
     {
         try {
             DB::beginTransaction();
-            LoanTerm::where("finance_option_id",$request->id)->delete();
+            LoanTerm::where("finance_option_id", $request->id)->delete();
             FinanceOption::where("id", $request->id)->delete();
             DB::commit();
             return response()->json(["status" => 200]);
@@ -341,7 +342,7 @@ class OperationController extends Controller
     public function getSubTypes(Request $request)
     {
         if ($request->id != "") {
-            $subtypes = AdderSubType::where("adder_type_id",$request->id)->get();
+            $subtypes = AdderSubType::where("adder_type_id", $request->id)->get();
             return response()->json(["status" => 200, "subtypes" => $subtypes]);
         }
     }
@@ -363,7 +364,7 @@ class OperationController extends Controller
         try {
             $count = SalesPartner::where("name", $request->name)->count();
             if ($count == 0) {
-                $result = $this->uploads($request->file, 'salespartners/',"");
+                $result = $this->uploads($request->file, 'salespartners/', "");
                 SalesPartner::create([
                     "name" => $request->name,
                     'image' => (!empty($result) ? $result["fileName"] : ""),
@@ -405,17 +406,36 @@ class OperationController extends Controller
         }
     }
 
+    public function salesPartnerOverwriteCost(Request $request)
+    {
+        $overwrites = [];
+        try {
+
+            $salesPartnerUser = User::where("id", $request->id)->first();
+
+            if (!empty($salesPartnerUser)) {
+                $overwrites = [
+                    "overwrite_base_price" => $salesPartnerUser->overwrite_base_price,
+                    "overwrite_panel_price" => $salesPartnerUser->overwrite_panel_price,
+                ];
+            }
+            return response()->json(["overwrites" => $overwrites, "status" => 200]);
+        } catch (\Throwable $th) {
+            return response()->json(["status" => 500, "error" => $th->getMessage()]);
+        }
+    }
+
     /************************************CALL SCRIPTS STARTS **************************************************************/
 
     public function callScriptList(Request $request)
     {
         if ($request->id != "") {
-            $script = CallScript::with("call","department")->where("id", $request->id)->first();
+            $script = CallScript::with("call", "department")->where("id", $request->id)->first();
         }
         return view("operations/call-scripts/index", [
             "calls" => Call::all(),
             "departments" => Department::all(),
-            "callScripts" => CallScript::with("call","department")->get(),
+            "callScripts" => CallScript::with("call", "department")->get(),
             "script" => ($request->id != "" ? $script : []),
         ]);
     }
@@ -472,12 +492,12 @@ class OperationController extends Controller
     public function emailScriptList(Request $request)
     {
         if ($request->id != "") {
-            $script = EmailScript::with("email","department")->where("id", $request->id)->first();
+            $script = EmailScript::with("email", "department")->where("id", $request->id)->first();
         }
         return view("operations/email-scripts/index", [
             "emailTypes" => EmailType::all(),
             "departments" => Department::all(),
-            "emailScripts" => EmailScript::with("email","department")->get(),
+            "emailScripts" => EmailScript::with("email", "department")->get(),
             "script" => ($request->id != "" ? $script : []),
         ]);
     }

@@ -170,6 +170,7 @@ Route::middleware('auth')->group(function () {
         Route::post('/sales-partner-store', 'salesPartnerStore')->name("sales.partner.store");
         Route::post('/sales-partner-update', 'salesPartnerUpdate')->name("sales.partner.update");
         Route::post('/sales-partner-delete', 'salesPartnerDelete')->name("sales.partner.delete");
+        Route::post('/sales-partner-overwrite-prices', 'salesPartnerOverwriteCost')->name("sales.partner.overwrite.prices");
 
         // CALL SCRIPTS
         Route::get('/view-call-scripts/{id?}', 'callScriptList')->name("call.scripts.list");
