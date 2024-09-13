@@ -118,6 +118,8 @@ class CustomerController extends Controller
                 "commission" => $request->commission,
                 "dealer_fee" => $request->dealer_fee,
                 "dealer_fee_amount" => $request->dealer_fee_amount,
+                "total_overwrite_base_price" => $request->overwrite_base_price,
+                "total_overwrite_panel_price" => ($request->overwrite_panel_price * $request->panel_qty),
             ]);
             if (!empty($request->uom)) {
                 $count = count($request->uom);
@@ -143,6 +145,8 @@ class CustomerController extends Controller
                 "office_cost" => (!empty($officeCost) ? $officeCost->cost : ""),
                 "sales_partner_user_id" => $request->sales_partner_user_id,
                 "code" => $this->generateProjectCode(),
+                "overwrite_base_price" =>  $request->overwrite_base_price,
+                "overwrite_panel_price" =>  $request->overwrite_panel_price,
             ]);
             Task::create([
                 "project_id" => $project->id,
@@ -376,7 +380,7 @@ class CustomerController extends Controller
                 "customer_id" => $request->customer_id,
                 "customer_email" => $request->customer_email,
             ];
-            
+
             if ($request->ccEmails != "") {
                 $ccEmails = $this->handleCommaSeparatedValues($request->ccEmails);
             }

@@ -16,7 +16,8 @@
                 <div class="card-body">
                     <div class="d-flex align-items-center  profile-av pe-xl-4 pe-md-4 pe-sm-4 pe-4 ">
                         <img src="{{($project->customer->salespartner->image != '' ? (asset('storage/salespartners/'.$project->customer->salespartner->image)) : (asset('assets/images/profile_av.png')))}}" alt="" class="avatar lg rounded-circle img-thumbnail shadow-sm">
-                        <h3 class="mb-0 fw-bold fs-6 mx-3">{{$project->project_name}}</h3>
+                        <h3 class="mb-0 fw-bold fs-6 mx-3 text-start">{{$project->project_name}}</h3>
+                        <h6 class="mb-0 fs-6  font-monospace text-end">{{Carbon\Carbon::parse($project->customer->sold_date)->diffForHumans()}}</h6>
                     </div>
                     <div class="row g-2 pt-4">
                         {{--<div class="col-12 d-flex align-items-center">
