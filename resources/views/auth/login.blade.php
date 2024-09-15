@@ -38,7 +38,7 @@
                             </div>
                             <!-- Image block -->
                             <div class="">
-                                <img src="{{asset('storage/images/login-img.svg')}}" alt="login-img">
+                                <img src="{{asset('assets/images/login-img.svg')}}" alt="login-img">
                             </div>
                         </div>
                     </div>
