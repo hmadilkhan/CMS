@@ -44,13 +44,13 @@
     </div>
     <div class="row g-3 mb-3">
         <div class="col">
-            <label for="overwrite_base_price" class="form-label">Overwrite Base Price</label>
-            <input type="text" class="form-control" id="overwrite_base_price" name="overwrite_base_price" placeholder="Overwrite Base Cost" value="{{!empty($employee) ? $employee->user->overwrite_base_price : ''}}">
+            <label for="overwrite_base_price" class="form-label">Override Base Price</label>
+            <input type="text" class="form-control" id="overwrite_base_price" name="overwrite_base_price" placeholder="Override Base Cost" value="{{!empty($employee) ? $employee->user->overwrite_base_price : ''}}">
             <div id="overwrite_base_price_message" class="text-danger message mt-2"></div>
         </div>
         <div class="col">
-            <label for="overwrite_panel_price" class="form-label">Overwrite Panel Price</label>
-            <input type="text" class="form-control" id="overwrite_panel_price" name="overwrite_panel_price" placeholder="Overwrite Panel Price" value="{{!empty($employee) ? $employee->user->overwrite_panel_price : ''}}">
+            <label for="overwrite_panel_price" class="form-label">Override Panel Price</label>
+            <input type="text" class="form-control" id="overwrite_panel_price" name="overwrite_panel_price" placeholder="Override Panel Price" value="{{!empty($employee) ? $employee->user->overwrite_panel_price : ''}}">
             <div id="overwrite_panel_price_message" class="text-danger message mt-2"></div>
         </div>
     </div>

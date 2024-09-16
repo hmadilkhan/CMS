@@ -63,4 +63,9 @@ class Project extends Model
     {
         return $this->hasMany(Email::class,"project_id","id");
     }
+
+    public function salesPartnerUser()
+    {
+        return $this->belongsTo(User::class,"sales_partner_user_id","id");
+    }
 }

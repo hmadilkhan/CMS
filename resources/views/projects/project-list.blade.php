@@ -14,17 +14,16 @@
         <div class="col-xxl-3 col-xl-3 col-lg-3 col-md-3 col-sm-3 border border-dark border-rounded border-2 " style="margin-right: 5px;cursor:pointer;" onclick="showProject('{{$project->id}}')" >
             <div class="card">
                 <div class="card-body">
-                    <div class="d-flex align-items-center  profile-av pe-xl-4 pe-md-4 pe-sm-4 pe-4 ">
-                        <img src="{{($project->customer->salespartner->image != '' ? (asset('storage/salespartners/'.$project->customer->salespartner->image)) : (asset('assets/images/profile_av.png')))}}" alt="" class="avatar lg rounded-circle img-thumbnail shadow-sm">
-                        <h3 class="mb-0 fw-bold fs-6 mx-3 text-start">{{$project->project_name}}</h3>
-                        <h6 class="mb-0 fs-6  font-monospace text-end">{{Carbon\Carbon::parse($project->customer->sold_date)->diffForHumans()}}</h6>
+                    <div class="d-flex align-items-center justify-content-between profile-av pe-xl-4 pe-md-4 pe-sm-4 pe-4">
+                        <div class="d-flex align-items-center">
+                            <img src="{{($project->customer->salespartner->image != '' ? (asset('storage/salespartners/'.$project->customer->salespartner->image)) : (asset('assets/images/profile_av.png')))}}" alt="" class="avatar lg rounded-circle img-thumbnail shadow-sm">
+                            <h3 class="mb-0 fw-bold fs-6 mx-3 text-start">{{$project->project_name}}</h3>
+                        </div>
+                        <div class="text-end ms-auto">
+                            <h6 class="mb-0 fs-6 font-monospace fw-bold">{{now()->diffInDays(Carbon\Carbon::parse($project->customer->sold_date))}} days</h6>
+                        </div>
                     </div>
                     <div class="row g-2 pt-4">
-                        {{--<div class="col-12 d-flex align-items-center">
-                            <div class="">
-                                <h3 class="mb-0 fw-bold  fs-6  mb-2">{{$project->project_name}}</h3>
-                            </div>
-                        </div>--}}
                         <div class="col-6">
                             <div class="d-flex align-items-center">
                                 <i class="icofont-code-alt"></i>

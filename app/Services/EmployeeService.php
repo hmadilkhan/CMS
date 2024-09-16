@@ -55,7 +55,7 @@ class EmployeeService
             ]);
             $user->assignRole($data['roles']);
 
-            $employee = Employee::create(array_merge($data->except(["file", "id", "previous_logo", "roles", "username", "password", "password_confirmation", "user_id", "departments", "overwrite_base_price", "overwrite_panel_price"]), ['user_id' => $user->id, 'image' => $result]));
+            $employee = Employee::create(array_merge($data->except(["file", "id", "previous_logo", "roles", "username", "password", "password_confirmation", "user_id", "departments", "overwrite_base_price", "overwrite_panel_price"]), ['user_id' => $user->id, 'image' => $result["fileName"]]));
 
             $this->attachDepartments($employee->id, $data['departments']);
 
@@ -69,7 +69,36 @@ class EmployeeService
 
     public function updateEmployee(Employee $employee, $data)
     {
-        // Similar to createEmployee but updating an existing employee.
+        try {
+            $data->validated();
+            DB::beginTransaction();
+            $result = $this->handleFileUpload($data['file'] ?? null, 'employees/', $data["previous_logo"]);
+            $user = User::findOrFail($data["user_id"]);
+            $user->update([
+                'name' => $data["name"],
+                'email' => $data["email"],
+                'overwrite_base_price' => $data['overwrite_base_price'],
+                'overwrite_panel_price' => $data['overwrite_panel_price'],
+            ]);
+            $user->syncRoles($data["roles"]);
+            $employee->update(
+                array_merge(
+                    $data->except(["file", "id", "previous_logo", "roles", "username", "password", "password_confirmation", "user_id", "departments", "overwrite_base_price", "overwrite_panel_price"]),
+                    [
+                        "user_id" => $data["user_id"],
+                        "image" => (!empty($result) ? $result["fileName"] : $data["previous_logo"]),
+                    ]
+                )
+            );
+            EmployeeDepartment::where("employee_id", $employee->id)->delete();
+            $this->attachDepartments($employee->id, $data['departments']);
+
+            DB::commit();
+            return response()->json(["status" => 200, "messsage" => "Employee updated successfully"]);
+        } catch (\Throwable $th) {
+            DB::rollBack();
+            return response()->json(["status" => 500, "messsage" => $th->getMessage()]);
+        }
     }
 
     public function deleteEmployee(Employee $employee)
@@ -92,10 +121,10 @@ class EmployeeService
             ->get();
     }
 
-    protected function handleFileUpload($file, $path)
+    protected function handleFileUpload($file, $path, $previous = "")
     {
         if ($file) {
-            return $this->uploads($file, $path);
+            return $this->uploads($file, $path, $previous);
         }
         return null;
     }

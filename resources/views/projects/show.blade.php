@@ -270,8 +270,9 @@
         .main-container {
             width: 650px;
             /* margin-left: auto;
-                margin-right: auto; */
+                        margin-right: auto; */
         }
+
         .tags-input {
             border: 1px solid #ced4da;
             padding: 5px;
@@ -280,12 +281,14 @@
             flex-wrap: wrap;
             cursor: text;
         }
+
         .tags-input input {
             border: none;
             outline: none;
             flex-grow: 1;
             min-width: 150px;
         }
+
         .tag {
             background-color: #007bff;
             color: white;
@@ -295,10 +298,12 @@
             display: inline-flex;
             align-items: center;
         }
+
         .tag i {
             margin-left: 5px;
             cursor: pointer;
         }
+
         .invalid-feedback {
             display: none;
             color: red;
@@ -312,7 +317,8 @@
                     <div class="card border-0 mb-4 no-bg">
                         <div
                             class="card-header py-3 px-0 d-sm-flex align-items-center  justify-content-between border-bottom">
-                            <h6 class="mb-0 fs-6  font-monospace fw-bold mb-0 mt-sm-0 px-3 text-center">{{Carbon\Carbon::parse($project->customer->sold_date)->diffForHumans()}}</h6>
+                            <h6 class="mb-0 fs-6  font-monospace fw-bold mb-0 mt-sm-0 px-3 text-center">
+                                {{ Carbon\Carbon::parse($project->customer->sold_date)->diffForHumans() }}</h6>
                             <h3 class=" fw-bold flex-fill mb-0 mt-sm-0 text-center fs-10 text-uppercase">
                                 {{ $project->project_name }}
                             </h3>
@@ -803,7 +809,8 @@
                                         @foreach ($filtered_collection as $value)
                                             @if ($value->notes != '')
                                                 {{-- <textarea class="form-control" disabled rows="3">{{ $value->notes }} {{ !empty($value->user) ? '( Added by ' . $value->user->name . ')' : '' }}</textarea> --}}
-                                                <label class="form-control" disabled rows="3">{{ $value->notes }} {{ !empty($value->user) ? '( Added by ' . $value->user->name . ')' : '' }}</label>
+                                                <label class="form-control" disabled rows="3">{{ $value->notes }}
+                                                    {{ !empty($value->user) ? '( Added by ' . $value->user->name . ')' : '' }}</label>
                                             @endif
                                         @endforeach
                                     </div>
@@ -840,10 +847,12 @@
             </div>
             <div class="tab-pane fade" id="customer" role="tabpanel">
                 <div class="card mt-1">
-                    <div class="card-body">
+                    <div class="card-header">
                         <div class="card-header py-3 px-0 d-sm-flex align-items-center  justify-content-between border-bottom">
                             <h3 class=" fw-bold flex-fill mb-0 mt-sm-0">Customer Details</h3>
                         </div>
+                    </div>
+                    <div class="card-body">
                         <div class="row g-3 mb-3">
                             <div class="col-sm-3">
                                 <label for="first_name" class="form-label">First Name</label>
@@ -929,10 +938,12 @@
             </div>
             <div class="tab-pane fade" id="salespartner" role="tabpanel">
                 <div class="card mt-1">
-                    <div class="card-body">
+                    <div class="card-header">
                         <div class="card-header py-3 px-0 d-sm-flex align-items-center  justify-content-between border-bottom">
                             <h3 class=" fw-bold flex-fill mb-0 mt-sm-0">Sales Partner Details</h3>
                         </div>
+                    </div>
+                    <div class="card-body">
                         <div class="row g-3 mb-3 mt-1">
                             <div
                                 class="col-sm-3d-flex align-items-center justify-content-between profile-av pe-xl-4 pe-md-2 pe-sm-4 pe-4 w220">
@@ -952,6 +963,35 @@
                             <div class="col-sm-3 ">
                                 <label for="exampleFormControlInput877" class="form-label">Phone</label>
                                 <input disabled value="{{ $project->customer->salespartner->phone }}" type="text"
+                                    class="form-control" id="street" name="street" placeholder="Street">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="card mt-1">
+                    <div class="card-body">
+                        <div class="card-header py-3 px-0 d-sm-flex align-items-center  justify-content-between border-bottom">
+                            <h3 class=" fw-bold flex-fill mb-0 mt-sm-0">Sales Person</h3>
+                        </div>
+                        <div class="row g-3 mb-3 mt-1">
+                            <div
+                                class="col-sm-3d-flex align-items-center justify-content-between profile-av pe-xl-4 pe-md-2 pe-sm-4 pe-4 w220">
+                                <img src="{{ $project->salesPartnerUser->image != '' ? asset('storage/users/' . $project->salesPartnerUser->image) : asset('assets/images/profile_av.png') }}"
+                                    alt="" class="avatar xl rounded-circle img-thumbnail shadow-sm">
+                            </div>
+                            <div class="col-sm-3 ">
+                                <label for="exampleFormControlInput877" class="form-label">Sales Person Name</label>
+                                <input disabled value="{{ $project->salesPartnerUser->name }}" type="text"
+                                    class="form-control" id="first_name" name="first_name" placeholder="First Name">
+                            </div>
+                            <div class="col-sm-3 ">
+                                <label for="exampleFormControlInput877" class="form-label">Email</label>
+                                <input disabled value="{{ $project->salesPartnerUser->email }}" type="text"
+                                    class="form-control" id="last_name" name="last_name" placeholder="Last Name">
+                            </div>
+                            <div class="col-sm-3 ">
+                                <label for="exampleFormControlInput877" class="form-label">Phone</label>
+                                <input disabled value="{{ $project->salesPartnerUser->phone }}" type="text"
                                     class="form-control" id="street" name="street" placeholder="Street">
                             </div>
                         </div>
@@ -1041,7 +1081,7 @@
                                             <td>{{ $index }}</td>
                                             <td>{{ $adder->type->name }}</td>
                                             <td>{{ $adder->unit->name }}</td>
-                                            <td>$ {{number_format($adder->amount,2) }}</td>
+                                            <td>$ {{ number_format($adder->amount, 2) }}</td>
                                             <td>
                                                 <i style='cursor: pointer;' class='icofont-trash text-danger'
                                                     onClick="deleteItem('{{ $index }}','{{ $adder->id }}')">
@@ -1087,26 +1127,26 @@
                                 <div class="col-sm-3 ">
                                     <label for="contract_amount" class="form-label">Contract Amount</label>
                                     <input type="text" class="form-control"
-                                        value="$ {{number_format($project->customer->finances->contract_amount,2) }}" id="contract_amount"
-                                        name="contract_amount">
+                                        value="$ {{ number_format($project->customer->finances->contract_amount, 2) }}"
+                                        id="contract_amount" name="contract_amount">
                                 </div>
                                 <div class="col-sm-3 ">
                                     <label for="redline_costs" class="form-label">Redline Costs</label>
                                     <input type="text" class="form-control"
-                                        value="$ {{number_format($project->customer->finances->redline_costs,2) }}" id="redline_costs"
-                                        name="redline_costs">
+                                        value="$ {{ number_format($project->customer->finances->redline_costs, 2) }}"
+                                        id="redline_costs" name="redline_costs">
                                 </div>
                                 <div class="col-sm-3 ">
                                     <label for="adders" class="form-label">Adders</label>
                                     <input type="text" class="form-control"
-                                        value="$ {{ number_format($project->customer->finances->adders,2) }}" id="adders_amount"
-                                        name="adders_amount">
+                                        value="$ {{ number_format($project->customer->finances->adders, 2) }}"
+                                        id="adders_amount" name="adders_amount">
                                 </div>
                                 <div class="col-sm-3 ">
                                     <label for="commission" class="form-label">Commission</label>
                                     <input type="text" class="form-control"
-                                        value="$ {{number_format($project->customer->finances->commission,2) }}" id="commission"
-                                        name="commission">
+                                        value="$ {{ number_format($project->customer->finances->commission, 2) }}"
+                                        id="commission" name="commission">
                                 </div>
                                 <div class="col-sm-3 ">
                                     <label for="dealer_fee" class="form-label">Dealer Fee</label>
@@ -1117,8 +1157,8 @@
                                 <div class="col-sm-3 ">
                                     <label for="dealer_fee_amount" class="form-label">Dealer Fee Amount</label>
                                     <input type="text" class="form-control"
-                                        value="$ {{ number_format($project->customer->finances->dealer_fee_amount,2) }}" id="dealer_fee_amount"
-                                        name="dealer_fee_amount">
+                                        value="$ {{ number_format($project->customer->finances->dealer_fee_amount, 2) }}"
+                                        id="dealer_fee_amount" name="dealer_fee_amount">
                                 </div>
                             </div>
                             <div class="col-sm-12 mb-3">
@@ -1302,10 +1342,14 @@
                                                                         </div>
                                                                         <div class="col-md-12 mb-1">
                                                                             <div class="mb-3">
-                                                                                <label for="ccEmails" class="form-label">CC Emails</label>
+                                                                                <label for="ccEmails" class="form-label">CC
+                                                                                    Emails</label>
                                                                                 <div class="tags-input" id="ccEmails"></div>
-                                                                                <input type="hidden" name="ccEmails" id="ccEmailsHidden">
-                                                                                <div class="invalid-feedback" id="emailError">Please enter valid email addresses separated by commas.</div>
+                                                                                <input type="hidden" name="ccEmails"
+                                                                                    id="ccEmailsHidden">
+                                                                                <div class="invalid-feedback" id="emailError">
+                                                                                    Please enter valid email addresses separated
+                                                                                    by commas.</div>
                                                                             </div>
                                                                         </div>
                                                                         <div class="col-md-12 mb-1">
@@ -2155,7 +2199,7 @@
                 }
             });
         }
-        document.addEventListener('DOMContentLoaded', function () {
+        document.addEventListener('DOMContentLoaded', function() {
             const tagsInput = document.querySelector('.tags-input');
             const input = document.createElement('input');
             const hiddenInput = document.getElementById('ccEmailsHidden');
@@ -2193,7 +2237,7 @@
                 return emails.every(email => emailPattern.test(email));
             }
 
-            input.addEventListener('keydown', function (e) {
+            input.addEventListener('keydown', function(e) {
                 if (e.key === 'Enter' || e.key === ',') {
                     e.preventDefault();
                     const email = input.value.trim();
