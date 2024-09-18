@@ -500,7 +500,7 @@
                     let totalOverwritePanelCost = overwritePanelCost * panelQty;
                     let redlinecost = baseCost + (panelQty * moduleCost) + overwriteBaseCost +
                         totalOverwritePanelCost;
-                    // console.log("Redline Cost", redlinecost);
+                    console.log("totalOverwritePanelCost", totalOverwritePanelCost);
                     $("#redline_costs").val(redlinecost);
                     // console.log(baseCost);
                 }
