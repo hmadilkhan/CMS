@@ -3,9 +3,11 @@
 namespace App\Http\Controllers;
 
 use App\Exports\ForecastReportExport;
+use App\Exports\OverrideCostExport;
 use App\Exports\ProfitReportExport;
 use App\Models\Customer;
 use App\Models\OfficeCost;
+use App\Models\SalesPartner;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Excel;
@@ -104,5 +106,68 @@ class ReportController extends Controller
     {
         $customer = Customer::with("salespartner", "finances", "project")->whereBetween("sold_date", [$request->from, $request->to])->orderBy("sold_date", "ASC")->get();
         return Excel::download(new ForecastReportExport($customer, $request->from, $request->to), 'Forecast Report.pdf', \Maatwebsite\Excel\Excel::DOMPDF);
+    }
+
+    public function overrideReport()
+    {
+        return view("reports.override.override", [
+            "partners" => SalesPartner::all(),
+        ]);
+    }
+
+    public function getOverrideReport(Request $request)
+    {
+        $salesPartnerIds = [];
+        if ($request->sales_partner_id != "") {
+            $salesPartnerIds = User::where('sales_partner_id',$request->sales_partner_id)->pluck("id");
+        }
+
+        $customer = Customer::with("salespartner", "finances", "project","project.salesPartnerUser")
+                    ->when(!empty($salesPartnerIds),function($query) use ($salesPartnerIds){
+                        $query->whereHas("project",function($q) use ($salesPartnerIds){
+                            $q->whereIn("sales_partner_user_id",$salesPartnerIds);
+                        });
+                    })
+                    ->whereBetween("sold_date", [$request->from, $request->to])
+                    ->orderBy("sold_date", "ASC");
+
+        return view("reports.override.override_table", [
+            "customers" => $customer->get(),
+        ]);
+    }
+
+
+    public function getOverrideReportExport(Request $request)
+    {
+        $salesPartnerIds = [];
+        if ($request->sales_partner_id != "") {
+            $salesPartnerIds = User::where('sales_partner_id',$request->sales_partner_id)->pluck("id");
+        }
+        $customer = Customer::with("salespartner", "finances", "project","project.salesPartnerUser")
+        ->when(!empty($salesPartnerIds),function($query) use ($salesPartnerIds){
+            $query->whereHas("project",function($q) use ($salesPartnerIds){
+                $q->whereIn("sales_partner_user_id",$salesPartnerIds);
+            });
+        })
+        ->whereBetween("sold_date", [$request->from, $request->to])
+        ->orderBy("sold_date", "ASC")->get();
+        return Excel::download(new OverrideCostExport($customer, $request->from, $request->to), 'Override Report.xlsx');
+    }
+
+    public function getOverrideReportPdfExport(Request $request)
+    {
+        $salesPartnerIds = [];
+        if ($request->sales_partner_id != "") {
+            $salesPartnerIds = User::where('sales_partner_id',$request->sales_partner_id)->pluck("id");
+        }
+        $customer = Customer::with("salespartner", "finances", "project","project.salesPartnerUser")
+        ->when(!empty($salesPartnerIds),function($query) use ($salesPartnerIds){
+            $query->whereHas("project",function($q) use ($salesPartnerIds){
+                $q->whereIn("sales_partner_user_id",$salesPartnerIds);
+            });
+        })
+        ->whereBetween("sold_date", [$request->from, $request->to])
+        ->orderBy("sold_date", "ASC")->get();
+        return Excel::download(new OverrideCostExport($customer, $request->from, $request->to), 'Override Report.pdf', \Maatwebsite\Excel\Excel::DOMPDF);
     }
 }

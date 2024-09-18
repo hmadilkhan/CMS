@@ -197,11 +197,18 @@ Route::middleware('auth')->group(function () {
         Route::post('/reports-profilt', 'getProfitabilityReport')->name("reports.profit");
         Route::get('/profitable-report-excel-export/{from}/{to}', 'getProfitableReportExport')->name("profitable.report.excel.export");
         Route::get('/profitable-report-pdf-export/{from}/{to}', 'getProfitableReportPdfExport')->name("profitable.report.pdf.export");
+        
         // FORECAST REPORT
         Route::get('/forecast-report', 'forecastReport')->name("forecast.report");
         Route::post('/forecast-report', 'getForecastReport')->name("forecast.report");
         Route::get('/forecast-report-excel-export/{from}/{to}', 'getForecastReportExport')->name("forecast.report.excel.export");
         Route::get('/forecast-report-pdf-export/{from}/{to}', 'getForecastReportPdfExport')->name("forecast.report.pdf.export");
+
+         // OVERRIDE REPORT
+         Route::get('/override-report', 'overrideReport')->name("override.report");
+         Route::post('/override-report', 'getOverrideReport')->name("override.report");
+         Route::get('/override-report-excel-export/{salespartner}/{from}/{to}', 'getOverrideReportExport')->name("override.report.excel.export");
+         Route::get('/override-report-pdf-export/{salespartner}/{from}/{to}', 'getOverrideReportPdfExport')->name("override.report.pdf.export");
     });
 
     Route::controller(AuroraController::class)->group(function () {

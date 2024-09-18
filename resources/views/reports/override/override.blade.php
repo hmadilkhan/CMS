@@ -1,5 +1,5 @@
 @extends('layouts.master')
-@section('title', 'Reports')
+@section('title', 'Forecast Report')
 @section('content')
     <div class="body d-flex py-lg-3 py-md-2">
         <div class="container-xxl">
@@ -8,7 +8,7 @@
                     <div class="card border-0 mb-4 no-bg">
                         <div
                             class="card-header py-3 px-0 d-sm-flex align-items-center  justify-content-between border-bottom">
-                            <h3 class=" fw-bold flex-fill mb-0 mt-sm-0">Profitablity Report</h3>
+                            <h3 class=" fw-bold flex-fill mb-0 mt-sm-0">Override Report</h3>
                         </div>
                     </div>
                 </div>
@@ -31,7 +31,7 @@
                                 <div id="salespartner_message" class="text-danger message mt-2">{{ $message }}</div>
                             @enderror
                         </div>
-                        <div class="col-sm-2 mb-3">
+                        <div class="col-sm-3 mb-3">
                             <label for="from_date" class="form-label">From </label>
                             <input type="date" class="form-control" id="from_date" name="from_date"
                                 placeholder="Enter From Date">
@@ -39,7 +39,7 @@
                                 <div id="from_message" class="text-danger message mt-2">{{ $message }}</div>
                             @enderror
                         </div>
-                        <div class="col-sm-2 mb-3">
+                        <div class="col-sm-3 mb-3">
                             <label for="to_date" class="form-label">To </label>
                             <input type="date" class="form-control" id="to_date" name="to_date"
                                 placeholder="Enter From Date">
@@ -71,12 +71,11 @@
             } else if ($("#to_date").val() == "") {
                 $("#to_message").html("Please select to date")
             } else {
-                $("#salespartner_message").html("");
                 $("#from_message").html("");
                 $("#to_message").html("");
 
                 $.ajax({
-                    url: "{{ route('reports.profit') }}",
+                    url: "{{ route('override.report') }}",
                     method: "POST",
                     data: {
                         "_token": "{{ csrf_token() }}",
@@ -94,12 +93,12 @@
         }
 
         function excelExport() {
-            window.open("{{ url('profitable-report-excel-export') }}" + "/" + $("#from_date").val() + "/" + $("#to_date")
+            window.open("{{ url('override-report-excel-export') }}" + "/" + $("#sales_partner_id").val() + "/" + $("#from_date").val() + "/" + $("#to_date")
                 .val());
         }
 
         function pdfExport() {
-            window.open("{{ url('profitable-report-pdf-export') }}" + "/" + $("#from_date").val() + "/" + $("#to_date")
+            window.open("{{ url('override-report-pdf-export') }}" + "/" + $("#sales_partner_id").val() + "/" + $("#from_date").val() + "/" + $("#to_date")
                 .val());
         }
     </script>
