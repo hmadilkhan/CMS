@@ -270,7 +270,7 @@
         .main-container {
             width: 650px;
             /* margin-left: auto;
-                        margin-right: auto; */
+                            margin-right: auto; */
         }
 
         .tags-input {
@@ -318,7 +318,7 @@
                         <div
                             class="card-header py-3 px-0 d-sm-flex align-items-center  justify-content-between border-bottom">
                             <h6 class="mb-0 fs-6  font-monospace fw-bold mb-0 mt-sm-0 px-3 text-center">
-                                {{ Carbon\Carbon::parse($project->customer->sold_date)->diffForHumans() }}</h6>
+                                {{ now()->diffInDays(Carbon\Carbon::parse($project->customer->sold_date)) }}</h6>
                             <h3 class=" fw-bold flex-fill mb-0 mt-sm-0 text-center fs-10 text-uppercase">
                                 {{ $project->project_name }}
                             </h3>
