@@ -558,10 +558,12 @@
             let panelQty = $("#panel_qty").val();
             let moduleQty = $("#module_qty").val();
             let overwritePanelCost = $("#overwrite_panel_price").val();
+            let overwriteBaseCost = $("#overwrite_base_price").val();
             overwritePanelCost = parseFloat(overwritePanelCost);
+            overwriteBaseCost = parseFloat(overwriteBaseCost);
             let totalOverwritePanelCost = overwritePanelCost * panelQty;
             $("#module_qty").val(panelQty * systemSize);
-            let redlinecost = baseCost + (panelQty * moduleCost) + totalOverwritePanelCost;
+            let redlinecost = baseCost + (panelQty * moduleCost) + totalOverwritePanelCost + overwriteBaseCost;
             $("#redline_costs").val(redlinecost);
         }
 
