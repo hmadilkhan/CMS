@@ -125,6 +125,8 @@ Route::middleware('auth')->group(function () {
     Route::post('get-departments-fields', [App\Http\Controllers\ProjectController::class, 'getDepartmentFields'])->name('get.departments.fields');
     Route::post('save-department-notes', [App\Http\Controllers\ProjectController::class, 'saveDepartmentNotes'])->name('department.notes');
     Route::post('delete-file', [App\Http\Controllers\ProjectController::class, 'deleteFile'])->name('delete.file');
+    Route::post('project-accept-file', [App\Http\Controllers\ProjectController::class, 'projectAcceptance'])->name('project.accept.file');
+    Route::get('/pdf/{id}', [App\Http\Controllers\ProjectController::class, 'generatePDF'])->name('generate.pdf.file');
 
     // ADDERS CONTROLLER
     Route::post('adders-store', [App\Http\Controllers\AdderController::class, 'store'])->name('adders.store');

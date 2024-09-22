@@ -15,15 +15,18 @@ use App\Models\EmailType;
 use App\Models\Employee;
 use App\Models\EmployeeDepartment;
 use App\Models\Project;
+use App\Models\ProjectAcceptance;
 use App\Models\ProjectCallLog;
 use App\Models\ProjectFile;
 use App\Models\SubDepartment;
 use App\Models\Task;
 use App\Models\Tool;
 use App\Traits\MediaTrait;
+use FPDF;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Validation\Rule;
 
@@ -106,11 +109,11 @@ class ProjectController extends Controller
      */
     public function show(Project $project)
     {
-        $project = Project::with("task", "customer", "department", "logs", "logs.call", "subdepartment", "assignedPerson", "assignedPerson.employee", "departmentnotes", "departmentnotes.user","salesPartnerUser")->where("id", $project->id)->first();
+        $project = Project::with("task", "customer", "department", "logs", "logs.call", "subdepartment", "assignedPerson", "assignedPerson.employee", "departmentnotes", "departmentnotes.user", "salesPartnerUser")->where("id", $project->id)->first();
         $task = Task::whereIn("status", ["In-Progress", "Hold", "Cancelled"])->where("project_id", $project->id)->first();
         $departments = Department::whereIn("id", Task::where("project_id", $project->id)->whereNotIn("department_id", Department::where("id", ">", $task->department_id)->take(1)->pluck("id"))->groupBy("department_id")->orderBy("department_id")->pluck("department_id"))->get();
         $fwdDepartments =  array_merge($departments->toArray(), Department::where("id", ">", $task->department_id)->take(1)->get()->toArray());
-        Email::where("project_id",$project->id)->where("department_id",$project->department_id)->update(["is_view" => 0]);
+        Email::where("project_id", $project->id)->where("department_id", $project->department_id)->update(["is_view" => 0]);
         return view("projects.show", [
             "project" => $project,
             "task" => $task,
@@ -513,11 +516,11 @@ class ProjectController extends Controller
     {
         $query = Project::with("customer", "customer.salespartner", "department", "subdepartment", "assignedPerson", "assignedPerson.employee", "task", "notes");
         $subdepartmentsQuery = SubDepartment::with("department");
-        if (in_array("Sales Manager",auth()->user()->getRoleNames()->toArray())) {
-            $query->whereHas("customer",function($q){
-                return $q->where("sales_partner_id",auth()->user()->sales_partner_id);
+        if (in_array("Sales Manager", auth()->user()->getRoleNames()->toArray())) {
+            $query->whereHas("customer", function ($q) {
+                return $q->where("sales_partner_id", auth()->user()->sales_partner_id);
             });
-        } else if (in_array("Sales Person",auth()->user()->getRoleNames()->toArray())) {
+        } else if (in_array("Sales Person", auth()->user()->getRoleNames()->toArray())) {
             $query->where("sales_partner_user_id", auth()->user()->id);
         } else if (auth()->user()->getRoleNames()[0] == "Manager") {
             $query->whereIn("department_id", EmployeeDepartment::whereIn("employee_id", Employee::where("user_id", auth()->user()->id)->pluck("id"))->pluck("department_id"));
@@ -731,5 +734,119 @@ class ProjectController extends Controller
         } else {
             return response()->json(["status" => 500, "message" => "File not found"]);
         }
+    }
+
+    public function projectAcceptance(Request $request)
+    {
+        $request->validate([
+            "file" => "required"
+        ]);
+        $result = $this->uploads($request->file, 'project-acceptance/');
+
+        if (!empty($result)) {
+            $projectAcceptance = ProjectAcceptance::create([
+                "project_id" => $request->project_id,
+                "sales_partner_id" => $request->sales_partner_id,
+                "image" => $result["fileName"],
+            ]);
+            if (!empty($projectAcceptance)) {
+                return view("projects.project-acceptance", [
+                    "image" => $result["fileName"],
+                    "project" => Project::with("task", "customer", "customer.salespartner", "department", "logs", "subdepartment", "assignedPerson", "assignedPerson.employee")->where("id", $request->project_id)->first(),
+                    "mode" => "view",
+                ]);
+            }
+        }
+    }
+
+    public function generatePDF(Request $request)
+    {
+        $image = ProjectAcceptance::where("project_id", $request->id)->first();
+        $project = Project::with("task", "customer", "customer.salespartner", "department", "logs", "subdepartment", "assignedPerson", "assignedPerson.employee")->where("id", $request->id)->first();
+
+        $modulesAmount = $project->customer->panel_qty * $project->customer->module->amount;
+
+        // Initialize FPDF
+        $pdf = new FPDF();
+        $pdf->AddPage();
+
+        $pdf->ln(5);
+        // Add the Solen logo at the top (50x40 image dimensions)
+        $pdf->Image(public_path('storage/solen_logo.png'), 80, -10, 50, 40); // X: 10, Y: 10, width: 50, height: 40
+
+        // Move the cursor down for the title
+        $pdf->Ln(5); // Adjust the line break to give enough space after the image
+
+        // Set font for the title
+        $pdf->SetFont('Arial', 'B', 16);
+
+        // Add project title
+        $pdf->Cell(190, 10, 'Project Acceptance Review', 0, 1, 'C');
+
+        // Add line break
+        $pdf->Ln(5);
+
+        // Homeowner details
+        $pdf->SetFont('Arial', '', 12);
+        $pdf->Cell(0, 8, 'Homeowner Name: ' . $project->customer->first_name . ' ' . $project->customer->last_name, 0, 1);
+        $pdf->Cell(0, 8, 'Address: ' . $project->customer->address, 0, 1);
+        $pdf->Cell(0, 8, 'Phone: ' . $project->customer->phone, 0, 1);
+
+        // Add Image
+        if (!empty($image)) {
+            $pdf->Image(public_path('storage/project-acceptance/' . $image->image), 10, 60, 190, 100);
+        }
+
+        // Line break
+        $pdf->Ln(105);
+
+        // Total Adder Cost Title
+        $pdf->SetFont('Arial', 'B', 14);
+        $pdf->Cell(0, 10, 'Total Adder Cost', 0, 1, 'C');
+
+        // Add table for the financial details
+        $pdf->SetFont('Arial', '', 12);
+        $pdf->Cell(70, 10, 'Base Price', 1);
+        $pdf->Cell(70, 10, $project->customer->inverter->name, 1);
+        $pdf->Cell(50, 10, number_format($project->customer->inverter->invertertyperates->base_cost, 2), 1, 1);
+
+        $pdf->Cell(70, 10, 'Module Price', 1);
+        $pdf->Cell(70, 10, $project->customer->panel_qty . ' x ' . $project->customer->module->amount, 1);
+        $pdf->Cell(50, 10, number_format($modulesAmount, 2), 1, 1);
+
+        $pdf->Cell(70, 10, 'System Cost', 1);
+        $pdf->Cell(70, 10, '-', 1);
+        $pdf->Cell(50, 10, number_format($project->customer->finances->redline_costs, 2), 1, 1);
+
+        $pdf->Cell(70, 10, 'Adder Total', 1);
+        $pdf->Cell(70, 10, '-', 1);
+        $pdf->Cell(50, 10, number_format($project->customer->finances->adders, 2), 1, 1);
+
+        $pdf->Cell(70, 10, 'Dealer Fee', 1);
+        $pdf->Cell(70, 10, '-', 1);
+        $pdf->Cell(50, 10, number_format($project->customer->finances->dealer_fee_amount, 2), 1, 1);
+
+        $pdf->Cell(70, 10, 'Commission', 1);
+        $pdf->Cell(70, 10, '-', 1);
+        $pdf->Cell(50, 10, number_format($project->customer->finances->commission, 2), 1, 1);
+
+        $pdf->Cell(70, 10, 'Contract Price', 1);
+        $pdf->Cell(70, 10, '-', 1);
+        $pdf->Cell(50, 10, number_format($project->customer->finances->contract_amount, 2), 1, 1);
+
+        // Set the file path where you want to save the PDF in the 'storage/app/public/pdfs' folder
+        $filePath = storage_path('app/public/pdfs/project_acceptance_review-' . $project->id . '.pdf');
+
+        // Ensure the 'pdfs' folder exists, if not, create it
+        if (!file_exists(storage_path('app/public/pdfs'))) {
+            mkdir(storage_path('app/public/pdfs'), 0777, true);
+        }
+
+        // Save the PDF to the specified path
+        $pdf->Output('F', $filePath); // 'F' option saves the file to the given pat
+
+        // Output the PDF
+        // $pdf->Output('I', 'project_acceptance_review.pdf'); // 'D' for download, 'I' for inline
+        exit;
     }
 }

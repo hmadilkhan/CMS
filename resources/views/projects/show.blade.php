@@ -270,7 +270,7 @@
         .main-container {
             width: 650px;
             /* margin-left: auto;
-                            margin-right: auto; */
+                                margin-right: auto; */
         }
 
         .tags-input {
@@ -371,6 +371,9 @@
                         @endcan
                         <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#communication"
                                 role="tab">Communication</a></li>
+                        <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#acceptance"
+                                role="tab">Acceptance</a></li>
+
                         {{-- @endif --}}
                     </ul>
                 </div>
@@ -1438,6 +1441,64 @@
                 </div>
             </div>
 
+            <div class="tab-pane fade" id="acceptance" role="tabpanel">
+                <div class="card mt-1">
+                    <div class="card-body">
+                        <form id="accept-form" method="post"
+                            enctype="multipart/form-data">
+                            @csrf
+                            <input type="hidden" name="project_id" value="{{ $project->id }}"/>
+                            <input type="hidden" name="sales_partner_id" value="{{ $project->customer->sales_partner_id }}"/>
+                            <div class="col-md-4 mb-3">
+                                <label for="formFileMultipleoneone" class="form-label" id="requiredfiles">Add Design</label>
+                                <input class="form-control" type="file" id="file" name="file"
+                                    accept=".png,.jpg,.pdf" multiple>
+                                @error('file')
+                                    <div id="file_message" class="text-danger message mt-2">{{ $message }}
+                                    </div>
+                                @enderror
+                                <div id="file_message" class="text-danger message mt-2"></div>
+                            </div>
+                            <div class="col-sm-12 mb-3">
+                                <button type="submit" class="btn btn-dark me-1 mt-1 w-sm-100" id="saveFiles"><i
+                                        class="icofont-arrow-left me-2 fs-6"></i>Submit</button>
+                            </div>
+                        </form>
+                        <div class="row" id="project-acceptance-view"></div>
+                        {{-- <div class="row">
+                            <div class="col-md-12 d-flex justify-content-center">
+                                <img src="{{ asset('storage/solen_logo.png') }}" width="250" height="200"
+                                    alt="" class="">
+                            </div>
+                            <div class="col-md-12 d-flex justify-content-center mb-2">
+                                <h4 class=" fw-bold flex-fill mb-0 mt-sm-0 text-center fs-10 text-uppercase">Project Acceptance
+                                    Review</h4>
+                            </div>
+                            <div class="row mx-4">
+                            <div class="col-md-12 ">
+                                <h5 class="fs-10  flex-fill">Homeowner Name : {{ $project->customer->first_name." ".$project->customer->last_name }}</h5>
+                            </div>
+                            <div class="col-md-12 ">
+                                <h5 class="fs-10  flex-fill">Address : {{ $project->customer->address }}</h5>
+                            </div>
+                            <div class="col-md-12 ">
+                                <h5 class="fs-10  flex-fill">Phone : {{ $project->customer->phone }}</h5>
+                            </div>
+                            </div>
+                        </div>
+                        <div class="col-md-12 d-flex justify-content-center mx-3">
+                            <img src="{{ asset('storage/design.jpg') }}" height="400" width="100%"
+                                alt="" class=" mx-auto d-block">
+                        </div>
+                        <div class="row mt-2">
+                            <div class="col-md-12 d-flex justify-content-center">
+                                <h5 class="fs-10 fw-bold text-decoration-underline">Total Adder Cost</h5>
+                            </div>
+                        </div> --}}
+                    </div>
+                </div>
+            </div>
+
             <div class="modal fade" id="createemail" tabindex="-1" aria-hidden="true">
                 <div class="modal-dialog modal-dialog-centered modal-lg modal-dialog-scrollable">
                     <div class="modal-content">
@@ -1490,7 +1551,8 @@
                     <div class="modal-content">
                         <div class="modal-header">
                             <h5 class="modal-title  fw-bold" id="deleteprojectLabel"> Delete item Permanently?</h5>
-                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal"
+                                aria-label="Close"></button>
                         </div>
                         <div class="modal-body justify-content-center flex-column d-flex">
                             <i class="icofont-ui-delete text-danger display-2 text-center mt-2"></i>
@@ -1510,7 +1572,8 @@
                     <div class="modal-content">
                         <div class="modal-header">
                             <h5 class="modal-title  fw-bold" id="dremovetaskLabel"> Remove Adder?</h5>
-                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal"
+                                aria-label="Close"></button>
                         </div>
                         <div class="modal-body justify-content-center flex-column d-flex">
                             <i class="icofont-ui-rate-remove text-danger display-2 text-center mt-2"></i>
@@ -2256,5 +2319,35 @@
             });
 
         });
+        $('#accept-form').on('submit', function(e) {
+        e.preventDefault();
+
+        // Create a FormData object
+        var formData = new FormData(this); // Automatically collects all form inputs, including files
+
+        // Send the form data using jQuery AJAX
+        $.ajax({
+            url: "{{ route('project.accept.file') }}", // The URL where the request is sent
+            type: 'POST',
+            data: formData,
+            contentType: false, // Tell jQuery not to set contentType
+            processData: false, // Tell jQuery not to process the data (i.e., don't try to convert it into a string)
+            headers: {
+                'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') // Include the CSRF token from meta tag
+            },
+            success: function(response) {
+                $("#project-acceptance-view").empty();
+                $("#project-acceptance-view").html(response);
+                // if (response.success) {
+                //     console.log('File uploaded successfully.');
+                // } else {
+                //     console.error('Error: ' + response.message);
+                // }
+            },
+            error: function(xhr) {
+                console.error('Error uploading file: ' + xhr.responseText);
+            }
+        });
+    });
     </script>
 @endsection
