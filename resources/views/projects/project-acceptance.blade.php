@@ -73,12 +73,30 @@
                 </tr>
             </table>
         </div>
+        <div class="row mx-4">
+            <div class="col-md-12 ">
+                <h5 class="fs-10  flex-fill">Adders :
+                    @foreach ($project->customer->adders as $adders)
+                        {{ $adders->type->name }},
+                    @endforeach
+                </h5>
+            </div>
+        </div>
         @if ($mode == 'view')
             <div class="row mt-4 mx-3">
-                <div class="col-md-12">
-                    <button type="button" class="btn btn-dark me-1 w-sm-100 float-right">Send Email<i
-                        class="icofont-arrow-right me-2 fs-6"></i></button>
-                </div>
+                @if (!auth()->user()->hasAnyRole(['Manager', 'Sales Person']))
+                    <div class="col-md-12">
+                        <button type="button" class="btn btn-dark me-1 w-sm-100 float-right">Send Email<i
+                                class="icofont-arrow-right me-2 fs-6"></i></button>
+                    </div>
+                @else
+                    <div class="col-md-12">
+                        <button type="button" class="btn btn-success me-1 w-sm-100 float-right text-white">Approve<i
+                                class="icofont-arrow-right me-2 fs-6"></i></button>
+                        <button type="button" class="btn btn-danger me-1 w-sm-100 float-right text-white">Reject<i
+                                class="icofont-arrow-right me-2 fs-6"></i></button>
+                    </div>
+                @endif
             </div>
         @endif
     </div>

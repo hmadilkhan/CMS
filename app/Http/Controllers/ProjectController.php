@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Jobs\AcceptanceEmailJob;
+use App\Mail\AcceptanceEmail;
 use App\Models\AdderType;
 use App\Models\AdderUnit;
 use App\Models\Call;
@@ -26,6 +28,7 @@ use FPDF;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Validation\Rule;
@@ -738,31 +741,42 @@ class ProjectController extends Controller
 
     public function projectAcceptance(Request $request)
     {
-        $request->validate([
-            "file" => "required"
-        ]);
-        $result = $this->uploads($request->file, 'project-acceptance/');
-
-        if (!empty($result)) {
-            $projectAcceptance = ProjectAcceptance::create([
-                "project_id" => $request->project_id,
-                "sales_partner_id" => $request->sales_partner_id,
-                "image" => $result["fileName"],
+        if ($request->mode == "post") {
+            $request->validate([
+                "file" => "required"
             ]);
+            $result = $this->uploads($request->file, 'project-acceptance/');
+            if (!empty($result)) {
+                $projectAcceptance = ProjectAcceptance::create([
+                    "project_id" => $request->project_id,
+                    "sales_partner_id" => $request->sales_partner_id,
+                    "image" => $result["fileName"],
+                ]);
+                if (!empty($projectAcceptance)) {
+                    return view("projects.project-acceptance", [
+                        "image" => $result["fileName"],
+                        "project" => Project::with("task", "customer", "customer.salespartner","customer.adders")->where("id", $request->project_id)->first(),
+                        "mode" => "view",
+                    ]);
+                }
+            }
+        }else{
+            $projectAcceptance = ProjectAcceptance::where("project_id",$request->project_id)->latest()->first();
             if (!empty($projectAcceptance)) {
                 return view("projects.project-acceptance", [
-                    "image" => $result["fileName"],
-                    "project" => Project::with("task", "customer", "customer.salespartner", "department", "logs", "subdepartment", "assignedPerson", "assignedPerson.employee")->where("id", $request->project_id)->first(),
+                    "image" => $projectAcceptance->image,
+                    "project" => Project::with("task", "customer", "customer.salespartner","customer.adders")->where("id", $request->project_id)->first(),
                     "mode" => "view",
                 ]);
             }
         }
+
     }
 
     public function generatePDF(Request $request)
     {
         $image = ProjectAcceptance::where("project_id", $request->id)->first();
-        $project = Project::with("task", "customer", "customer.salespartner", "department", "logs", "subdepartment", "assignedPerson", "assignedPerson.employee")->where("id", $request->id)->first();
+        $project = Project::with("task", "customer", "customer.salespartner","customer.adders")->where("id", $request->id)->first();
 
         $modulesAmount = $project->customer->panel_qty * $project->customer->module->amount;
 
@@ -847,6 +861,21 @@ class ProjectController extends Controller
 
         // Output the PDF
         // $pdf->Output('I', 'project_acceptance_review.pdf'); // 'D' for download, 'I' for inline
+        $ccEmails = "";
+        $attachments = [];
+        $details = [
+            "subject" => "Project Acceptance Review",
+            "body" => "Hi, Project Acceptance Review PDf is attached. Please check the attachment. ",
+            "project_id" => $project->id,
+            "department_id" => 3,
+            "customer_id" => $project->customer_id,
+            "customer_email" => "hmadilkhan@gmail.com",
+        ];
+        array_push($attachments,  'project_acceptance_review-' . $project->id.'.pdf');
+        // dispatch(new AcceptanceEmailJob($details, $attachments, $ccEmails));
+        // Mail::mailer("dealreview")->to($details['customer_email'])->send(new AcceptanceEmail($details, $attachments,$ccEmails));
+        return Mail::mailer("dealreview")->to($details['customer_email'])->send(new AcceptanceEmail($details, $attachments,$ccEmails));
+        return response()->json(["status" => 200, "message" => "Email has been sent"]);
         exit;
     }
 }

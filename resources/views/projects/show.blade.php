@@ -270,7 +270,7 @@
         .main-container {
             width: 650px;
             /* margin-left: auto;
-                                margin-right: auto; */
+                                        margin-right: auto; */
         }
 
         .tags-input {
@@ -971,35 +971,38 @@
                         </div>
                     </div>
                 </div>
-                <div class="card mt-1">
-                    <div class="card-body">
-                        <div class="card-header py-3 px-0 d-sm-flex align-items-center  justify-content-between border-bottom">
-                            <h3 class=" fw-bold flex-fill mb-0 mt-sm-0">Sales Person</h3>
-                        </div>
-                        <div class="row g-3 mb-3 mt-1">
+                @if ($project->salesPartnerUser != null)
+                    <div class="card mt-1">
+                        <div class="card-body">
                             <div
-                                class="col-sm-3d-flex align-items-center justify-content-between profile-av pe-xl-4 pe-md-2 pe-sm-4 pe-4 w220">
-                                <img src="{{ $project->salesPartnerUser->image != '' ? asset('storage/users/' . $project->salesPartnerUser->image) : asset('assets/images/profile_av.png') }}"
-                                    alt="" class="avatar xl rounded-circle img-thumbnail shadow-sm">
+                                class="card-header py-3 px-0 d-sm-flex align-items-center  justify-content-between border-bottom">
+                                <h3 class=" fw-bold flex-fill mb-0 mt-sm-0">Sales Person</h3>
                             </div>
-                            <div class="col-sm-3 ">
-                                <label for="exampleFormControlInput877" class="form-label">Sales Person Name</label>
-                                <input disabled value="{{ $project->salesPartnerUser->name }}" type="text"
-                                    class="form-control" id="first_name" name="first_name" placeholder="First Name">
-                            </div>
-                            <div class="col-sm-3 ">
-                                <label for="exampleFormControlInput877" class="form-label">Email</label>
-                                <input disabled value="{{ $project->salesPartnerUser->email }}" type="text"
-                                    class="form-control" id="last_name" name="last_name" placeholder="Last Name">
-                            </div>
-                            <div class="col-sm-3 ">
-                                <label for="exampleFormControlInput877" class="form-label">Phone</label>
-                                <input disabled value="{{ $project->salesPartnerUser->phone }}" type="text"
-                                    class="form-control" id="street" name="street" placeholder="Street">
+                            <div class="row g-3 mb-3 mt-1">
+                                <div
+                                    class="col-sm-3d-flex align-items-center justify-content-between profile-av pe-xl-4 pe-md-2 pe-sm-4 pe-4 w220">
+                                    <img src="{{ $project->salesPartnerUser->image != '' ? asset('storage/users/' . $project->salesPartnerUser->image) : asset('assets/images/profile_av.png') }}"
+                                        alt="" class="avatar xl rounded-circle img-thumbnail shadow-sm">
+                                </div>
+                                <div class="col-sm-3 ">
+                                    <label for="exampleFormControlInput877" class="form-label">Sales Person Name</label>
+                                    <input disabled value="{{ $project->salesPartnerUser->name }}" type="text"
+                                        class="form-control" id="first_name" name="first_name" placeholder="First Name">
+                                </div>
+                                <div class="col-sm-3 ">
+                                    <label for="exampleFormControlInput877" class="form-label">Email</label>
+                                    <input disabled value="{{ $project->salesPartnerUser->email }}" type="text"
+                                        class="form-control" id="last_name" name="last_name" placeholder="Last Name">
+                                </div>
+                                <div class="col-sm-3 ">
+                                    <label for="exampleFormControlInput877" class="form-label">Phone</label>
+                                    <input disabled value="{{ $project->salesPartnerUser->phone }}" type="text"
+                                        class="form-control" id="street" name="street" placeholder="Street">
+                                </div>
                             </div>
                         </div>
                     </div>
-                </div>
+                @endif
             </div>
             <div class="tab-pane fade" id="addersDiv" role="tabpanel">
                 <div class="card mt-1">
@@ -1444,26 +1447,30 @@
             <div class="tab-pane fade" id="acceptance" role="tabpanel">
                 <div class="card mt-1">
                     <div class="card-body">
-                        <form id="accept-form" method="post"
-                            enctype="multipart/form-data">
-                            @csrf
-                            <input type="hidden" name="project_id" value="{{ $project->id }}"/>
-                            <input type="hidden" name="sales_partner_id" value="{{ $project->customer->sales_partner_id }}"/>
-                            <div class="col-md-4 mb-3">
-                                <label for="formFileMultipleoneone" class="form-label" id="requiredfiles">Add Design</label>
-                                <input class="form-control" type="file" id="file" name="file"
-                                    accept=".png,.jpg,.pdf" multiple>
-                                @error('file')
-                                    <div id="file_message" class="text-danger message mt-2">{{ $message }}
-                                    </div>
-                                @enderror
-                                <div id="file_message" class="text-danger message mt-2"></div>
-                            </div>
-                            <div class="col-sm-12 mb-3">
-                                <button type="submit" class="btn btn-dark me-1 mt-1 w-sm-100" id="saveFiles"><i
-                                        class="icofont-arrow-left me-2 fs-6"></i>Submit</button>
-                            </div>
-                        </form>
+                        @if (!auth()->user()->hasAnyRole(['Manager', 'Sales Person']))
+                            <form id="accept-form" method="post" enctype="multipart/form-data">
+                                @csrf
+                                <input type="hidden" name="project_id" value="{{ $project->id }}" />
+                                <input type="hidden" name="sales_partner_id"
+                                    value="{{ $project->customer->sales_partner_id }}" />
+                                <input type="hidden" name="mode" value="post" />
+                                <div class="col-md-4 mb-3">
+                                    <label for="formFileMultipleoneone" class="form-label" id="requiredfiles">Add
+                                        Design</label>
+                                    <input class="form-control" type="file" id="file" name="file"
+                                        accept=".png,.jpg,.pdf" multiple>
+                                    @error('file')
+                                        <div id="file_message" class="text-danger message mt-2">{{ $message }}
+                                        </div>
+                                    @enderror
+                                    <div id="file_message" class="text-danger message mt-2"></div>
+                                </div>
+                                <div class="col-sm-12 mb-3">
+                                    <button type="submit" class="btn btn-dark me-1 mt-1 w-sm-100" id="saveFiles"><i
+                                            class="icofont-arrow-left me-2 fs-6"></i>Submit</button>
+                                </div>
+                            </form>
+                        @endif
                         <div class="row" id="project-acceptance-view"></div>
                         {{-- <div class="row">
                             <div class="col-md-12 d-flex justify-content-center">
@@ -2320,34 +2327,64 @@
 
         });
         $('#accept-form').on('submit', function(e) {
-        e.preventDefault();
+            e.preventDefault();
 
-        // Create a FormData object
-        var formData = new FormData(this); // Automatically collects all form inputs, including files
+            // Create a FormData object
+            var formData = new FormData(this); // Automatically collects all form inputs, including files
 
-        // Send the form data using jQuery AJAX
-        $.ajax({
-            url: "{{ route('project.accept.file') }}", // The URL where the request is sent
-            type: 'POST',
-            data: formData,
-            contentType: false, // Tell jQuery not to set contentType
-            processData: false, // Tell jQuery not to process the data (i.e., don't try to convert it into a string)
-            headers: {
-                'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') // Include the CSRF token from meta tag
-            },
-            success: function(response) {
-                $("#project-acceptance-view").empty();
-                $("#project-acceptance-view").html(response);
-                // if (response.success) {
-                //     console.log('File uploaded successfully.');
-                // } else {
-                //     console.error('Error: ' + response.message);
-                // }
-            },
-            error: function(xhr) {
-                console.error('Error uploading file: ' + xhr.responseText);
-            }
+            // Send the form data using jQuery AJAX
+            $.ajax({
+                url: "{{ route('project.accept.file') }}", // The URL where the request is sent
+                type: 'POST',
+                data: formData,
+                contentType: false, // Tell jQuery not to set contentType
+                processData: false, // Tell jQuery not to process the data (i.e., don't try to convert it into a string)
+                headers: {
+                    'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr(
+                        'content') // Include the CSRF token from meta tag
+                },
+                success: function(response) {
+                    $("#project-acceptance-view").empty();
+                    $("#project-acceptance-view").html(response);
+                    // if (response.success) {
+                    //     console.log('File uploaded successfully.');
+                    // } else {
+                    //     console.error('Error: ' + response.message);
+                    // }
+                },
+                error: function(xhr) {
+                    console.error('Error uploading file: ' + xhr.responseText);
+                }
+            });
         });
-    });
+        getAcceptanceForm();
+
+        function getAcceptanceForm() {
+            $.ajax({
+                url: "{{ route('project.accept.file') }}", // The URL where the request is sent
+                type: 'POST',
+                data: {
+                    "_token": "{{ csrf_token() }}",
+                    project_id: '{{ $project->id }}',
+                    mode: 'view'
+                },
+                headers: {
+                    'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr(
+                        'content') // Include the CSRF token from meta tag
+                },
+                success: function(response) {
+                    $("#project-acceptance-view").empty();
+                    $("#project-acceptance-view").html(response);
+                    // if (response.success) {
+                    //     console.log('File uploaded successfully.');
+                    // } else {
+                    //     console.error('Error: ' + response.message);
+                    // }
+                },
+                error: function(xhr) {
+                    console.error('Error uploading file: ' + xhr.responseText);
+                }
+            });
+        }
     </script>
 @endsection

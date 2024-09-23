@@ -10,7 +10,7 @@ use Illuminate\Mail\Mailables\Content;
 use Illuminate\Mail\Mailables\Envelope;
 use Illuminate\Queue\SerializesModels;
 
-class TestEmail extends Mailable
+class AcceptanceEmail extends Mailable
 {
     use Queueable, SerializesModels;
 
@@ -23,7 +23,7 @@ class TestEmail extends Mailable
     /**
      * Create a new message instance.
      */
-    public function __construct($details, $files,$ccEmails = [])
+    public function __construct($details, $files, $ccEmails = [])
     {
         $this->subject = $details['subject'];
         $this->body = $details['body'];
@@ -60,22 +60,16 @@ class TestEmail extends Mailable
     public function attachments(): array
     {
         foreach ($this->uploadedFiles as $key => $file) {
-        //    array_push($this->sendAttachments, Attachment::fromPath(public_path("/storage/emails/$file")));
-           array_push($this->sendAttachments, Attachment::fromPath(asset("/storage/emails/".$file)));
+            //    array_push($this->sendAttachments, Attachment::fromPath(public_path("/storage/emails/$file")));
+            array_push($this->sendAttachments, Attachment::fromPath(asset("/storage/pdfs/" . $file)));
         }
-        dd($this->sendAttachments);
         return $this->sendAttachments;
     }
 
-     /**
-     * Build the message.
-     *
-     * @return $this
-     */
     public function build()
     {
         $email = $this->subject($this->subject)
-                      ->view('mail.test-email', ['body' => $this->body]);
+            ->view('mail.test-email', ['body' => $this->body]);
 
         // Add CC recipients
         if (!empty($this->ccEmails)) {
@@ -86,7 +80,6 @@ class TestEmail extends Mailable
         foreach ($this->attachments() as $attachment) {
             $email->attach($attachment);
         }
-
         return $email;
     }
 }

@@ -16,6 +16,9 @@ return new class extends Migration
             $table->integer("project_id");
             $table->integer("sales_partner_id");
             $table->string("image");
+            $table->integer("action_by");
+            $table->integer("status");
+            $table->timestamp("approved_date")->nullable();
             $table->timestamps();
         });
     }
