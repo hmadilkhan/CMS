@@ -1447,7 +1447,7 @@
             <div class="tab-pane fade" id="acceptance" role="tabpanel">
                 <div class="card mt-1">
                     <div class="card-body">
-                        @if (!auth()->user()->hasAnyRole(['Manager', 'Sales Person']))
+                        @if (auth()->user()->hasAnyRole(['Super Admin', 'Admin','Employee']))
                             <form id="accept-form" method="post" enctype="multipart/form-data">
                                 @csrf
                                 <input type="hidden" name="project_id" value="{{ $project->id }}" />
