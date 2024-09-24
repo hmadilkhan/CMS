@@ -1,5 +1,21 @@
 <div class="card">
     <div class="card-body">
+        @if (!empty($projectAcceptance) && $projectAcceptance->action_by != 0)
+        <div class="row mt-4 mx-3">
+            <table class="table table-bordered">
+                <tr class="bg-light">
+                    <th class="fw-bold">Approved By</th>
+                    <th class="fw-bold">Status</th>
+                    <th class="fw-bold">Action Date</th>
+                </tr>
+                <tr>
+                    <td>{{$projectAcceptance->user->name}}</td>
+                    <td>{{$projectAcceptance->status == 1 ? "Approved" : "Rejected" }}</td>
+                    <td>{{date("d M Y" , strtotime($projectAcceptance->approved_date)). " ". date("H:i a" , strtotime($projectAcceptance->approved_date))}}</td>
+                </tr>
+            </table>
+        </div>
+        @endif
         <div class="row">
             <div class="col-md-12 d-flex justify-content-center">
                 <img src="{{ asset('storage/solen_logo.png') }}" width="250" height="200" alt="" class="">
@@ -26,8 +42,8 @@
             </div>
         </div>
         <div class="col-md-12 d-flex justify-content-center mx-3">
-            <img src="{{ !empty($image) ? asset('storage/project-acceptance/' . $image) : '' }}" height="400"
-                width="100%" alt="" class=" mx-auto d-block">
+            <img src="{{ !empty($projectAcceptance) ? asset('storage/project-acceptance/' . $projectAcceptance->image) : '' }}"
+                height="400" width="100%" alt="" class=" mx-auto d-block">
         </div>
         <div class="row mt-4">
             <div class="col-md-12 d-flex justify-content-center">
@@ -90,12 +106,16 @@
                                 class="icofont-arrow-right me-2 fs-6"></i></button>
                     </div>
                 @else
-                    <div class="col-md-12">
-                        <button type="button" class="btn btn-success me-1 w-sm-100 float-right text-white">Approve<i
-                                class="icofont-arrow-right me-2 fs-6"></i></button>
-                        <button type="button" class="btn btn-danger me-1 w-sm-100 float-right text-white">Reject<i
-                                class="icofont-arrow-right me-2 fs-6"></i></button>
-                    </div>
+                    @if (!empty($projectAcceptance) && $projectAcceptance->action_by == 0)
+                        <div class="col-md-12">
+                            <button onclick="acceptanceAction('2','{{ $projectAcceptance->id }}')" type="button"
+                                class="btn btn-danger me-1 w-sm-100 float-right text-white"><i
+                                    class="mr-1 icofont-close me-2 fs-6"></i>Reject</button>
+                            <button onclick="acceptanceAction('1','{{ $projectAcceptance->id }}')" type="button"
+                                class="btn btn-success me-1 w-sm-100 float-right text-white"><i
+                                    class="mr-1 icofont-tick-mark me-2 fs-6"></i> Approve</button>
+                        </div>
+                    @endif
                 @endif
             </div>
         @endif

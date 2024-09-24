@@ -270,7 +270,7 @@
         .main-container {
             width: 650px;
             /* margin-left: auto;
-                                        margin-right: auto; */
+                                            margin-right: auto; */
         }
 
         .tags-input {
@@ -2380,6 +2380,29 @@
                     // } else {
                     //     console.error('Error: ' + response.message);
                     // }
+                },
+                error: function(xhr) {
+                    console.error('Error uploading file: ' + xhr.responseText);
+                }
+            });
+        }
+
+        function acceptanceAction(mode, id) {
+            $.ajax({
+                url: "{{ route('action.project.acceptance') }}", // The URL where the request is sent
+                type: 'POST',
+                data: {
+                    "_token": "{{ csrf_token() }}",
+                    id: id,
+                    mode: mode
+                },
+                success: function(response) {
+                    if (response.status == 200) {
+                        getAcceptanceForm();
+                    }
+                    if(response.status == 500) {
+                        alert(response.message)
+                    }
                 },
                 error: function(xhr) {
                     console.error('Error uploading file: ' + xhr.responseText);

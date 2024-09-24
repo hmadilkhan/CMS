@@ -755,28 +755,27 @@ class ProjectController extends Controller
                 if (!empty($projectAcceptance)) {
                     return view("projects.project-acceptance", [
                         "image" => $result["fileName"],
-                        "project" => Project::with("task", "customer", "customer.salespartner","customer.adders")->where("id", $request->project_id)->first(),
+                        "project" => Project::with("task", "customer", "customer.salespartner", "customer.adders")->where("id", $request->project_id)->first(),
                         "mode" => "view",
                     ]);
                 }
             }
-        }else{
-            $projectAcceptance = ProjectAcceptance::where("project_id",$request->project_id)->latest()->first();
+        } else {
+            $projectAcceptance = ProjectAcceptance::with("user")->where("project_id", $request->project_id)->latest()->first();
             if (!empty($projectAcceptance)) {
                 return view("projects.project-acceptance", [
-                    "image" => $projectAcceptance->image,
-                    "project" => Project::with("task", "customer", "customer.salespartner","customer.adders")->where("id", $request->project_id)->first(),
+                    "projectAcceptance" => $projectAcceptance,
+                    "project" => Project::with("task", "customer", "customer.salespartner", "customer.adders")->where("id", $request->project_id)->first(),
                     "mode" => "view",
                 ]);
             }
         }
-
     }
 
     public function generatePDF(Request $request)
     {
-        $image = ProjectAcceptance::where("project_id", $request->id)->first();
-        $project = Project::with("task", "customer", "customer.salespartner","customer.adders")->where("id", $request->id)->first();
+        $image = ProjectAcceptance::with("user")->where("project_id", $request->id)->first();
+        $project = Project::with("task", "customer", "customer.salespartner", "customer.adders")->where("id", $request->id)->first();
 
         $modulesAmount = $project->customer->panel_qty * $project->customer->module->amount;
 
@@ -847,6 +846,18 @@ class ProjectController extends Controller
         $pdf->Cell(70, 10, 'Contract Price', 1);
         $pdf->Cell(70, 10, '-', 1);
         $pdf->Cell(50, 10, number_format($project->customer->finances->contract_amount, 2), 1, 1);
+        $addersName = "";
+
+        foreach ($project->customer->adders as $adders) {
+            $addersName .= $adders->type->name . ",";
+        }
+
+        $pdf->ln(5);
+        // Total Adder Cost Title
+        $pdf->SetFont('Arial', 'B', 14);
+        $pdf->Cell(0, 10, 'Adders : ', 0, 1, 'L');
+        $pdf->SetFont('Arial', '', 12);
+        $pdf->Cell(0, 10, $addersName, 0, 1, 'L');
 
         // Set the file path where you want to save the PDF in the 'storage/app/public/pdfs' folder
         $filePath = storage_path('app/public/pdfs/project_acceptance_review-' . $project->id . '.pdf');
@@ -871,11 +882,25 @@ class ProjectController extends Controller
             "customer_id" => $project->customer_id,
             "customer_email" => "hmadilkhan@gmail.com",
         ];
-        array_push($attachments,  'project_acceptance_review-' . $project->id.'.pdf');
+        array_push($attachments,  'project_acceptance_review-' . $project->id . '.pdf');
         // dispatch(new AcceptanceEmailJob($details, $attachments, $ccEmails));
         // Mail::mailer("dealreview")->to($details['customer_email'])->send(new AcceptanceEmail($details, $attachments,$ccEmails));
-        return Mail::mailer("dealreview")->to($details['customer_email'])->send(new AcceptanceEmail($details, $attachments,$ccEmails));
+        // return Mail::mailer("dealreview")->to($details['customer_email'])->send(new AcceptanceEmail($details, $attachments, $ccEmails));
         return response()->json(["status" => 200, "message" => "Email has been sent"]);
         exit;
+    }
+
+    public function actionProjectAcceptance(Request $request)
+    {
+        try {
+            ProjectAcceptance::where("id", $request->id)->update([
+                "action_by" => auth()->user()->id,
+                "status" => $request->mode,
+                "approved_date" => date("Y-m-d H:i:s"),
+            ]);
+            return response()->json(["status" => 200, "message" => "Project Acceptance Approved"]);
+        } catch (\Throwable $th) {
+            return response()->json(["status" => 500, "message" => "Error: " . $th->getMessage()]);
+        }
     }
 }

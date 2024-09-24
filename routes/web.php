@@ -127,6 +127,7 @@ Route::middleware('auth')->group(function () {
     Route::post('delete-file', [App\Http\Controllers\ProjectController::class, 'deleteFile'])->name('delete.file');
     Route::post('project-accept-file', [App\Http\Controllers\ProjectController::class, 'projectAcceptance'])->name('project.accept.file');
     Route::get('/pdf/{id}', [App\Http\Controllers\ProjectController::class, 'generatePDF'])->name('generate.pdf.file');
+    Route::post('action-project-acceptance', [App\Http\Controllers\ProjectController::class, 'actionProjectAcceptance'])->name('action.project.acceptance');
 
     // ADDERS CONTROLLER
     Route::post('adders-store', [App\Http\Controllers\AdderController::class, 'store'])->name('adders.store');
