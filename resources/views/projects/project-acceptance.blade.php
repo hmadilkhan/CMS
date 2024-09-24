@@ -43,19 +43,23 @@
         </div>
         <div class="col-md-12 d-flex justify-content-center mx-3">
             <img src="{{ !empty($projectAcceptance) ? asset('storage/project-acceptance/' . $projectAcceptance->image) : '' }}"
-                height="400" width="100%" alt="" class=" mx-auto d-block">
+                 width="100%" alt="" class=" mx-auto d-block">
         </div>
         <div class="row mt-4">
             <div class="col-md-12 d-flex justify-content-center">
                 <h5 class="fs-10 fw-bold text-decoration-underline">Total Adder Cost</h5>
             </div>
         </div>
+        @php
+        $basePrice = $project->customer->inverter->invertertyperates->base_cost + $project->overwrite_base_price;
+        $moduleQtyPrice = $project->customer->module->amount + $project->overwrite_panel_price;
+        @endphp
         <div class="row mt-4 mx-3 bg-light">
             <table class="table table-bordered table-striped">
                 <tr>
                     <td>Inverter Base</td>
                     <td>{{ $project->customer->inverter->name }}</td>
-                    <td>{{ number_format($project->customer->inverter->invertertyperates->base_cost, 2) }}</td>
+                    <td>{{ number_format($basePrice, 2) }}</td>
                 </tr>
                 <tr>
                     <td>Dealer Fee </d>
@@ -64,7 +68,7 @@
                 </tr>
                 <tr>
                     <td>Module Count </d>
-                    <td>{{ $project->customer->panel_qty }} x {{ $project->customer->module->amount }}</td>
+                    <td>{{ $project->customer->panel_qty }} x {{ $moduleQtyPrice }}</td>
                     <td>{{ number_format($modulesAmount, 2) }}</td>
                 </tr>
                 <tr>
