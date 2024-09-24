@@ -87,7 +87,9 @@
                 <ul class="sub-menu collapse {{ (Route::currentRouteName() == 'reports.profit' or Route::currentRouteName() == 'forecast.report'  ) ? 'show' : '' }}" id="reports">
                     <li><a class="ms-link {{ Route::currentRouteName() == 'reports.profit' ? 'active' : '' }}" href="{{route('reports.profit')}}"><span>Profitability Report</span></a></li>
                     <li><a class="ms-link {{ Route::currentRouteName() == 'forecast.report' ? 'active' : '' }}" href="{{route('forecast.report')}}"><span>Forecast Report</span></a></li>
-                    <li><a class="ms-link {{ Route::currentRouteName() == 'override.report' ? 'active' : '' }}" href="{{route('override.report')}}"><span>Override Report</span></a></li>
+                    @can('Override Report')
+                        <li><a class="ms-link {{ Route::currentRouteName() == 'override.report' ? 'active' : '' }}" href="{{route('override.report')}}"><span>Override Report</span></a></li>
+                    @endcan
                 </ul>
             </li>
             @endcan
