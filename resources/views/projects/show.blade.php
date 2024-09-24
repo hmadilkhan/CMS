@@ -1447,12 +1447,11 @@
             <div class="tab-pane fade" id="acceptance" role="tabpanel">
                 <div class="card mt-1">
                     <div class="card-body">
-                        @if (!auth()->user()->hasAnyRole(['Super Admin','Manager', 'Sales Person']))
+                        @if (!auth()->user()->hasAnyRole(['Manager', 'Sales Person']))
                             <form id="accept-form" method="post" enctype="multipart/form-data">
                                 @csrf
                                 <input type="hidden" name="project_id" value="{{ $project->id }}" />
-                                <input type="hidden" name="sales_partner_id"
-                                    value="{{ $project->customer->sales_partner_id }}" />
+                                <input type="hidden" name="sales_partner_id" value="{{ $project->customer->sales_partner_id }}" />
                                 <input type="hidden" name="mode" value="post" />
                                 <div class="col-md-4 mb-3">
                                     <label for="formFileMultipleoneone" class="form-label" id="requiredfiles">Add
