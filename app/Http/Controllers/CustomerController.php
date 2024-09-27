@@ -380,10 +380,11 @@ class CustomerController extends Controller
                 "customer_id" => $request->customer_id,
                 "customer_email" => $request->customer_email,
             ];
-
+            
             if ($request->ccEmails != "") {
                 $ccEmails = $this->handleCommaSeparatedValues($request->ccEmails);
             }
+            
             if (!empty($request->images) && count($request->images) > 0) {
                 foreach ($request->images  as $file) {
                     $savedFile = $this->uploads($file, 'emails/');
