@@ -63,7 +63,6 @@ class TestEmail extends Mailable
         //    array_push($this->sendAttachments, Attachment::fromPath(public_path("/storage/emails/$file")));
            array_push($this->sendAttachments, Attachment::fromPath(asset("/storage/emails/".$file)));
         }
-        dd($this->sendAttachments);
         return $this->sendAttachments;
     }
 
