@@ -34,7 +34,7 @@
                         {{ $project->customer->first_name . ' ' . $project->customer->last_name }}</h5>
                 </div>
                 <div class="col-md-12 ">
-                    <h5 class="fs-10  flex-fill">Address : {{ $project->customer->address }}</h5>
+                    <h5 class="fs-10  flex-fill">Address : {{ $project->customer->state." ".$project->customer->city." ".$project->customer->street }}</h5>
                 </div>
                 <div class="col-md-12 ">
                     <h5 class="fs-10  flex-fill">Phone : {{ $project->customer->phone }}</h5>
