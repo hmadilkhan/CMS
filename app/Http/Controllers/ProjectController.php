@@ -747,15 +747,17 @@ class ProjectController extends Controller
             ]);
             $result = $this->uploads($request->file, 'project-acceptance/');
             if (!empty($result)) {
+                $project = Project::with("task", "customer", "customer.salespartner", "customer.adders","salesPartnerUser")->where("id", $request->project_id)->first();
                 $projectAcceptance = ProjectAcceptance::create([
                     "project_id" => $request->project_id,
                     "sales_partner_id" => $request->sales_partner_id,
                     "image" => $result["fileName"],
                 ]);
+                $this->sendEmailForProjectAcceptance($project,"Project Acceptance Review","<p>Dear {{$project->salesPartnerUser->name}}, </br> It is inform you that the Project Acceptance document is ready for review. Please login to CRM and take necessary action !</br>Best Regards.</br> Solen Energy Co. Team</p>",$project->salesPartnerUser->email);
                 if (!empty($projectAcceptance)) {
                     return view("projects.project-acceptance", [
                         "image" => $result["fileName"],
-                        "project" => Project::with("task", "customer", "customer.salespartner", "customer.adders")->where("id", $request->project_id)->first(),
+                        "project" => $project,
                         "mode" => "view",
                     ]);
                 }
@@ -893,14 +895,32 @@ class ProjectController extends Controller
     public function actionProjectAcceptance(Request $request)
     {
         try {
+            $projectAcceptance = ProjectAcceptance::with("user")->where("project_id", $request->id)->latest()->first();
+            $project = Project::with( "assignedPerson", "assignedPerson.employee")->where("id", $projectAcceptance->project_id)->first();
             ProjectAcceptance::where("id", $request->id)->update([
                 "action_by" => auth()->user()->id,
                 "status" => $request->mode,
                 "approved_date" => date("Y-m-d H:i:s"),
             ]);
+            $this->sendEmailForProjectAcceptance($project,"Project Acceptance Review Status","<p>Dear {{$project->assignedPerson[0]->employee->name}}, </br> Project Acceptance document has been ".( $request->mode == 1 ? 'approved' : 'rejected').". Please login to CRM and take necessary action !</br>Best Regards.</br> Solen Energy Co. Team</p>",$project->assignedPerson[0]->employee->email);
             return response()->json(["status" => 200, "message" => "Project Acceptance Approved"]);
         } catch (\Throwable $th) {
             return response()->json(["status" => 500, "message" => "Error: " . $th->getMessage()]);
         }
+    }
+
+    public function sendEmailForProjectAcceptance($project, $subject, $body, $emailTo)
+    {
+        $ccEmails = "";
+        $attachments = [];
+        $details = [
+            "subject" => $subject,
+            "body" => $body,
+            "project_id" => $project->id,
+            "department_id" => 3,
+            "customer_id" => $project->customer_id,
+            "customer_email" => $emailTo,
+        ];
+        dispatch(new AcceptanceEmailJob($details, $attachments, $ccEmails));
     }
 }
