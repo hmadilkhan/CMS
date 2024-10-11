@@ -903,7 +903,7 @@ class ProjectController extends Controller
                 "status" => $request->mode,
                 "approved_date" => date("Y-m-d H:i:s"),
             ]);
-            $this->sendEmailForProjectAcceptance($project,"Project Acceptance Review Status","<p>Dear {{$project->assignedPerson[0]->employee->name}}, </br> Project Acceptance document has been ".( $request->mode == 1 ? 'approved' : 'rejected').". Please login to CRM and take necessary action !</br>Best Regards.</br> Solen Energy Co. Team</p>",$project->assignedPerson[0]->employee->email);
+            $this->sendEmailForProjectAcceptance($project,"Project Acceptance Review Status","<p>Dear {{$project->assignedPerson[0]->employee->name}}, </br> Project Acceptance document has been ".( $request->mode == 1 ? 'approved' : 'rejected').". Please login to CRM and take necessary action !</br>Best Regards.</br> Solen Energy Co. Team</p>","hmadilkhan@gmail.com");
             return response()->json(["status" => 200, "message" => "Project Acceptance Approved"]);
         } catch (\Throwable $th) {
             return response()->json(["status" => 500, "message" => "Error: " . $th->getMessage()]);
