@@ -66,20 +66,19 @@ class AcceptanceEmail extends Mailable
         return $this->sendAttachments;
     }
 
-    public function build()
-    {
-        $email = $this->subject($this->subject)
-            ->view('mail.test-email', ['body' => $this->body]);
+    // public function build()
+    // {
+    //     $email = $this->subject($this->subject)
+    //         ->view('mail.test-email', ['body' => $this->body]);
+    //     // Add CC recipients
+    //     if (!empty($this->ccEmails)) {
+    //         $email->cc($this->ccEmails);
+    //     }
 
-        // Add CC recipients
-        if (!empty($this->ccEmails)) {
-            $email->cc($this->ccEmails);
-        }
-
-        // Attach files
-        foreach ($this->attachments() as $attachment) {
-            $email->attach($attachment);
-        }
-        return $email;
-    }
+    //     // Attach files
+    //     foreach ($this->attachments() as $attachment) {
+    //         $email->attach($attachment);
+    //     }
+    //     return $email;
+    // }
 }
