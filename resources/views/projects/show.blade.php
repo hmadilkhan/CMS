@@ -2386,13 +2386,14 @@
             });
         }
 
-        function acceptanceAction(mode, id) {
+        function acceptanceAction(mode, id,projectId) {
             $.ajax({
                 url: "{{ route('action.project.acceptance') }}", // The URL where the request is sent
                 type: 'POST',
                 data: {
                     "_token": "{{ csrf_token() }}",
                     id: id,
+                    projectId: projectId,
                     mode: mode
                 },
                 success: function(response) {

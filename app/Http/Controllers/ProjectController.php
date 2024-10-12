@@ -896,7 +896,7 @@ class ProjectController extends Controller
     public function actionProjectAcceptance(Request $request)
     {
         try {
-            $projectAcceptance = ProjectAcceptance::with("user")->where("project_id", $request->id)->latest()->first();
+            $projectAcceptance = ProjectAcceptance::with("user")->where("project_id", $request->projectId)->latest()->first();
             $project = Project::with( "assignedPerson", "assignedPerson.employee")->where("id", $projectAcceptance->project_id)->first();
             ProjectAcceptance::where("id", $request->id)->update([
                 "action_by" => auth()->user()->id,
