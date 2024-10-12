@@ -328,8 +328,8 @@
                                 id="openemployee"><i class="icofont-arrow-left me-2 fs-6"></i>Back to List</a>
                         </div>
                     </div>
-                    <div class="card border-0 mb-4 no-bg d-flex py-2 project-tab flex-wrap w-sm-100">
-                        <ul class="nav nav-tabs tab-body-header rounded ms-3 prtab-set w-sm-100" role="tablist">
+                    <div class="card border-0 mb-4 no-bg d-flex py-3 project-tab flex-wrap w-sm-100 ">
+                        <ul class="nav nav-tabs tab-body-header rounded ms-3 prtab-set w-sm-100 justify-content-center justify-content-around" role="tablist">
                             @foreach ($departments as $department)
                                 @if ($department->id < $project->department_id)
                                     <li class="nav-item "><a class="nav-link active bg-success" data-bs-toggle="tab"

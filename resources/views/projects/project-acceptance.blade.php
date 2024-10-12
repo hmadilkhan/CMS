@@ -105,10 +105,10 @@
         @if ($mode == 'view')
             <div class="row mt-4 mx-3">
                 @if (!auth()->user()->hasAnyRole(['Manager', 'Sales Person']))
-                    <div class="col-md-12">
+                    {{-- <div class="col-md-12">
                         <button type="button" class="btn btn-dark me-1 w-sm-100 float-right">Send Email<i
                                 class="icofont-arrow-right me-2 fs-6"></i></button>
-                    </div>
+                    </div> --}}
                 @else
                     @if (!empty($projectAcceptance) && $projectAcceptance->action_by == 0)
                         <div class="col-md-12">
