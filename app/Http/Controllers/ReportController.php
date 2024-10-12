@@ -110,8 +110,16 @@ class ReportController extends Controller
 
     public function overrideReport()
     {
+        $salesPartners = [];
+        if (auth()->user()->hasRole("Super Admin")) {
+            $salesPartners = SalesPartner::all();
+        } else {
+            if (auth()->user()->sales_partner_id != "") {
+                $salesPartners = SalesPartner::where("id", auth()->user()->sales_partner_id)->get();
+            }
+        }
         return view("reports.override.override", [
-            "partners" => SalesPartner::all(),
+            "partners" =>  $salesPartners,
         ]);
     }
 
@@ -119,17 +127,17 @@ class ReportController extends Controller
     {
         $salesPartnerIds = [];
         if ($request->sales_partner_id != "") {
-            $salesPartnerIds = User::where('sales_partner_id',$request->sales_partner_id)->pluck("id");
+            $salesPartnerIds = User::where('sales_partner_id', $request->sales_partner_id)->pluck("id");
         }
 
-        $customer = Customer::with("salespartner", "finances", "project","project.salesPartnerUser")
-                    ->when(!empty($salesPartnerIds),function($query) use ($salesPartnerIds){
-                        $query->whereHas("project",function($q) use ($salesPartnerIds){
-                            $q->whereIn("sales_partner_user_id",$salesPartnerIds);
-                        });
-                    })
-                    ->whereBetween("sold_date", [$request->from, $request->to])
-                    ->orderBy("sold_date", "ASC");
+        $customer = Customer::with("salespartner", "finances", "project", "project.salesPartnerUser")
+            ->when(!empty($salesPartnerIds), function ($query) use ($salesPartnerIds) {
+                $query->whereHas("project", function ($q) use ($salesPartnerIds) {
+                    $q->whereIn("sales_partner_user_id", $salesPartnerIds);
+                });
+            })
+            ->whereBetween("sold_date", [$request->from, $request->to])
+            ->orderBy("sold_date", "ASC");
 
         return view("reports.override.override_table", [
             "customers" => $customer->get(),
@@ -141,16 +149,16 @@ class ReportController extends Controller
     {
         $salesPartnerIds = [];
         if ($request->sales_partner_id != "") {
-            $salesPartnerIds = User::where('sales_partner_id',$request->sales_partner_id)->pluck("id");
+            $salesPartnerIds = User::where('sales_partner_id', $request->sales_partner_id)->pluck("id");
         }
-        $customer = Customer::with("salespartner", "finances", "project","project.salesPartnerUser")
-        ->when(!empty($salesPartnerIds),function($query) use ($salesPartnerIds){
-            $query->whereHas("project",function($q) use ($salesPartnerIds){
-                $q->whereIn("sales_partner_user_id",$salesPartnerIds);
-            });
-        })
-        ->whereBetween("sold_date", [$request->from, $request->to])
-        ->orderBy("sold_date", "ASC")->get();
+        $customer = Customer::with("salespartner", "finances", "project", "project.salesPartnerUser")
+            ->when(!empty($salesPartnerIds), function ($query) use ($salesPartnerIds) {
+                $query->whereHas("project", function ($q) use ($salesPartnerIds) {
+                    $q->whereIn("sales_partner_user_id", $salesPartnerIds);
+                });
+            })
+            ->whereBetween("sold_date", [$request->from, $request->to])
+            ->orderBy("sold_date", "ASC")->get();
         return Excel::download(new OverrideCostExport($customer, $request->from, $request->to), 'Override Report.xlsx');
     }
 
@@ -158,16 +166,16 @@ class ReportController extends Controller
     {
         $salesPartnerIds = [];
         if ($request->sales_partner_id != "") {
-            $salesPartnerIds = User::where('sales_partner_id',$request->sales_partner_id)->pluck("id");
+            $salesPartnerIds = User::where('sales_partner_id', $request->sales_partner_id)->pluck("id");
         }
-        $customer = Customer::with("salespartner", "finances", "project","project.salesPartnerUser")
-        ->when(!empty($salesPartnerIds),function($query) use ($salesPartnerIds){
-            $query->whereHas("project",function($q) use ($salesPartnerIds){
-                $q->whereIn("sales_partner_user_id",$salesPartnerIds);
-            });
-        })
-        ->whereBetween("sold_date", [$request->from, $request->to])
-        ->orderBy("sold_date", "ASC")->get();
+        $customer = Customer::with("salespartner", "finances", "project", "project.salesPartnerUser")
+            ->when(!empty($salesPartnerIds), function ($query) use ($salesPartnerIds) {
+                $query->whereHas("project", function ($q) use ($salesPartnerIds) {
+                    $q->whereIn("sales_partner_user_id", $salesPartnerIds);
+                });
+            })
+            ->whereBetween("sold_date", [$request->from, $request->to])
+            ->orderBy("sold_date", "ASC")->get();
         return Excel::download(new OverrideCostExport($customer, $request->from, $request->to), 'Override Report.pdf', \Maatwebsite\Excel\Excel::DOMPDF);
     }
 }
