@@ -1136,10 +1136,16 @@
                                         value="$ {{ number_format($project->customer->finances->contract_amount, 2) }}"
                                         id="contract_amount" name="contract_amount">
                                 </div>
+                                @php
+                                $totalOverridePanelCost = $project->customer->panel_qty * $project->customer->project->overwrite_panel_price;
+                                $totalOverride = $totalOverridePanelCost + $project->customer->project->overwrite_base_price;
+                                $actualRedlineCost = $customer->finances->redline_costs - $totalOverride;
+                                // $project->customer->finances->redline_costs
+                                @endphp
                                 <div class="col-sm-3 ">
                                     <label for="redline_costs" class="form-label">Redline Costs</label>
                                     <input type="text" class="form-control"
-                                        value="$ {{ number_format($project->customer->finances->redline_costs, 2) }}"
+                                        value="$ {{ number_format($actualRedlineCost, 2) }}"
                                         id="redline_costs" name="redline_costs">
                                 </div>
                                 <div class="col-sm-3 ">
