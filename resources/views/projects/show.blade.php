@@ -1140,6 +1140,7 @@
                                 $totalOverridePanelCost = $project->customer->panel_qty * $project->overwrite_panel_price;
                                 $totalOverride = $totalOverridePanelCost + $project->overwrite_base_price;
                                 $actualRedlineCost = $project->customer->finances->redline_costs - $totalOverride;
+                                $totalCommission = $totalOverride + $project->customer->finances->commission;
                                 // $project->customer->finances->redline_costs
                                 @endphp
                                 <div class="col-sm-3 ">
@@ -1157,7 +1158,7 @@
                                 <div class="col-sm-3 ">
                                     <label for="commission" class="form-label">Commission</label>
                                     <input type="text" class="form-control"
-                                        value="$ {{ number_format($project->customer->finances->commission, 2) }}"
+                                        value="$ {{ number_format($totalCommission, 2) }}"
                                         id="commission" name="commission">
                                 </div>
                                 <div class="col-sm-3 ">
