@@ -827,26 +827,21 @@
                                 @endphp
 
                                 <div class="col-sm-6 mb-3">
-                                    <div class="col-sm-12 mb-3">
+                                    @livewire('project.notes-section', ['projectId' => $project->id,'taskId' => $task->id,'departmentId' => $project->department_id ], key($project->id))
+                                    {{-- <div class="col-sm-12 mb-3">
                                         <label for="formFileMultipleoneone"
                                             class="form-label fw-bold flex-fill mb-2 mt-sm-0">Department Notes</label>
                                         @foreach ($filtered_collection as $value)
                                             @if ($value->notes != '')
-                                                {{-- <textarea class="form-control" disabled rows="3">{{ $value->notes }} {{ !empty($value->user) ? '( Added by ' . $value->user->name . ')' : '' }}</textarea> --}}
                                                 <label class="form-control" disabled rows="3">{{ $value->notes }}
                                                     {{ !empty($value->user) ? '( Added by ' . $value->user->name . ')' : '' }}</label>
                                             @endif
                                         @endforeach
-                                    </div>
+                                    </div> --}}
+                                    
                                     @include('projects.partial.show-department-fields')
                                 </div>
-                                {{-- <div class="col-sm-4 mb-3">
-                @foreach ($logs as $key => $log)
-                <label for="formFileMultipleoneone" class="form-label fw-bold flex-fill mb-2 mt-sm-0">Call No {{ ++$key }} :
-            {{ $log->call_no == 'no' ? 'Customer not responding' : $log->call_no }} </label>
-            <textarea class="form-control" disabled rows="3">{{ $log->notes }}</textarea>
-            @endforeach
-        </div> --}}
+                               
                                 <div class="col-sm-6 mb-3">
                                     <label for="formFileMultipleoneone"
                                         class="form-label fw-bold flex-fill mb-2 mt-sm-0">Files</label>
