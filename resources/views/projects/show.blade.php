@@ -270,7 +270,7 @@
         .main-container {
             width: 650px;
             /* margin-left: auto;
-                                            margin-right: auto; */
+                                                margin-right: auto; */
         }
 
         .tags-input {
@@ -328,8 +328,9 @@
                                 id="openemployee"><i class="icofont-arrow-left me-2 fs-6"></i>Back to List</a>
                         </div>
                     </div>
-                    <div class="card border-0 mb-4 no-bg d-flex py-3 project-tab flex-wrap w-sm-100 ">
-                        <ul class="nav nav-tabs tab-body-header rounded ms-3 prtab-set w-sm-100 justify-content-center justify-content-around" role="tablist">
+                    {{-- <div class="card border-0 mb-4 no-bg d-flex py-3 project-tab flex-wrap w-sm-100 ">
+                        <ul class="nav nav-tabs tab-body-header rounded ms-3 prtab-set w-sm-100 justify-content-center justify-content-around"
+                            role="tablist">
                             @foreach ($departments as $department)
                                 @if ($department->id < $project->department_id)
                                     <li class="nav-item "><a class="nav-link active bg-success" data-bs-toggle="tab"
@@ -343,6 +344,25 @@
                                 @endif
                             @endforeach
                         </ul>
+                    </div> --}}
+                    <div class="d-flex justify-content-center align-items-center">
+                        <div class="py-2 project-tab flex-wrap w-sm-100">
+                            <ul class="nav nav-tabs tab-body-header rounded ms-3 prtab-set w-sm-100" role="tablist"
+                                style="cursor: pointer;">
+                                @foreach ($departments as $department)
+                                    @if ($department->id < $project->department_id)
+                                        <li class="nav-item "><a class="nav-link active bg-success" data-bs-toggle="tab"
+                                                role="tab">{{ $department->name }}</a></li>
+                                    @elseif($department->id == $project->department_id)
+                                        <li class="nav-item "><a class="nav-link active " data-bs-toggle="tab"
+                                                role="tab">{{ $department->name }}</a></li>
+                                    @else
+                                        <li class="nav-item"><a class="nav-link" data-bs-toggle="tab"
+                                                role="tab">{{ $department->name }}</a></li>
+                                    @endif
+                                @endforeach
+                            </ul>
+                        </div>
                     </div>
 
                 </div>
@@ -402,7 +422,8 @@
                                         <input type="hidden" name="task_id" value="{{ $task->id }}">
                                         <input type="hidden" name="sub_department_id"
                                             value="{{ $task->sub_department_id }}">
-                                        <input type="hidden" name="department_id" value="{{ $project->department_id }}">
+                                        <input type="hidden" name="department_id"
+                                            value="{{ $project->department_id }}">
                                         <div class="col-sm-12 mb-2">
                                             <label for="employee" class="form-label mt-2">Select Employee</label>
                                             <select class="form-select select2" aria-label="Default Select Employee"
@@ -1137,17 +1158,18 @@
                                         id="contract_amount" name="contract_amount">
                                 </div>
                                 @php
-                                $totalOverridePanelCost = $project->customer->panel_qty * $project->overwrite_panel_price;
-                                $totalOverride = $totalOverridePanelCost + $project->overwrite_base_price;
-                                $actualRedlineCost = $project->customer->finances->redline_costs - $totalOverride;
-                                $totalCommission = $totalOverride + $project->customer->finances->commission;
-                                // $project->customer->finances->redline_costs
+                                    $totalOverridePanelCost =
+                                        $project->customer->panel_qty * $project->overwrite_panel_price;
+                                    $totalOverride = $totalOverridePanelCost + $project->overwrite_base_price;
+                                    $actualRedlineCost = $project->customer->finances->redline_costs - $totalOverride;
+                                    $totalCommission = $totalOverride + $project->customer->finances->commission;
+                                    // $project->customer->finances->redline_costs
                                 @endphp
                                 <div class="col-sm-3 ">
                                     <label for="redline_costs" class="form-label">Redline Costs</label>
                                     <input type="text" class="form-control"
-                                        value="$ {{ number_format($actualRedlineCost, 2) }}"
-                                        id="redline_costs" name="redline_costs">
+                                        value="$ {{ number_format($actualRedlineCost, 2) }}" id="redline_costs"
+                                        name="redline_costs">
                                 </div>
                                 <div class="col-sm-3 ">
                                     <label for="adders" class="form-label">Adders</label>
@@ -1158,8 +1180,7 @@
                                 <div class="col-sm-3 ">
                                     <label for="commission" class="form-label">Commission</label>
                                     <input type="text" class="form-control"
-                                        value="$ {{ number_format($totalCommission, 2) }}"
-                                        id="commission" name="commission">
+                                        value="$ {{ number_format($totalCommission, 2) }}" id="commission" name="commission">
                                 </div>
                                 <div class="col-sm-3 ">
                                     <label for="dealer_fee" class="form-label">Dealer Fee</label>
@@ -1454,11 +1475,12 @@
             <div class="tab-pane fade" id="acceptance" role="tabpanel">
                 <div class="card mt-1">
                     <div class="card-body">
-                        @if (auth()->user()->hasAnyRole(['Super Admin', 'Admin','Employee']))
+                        @if (auth()->user()->hasAnyRole(['Super Admin', 'Admin', 'Employee']))
                             <form id="accept-form" method="post" enctype="multipart/form-data">
                                 @csrf
                                 <input type="hidden" name="project_id" value="{{ $project->id }}" />
-                                <input type="hidden" name="sales_partner_id" value="{{ $project->customer->sales_partner_id }}" />
+                                <input type="hidden" name="sales_partner_id"
+                                    value="{{ $project->customer->sales_partner_id }}" />
                                 <input type="hidden" name="mode" value="post" />
                                 <div class="col-md-4 mb-3">
                                     <label for="formFileMultipleoneone" class="form-label" id="requiredfiles">Add
@@ -2393,7 +2415,7 @@
             });
         }
 
-        function acceptanceAction(mode, id,projectId) {
+        function acceptanceAction(mode, id, projectId) {
             $.ajax({
                 url: "{{ route('action.project.acceptance') }}", // The URL where the request is sent
                 type: 'POST',
@@ -2407,7 +2429,7 @@
                     if (response.status == 200) {
                         getAcceptanceForm();
                     }
-                    if(response.status == 500) {
+                    if (response.status == 500) {
                         alert(response.message)
                     }
                 },
