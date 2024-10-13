@@ -1139,7 +1139,7 @@
                                 @php
                                 $totalOverridePanelCost = $project->customer->panel_qty * $project->overwrite_panel_price;
                                 $totalOverride = $totalOverridePanelCost + $project->overwrite_base_price;
-                                $actualRedlineCost = $customer->finances->redline_costs - $totalOverride;
+                                $actualRedlineCost = $project->customer->finances->redline_costs - $totalOverride;
                                 // $project->customer->finances->redline_costs
                                 @endphp
                                 <div class="col-sm-3 ">
