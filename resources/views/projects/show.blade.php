@@ -827,7 +827,7 @@
                                 @endphp
 
                                 <div class="col-sm-6 mb-3">
-                                    @livewire('project.notes-section', ['projectId' => $project->id,'taskId' => $task->id,'departmentId' => $project->department_id ], key($project->id))
+                                    @livewire('project.notes-section', ['projectId' => $project->id,'taskId' => $task->id,'departmentId' =>$department->id,'projectDepartmentId' => $project->department_id ], key($project->id))
                                     {{-- <div class="col-sm-12 mb-3">
                                         <label for="formFileMultipleoneone"
                                             class="form-label fw-bold flex-fill mb-2 mt-sm-0">Department Notes</label>

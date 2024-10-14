@@ -11,6 +11,7 @@ class NotesSection extends Component
     public $taskId = "";
     public $departmentId = "";
     public $departmentNote = "";
+    public $projectDepartmentId = "";
 
     protected $rules = [
         'departmentNote' => 'required',
@@ -38,7 +39,9 @@ class NotesSection extends Component
 
     public function render()
     {
-        $notes = DepartmentNote::where("project_id", $this->projectId)->get();
-        return view('livewire.project.notes-section', compact("notes"));
+        $notes = DepartmentNote::where("project_id", $this->projectId)->where("department_id", $this->departmentId)->get();
+        $departmentId = $this->departmentId;
+        $projectDepartmentId = $this->projectDepartmentId;
+        return view('livewire.project.notes-section', compact("notes","departmentId","projectDepartmentId"));
     }
 }
