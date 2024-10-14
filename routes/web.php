@@ -26,6 +26,11 @@ use Illuminate\Support\Facades\Route;
 |
 */
 
+Route::get('/CRM', function () {
+    return redirect('https://crm.solenenergyco.com');
+});
+
+
 Route::get('/storage-link', function () {
     $targetFolder = storage_path("app/public");
     $linkFolder = $_SERVER['DOCUMENT_ROOT'] . "/storage";
