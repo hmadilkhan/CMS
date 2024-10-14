@@ -20,7 +20,14 @@
                             <h3 class="mb-0 fw-bold fs-6 mx-3 text-start">{{$project->project_name}}</h3>
                         </div>
                         <div class="text-end ms-auto">
-                            <h6 class="mb-0 fs-6 font-monospace fw-bold">{{now()->diffInDays(Carbon\Carbon::parse($project->customer->sold_date))}} </h6>
+                            <h6 class="mb-0 fs-6 font-monospace fw-bold">
+                            @if (empty($project->pto_approval_date))
+                                {{ now()->diffInDays(Carbon\Carbon::parse($project->customer->sold_date)) }}
+                            @else
+                                {{ Carbon\Carbon::parse($project->pto_approval_date)->diffInDays(Carbon\Carbon::parse($project->customer->sold_date)) }}
+                            @endif
+                            </h6>
+                            {{-- <h6 class="mb-0 fs-6 font-monospace fw-bold">{{now()->diffInDays(Carbon\Carbon::parse($project->customer->sold_date))}} </h6> --}}
                         </div>
                     </div>
                     <div class="row g-2 pt-4">
