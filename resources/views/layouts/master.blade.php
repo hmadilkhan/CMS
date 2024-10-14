@@ -65,7 +65,7 @@
     </script>
     @yield('scripts')
     {{-- @livewireScripts --}}
-    @livewireScripts(asset('CRM/livewire/livewire.js'))
+    @livewireScripts(asset('CRM/assets/livewire/livewire.js'))
 </body>
 
 </html>
