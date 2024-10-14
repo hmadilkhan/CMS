@@ -1,3 +1,4 @@
+<div>
 @can('Notes Section')
     <div class="col-sm-12 mb-3">
         @if ($departmentId == $projectDepartmentId)
@@ -24,3 +25,4 @@
         @endforeach
     </div>
 @endcan
+</div>
