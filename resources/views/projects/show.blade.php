@@ -319,10 +319,10 @@
                             class="card-header py-3 px-0 d-sm-flex align-items-center  justify-content-between border-bottom">
                             <h6 class="mb-0 fs-6  font-monospace fw-bold mb-0 mt-sm-0 px-3 text-center">
 
-                                @if (empty($project->pto_submission_date))
+                                @if (empty($project->pto_approval_date))
                                     {{ now()->diffInDays(Carbon\Carbon::parse($project->customer->sold_date)) }}
                                 @else
-                                    {{ Carbon\Carbon::parse($project->pto_submission_date)->diffInDays(Carbon\Carbon::parse($project->customer->sold_date)) }}
+                                    {{ Carbon\Carbon::parse($project->pto_approval_date)->diffInDays(Carbon\Carbon::parse($project->customer->sold_date)) }}
                                 @endif
                                 {{-- {{ now()->diffInDays(Carbon\Carbon::parse($project->customer->sold_date)) }} --}}
                             </h6>
