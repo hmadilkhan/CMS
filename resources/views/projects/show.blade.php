@@ -270,7 +270,7 @@
         .main-container {
             width: 650px;
             /* margin-left: auto;
-                                                margin-right: auto; */
+                                                    margin-right: auto; */
         }
 
         .tags-input {
@@ -318,7 +318,15 @@
                         <div
                             class="card-header py-3 px-0 d-sm-flex align-items-center  justify-content-between border-bottom">
                             <h6 class="mb-0 fs-6  font-monospace fw-bold mb-0 mt-sm-0 px-3 text-center">
-                                {{ now()->diffInDays(Carbon\Carbon::parse($project->customer->sold_date)) }}</h6>
+
+                                @if (empty($project->customer->pto_date))
+
+                                    {{ now()->diffInDays(Carbon\Carbon::parse($project->customer->sold_date)) }}
+                                @else
+                                    {{ Carbon\Carbon::parse($project->customer->pto_date)->diffInDays(Carbon::parse($project->customer->sold_date)) }}
+                                @endif
+                                {{-- {{ now()->diffInDays(Carbon\Carbon::parse($project->customer->sold_date)) }} --}}
+                            </h6>
                             <h3 class=" fw-bold flex-fill mb-0 mt-sm-0 text-center fs-10 text-uppercase">
                                 {{ $project->project_name }}
                             </h3>
@@ -422,8 +430,7 @@
                                         <input type="hidden" name="task_id" value="{{ $task->id }}">
                                         <input type="hidden" name="sub_department_id"
                                             value="{{ $task->sub_department_id }}">
-                                        <input type="hidden" name="department_id"
-                                            value="{{ $project->department_id }}">
+                                        <input type="hidden" name="department_id" value="{{ $project->department_id }}">
                                         <div class="col-sm-12 mb-2">
                                             <label for="employee" class="form-label mt-2">Select Employee</label>
                                             <select class="form-select select2" aria-label="Default Select Employee"
@@ -827,7 +834,7 @@
                                 @endphp
 
                                 <div class="col-sm-6 mb-3">
-                                    @livewire('project.notes-section', ['projectId' => $project->id,'taskId' => $task->id,'departmentId' =>$department->id,'projectDepartmentId' => $project->department_id ], key($project->id))
+                                    @livewire('project.notes-section', ['projectId' => $project->id, 'taskId' => $task->id, 'departmentId' => $department->id, 'projectDepartmentId' => $project->department_id], key($project->id))
                                     {{-- <div class="col-sm-12 mb-3">
                                         <label for="formFileMultipleoneone"
                                             class="form-label fw-bold flex-fill mb-2 mt-sm-0">Department Notes</label>
@@ -838,10 +845,10 @@
                                             @endif
                                         @endforeach
                                     </div> --}}
-                                    
+
                                     @include('projects.partial.show-department-fields')
                                 </div>
-                               
+
                                 <div class="col-sm-6 mb-3">
                                     <label for="formFileMultipleoneone"
                                         class="form-label fw-bold flex-fill mb-2 mt-sm-0">Files</label>
