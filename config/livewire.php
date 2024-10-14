@@ -2,8 +2,6 @@
 
 return [
 
-    'asset_url' => env('APP_URL') === 'https://solenenergyco.com/CRM' ? '/CRM' : null,
-
     /*
     |---------------------------------------------------------------------------
     | Class Namespace
@@ -53,8 +51,6 @@ return [
     */
 
     'lazy_placeholder' => null,
-
-    'base_url' => env('APP_ENV') === 'production' && request()->is('CRM*') ? '/CRM' : null,
 
 
     /*
