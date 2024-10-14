@@ -322,7 +322,7 @@
                                 @if (empty($project->pto_submission_date))
                                     {{ now()->diffInDays(Carbon\Carbon::parse($project->customer->sold_date)) }}
                                 @else
-                                    {{ Carbon::parse($project->pto_submission_date)->diffInDays(Carbon::parse($project->customer->sold_date)) }}
+                                    {{ Carbon\Carbon::parse($project->pto_submission_date)->diffInDays(Carbon\Carbon::parse($project->customer->sold_date)) }}
                                 @endif
                                 {{-- {{ now()->diffInDays(Carbon\Carbon::parse($project->customer->sold_date)) }} --}}
                             </h6>
