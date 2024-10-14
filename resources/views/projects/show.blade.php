@@ -849,21 +849,7 @@
                                 </div>
 
                                 <div class="col-sm-6 mb-3">
-                                    <label for="formFileMultipleoneone"
-                                        class="form-label fw-bold flex-fill mb-2 mt-sm-0">Files</label>
-                                    <ul class="list-group list-group-custom">
-                                        @foreach ($files as $file)
-                                            <!-- <label class="badge bg-light"> <a target="_blank" href="{{ asset('storage/projects/' . $file->filename) }}" class="ml-3">{{ $file->filename }}</a></label> -->
-                                            <li class="list-group-item light-primary-bg">
-                                                @can('File Delete')
-                                                    <i class="icofont-trash text-danger fs-6" style="cursor:pointer;"
-                                                        onclick="deleteFile('{{ $file->id }}')">&nbsp;</i>
-                                                @endcan
-                                                <a target="_blank" href="{{ asset('storage/projects/' . $file->filename) }}"
-                                                    class="ml-3">{{ $file->filename }}</a>
-                                            </li>
-                                        @endforeach
-                                    </ul>
+                                    @livewire('project.files-section', ['projectId' => $project->id, 'taskId' => $task->id, 'departmentId' => $department->id, 'projectDepartmentId' => $project->department_id], key($project->id))
                                 </div>
                             @endforeach
                         </div>
