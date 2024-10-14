@@ -64,8 +64,7 @@
         $(".sidebar").addClass("sidebar-mini")
     </script>
     @yield('scripts')
-    {{-- @livewireScripts --}}
-    @livewireScripts(asset('CRM/assets/livewire/livewire.js'))
+    @livewireScripts
 </body>
 
 </html>
