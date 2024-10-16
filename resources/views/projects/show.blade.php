@@ -530,6 +530,58 @@
             </div>
 
             <div class="row">
+                {{-- <div class="col-md-4">
+                 <div class="card card-info mt-2">
+                    <div class="card-body">
+                        <div class="row clearfix">
+                            <div class="col-md-12">
+                                <div class="card border-0 mb-4 no-bg">
+                                    <div class="card-header py-3 px-0 d-sm-flex align-items-center  justify-content-between border-bottom">
+                                        <h3 class=" fw-bold flex-fill mb-0 mt-sm-0">Call Logs</h3>
+                                    </div>
+                                </div>
+                            </div>
+                            <form id="call-log-form" method="post" action="{{ route('projects.call.logs') }}">
+            @csrf
+            <input type="hidden" name="id" value="{{ $project->id }}">
+            <input type="hidden" name="taskid" value="{{ $task->id }}">
+
+            <div class="row g-3 mb-3">
+                <div class="col-md-12">
+                    <div class="col-sm-12 mb-3">
+                        <label for="call_no" class="form-label">Select Call</label>
+                        <select class="form-select select2" aria-label="Default Select call" id="call_number" name="call_no">
+                            <option value="">Select Call</option>
+                            <option {{ old('call_no') != '' && old('call_no') == 'yes' ? 'selected' : '' }} value="1">Call No 1</option>
+                            <option {{ old('call_no') != '' && old('call_no') == 'no' ? 'selected' : '' }} value="2">Call No 2</option>
+                        </select>
+                        <div id="call_no_message" class="text-danger message mt-2"></div>
+                    </div>
+                    <div class="col-sm-12 mb-3">
+                        <label for="call_no_1" class="form-label">Did You Call ?</label>
+                        <select class="form-select select2" aria-label="Default select options" id="call_no_1" name="call_no_1">
+                            <option value="">Select Options</option>
+                            <option {{ old('call_no_1') != '' && old('call_no_1') == 'yes' ? 'selected' : '' }} value="yes">Yes</option>
+                            <option {{ old('call_no_1') != '' && old('call_no_1') == 'no' ? 'selected' : '' }} value="no">Customer Not Responding</option>
+                        </select>
+                        <div id="call_no_1_message" class="text-danger message mt-2"></div>
+                    </div>
+                    <div class="col-sm-12 mb-3">
+                        <label for="notes_1" class="form-label">Comments:</label>
+                        <input type="text" class="form-control" id="notes_1" name="notes_1" value="{{ old('notes_1') }}" />
+                        <div id="notes_1_message" class="text-danger message mt-2"></div>
+                    </div>
+
+                </div>
+                <div class="col-sm-12 mb-3">
+                    <button type="button" class="btn btn-dark me-1 mt-1 w-sm-100" id="saveCallLogs"><i class="icofont-arrow-left me-2 fs-6"></i>Submit</button>
+                </div>
+            </div>
+            </form>
+        </div>
+    </div>
+</div>
+</div> --}}
                 {{-- @can('Notes Section')
                     <div class="col-md-4">
                         <div class="card card-info mt-2">
@@ -568,8 +620,8 @@
                             </div>
                         </div>
                     </div>
-                @endcan --}}
-                {{-- @can('Files Section')
+                @endcan
+                @can('Files Section')
                     <div class="col-md-4">
                         <div class="card card-info mt-2">
                             <div class="card-body">
@@ -611,6 +663,7 @@
                         </div>
                     </div>
                 @endcan --}}
+
             </div>
             @can('Project Move')
                 <div class="card card-info mt-2">
@@ -1737,46 +1790,22 @@
 
         $("#saveProject").click(function(e) {
             $("#file_message").html('')
-            let fileCount = $("[name='file[]']").prop("files").length;
             let stage = $('input[name="stage"]:checked').val()
             let totalCount = $("#" + $("#forward").val() + "_length")
-                .val(); //"{{ $project->department->document_length }}";
+                .val(); 
             let alreadyUploaded = "{{ count($filesCount) }}";
             let currentproject = "{{ $project->department->id }}";
             let project = $("#forward").val();
             let logs = $("#" + ($("#forward").val() - 1) + "_log_count")
-                .val() //"{{ count($project->department->logs) }}"
+                .val();
             $("#call_no_1_message").html("");
             $("#call_no_2_message").html("");
             $("#notes_1_message").html("");
             $("#notes_2_message").html("");
-            // alert(($("#notes_1").val() == ""))
-            // alert((stage == "forward" && alreadyUploaded == 0 && (project != $("#forward").val())))
 
             if (project != 1 && project != 8 && logs == 0 && stage == "forward") {
-                // if ($("#call_no_1").val() == "") {
-                //     $("#call_no_1").focus();
-                //     $("#call_no_1_message").html("Please select the desired option");
-                // } else if ($("#notes_1").val() == "") {
-                //     $("#notes_1").focus();
-                //     $("#notes_1_message").html("Please enter notes");
-                // } else if ($("#call_no_2").val() == "") {
-                //     $("#call_no_2").focus();
-                //     $("#call_no_2_message").html("Please select the desired option");
-                // } else if ($("#notes_2").val() == "") {
-                //     $("#notes_2").focus();
-                //     $("#notes_2_message").html("Please enter notes");
-                // } else {
-
                 if (stage == "forward" && (currentproject != $("#forward").val())) { //&& alreadyUploaded == 0
                     $("#form").submit();
-                    /* THIS CODE IS COMMENTED BECAUSE OF THE REQUIREMENT THAT FILES NOT MANDATORY*/
-                    // if (fileCount == totalCount) {
-                    //     $("#file_message").html('')
-                    //     $("#form").submit();
-                    // } else {
-                    //     $("#file_message").html("Please select total " + totalCount + " files");
-                    // }
                 } else {
                     $("#form").submit();
                 }
@@ -1784,14 +1813,6 @@
             } else {
                 if (stage == "forward" && (currentproject != $("#forward").val())) { //&& alreadyUploaded == 0
                     $("#form").submit();
-
-                    /* THIS CODE IS COMMENTED BECAUSE OF THE REQUIREMENT THAT FILES NOT MANDATORY*/
-                    // if (fileCount == totalCount) {
-                    //     $("#file_message").html('')
-                    //     $("#form").submit();
-                    // } else {
-                    //     $("#file_message").html("Please select total " + totalCount + " files");
-                    // }
                 } else {
                     $("#form").submit();
                 }
@@ -1812,12 +1833,6 @@
             } else if ($("#notes_1").val() == "") {
                 $("#notes_1").focus();
                 $("#notes_1_message").html("Please enter results of the call");
-                // } else if ($("#call_no_2").val() == "") {
-                //     $("#call_no_2").focus();
-                //     $("#call_no_2_message").html("Please select the desired option");
-                // } else if ($("#notes_2").val() == "") {
-                //     $("#notes_2").focus();
-                //     $("#notes_2_message").html("Please enter notes");
             } else {
                 $("#call-log-form").submit();
             }
@@ -1825,24 +1840,6 @@
 
         $("#saveFiles").click(function() {
             $("#files-form").submit();
-
-            // $("#file_message").html('')
-            // let fileCount = $("[name='file[]']").prop("files").length;
-            // let stage = $('input[name="stage"]:checked').val()
-            // let alreadyUploaded = "{{ count($filesCount) }}";
-            // let departmentLength = "{{ $project->department->document_length }}";
-            // let balance = departmentLength - alreadyUploaded;
-            // if (fileCount <= balance) {
-            //     if (balance > 0) {
-            //         $("#files-form").submit();
-            //     }
-            // } else {
-            //     if (balance == 0) {
-            //         $("#file_message").html("All files are already selected. No files will be uploaded")
-            //     } else {
-            //         $("#file_message").html("Only " + balance + " files can be selected")
-            //     }
-            // }
         })
 
         $("#adders").change(function() {
