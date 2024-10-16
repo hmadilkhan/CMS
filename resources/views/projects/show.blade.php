@@ -530,59 +530,7 @@
             </div>
 
             <div class="row">
-                {{-- <div class="col-md-4">
-                 <div class="card card-info mt-2">
-                    <div class="card-body">
-                        <div class="row clearfix">
-                            <div class="col-md-12">
-                                <div class="card border-0 mb-4 no-bg">
-                                    <div class="card-header py-3 px-0 d-sm-flex align-items-center  justify-content-between border-bottom">
-                                        <h3 class=" fw-bold flex-fill mb-0 mt-sm-0">Call Logs</h3>
-                                    </div>
-                                </div>
-                            </div>
-                            <form id="call-log-form" method="post" action="{{ route('projects.call.logs') }}">
-            @csrf
-            <input type="hidden" name="id" value="{{ $project->id }}">
-            <input type="hidden" name="taskid" value="{{ $task->id }}">
-
-            <div class="row g-3 mb-3">
-                <div class="col-md-12">
-                    <div class="col-sm-12 mb-3">
-                        <label for="call_no" class="form-label">Select Call</label>
-                        <select class="form-select select2" aria-label="Default Select call" id="call_number" name="call_no">
-                            <option value="">Select Call</option>
-                            <option {{ old('call_no') != '' && old('call_no') == 'yes' ? 'selected' : '' }} value="1">Call No 1</option>
-                            <option {{ old('call_no') != '' && old('call_no') == 'no' ? 'selected' : '' }} value="2">Call No 2</option>
-                        </select>
-                        <div id="call_no_message" class="text-danger message mt-2"></div>
-                    </div>
-                    <div class="col-sm-12 mb-3">
-                        <label for="call_no_1" class="form-label">Did You Call ?</label>
-                        <select class="form-select select2" aria-label="Default select options" id="call_no_1" name="call_no_1">
-                            <option value="">Select Options</option>
-                            <option {{ old('call_no_1') != '' && old('call_no_1') == 'yes' ? 'selected' : '' }} value="yes">Yes</option>
-                            <option {{ old('call_no_1') != '' && old('call_no_1') == 'no' ? 'selected' : '' }} value="no">Customer Not Responding</option>
-                        </select>
-                        <div id="call_no_1_message" class="text-danger message mt-2"></div>
-                    </div>
-                    <div class="col-sm-12 mb-3">
-                        <label for="notes_1" class="form-label">Comments:</label>
-                        <input type="text" class="form-control" id="notes_1" name="notes_1" value="{{ old('notes_1') }}" />
-                        <div id="notes_1_message" class="text-danger message mt-2"></div>
-                    </div>
-
-                </div>
-                <div class="col-sm-12 mb-3">
-                    <button type="button" class="btn btn-dark me-1 mt-1 w-sm-100" id="saveCallLogs"><i class="icofont-arrow-left me-2 fs-6"></i>Submit</button>
-                </div>
-            </div>
-            </form>
-        </div>
-    </div>
-</div>
-</div> --}}
-                @can('Notes Section')
+                {{-- @can('Notes Section')
                     <div class="col-md-4">
                         <div class="card card-info mt-2">
                             <div class="card-body">
@@ -620,8 +568,8 @@
                             </div>
                         </div>
                     </div>
-                @endcan
-                @can('Files Section')
+                @endcan --}}
+                {{-- @can('Files Section')
                     <div class="col-md-4">
                         <div class="card card-info mt-2">
                             <div class="card-body">
@@ -662,8 +610,7 @@
                             </div>
                         </div>
                     </div>
-                @endcan
-
+                @endcan --}}
             </div>
             @can('Project Move')
                 <div class="card card-info mt-2">
@@ -849,8 +796,8 @@
                                 </div>
 
                                 <div class="col-sm-6 mb-3">
-                                    {{-- @livewire('project.files-section', ['projectId' => $project->id, 'taskId' => $task->id, 'departmentId' => $department->id, 'projectDepartmentId' => $project->department_id], key($project->id)) --}}
-                                    <label for="formFileMultipleoneone"
+                                    @livewire('project.files-section', ['projectId' => $project->id, 'taskId' => $task->id, 'departmentId' => $department->id, 'projectDepartmentId' => $project->department_id], key($project->id))
+                                    {{-- <label for="formFileMultipleoneone"
                                         class="form-label fw-bold flex-fill mb-2 mt-sm-0">Files</label>
                                     <ul class="list-group list-group-custom">
                                         @foreach ($files as $file)
@@ -863,7 +810,7 @@
                                                     class="ml-3">{{ $file->filename }}</a>
                                             </li>
                                         @endforeach
-                                    </ul>
+                                    </ul> --}}
                                 </div>
                             @endforeach
                         </div>
