@@ -19,25 +19,35 @@
         .drop-zone:hover {
             cursor: pointer;
         }
+
+        .drop-zone {
+            border: 2px dashed #007bff;
+            border-radius: 5px;
+            padding: 40px;
+            text-align: center;
+            transition: background-color 0.3s;
+            cursor: pointer;
+        }
+
+        .drop-zone.dragover {
+            background-color: rgba(0, 123, 255, 0.1);
+        }
     </style>
     @can('Files Section')
         @if ($departmentId == $projectDepartmentId)
             <form wire:submit.prevent="save">
                 <div class="container mt-5">
-                    <div class="drop-zone" id="dropZone" wire:ignore x-data @click="$refs.fileInput.click()"
-                        @dragover.prevent="event.target.classList.add('dragover')"
-                        @dragleave.prevent="event.target.classList.remove('dragover')"
-                        @drop.prevent="handleDrop($event, $refs.fileInput)">
-                        <p class="mb-0">Drag & drop your file here, or <span class="text-primary">click to select</span></p>
-                        <input type="file" x-ref="fileInput" wire:model="image">
+                    <div class="drop-zone" id="dropZone" wire:ignore>
+                        <p class="mb-0">
+                            Drag & drop your file here, or
+                            <span class="text-primary" id="clickZone">click to select</span>
+                        </p>
+                        <input type="file" id="fileInput" wire:model="image" hidden>
                     </div>
-                    <div id="fileName" class="mt-3">
-                        @if ($image)
-                            <ul>
-                                <li>{{ $image->getClientOriginalName() }}</li>
-                            </ul>
-                        @endif
-                    </div>
+
+                    <div id="fileName" class="mt-3"></div>
+
+                    <button type="submit" class="btn btn-primary mt-3">Upload</button>
                 </div>
             </form>
         @endif
@@ -50,7 +60,7 @@
             </div>
         </div>
     </div>
-    <div wire:loading.remove>
+    <div wire:loading.remove class="mt-4">
         <label for="formFileMultipleoneone" class="form-label fw-bold flex-fill mb-2 mt-sm-0">Files</label>
         <ul class="list-group list-group-custom">
             @foreach ($files as $file)
@@ -88,31 +98,59 @@
 </div>
 @script
     <script>
-        function handleDrop(event, input) {
+        const dropZone = document.getElementById('dropZone');
+        const fileInput = document.getElementById('fileInput');
+        const fileNameDisplay = document.getElementById('fileName');
+
+        dropZone.addEventListener('click', () => fileInput.click());
+
+        fileInput.addEventListener('change', () => {
+            const file = fileInput.files[0];
+            handleFile(file);
+
+            if (file) {
+                // Trigger Livewire function after file selection
+                Livewire.emit('updateImage', file);
+            }
+        });
+
+        dropZone.addEventListener('dragover', (event) => {
+            event.preventDefault();
+            dropZone.classList.add('dragover');
+        });
+
+        dropZone.addEventListener('dragleave', () => {
+            dropZone.classList.remove('dragover');
+        });
+
+        dropZone.addEventListener('drop', (event) => {
+            event.preventDefault();
+            dropZone.classList.remove('dragover');
+
             const files = event.dataTransfer.files;
             if (files.length) {
-                input.files = files;
-                input.dispatchEvent(new Event('change', {
-                    bubbles: true
-                })); // Trigger Livewire change
+                const file = files[0];
+                fileInput.files = files; // Assign dropped file to input
+                handleFile(file);
+                @this.set('image', file);
+                // Trigger Livewire event after file drop
+                // Livewire.emit('updateImage', file);
             }
-            event.target.classList.remove('dragover');
-        }
+        });
 
-        function handleFile(files) {
-            if (files && files.length > 0) {
-                document.getElementById('fileName').textContent =
-                    `Selected files: ${Array.from(files).map(file => file.name).join(', ')}`;
+        function handleFile(file) {
+            if (file) {
+                fileNameDisplay.textContent = `Selected file: ${file.name}`;
+                console.log('Selected file:', file);
             } else {
-                document.getElementById('fileName').textContent = 'No file selected';
+                fileNameDisplay.textContent = 'No file selected';
             }
         }
-
-        window.addEventListener('show-delete-modal', event => {
+        window.addEventListener('show-delete-modal', () => {
             $('#deletefile').modal('show');
         });
 
-        window.addEventListener('hide-delete-modal', event => {
+        window.addEventListener('hide-delete-modal', () => {
             $('#deletefile').modal('hide');
         });
     </script>

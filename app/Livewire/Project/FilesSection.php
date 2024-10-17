@@ -48,6 +48,7 @@ class FilesSection extends Component
     public function save()
     {
         $this->validate();
+        dd($this->validate());
         if ($this->image != "") {
 
             // Get the original filename and sanitize it to avoid issues with spaces

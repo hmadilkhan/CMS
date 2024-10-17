@@ -14,6 +14,7 @@
     <!-- project css file  -->
     <link rel="stylesheet" href="{{ asset('assets/css/my-task.style.min.css') }}">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.3/css/select2.min.css" rel="stylesheet" />
+
     @livewireStyles
 </head>
 
@@ -63,8 +64,8 @@
         })
         $(".sidebar").addClass("sidebar-mini")
     </script>
-    @yield('scripts')
     @livewireScripts
+    @yield('scripts')
 </body>
 
 </html>
