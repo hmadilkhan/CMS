@@ -14,7 +14,7 @@ class FilesSection extends Component
     public $projectId = "";
     public $taskId = "";
     public $departmentId = "";
-    public $image;
+    public $files = [];
     public $projectDepartmentId = "";
     public $deleteId;
 
@@ -22,7 +22,7 @@ class FilesSection extends Component
         'image' => 'required'
     ];
 
-    public function updatedImage()
+    public function updatedFiles()
     {
         $this->save();
     }
@@ -47,37 +47,37 @@ class FilesSection extends Component
 
     public function save()
     {
-        $this->validate();
-        dd($this->validate());
-        if ($this->image != "") {
+        // $this->validate();
+        if (count($this->files) > 0) {
+            foreach ($this->files as $file) {
+                // Get the original filename and sanitize it to avoid issues with spaces
+                $originalName = str_replace(' ', '_', $file->getClientOriginalName());
 
-            // Get the original filename and sanitize it to avoid issues with spaces
-            $originalName = str_replace(' ', '_', $this->image->getClientOriginalName());
+                // Add a timestamp to the filename to ensure uniqueness
+                $timestampedName = now()->format('Ymd_His') . '_' . $originalName;
 
-            // Add a timestamp to the filename to ensure uniqueness
-            $timestampedName = now()->format('Ymd_His') . '_' . $originalName;
+                // Store the file in the 'projects' directory within the 'public' disk
+                $imageName =  $file->storeAs('projects', $timestampedName, 'public');
 
-            // Store the file in the 'projects' directory within the 'public' disk
-            $imageName =  $this->image->storeAs('projects', $timestampedName, 'public');
-            
-            $imageName = basename($imageName);
+                $imageName = basename($imageName);
 
-            ProjectFile::create([
-                "project_id" => $this->projectId,
-                "task_id" => $this->taskId,
-                "department_id" => $this->departmentId,
-                "filename" => $imageName,
-            ]);
+                ProjectFile::create([
+                    "project_id" => $this->projectId,
+                    "task_id" => $this->taskId,
+                    "department_id" => $this->departmentId,
+                    "filename" => $imageName,
+                ]);
+            }
         }
 
-        $this->image = "";
+        $this->files = [];
     }
 
     public function render()
     {
-        $files = ProjectFile::where("project_id", $this->projectId)->where("department_id", $this->departmentId)->get();
+        $departmentFiles = ProjectFile::where("project_id", $this->projectId)->where("department_id", $this->departmentId)->get();
         $departmentId = $this->departmentId;
         $projectDepartmentId = $this->projectDepartmentId;
-        return view('livewire.project.files-section', compact("files", "departmentId", "projectDepartmentId"));
+        return view('livewire.project.files-section', compact("departmentFiles", "departmentId", "projectDepartmentId"));
     }
 }

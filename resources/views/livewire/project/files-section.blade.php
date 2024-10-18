@@ -36,18 +36,17 @@
     @can('Files Section')
         @if ($departmentId == $projectDepartmentId)
             <form wire:submit.prevent="save">
-                <div class="container mt-5">
-                    <div class="drop-zone" id="dropZone" wire:ignore>
-                        <p class="mb-0">
-                            Drag & drop your file here, or
-                            <span class="text-primary" id="clickZone">click to select</span>
-                        </p>
-                        <input type="file" id="fileInput" wire:model="image" hidden>
-                    </div>
-
-                    <div id="fileName" class="mt-3"></div>
-
-                    <button type="submit" class="btn btn-primary mt-3">Upload</button>
+                <div class="drop-zone" id="dropZone" x-data="{ isDropping: false }" x-on:dragover.prevent="isDropping = true"
+                    x-on:dragleave.prevent="isDropping = false"
+                    x-on:drop.prevent="
+                    isDropping = false;
+                    let files = $event.dataTransfer.files;
+                    $refs.filesInput.files = files;
+                    $refs.filesInput.dispatchEvent(new Event('change'));"
+                    x-on:click="$refs.filesInput.click()"
+                    class="border-2 border-dashed rounded p-4" :class="{ 'border-blue-500 bg-blue-100': isDropping }">
+                    <p class="text-center">Drag and drop files here, or click to select files</p>
+                    <input type="file" multiple x-ref="filesInput" wire:model="files" class="hidden" />
                 </div>
             </form>
         @endif
@@ -63,7 +62,7 @@
     <div wire:loading.remove class="mt-4">
         <label for="formFileMultipleoneone" class="form-label fw-bold flex-fill mb-2 mt-sm-0">Files</label>
         <ul class="list-group list-group-custom">
-            @foreach ($files as $file)
+            @foreach ($departmentFiles as $file)
                 <li class="list-group-item light-primary-bg">
                     @can('File Delete')
                         <i class="icofont-trash text-danger fs-6" style="cursor:pointer;"
@@ -98,54 +97,6 @@
 </div>
 @script
     <script>
-        const dropZone = document.getElementById('dropZone');
-        const fileInput = document.getElementById('fileInput');
-        const fileNameDisplay = document.getElementById('fileName');
-
-        dropZone.addEventListener('click', () => fileInput.click());
-
-        fileInput.addEventListener('change', () => {
-            const file = fileInput.files[0];
-            handleFile(file);
-
-            if (file) {
-                // Trigger Livewire function after file selection
-                Livewire.emit('updateImage', file);
-            }
-        });
-
-        dropZone.addEventListener('dragover', (event) => {
-            event.preventDefault();
-            dropZone.classList.add('dragover');
-        });
-
-        dropZone.addEventListener('dragleave', () => {
-            dropZone.classList.remove('dragover');
-        });
-
-        dropZone.addEventListener('drop', (event) => {
-            event.preventDefault();
-            dropZone.classList.remove('dragover');
-
-            const files = event.dataTransfer.files;
-            if (files.length) {
-                const file = files[0];
-                fileInput.files = files; // Assign dropped file to input
-                handleFile(file);
-                @this.set('image', file);
-                // Trigger Livewire event after file drop
-                // Livewire.emit('updateImage', file);
-            }
-        });
-
-        function handleFile(file) {
-            if (file) {
-                fileNameDisplay.textContent = `Selected file: ${file.name}`;
-                console.log('Selected file:', file);
-            } else {
-                fileNameDisplay.textContent = 'No file selected';
-            }
-        }
         window.addEventListener('show-delete-modal', () => {
             $('#deletefile').modal('show');
         });
