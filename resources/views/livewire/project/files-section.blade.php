@@ -43,8 +43,8 @@
                     let files = $event.dataTransfer.files;
                     $refs.filesInput.files = files;
                     $refs.filesInput.dispatchEvent(new Event('change'));"
-                    x-on:click="$refs.filesInput.click()"
-                    class="border-2 border-dashed rounded p-4" :class="{ 'border-blue-500 bg-blue-100': isDropping }">
+                    x-on:click="$refs.filesInput.click()" class="border-2 border-dashed rounded p-4"
+                    :class="{ 'border-blue-500 bg-blue-100': isDropping }">
                     <p class="text-center">Drag and drop files here, or click to select files</p>
                     <input type="file" multiple x-ref="filesInput" wire:model="files" class="hidden" />
                 </div>
@@ -62,16 +62,20 @@
     <div wire:loading.remove class="mt-4">
         <label for="formFileMultipleoneone" class="form-label fw-bold flex-fill mb-2 mt-sm-0">Files</label>
         <ul class="list-group list-group-custom">
-            @foreach ($departmentFiles as $file)
-                <li class="list-group-item light-primary-bg">
-                    @can('File Delete')
-                        <i class="icofont-trash text-danger fs-6" style="cursor:pointer;"
-                            wire:click="deleteConfirmation('{{ $file->id }}')">&nbsp;</i>
-                    @endcan
-                    <a target="_blank" href="{{ asset('storage/projects/' . $file->filename) }}"
-                        class="ml-3">{{ $file->filename }}</a>
-                </li>
-            @endforeach
+            @if (count($departmentFiles) > 0)
+                @foreach ($departmentFiles as $file)
+                    <li class="list-group-item light-primary-bg">
+                        @can('File Delete')
+                            <i class="icofont-trash text-danger fs-6" style="cursor:pointer;"
+                                wire:click="$dispatch('deleteConfirmation', {id: {{ $file->id }}})")">&nbsp;</i>
+                        @endcan
+                        <a target="_blank" href="{{ asset('storage/projects/' . $file->filename) }}"
+                            class="ml-3">{{ $file->filename }}</a>
+                    </li>
+                @endforeach
+            @else
+                <label class="text-center fw-bold">No Files Found</label>
+            @endif
         </ul>
     </div>
     <!-- Modal  Delete Folder/ File-->
@@ -89,7 +93,8 @@
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="button" class="btn btn-danger color-fff" wire:click="deleteFile()">Delete</button>
+                    <button type="button" class="btn btn-danger color-fff"
+                        wire:click="deleteFile($('#deleteId').val())">Delete</button>
                 </div>
             </div>
         </div>
@@ -97,7 +102,7 @@
 </div>
 @script
     <script>
-        window.addEventListener('show-delete-modal', () => {
+        window.addEventListener('show-delete-modal', (e) => {
             $('#deletefile').modal('show');
         });
 

@@ -3,13 +3,15 @@
 namespace App\Livewire\Project;
 
 use App\Models\ProjectFile;
+use App\Traits\MediaTrait;
 use Illuminate\Support\Facades\Storage;
+use Livewire\Attributes\On;
 use Livewire\Component;
 use Livewire\WithFileUploads;
 
 class FilesSection extends Component
 {
-    use WithFileUploads;
+    use WithFileUploads, MediaTrait;
 
     public $projectId = "";
     public $taskId = "";
@@ -17,6 +19,8 @@ class FilesSection extends Component
     public $files = [];
     public $projectDepartmentId = "";
     public $deleteId;
+
+    protected $listeners = ['deleteConfirmation','refreshComponent' => '$refresh'];
 
     protected $rules = [
         'image' => 'required'
@@ -27,11 +31,13 @@ class FilesSection extends Component
         $this->save();
     }
 
+    #[On('deleteConfirmation')]
     public function deleteConfirmation($id)
     {
         if ($id != "") {
             $this->deleteId = $id;
             $this->dispatch('show-delete-modal');
+            // dd($this->deleteId);
         }
     }
 
@@ -39,9 +45,19 @@ class FilesSection extends Component
     {
         if ($this->deleteId != "") {
             $project = ProjectFile::findOrFail($this->deleteId);
-            Storage::disk('public')->delete($project->filename);
+
+            // $this->removeImage("projects/",$project->filename);
+            Storage::disk('public')->delete('projects/' . $project->filename);
             $project->delete();
             $this->dispatch('hide-delete-modal');
+
+            // Reset any properties if needed
+            $this->reset(['files', 'deleteId']);
+
+            // Emit a refresh event
+            $this->projectId = $this->projectId;
+
+            $this->dispatch('refreshComponent');
         }
     }
 
@@ -54,7 +70,7 @@ class FilesSection extends Component
                 $originalName = str_replace(' ', '_', $file->getClientOriginalName());
 
                 // Add a timestamp to the filename to ensure uniqueness
-                $timestampedName = now()->format('Ymd_His') . '_' . $originalName;
+                $timestampedName = time() . '_' . $originalName;
 
                 // Store the file in the 'projects' directory within the 'public' disk
                 $imageName =  $file->storeAs('projects', $timestampedName, 'public');

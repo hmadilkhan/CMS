@@ -491,11 +491,13 @@ class ProjectController extends Controller
                 ]);
             }
             DB::commit();
-            return redirect()->route("projects.show", $request->project_id);
+            return response()->json(["status" => 200, "message" => "Employee assigned successfully"]);
+            // return redirect()->route("projects.show", $request->project_id);
         } catch (\Throwable $th) {
             DB::rollBack();
-            return $th->getMessage();
-            return redirect()->route("projects.show", $request->project_id)->with("error", $th->getMessage());
+            // return $th->getMessage();
+            return response()->json(["status" => 500, "message" => "Error: ".$th->getMessage()]);
+            // return redirect()->route("projects.show", $request->project_id)->with("error", $th->getMessage());
         }
     }
 
@@ -503,15 +505,16 @@ class ProjectController extends Controller
     {
         $validated = $request->validate([
             'status' => 'required',
-            'reason' => 'required_if:status,Cancelled',
+            // 'reason' => 'required_if:status,Cancelled',
         ]);
         try {
             Task::where("project_id", $request->project_id)
                 // ->where("status", "In-Progress")
                 ->update(["status" => $request->status, "notes" => $request->reason]);
-            return redirect()->route("projects.show", $request->project_id);
+            return response()->json(["status" => 200, "message" => "Status changed successfully"]);
+            // return redirect()->route("projects.show", $request->project_id);
         } catch (\Throwable $th) {
-            return redirect()->route("projects.show", $request->project_id);
+            return response()->json(["status" => 500, "message" => "Error: ".$th->getMessage()]);
         }
     }
 
@@ -753,8 +756,8 @@ class ProjectController extends Controller
                     "sales_partner_id" => $request->sales_partner_id,
                     "image" => $result["fileName"],
                 ]);
-                $emailText = "<p>Hi ".$project->salesPartnerUser->name."</p><p>The Project Acceptance Review for the project ".$project->customer->first_name." ".$project->customer->last_name." is ready to be approved.</p><p>Please login to the CRM and navigate to the “Acceptance” tab within the project to approve or dispute the commission amount.</p><p>We look forward to getting a reply within the next 24 hours, after which we will assume the commission as approved.</p><p>If you have any questions, please reach out to us at engineering@solenenergyco.com</p><p>Thank you for your continued support!</p><p>The Solen Energy Construction Engineering Team</p>";
-                $this->sendEmailForProjectAcceptance($project,"Project Acceptance Review - ".$project->customer->first_name. " ".$project->customer->last_name,$emailText,$project->salesPartnerUser->email);
+                $emailText = "<p>Hi " . $project->salesPartnerUser->name . "</p><p>The Project Acceptance Review for the project " . $project->customer->first_name . " " . $project->customer->last_name . " is ready to be approved.</p><p>Please login to the CRM and navigate to the “Acceptance” tab within the project to approve or dispute the commission amount.</p><p>We look forward to getting a reply within the next 24 hours, after which we will assume the commission as approved.</p><p>If you have any questions, please reach out to us at engineering@solenenergyco.com</p><p>Thank you for your continued support!</p><p>The Solen Energy Construction Engineering Team</p>";
+                $this->sendEmailForProjectAcceptance($project, "Project Acceptance Review - " . $project->customer->first_name . " " . $project->customer->last_name, $emailText, $project->salesPartnerUser->email);
                 if (!empty($projectAcceptance)) {
                     return view("projects.project-acceptance", [
                         "image" => $result["fileName"],
@@ -897,14 +900,14 @@ class ProjectController extends Controller
     {
         try {
             $projectAcceptance = ProjectAcceptance::with("user")->where("project_id", $request->projectId)->latest()->first();
-            $project = Project::with("customer","assignedPerson", "assignedPerson.employee")->where("id", $projectAcceptance->project_id)->first();
+            $project = Project::with("customer", "assignedPerson", "assignedPerson.employee")->where("id", $projectAcceptance->project_id)->first();
             ProjectAcceptance::where("id", $request->id)->update([
                 "action_by" => auth()->user()->id,
                 "status" => $request->mode,
                 "approved_date" => date("Y-m-d H:i:s"),
             ]);
-            $emailText = "<p>Hi ".$project->assignedPerson[0]->employee->name."</p><p>The Project Acceptance Review for ".$project->customer->first_name." ".$project->customer->last_name." has been ".( $request->mode == 1 ? 'approved' : 'rejected')."</p><p>Please take the necessary steps to continue moving the job forward.</p><p>Thank you!.</p>";
-            $this->sendEmailForProjectAcceptance($project,"Project Acceptance Review Status - ".$project->customer->first_name. " ".$project->customer->last_name,$emailText,"engineering@solenenergyco.com");
+            $emailText = "<p>Hi " . $project->assignedPerson[0]->employee->name . "</p><p>The Project Acceptance Review for " . $project->customer->first_name . " " . $project->customer->last_name . " has been " . ($request->mode == 1 ? 'approved' : 'rejected') . "</p><p>Please take the necessary steps to continue moving the job forward.</p><p>Thank you!.</p>";
+            $this->sendEmailForProjectAcceptance($project, "Project Acceptance Review Status - " . $project->customer->first_name . " " . $project->customer->last_name, $emailText, "engineering@solenenergyco.com");
             return response()->json(["status" => 200, "message" => "Project Acceptance Approved"]);
         } catch (\Throwable $th) {
             return response()->json(["status" => 500, "message" => "Error: " . $th->getMessage()]);

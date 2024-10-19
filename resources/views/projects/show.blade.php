@@ -270,7 +270,7 @@
         .main-container {
             width: 650px;
             /* margin-left: auto;
-                                                    margin-right: auto; */
+                                                            margin-right: auto; */
         }
 
         .tags-input {
@@ -316,42 +316,44 @@
                 <div class="col-md-12">
                     <div class="card border-0 mb-4 no-bg">
                         <div
-                            class="card-header py-3 px-0 d-sm-flex align-items-center  justify-content-between border-bottom">
-                            <h6 class="mb-0 fs-6  font-monospace fw-bold mb-0 mt-sm-0 px-3 text-center">
-
+                            class="card-header py-3 px-0 d-sm-flex align-items-center me-1 mt-1 w-sm-100  justify-content-between border-bottom">
+                            <div class="d-flex">
+                            <h6 class="mb-0 fs-6  font-monospace fw-bold mb-0 mt-sm-0 px-3 py-3 text-center">
                                 @if (empty($project->pto_approval_date))
                                     {{ now()->diffInDays(Carbon\Carbon::parse($project->customer->sold_date)) }}
                                 @else
                                     {{ Carbon\Carbon::parse($project->pto_approval_date)->diffInDays(Carbon\Carbon::parse($project->customer->sold_date)) }}
                                 @endif
-                                {{-- {{ now()->diffInDays(Carbon\Carbon::parse($project->customer->sold_date)) }} --}}
                             </h6>
+                            @if (auth()->user()->hasAnyRole(['Super Admin', 'Admin', 'Manager']))
+                            <a class="me-1 mt-1 w-sm-100"><select class="form-select " aria-label="Default Select Status"
+                                id="employee" name="employee">
+                                <option value="">Select Employee</option>
+                                @foreach ($employees as $employee)
+                                    <option value="{{ $employee->id }}">{{ $employee->name }}</option>
+                                @endforeach
+                            </select></a>
+                            @endif
+                            </div>
                             <h3 class=" fw-bold flex-fill mb-0 mt-sm-0 text-center fs-10 text-uppercase">
                                 {{ $project->project_name }}
                             </h3>
-                            <a class="btn {{ $task->status == 'Hold' ? 'btn-warning' : ($task->status == 'Cancelled' ? 'btn-danger' : 'btn-dark') }} text-white me-1 mt-1 w-sm-100"
-                                id="openemployee">{{ $task->status }}</a>
+                            @if (auth()->user()->hasAnyRole(['Super Admin', 'Admin', 'Manager']))
+                            <a class="me-1 mt-1 w-sm-100"><select class="form-select " aria-label="Default Select Status"
+                                    id="status" name="status">
+                                    <option value="">Select Status</option>
+                                    <option {{ $task->status == 'In-Progress' ? 'selected' : '' }} value="In-Progress">
+                                        In-Progress</option>
+                                    <option {{ $task->status == 'Hold' ? 'selected' : '' }} value="Hold">
+                                        Hold</option>
+                                    <option {{ $task->status == 'Cancelled' ? 'selected' : '' }} value="Cancelled">Cancelled
+                                    </option>
+                                </select></a>
+                            @endif
                             <a href="{{ route('projects.index') }}" class="btn btn-dark me-1 mt-1 w-sm-100"
                                 id="openemployee"><i class="icofont-arrow-left me-2 fs-6"></i>Back to List</a>
                         </div>
                     </div>
-                    {{-- <div class="card border-0 mb-4 no-bg d-flex py-3 project-tab flex-wrap w-sm-100 ">
-                        <ul class="nav nav-tabs tab-body-header rounded ms-3 prtab-set w-sm-100 justify-content-center justify-content-around"
-                            role="tablist">
-                            @foreach ($departments as $department)
-                                @if ($department->id < $project->department_id)
-                                    <li class="nav-item "><a class="nav-link active bg-success" data-bs-toggle="tab"
-                                            role="tab">{{ $department->name }}</a></li>
-                                @elseif($department->id == $project->department_id)
-                                    <li class="nav-item "><a class="nav-link active " data-bs-toggle="tab"
-                                            role="tab">{{ $department->name }}</a></li>
-                                @else
-                                    <li class="nav-item"><a class="nav-link" data-bs-toggle="tab"
-                                            role="tab">{{ $department->name }}</a></li>
-                                @endif
-                            @endforeach
-                        </ul>
-                    </div> --}}
                     <div class="d-flex justify-content-center align-items-center">
                         <div class="py-2 project-tab flex-wrap w-sm-100">
                             <ul class="nav nav-tabs tab-body-header rounded ms-3 prtab-set w-sm-100" role="tablist"
@@ -387,7 +389,6 @@
                                 role="tab">Customer</a></li>
                         <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#salespartner"
                                 role="tab">Sales Partner</a></li>
-                        {{-- @if (auth()->user()->getRoleNames()[0] == 'Manager' or auth()->user()->getRoleNames()[0] == 'Sales Manager' or auth()->user()->getRoleNames()[0] == 'Admin' or auth()->user()->getRoleNames()[0] == 'Super Admin') --}}
                         @can('View Adder Details')
                             <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#addersDiv"
                                     role="tab">Adders</a></li>
@@ -400,7 +401,10 @@
                                 role="tab">Communication</a></li>
                         <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#acceptance"
                                 role="tab">Acceptance</a></li>
-
+                        @can('Department Tools')
+                            <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#department-tools"
+                                    role="tab">Department Tools</a></li>
+                        @endcan
                         {{-- @endif --}}
                     </ul>
                 </div>
@@ -415,7 +419,7 @@
                 @if (auth()->user()->getRoleNames()[0] == 'Manager' or
                         auth()->user()->getRoleNames()[0] == 'Admin' or
                         auth()->user()->getRoleNames()[0] == 'Super Admin')
-                    <div class="col-md-4">
+                    {{-- <div class="col-md-4">
                         <div class="card card-info">
                             <div class="card-body">
                                 <div
@@ -429,7 +433,8 @@
                                         <input type="hidden" name="task_id" value="{{ $task->id }}">
                                         <input type="hidden" name="sub_department_id"
                                             value="{{ $task->sub_department_id }}">
-                                        <input type="hidden" name="department_id" value="{{ $project->department_id }}">
+                                        <input type="hidden" name="department_id"
+                                            value="{{ $project->department_id }}">
                                         <div class="col-sm-12 mb-2">
                                             <label for="employee" class="form-label mt-2">Select Employee</label>
                                             <select class="form-select select2" aria-label="Default Select Employee"
@@ -458,8 +463,8 @@
                                 </form>
                             </div>
                         </div>
-                    </div>
-                    <div class="col-md-4">
+                    </div> --}}
+                    {{-- <div class="col-md-4">
                         <div class="card card-info">
                             <div class="card-body">
                                 <div
@@ -503,30 +508,9 @@
                                 </form>
                             </div>
                         </div>
-                    </div>
+                    </div> --}}
                 @endif
-                @can('Department Tools')
-                    <div class="col-md-4">
-                        <div class="card">
-                            <div class="card-body">
-                                <div class="col-sm-12 py-3 px-5">
-                                    <div class="card-header px-0 d-sm-flex align-items-center   border-bottom">
-                                        <h5 class=" fw-bold flex-fill mb-0 mt-sm-0">Department Tools</h5>
-                                    </div>
-                                    <div class="row flex flex-column g-3 mb-3">
-                                        <ul class="list-group list-group-custom">
-                                            @foreach ($tools as $tool)
-                                                <li class="list-group-item light-primary-bg"><a target="_blank"
-                                                        href="{{ asset('storage/tools/' . $tool->file) }}"
-                                                        class="ml-3">{{ $tool->name }}</a></li>
-                                            @endforeach
-                                        </ul>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                @endcan
+
             </div>
 
             <div class="row">
@@ -849,7 +833,7 @@
                                 </div>
 
                                 <div class="col-sm-6 mb-3">
-                                    @livewire('project.files-section', ['projectId' => $project->id, 'taskId' => $task->id, 'departmentId' => $department->id, 'projectDepartmentId' => $project->department_id], key($project->id))
+                                    @livewire('project.files-section', ['projectId' => $project->id, 'taskId' => $task->id, 'departmentId' => $department->id, 'projectDepartmentId' => $project->department_id], key($department->id))
                                     {{-- <label for="formFileMultipleoneone"
                                         class="form-label fw-bold flex-fill mb-2 mt-sm-0">Files</label>
                                     <ul class="list-group list-group-custom">
@@ -1175,8 +1159,8 @@
                                 <div class="col-sm-3 ">
                                     <label for="adders" class="form-label">Adders</label>
                                     <input type="text" class="form-control"
-                                        value="$ {{ number_format($project->customer->finances->adders, 2) }}"
-                                        id="adders_amount" name="adders_amount">
+                                        value="$ {{ number_format($project->customer->finances->adders, 2) }}" id="adders_amount"
+                                        name="adders_amount">
                                 </div>
                                 <div class="col-sm-3 ">
                                     <label for="commission" class="form-label">Commission</label>
@@ -1501,36 +1485,35 @@
                             </form>
                         @endif
                         <div class="row" id="project-acceptance-view"></div>
-                        {{-- <div class="row">
-                            <div class="col-md-12 d-flex justify-content-center">
-                                <img src="{{ asset('storage/solen_logo.png') }}" width="250" height="200"
-                                    alt="" class="">
+                    </div>
+                </div>
+            </div>
+
+            <div class="tab-pane fade" id="department-tools" role="tabpanel">
+                <div class="card mt-1">
+                    <div class="card-body">
+                        @can('Department Tools')
+                            <div class="col-md-4">
+                                <div class="card">
+                                    <div class="card-body">
+                                        <div class="col-sm-12 py-3 px-5">
+                                            <div class="card-header px-0 d-sm-flex align-items-center   border-bottom">
+                                                <h5 class=" fw-bold flex-fill mb-0 mt-sm-0">Department Tools</h5>
+                                            </div>
+                                            <div class="row flex flex-column g-3 mb-3">
+                                                <ul class="list-group list-group-custom">
+                                                    @foreach ($tools as $tool)
+                                                        <li class="list-group-item light-primary-bg"><a target="_blank"
+                                                                href="{{ asset('storage/tools/' . $tool->file) }}"
+                                                                class="ml-3">{{ $tool->name }}</a></li>
+                                                    @endforeach
+                                                </ul>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
-                            <div class="col-md-12 d-flex justify-content-center mb-2">
-                                <h4 class=" fw-bold flex-fill mb-0 mt-sm-0 text-center fs-10 text-uppercase">Project Acceptance
-                                    Review</h4>
-                            </div>
-                            <div class="row mx-4">
-                            <div class="col-md-12 ">
-                                <h5 class="fs-10  flex-fill">Homeowner Name : {{ $project->customer->first_name." ".$project->customer->last_name }}</h5>
-                            </div>
-                            <div class="col-md-12 ">
-                                <h5 class="fs-10  flex-fill">Address : {{ $project->customer->address }}</h5>
-                            </div>
-                            <div class="col-md-12 ">
-                                <h5 class="fs-10  flex-fill">Phone : {{ $project->customer->phone }}</h5>
-                            </div>
-                            </div>
-                        </div>
-                        <div class="col-md-12 d-flex justify-content-center mx-3">
-                            <img src="{{ asset('storage/design.jpg') }}" height="400" width="100%"
-                                alt="" class=" mx-auto d-block">
-                        </div>
-                        <div class="row mt-2">
-                            <div class="col-md-12 d-flex justify-content-center">
-                                <h5 class="fs-10 fw-bold text-decoration-underline">Total Adder Cost</h5>
-                            </div>
-                        </div> --}}
+                        @endcan
                     </div>
                 </div>
             </div>
@@ -1587,8 +1570,7 @@
                     <div class="modal-content">
                         <div class="modal-header">
                             <h5 class="modal-title  fw-bold" id="deleteprojectLabel"> Delete item Permanently?</h5>
-                            <button type="button" class="btn-close" data-bs-dismiss="modal"
-                                aria-label="Close"></button>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                         </div>
                         <div class="modal-body justify-content-center flex-column d-flex">
                             <i class="icofont-ui-delete text-danger display-2 text-center mt-2"></i>
@@ -1608,8 +1590,7 @@
                     <div class="modal-content">
                         <div class="modal-header">
                             <h5 class="modal-title  fw-bold" id="dremovetaskLabel"> Remove Adder?</h5>
-                            <button type="button" class="btn-close" data-bs-dismiss="modal"
-                                aria-label="Close"></button>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                         </div>
                         <div class="modal-body justify-content-center flex-column d-flex">
                             <i class="icofont-ui-rate-remove text-danger display-2 text-center mt-2"></i>
@@ -1763,6 +1744,53 @@
             }
         }
 
+        $("#status").change(function() {
+            $.ajax({
+                method: "POST",
+                url: "{{ route('projects.status') }}",
+                data: {
+                    _token: "{{ csrf_token() }}",
+                    status: $(this).val(),
+                    project_id: "{{ $project->id }}",
+                },
+                success: function(response) {
+                    if (response.status == 200) {
+                        alert("Status Updated");
+                    }else{
+                        alert("Some error occurred!");
+                    }
+                },
+                error: function(error) {
+                    console.log(error);
+                }
+            })
+        });
+
+        $("#employee").change(function() {
+            $.ajax({
+                method: "POST",
+                url: "{{ route('projects.assign') }}",
+                data: {
+                    _token: "{{ csrf_token() }}",
+                    employee: $(this).val(),
+                    project_id: "{{ $project->id }}",
+                    task_id: "{{ $task->id  }}",
+                    sub_department_id: "{{ $task->sub_department_id  }}",
+                    department_id: "{{ $project->department_id  }}",
+                },
+                success: function(response) {
+                    if (response.status == 200) {
+                        alert("Status Updated");
+                    }else{
+                        alert("Some error occurred!");
+                    }
+                },
+                error: function(error) {
+                    console.log(error);
+                }
+            })
+        });
+
         function getSubDepartments(id) {
             if (id != "") {
                 $.ajax({
@@ -1792,7 +1820,7 @@
             $("#file_message").html('')
             let stage = $('input[name="stage"]:checked').val()
             let totalCount = $("#" + $("#forward").val() + "_length")
-                .val(); 
+                .val();
             let alreadyUploaded = "{{ count($filesCount) }}";
             let currentproject = "{{ $project->department->id }}";
             let project = $("#forward").val();
