@@ -178,4 +178,9 @@ class ReportController extends Controller
             ->orderBy("sold_date", "ASC")->get();
         return Excel::download(new OverrideCostExport($customer, $request->from, $request->to), 'Override Report.pdf', \Maatwebsite\Excel\Excel::DOMPDF);
     }
+
+    public function DynamicReport()
+    {
+        return view("dynamic_report");
+    }
 }
