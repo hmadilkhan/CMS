@@ -171,6 +171,8 @@ class ProjectController extends Controller
         return view("projects.project-list", [
             "projects" => $result["projects"],
             "subdepartments" => $result["subdepartments"],
+            "departments" => $result["departments"],
+            "value" => $request->id,
         ]);
     }
 
@@ -545,6 +547,7 @@ class ProjectController extends Controller
         return [
             "projects" => $query->get(),
             "subdepartments" => $subdepartmentsQuery->get(),
+            "departments" => Department::all(),
         ];
     }
 
