@@ -270,7 +270,7 @@
         .main-container {
             width: 650px;
             /* margin-left: auto;
-                                                                                    margin-right: auto; */
+                                                                                                margin-right: auto; */
         }
 
         .tags-input {
@@ -408,192 +408,196 @@
                 <li class="nav-item"><a class="nav-link active" data-bs-toggle="tab" href="#actionmenu"
                         role="tab">Action Menu</a></li>
                 @can('Department Tools')
-                <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#departmenttools"
-                        role="tab">Department Tools</a></li>
+                    <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#departmenttools"
+                            role="tab">Department Tools</a></li>
                 @endcan
             </ul>
             <div class="tab-content">
-            <div class="tab-pane fade show active" id="actionmenu" role="tabpanel">
-                @can('Project Move')
+                <div class="tab-pane fade show active" id="actionmenu" role="tabpanel">
+                    @can('Project Move')
+                        <div class="card card-info mt-2">
+                            <div class="card-body">
+                                <div class="row clearfix">
+                                    <form id="form" method="post" action="{{ route('projects.move') }}"
+                                        enctype="multipart/form-data">
+                                        <input type="hidden" name="id" value="{{ $project->id }}">
+                                        <input type="hidden" name="taskid" value="{{ $task->id }}">
+                                        @csrf
+                                        <div class="col-md-12">
+                                            <div class="card border-0 mb-4 no-bg">
+                                                <div
+                                                    class="card-header py-3 px-0 d-sm-flex align-items-center  justify-content-between border-bottom">
+                                                    <h3 class=" fw-bold flex-fill mb-0 mt-sm-0">Project </h3>
+                                                    @if ($errors->any())
+                                                        <div class="alert alert-danger">
+                                                            <ul>
+                                                                @foreach ($errors->all() as $error)
+                                                                    <li>{{ $error }}</li>
+                                                                @endforeach
+                                                            </ul>
+                                                        </div>
+                                                    @endif
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div class="row  mb-3">
+                                            <div class="col-md-12">
+                                                <div class="form-group">
+                                                    <label class="form-label">Select Where to sent this project</label>
+                                                    <br />
+                                                    <label class="fancy-radio">
+                                                        <input type="radio" id="stage" name="stage" value="back">
+                                                        <span><i></i>Back</span>
+                                                    </label>
+                                                    <label class="fancy-radio">
+                                                        <input type="radio" id="stage" name="stage" value="forward">
+                                                        <span><i></i>Forward</span>
+                                                    </label>
+                                                    <p id="error-radio"></p>
+                                                </div>
+                                                @error('stage')
+                                                    <div class="text-danger message mt-2">{{ $message }}</div>
+                                                @enderror
+                                            </div>
+                                            <div class="col-sm-3 ">
+                                                <label for="finance_option_id" class="form-label">Move Back
+                                                    {{ count($filesCount) }}</label>
+                                                <select class="form-select select2" aria-label="Default select Move Back"
+                                                    id="back" name="back">
+                                                    <option value="">Select Move Back</option>
+                                                    @if (!empty($backdepartments))
+                                                        @foreach ($backdepartments as $mdepartment)
+                                                            <option
+                                                                {{ old('back') != '' && old('back') == $mdepartment->id ? 'selected' : '' }}
+                                                                value="{{ $mdepartment->id }}">{{ $mdepartment->name }}
+                                                            </option>
+                                                        @endforeach
+                                                    @endif
+                                                </select>
+                                                @error('back')
+                                                    <div class="text-danger message mt-2">{{ $message }}</div>
+                                                @enderror
+                                            </div>
+                                            @if (!empty($forwarddepartments))
+                                                @foreach ($forwarddepartments as $bdepartment)
+                                                    <input type="hidden" id="{{ $bdepartment['id'] }}_length"
+                                                        value="{{ $bdepartment['document_length'] }}" />
+                                                @endforeach
+                                            @endif
+                                            <div class="col-sm-3 ">
+                                                <label for="finance_option_id" class="form-label">Move Forward</label>
+                                                <select class="form-select select2" aria-label="Default select Move Forward"
+                                                    id="forward" name="forward">
+                                                    <option value="">Select Move Forward</option>
+                                                    @if (!empty($forwarddepartments))
+                                                        @foreach ($forwarddepartments as $bdepartment)
+                                                            <option
+                                                                {{ old('forward') != '' && old('forward') == $bdepartment['id'] ? 'selected' : '' }}
+                                                                value="{{ $bdepartment['id'] }}">{{ $bdepartment['name'] }}
+                                                            </option>
+                                                        @endforeach
+                                                    @endif
+                                                </select>
+                                                @error('forward')
+                                                    <div class="text-danger message mt-2">{{ $message }}</div>
+                                                @enderror
+                                            </div>
+                                            <div class="col-sm-3 ">
+                                                <label for="finance_option_id" class="form-label">Sub Department</label>
+                                                <select class="form-select select2" aria-label="Default select Sub Department"
+                                                    id="sub_department" name="sub_department">
+                                                    <option value="">Select Sub Department</option>
+                                                </select>
+                                                @error('sub_department')
+                                                    <div class="text-danger message mt-2">{{ $message }}</div>
+                                                @enderror
+                                            </div>
+                                            <div id="fieldDiv" class="mt-2"></div>
+                                            <div class="col-sm-12 mb-3 mt-3">
+                                                <button type="button" class="btn btn-dark me-1 mt-1 w-sm-100"
+                                                    id="saveProject"><i
+                                                        class="icofont-arrow-left me-2 fs-6"></i>Submit</button>
+                                            </div>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    @endcan
+
                     <div class="card card-info mt-2">
                         <div class="card-body">
                             <div class="row clearfix">
-                                <form id="form" method="post" action="{{ route('projects.move') }}"
-                                    enctype="multipart/form-data">
-                                    <input type="hidden" name="id" value="{{ $project->id }}">
-                                    <input type="hidden" name="taskid" value="{{ $task->id }}">
-                                    @csrf
-                                    <div class="col-md-12">
-                                        <div class="card border-0 mb-4 no-bg">
-                                            <div
-                                                class="card-header py-3 px-0 d-sm-flex align-items-center  justify-content-between border-bottom">
-                                                <h3 class=" fw-bold flex-fill mb-0 mt-sm-0">Project </h3>
-                                                @if ($errors->any())
-                                                    <div class="alert alert-danger">
-                                                        <ul>
-                                                            @foreach ($errors->all() as $error)
-                                                                <li>{{ $error }}</li>
-                                                            @endforeach
-                                                        </ul>
-                                                    </div>
-                                                @endif
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <div class="row  mb-3">
-                                        <div class="col-md-12">
-                                            <div class="form-group">
-                                                <label class="form-label">Select Where to sent this project</label>
-                                                <br />
-                                                <label class="fancy-radio">
-                                                    <input type="radio" id="stage" name="stage" value="back">
-                                                    <span><i></i>Back</span>
-                                                </label>
-                                                <label class="fancy-radio">
-                                                    <input type="radio" id="stage" name="stage" value="forward">
-                                                    <span><i></i>Forward</span>
-                                                </label>
-                                                <p id="error-radio"></p>
-                                            </div>
-                                            @error('stage')
-                                                <div class="text-danger message mt-2">{{ $message }}</div>
-                                            @enderror
-                                        </div>
-                                        <div class="col-sm-3 ">
-                                            <label for="finance_option_id" class="form-label">Move Back
-                                                {{ count($filesCount) }}</label>
-                                            <select class="form-select select2" aria-label="Default select Move Back"
-                                                id="back" name="back">
-                                                <option value="">Select Move Back</option>
-                                                @if (!empty($backdepartments))
-                                                    @foreach ($backdepartments as $mdepartment)
-                                                        <option
-                                                            {{ old('back') != '' && old('back') == $mdepartment->id ? 'selected' : '' }}
-                                                            value="{{ $mdepartment->id }}">{{ $mdepartment->name }}</option>
-                                                    @endforeach
-                                                @endif
-                                            </select>
-                                            @error('back')
-                                                <div class="text-danger message mt-2">{{ $message }}</div>
-                                            @enderror
-                                        </div>
-                                        @if (!empty($forwarddepartments))
-                                            @foreach ($forwarddepartments as $bdepartment)
-                                                <input type="hidden" id="{{ $bdepartment['id'] }}_length"
-                                                    value="{{ $bdepartment['document_length'] }}" />
-                                            @endforeach
-                                        @endif
-                                        <div class="col-sm-3 ">
-                                            <label for="finance_option_id" class="form-label">Move Forward</label>
-                                            <select class="form-select select2" aria-label="Default select Move Forward"
-                                                id="forward" name="forward">
-                                                <option value="">Select Move Forward</option>
-                                                @if (!empty($forwarddepartments))
-                                                    @foreach ($forwarddepartments as $bdepartment)
-                                                        <option
-                                                            {{ old('forward') != '' && old('forward') == $bdepartment['id'] ? 'selected' : '' }}
-                                                            value="{{ $bdepartment['id'] }}">{{ $bdepartment['name'] }}
-                                                        </option>
-                                                    @endforeach
-                                                @endif
-                                            </select>
-                                            @error('forward')
-                                                <div class="text-danger message mt-2">{{ $message }}</div>
-                                            @enderror
-                                        </div>
-                                        <div class="col-sm-3 ">
-                                            <label for="finance_option_id" class="form-label">Sub Department</label>
-                                            <select class="form-select select2" aria-label="Default select Sub Department"
-                                                id="sub_department" name="sub_department">
-                                                <option value="">Select Sub Department</option>
-                                            </select>
-                                            @error('sub_department')
-                                                <div class="text-danger message mt-2">{{ $message }}</div>
-                                            @enderror
-                                        </div>
-                                        <div id="fieldDiv" class="mt-2"></div>
-                                        <div class="col-sm-12 mb-3 mt-3">
-                                            <button type="button" class="btn btn-dark me-1 mt-1 w-sm-100"
-                                                id="saveProject"><i class="icofont-arrow-left me-2 fs-6"></i>Submit</button>
-                                        </div>
-                                    </div>
-                                </form>
-                            </div>
-                        </div>
-                    </div>
-                @endcan
-
-                <div class="card card-info mt-2">
-                    <div class="card-body">
-                        <div class="row clearfix">
-                            <div class="col-md-12">
-                                <div class="card border-0 mb-4 no-bg">
-                                    <div
-                                        class="card-header py-3 px-0 d-sm-flex align-items-center text-center  justify-content-between border-bottom">
-                                        <h3 class=" fw-bold flex-fill mb-0 mt-sm-0">Project Notes </h3>
-                                    </div>
-                                </div>
-                            </div>
-                            @foreach ($departments as $department)
                                 <div class="col-md-12">
                                     <div class="card border-0 mb-4 no-bg">
                                         <div
-                                            class="card-header py-3 px-0 d-sm-flex align-items-center  justify-content-between border-bottom border-top">
-                                            <h3 class=" fw-bold flex-fill mb-0 mt-sm-0 px-2">{{ $department->name }}</h3>
+                                            class="card-header py-3 px-0 d-sm-flex align-items-center text-center  justify-content-between border-bottom">
+                                            <h3 class=" fw-bold flex-fill mb-0 mt-sm-0">Project Notes </h3>
                                         </div>
                                     </div>
                                 </div>
-                                @php
-                                    $filtered_collection = $project->departmentnotes
-                                        ->filter(function ($item) use ($department) {
-                                            return $item->department_id == $department->id;
-                                        })
-                                        ->values();
-
-                                    $files = $project->files
-                                        ->filter(function ($item) use ($department) {
-                                            return $item->department_id == $department->id;
-                                        })
-                                        ->values();
-
-                                @endphp
-
-                                <div class="col-sm-6 mb-3">
-                                    @livewire('project.notes-section', ['projectId' => $project->id, 'taskId' => $task->id, 'departmentId' => $department->id, 'projectDepartmentId' => $project->department_id], key($project->id))
-                                    @include('projects.partial.show-department-fields')
-                                </div>
-
-                                <div class="col-sm-6 mb-3">
-                                    @livewire('project.files-section', ['projectId' => $project->id, 'taskId' => $task->id, 'departmentId' => $department->id, 'projectDepartmentId' => $project->department_id], key($department->id))
-                                </div>
-                            @endforeach
-                        </div>
-                    </div>`
-                </div>
-            </div>
-            <div class="tab-pane fade" id="departmenttools" role="tabpanel">
-                <div class=" mt-2">
-                    <div class="card-body">
-                        @can('Department Tools')
-                            <div class="col-md-4">
-                                <div class="card">
-                                    <div class="card-body">
-                                        <div class="col-sm-12 py-3 px-5">
-                                            <div class="card-header px-0 d-sm-flex align-items-center   border-bottom">
-                                                <h5 class=" fw-bold flex-fill mb-0 mt-sm-0">Department Tools</h5>
+                                @foreach ($departments as $department)
+                                    <div class="col-md-12">
+                                        <div class="card border-0 mb-4 no-bg">
+                                            <div
+                                                class="card-header py-3 px-0 d-sm-flex align-items-center  justify-content-between border-bottom border-top">
+                                                <h3 class=" fw-bold flex-fill mb-0 mt-sm-0 px-2">{{ $department->name }}
+                                                </h3>
                                             </div>
-                                            <div class="row flex flex-column g-3 mb-3">
-                                                <ul class="list-group list-group-custom">
-                                                    @if(!empty($tools))
-                                                    @foreach ($tools as $tool)
-                                                        <li class="list-group-item light-primary-bg"><a target="_blank"
-                                                                href="{{ asset('storage/tools/' . $tool->file) }}"
-                                                                class="ml-3">{{ $tool->name }}</a></li>
-                                                    @endforeach
-                                                    @else
-                                                        <div>No Tools found.</div>
-                                                    @endcan
+                                        </div>
+                                    </div>
+                                    @php
+                                        $filtered_collection = $project->departmentnotes
+                                            ->filter(function ($item) use ($department) {
+                                                return $item->department_id == $department->id;
+                                            })
+                                            ->values();
+
+                                        $files = $project->files
+                                            ->filter(function ($item) use ($department) {
+                                                return $item->department_id == $department->id;
+                                            })
+                                            ->values();
+
+                                    @endphp
+
+                                    <div class="col-sm-6 mb-3">
+                                        @livewire('project.notes-section', ['projectId' => $project->id, 'taskId' => $task->id, 'departmentId' => $department->id, 'projectDepartmentId' => $project->department_id], key($project->id))
+                                        @include('projects.partial.show-department-fields')
+                                    </div>
+
+                                    <div class="col-sm-6 mb-3">
+                                        @livewire('project.files-section', ['projectId' => $project->id, 'taskId' => $task->id, 'departmentId' => $department->id, 'projectDepartmentId' => $project->department_id], key($department->id))
+                                    </div>
+                                @endforeach
+                            </div>
+                        </div>`
+                    </div>
+                </div>
+                <div class="tab-pane fade" id="departmenttools" role="tabpanel">
+                    <div class=" mt-2">
+                        <div class="card-body">
+                            @can('Department Tools')
+                                <div class="col-md-4">
+                                    <div class="card">
+                                        <div class="card-body">
+                                            <div class="col-sm-12 py-3 px-5">
+                                                <div class="card-header px-0 d-sm-flex align-items-center   border-bottom">
+                                                    <h5 class=" fw-bold flex-fill mb-0 mt-sm-0">Department Tools</h5>
+                                                </div>
+                                                <div class="row flex flex-column g-3 mb-3">
+                                                    <ul class="list-group list-group-custom">
+                                                        @if (!empty($tools))
+                                                            @foreach ($tools as $tool)
+                                                                <li class="list-group-item light-primary-bg"><a
+                                                                        target="_blank"
+                                                                        href="{{ asset('storage/tools/' . $tool->file) }}"
+                                                                        class="ml-3">{{ $tool->name }}</a></li>
+                                                            @endforeach
+                                                        @else
+                                                            <div>No Tools found.</div>
+                                                        @endcan
                                                 </ul>
                                             </div>
                                         </div>
@@ -604,569 +608,568 @@
                     </div>
                 </div>
             </div>
-            </div>
         </div>
-        <div class="tab-pane fade" id="customer" role="tabpanel">
-            <div class="card mt-1">
-                <div class="card-header">
-                    <div class="card-header py-3 px-0 d-sm-flex align-items-center  justify-content-between border-bottom">
-                        <h3 class=" fw-bold flex-fill mb-0 mt-sm-0">Customer Details</h3>
+    </div>
+    <div class="tab-pane fade" id="customer" role="tabpanel">
+        <div class="card mt-1">
+            <div class="card-header">
+                <div class="card-header py-3 px-0 d-sm-flex align-items-center  justify-content-between border-bottom">
+                    <h3 class=" fw-bold flex-fill mb-0 mt-sm-0">Customer Details</h3>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="row g-3 mb-3">
+                    <div class="col-sm-3">
+                        <label for="first_name" class="form-label">First Name</label>
+                        <input disabled value="{{ $project->customer->first_name }}" type="text"
+                            class="form-control" id="first_name" name="first_name" placeholder="First Name">
+                    </div>
+                    <div class="col-sm-3">
+                        <label for="last_name" class="form-label">Last Name</label>
+                        <input disabled value="{{ $project->customer->last_name }}" type="text"
+                            class="form-control" id="last_name" name="last_name" placeholder="Last Name">
+                    </div>
+                    <div class="col-sm-3">
+                        <label for="street" class="form-label">Street</label>
+                        <input disabled value="{{ $project->customer->street }}" type="text" class="form-control"
+                            id="street" name="street" placeholder="Street">
+                    </div>
+                    <div class="col-sm-3">
+                        <label for="city" class="form-label">City</label>
+                        <input disabled value="{{ $project->customer->city }}" type="text" class="form-control"
+                            id="city" name="city" placeholder="City">
+                    </div>
+                    <div class="col-sm-3">
+                        <label for="state" class="form-label">State</label>
+                        <input disabled value="{{ $project->customer->state }}" type="text" class="form-control"
+                            id="state" name="state" placeholder="State">
+                    </div>
+                    <div class="col-sm-3">
+                        <label for="zipcode" class="form-label">Zip Code</label>
+                        <input disabled value="{{ $project->customer->zipcode }}" type="text"
+                            class="form-control" id="zipcode" name="zipcode" placeholder="Zip Code">
+                    </div>
+                    <div class="col-sm-3">
+                        <label for="phone" class="form-label">Phone</label>
+                        <input disabled value="{{ $project->customer->phone }}" type="text" class="form-control"
+                            id="phone" name="phone" placeholder="phone">
+                    </div>
+                    <div class="col-sm-3">
+                        <label for="email" class="form-label">Email</label>
+                        <input disabled value="{{ $project->customer->email }}" type="text" class="form-control"
+                            id="email" name="email" placeholder="Email">
+                    </div>
+
+                    <div class="col-sm-3">
+                        <label for="sold_date" class="form-label">Sold Date</label>
+                        <input disabled value="{{ $project->customer->sold_date }}" type="date"
+                            class="form-control" id="sold_date" name="sold_date" placeholder="Sold Date">
+                    </div>
+                    <div class="col-sm-3">
+                        <label class="form-label">Sales Partner</label>
+                        <input disabled value="{{ $project->customer->salespartner->name }}" type="text"
+                            class="form-control" />
+                    </div>
+                    <div class="col-sm-3">
+                        <label for="code" class="form-label">Panel Qty</label>
+                        <input disabled value="{{ $project->customer->panel_qty }}" type="text"
+                            class="form-control" id="panel_qty" name="panel_qty" placeholder="Panel Qty">
+                    </div>
+                    <div class="col-sm-3">
+                        <label class="form-label">Module Type</label>
+                        <input disabled value="{{ $project->customer->module->name }}" type="text"
+                            class="form-control" id="module_type_id" name="module_type_id"
+                            placeholder="Module Type">
+                    </div>
+                    <div class="col-sm-3">
+                        <label class="form-label">Inverter Type</label>
+                        <input disabled value="{{ $project->customer->inverter->name }}" type="text"
+                            class="form-control" id="inverter_type_id" name="inverter_type_id"
+                            placeholder="Inverter Type">
+                    </div>
+                    <div class="col-sm-3">
+                        <label for="module_qty" class="form-label">System Size</label>
+                        <input disabled value="{{ $project->customer->module_value }}" type="text"
+                            class="form-control" id="module_qty" name="module_qty" placeholder="System Size">
+                    </div>
+                    <div class="col-sm-3">
+                        <label for="inverter_qty" class="form-label">Inverter Qty</label>
+                        <input disabled value="{{ $project->customer->inverter_qty }}" type="text"
+                            class="form-control" id="inverter_qty" name="inverter_qty" placeholder="Inverter Qty">
                     </div>
                 </div>
-                <div class="card-body">
+            </div>
+        </div>
+        <div class="card mt-1">
+            <div class="card-header">
+                <div class="card-header py-3 px-0 d-sm-flex align-items-center  justify-content-between border-bottom">
+                    <h3 class=" fw-bold flex-fill mb-0 mt-sm-0">Sales Partner Details</h3>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="row g-3 mb-3 mt-1">
+                    <div
+                        class="col-sm-3d-flex align-items-center justify-content-between profile-av pe-xl-4 pe-md-2 pe-sm-4 pe-4 w220">
+                        <img src="{{ $project->customer->salespartner->image != '' ? asset('storage/users/' . $project->customer->salespartner->image) : asset('assets/images/profile_av.png') }}"
+                            alt="" class="avatar xl rounded-circle img-thumbnail shadow-sm">
+                    </div>
+                    <div class="col-sm-3 ">
+                        <label for="exampleFormControlInput877" class="form-label">Sales Partner Name</label>
+                        <input disabled value="{{ $project->customer->salespartner->name }}" type="text"
+                            class="form-control" id="first_name" name="first_name" placeholder="First Name">
+                    </div>
+                    <div class="col-sm-3 ">
+                        <label for="exampleFormControlInput877" class="form-label">Email</label>
+                        <input disabled value="{{ $project->customer->salespartner->email }}" type="text"
+                            class="form-control" id="last_name" name="last_name" placeholder="Last Name">
+                    </div>
+                    <div class="col-sm-3 ">
+                        <label for="exampleFormControlInput877" class="form-label">Phone</label>
+                        <input disabled value="{{ $project->customer->salespartner->phone }}" type="text"
+                            class="form-control" id="street" name="street" placeholder="Street">
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="card mt-1">
+            <div class="card-body">
+                <div class="card-header py-3 px-0 d-sm-flex align-items-center  justify-content-between border-bottom">
+                    <h3 class=" fw-bold flex-fill mb-0 mt-sm-0">Sales Person</h3>
+                </div>
+                <div class="row g-3 mb-3 mt-1">
+                    <div
+                        class="col-sm-3d-flex align-items-center justify-content-between profile-av pe-xl-4 pe-md-2 pe-sm-4 pe-4 w220">
+                        <img src="{{ $project->salesPartnerUser->image != '' ? asset('storage/users/' . $project->salesPartnerUser->image) : asset('assets/images/profile_av.png') }}"
+                            alt="" class="avatar xl rounded-circle img-thumbnail shadow-sm">
+                    </div>
+                    <div class="col-sm-3 ">
+                        <label for="exampleFormControlInput877" class="form-label">Sales Person Name</label>
+                        <input disabled value="{{ $project->salesPartnerUser->name }}" type="text"
+                            class="form-control" id="first_name" name="first_name" placeholder="First Name">
+                    </div>
+                    <div class="col-sm-3 ">
+                        <label for="exampleFormControlInput877" class="form-label">Email</label>
+                        <input disabled value="{{ $project->salesPartnerUser->email }}" type="text"
+                            class="form-control" id="last_name" name="last_name" placeholder="Last Name">
+                    </div>
+                    <div class="col-sm-3 ">
+                        <label for="exampleFormControlInput877" class="form-label">Phone</label>
+                        <input disabled value="{{ $project->salesPartnerUser->phone }}" type="text"
+                            class="form-control" id="street" name="street" placeholder="Street">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="tab-pane fade" id="financial" role="tabpanel">
+        <div class="card mt-1">
+            <div class="card-body">
+                @can('View Financial Details')
+                    <div class="card-header py-3 px-0 d-sm-flex align-items-center  justify-content-between border-bottom">
+                        <h3 class=" fw-bold flex-fill mb-0 mt-sm-0" data-bs-toggle="collapse" data-bs-target="#finance"
+                            aria-expanded="false" aria-controls="finance">Financial Details</h3>
+                    </div>
                     <div class="row g-3 mb-3">
-                        <div class="col-sm-3">
-                            <label for="first_name" class="form-label">First Name</label>
-                            <input disabled value="{{ $project->customer->first_name }}" type="text"
-                                class="form-control" id="first_name" name="first_name" placeholder="First Name">
+                        <div class="col-sm-3 ">
+                            <label for="finance_option_id" class="form-label">Finance Option</label>
+                            <input type="text" class="form-control"
+                                value="{{ $project->customer->finances->finance->name }}">
                         </div>
-                        <div class="col-sm-3">
-                            <label for="last_name" class="form-label">Last Name</label>
-                            <input disabled value="{{ $project->customer->last_name }}" type="text"
-                                class="form-control" id="last_name" name="last_name" placeholder="Last Name">
+                        @if ($project->customer->finances->finance->name != 'Cash')
+                            <div class="col-sm-3  loandiv">
+                                <label for="loan_term_id" class="form-label">Loan Term</label>
+                                <input type="text" class="form-control"
+                                    value="{{ !empty($project->customer->finances->term) ? $project->customer->finances->term->year : '' }}"
+                                    id="loan_term_id" name="loan_term_id">
+                            </div>
+                            <div class="col-sm-3  loandiv">
+                                <label for="loan_apr_id" class="form-label">Loan Apr</label>
+                                <input type="text" class="form-control"
+                                    value="{{ !empty($project->customer->finances->apr) ? $project->customer->finances->apr->apr : '' }}"
+                                    id="loan_apr_id" name="loan_apr_id">
+                            </div>
+                        @endif
+                        <div class="col-sm-3 ">
+                            <label for="contract_amount" class="form-label">Contract Amount</label>
+                            <input type="text" class="form-control"
+                                value="$ {{ number_format($project->customer->finances->contract_amount, 2) }}"
+                                id="contract_amount" name="contract_amount">
                         </div>
-                        <div class="col-sm-3">
-                            <label for="street" class="form-label">Street</label>
-                            <input disabled value="{{ $project->customer->street }}" type="text" class="form-control"
-                                id="street" name="street" placeholder="Street">
+                        @php
+                            $totalOverridePanelCost = $project->customer->panel_qty * $project->overwrite_panel_price;
+                            $totalOverride = $totalOverridePanelCost + $project->overwrite_base_price;
+                            $actualRedlineCost = $project->customer->finances->redline_costs - $totalOverride;
+                            $totalCommission = $totalOverride + $project->customer->finances->commission;
+                            // $project->customer->finances->redline_costs
+                        @endphp
+                        <div class="col-sm-3 ">
+                            <label for="redline_costs" class="form-label">Redline Costs</label>
+                            <input type="text" class="form-control"
+                                value="$ {{ number_format($actualRedlineCost, 2) }}" id="redline_costs"
+                                name="redline_costs">
                         </div>
-                        <div class="col-sm-3">
-                            <label for="city" class="form-label">City</label>
-                            <input disabled value="{{ $project->customer->city }}" type="text" class="form-control"
-                                id="city" name="city" placeholder="City">
+                        <div class="col-sm-3 ">
+                            <label for="adders" class="form-label">Adders</label>
+                            <input type="text" class="form-control"
+                                value="$ {{ number_format($project->customer->finances->adders, 2) }}" id="adders_amount"
+                                name="adders_amount">
                         </div>
-                        <div class="col-sm-3">
-                            <label for="state" class="form-label">State</label>
-                            <input disabled value="{{ $project->customer->state }}" type="text" class="form-control"
-                                id="state" name="state" placeholder="State">
+                        <div class="col-sm-3 ">
+                            <label for="commission" class="form-label">Commission</label>
+                            <input type="text" class="form-control"
+                                value="$ {{ number_format($totalCommission, 2) }}" id="commission" name="commission">
                         </div>
-                        <div class="col-sm-3">
-                            <label for="zipcode" class="form-label">Zip Code</label>
-                            <input disabled value="{{ $project->customer->zipcode }}" type="text"
-                                class="form-control" id="zipcode" name="zipcode" placeholder="Zip Code">
+                        <div class="col-sm-3 ">
+                            <label for="dealer_fee" class="form-label">Dealer Fee</label>
+                            <input type="text" class="form-control"
+                                value="{{ $project->customer->finances->dealer_fee }}" id="dealer_fee"
+                                name="dealer_fee">
                         </div>
-                        <div class="col-sm-3">
-                            <label for="phone" class="form-label">Phone</label>
-                            <input disabled value="{{ $project->customer->phone }}" type="text" class="form-control"
-                                id="phone" name="phone" placeholder="phone">
-                        </div>
-                        <div class="col-sm-3">
-                            <label for="email" class="form-label">Email</label>
-                            <input disabled value="{{ $project->customer->email }}" type="text" class="form-control"
-                                id="email" name="email" placeholder="Email">
-                        </div>
-
-                        <div class="col-sm-3">
-                            <label for="sold_date" class="form-label">Sold Date</label>
-                            <input disabled value="{{ $project->customer->sold_date }}" type="date"
-                                class="form-control" id="sold_date" name="sold_date" placeholder="Sold Date">
-                        </div>
-                        <div class="col-sm-3">
-                            <label class="form-label">Sales Partner</label>
-                            <input disabled value="{{ $project->customer->salespartner->name }}" type="text"
-                                class="form-control" />
-                        </div>
-                        <div class="col-sm-3">
-                            <label for="code" class="form-label">Panel Qty</label>
-                            <input disabled value="{{ $project->customer->panel_qty }}" type="text"
-                                class="form-control" id="panel_qty" name="panel_qty" placeholder="Panel Qty">
-                        </div>
-                        <div class="col-sm-3">
-                            <label class="form-label">Module Type</label>
-                            <input disabled value="{{ $project->customer->module->name }}" type="text"
-                                class="form-control" id="module_type_id" name="module_type_id"
-                                placeholder="Module Type">
-                        </div>
-                        <div class="col-sm-3">
-                            <label class="form-label">Inverter Type</label>
-                            <input disabled value="{{ $project->customer->inverter->name }}" type="text"
-                                class="form-control" id="inverter_type_id" name="inverter_type_id"
-                                placeholder="Inverter Type">
-                        </div>
-                        <div class="col-sm-3">
-                            <label for="module_qty" class="form-label">System Size</label>
-                            <input disabled value="{{ $project->customer->module_value }}" type="text"
-                                class="form-control" id="module_qty" name="module_qty" placeholder="System Size">
-                        </div>
-                        <div class="col-sm-3">
-                            <label for="inverter_qty" class="form-label">Inverter Qty</label>
-                            <input disabled value="{{ $project->customer->inverter_qty }}" type="text"
-                                class="form-control" id="inverter_qty" name="inverter_qty" placeholder="Inverter Qty">
+                        <div class="col-sm-3 ">
+                            <label for="dealer_fee_amount" class="form-label">Dealer Fee Amount</label>
+                            <input type="text" class="form-control"
+                                value="$ {{ number_format($project->customer->finances->dealer_fee_amount, 2) }}"
+                                id="dealer_fee_amount" name="dealer_fee_amount">
                         </div>
                     </div>
-                </div>
-            </div>
-            <div class="card mt-1">
-                <div class="card-header">
-                    <div class="card-header py-3 px-0 d-sm-flex align-items-center  justify-content-between border-bottom">
-                        <h3 class=" fw-bold flex-fill mb-0 mt-sm-0">Sales Partner Details</h3>
+                    <div class="col-sm-12 mb-3">
+                        <button type="submit" class="btn btn-dark me-1 mt-1 w-sm-100"><i
+                                class="icofont-arrow-left me-2 fs-6"></i>Submit</button>
                     </div>
-                </div>
-                <div class="card-body">
-                    <div class="row g-3 mb-3 mt-1">
-                        <div
-                            class="col-sm-3d-flex align-items-center justify-content-between profile-av pe-xl-4 pe-md-2 pe-sm-4 pe-4 w220">
-                            <img src="{{ $project->customer->salespartner->image != '' ? asset('storage/users/' . $project->customer->salespartner->image) : asset('assets/images/profile_av.png') }}"
-                                alt="" class="avatar xl rounded-circle img-thumbnail shadow-sm">
-                        </div>
-                        <div class="col-sm-3 ">
-                            <label for="exampleFormControlInput877" class="form-label">Sales Partner Name</label>
-                            <input disabled value="{{ $project->customer->salespartner->name }}" type="text"
-                                class="form-control" id="first_name" name="first_name" placeholder="First Name">
-                        </div>
-                        <div class="col-sm-3 ">
-                            <label for="exampleFormControlInput877" class="form-label">Email</label>
-                            <input disabled value="{{ $project->customer->salespartner->email }}" type="text"
-                                class="form-control" id="last_name" name="last_name" placeholder="Last Name">
-                        </div>
-                        <div class="col-sm-3 ">
-                            <label for="exampleFormControlInput877" class="form-label">Phone</label>
-                            <input disabled value="{{ $project->customer->salespartner->phone }}" type="text"
-                                class="form-control" id="street" name="street" placeholder="Street">
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="card mt-1">
-                <div class="card-body">
-                    <div class="card-header py-3 px-0 d-sm-flex align-items-center  justify-content-between border-bottom">
-                        <h3 class=" fw-bold flex-fill mb-0 mt-sm-0">Sales Person</h3>
-                    </div>
-                    <div class="row g-3 mb-3 mt-1">
-                        <div
-                            class="col-sm-3d-flex align-items-center justify-content-between profile-av pe-xl-4 pe-md-2 pe-sm-4 pe-4 w220">
-                            <img src="{{ $project->salesPartnerUser->image != '' ? asset('storage/users/' . $project->salesPartnerUser->image) : asset('assets/images/profile_av.png') }}"
-                                alt="" class="avatar xl rounded-circle img-thumbnail shadow-sm">
-                        </div>
-                        <div class="col-sm-3 ">
-                            <label for="exampleFormControlInput877" class="form-label">Sales Person Name</label>
-                            <input disabled value="{{ $project->salesPartnerUser->name }}" type="text"
-                                class="form-control" id="first_name" name="first_name" placeholder="First Name">
-                        </div>
-                        <div class="col-sm-3 ">
-                            <label for="exampleFormControlInput877" class="form-label">Email</label>
-                            <input disabled value="{{ $project->salesPartnerUser->email }}" type="text"
-                                class="form-control" id="last_name" name="last_name" placeholder="Last Name">
-                        </div>
-                        <div class="col-sm-3 ">
-                            <label for="exampleFormControlInput877" class="form-label">Phone</label>
-                            <input disabled value="{{ $project->salesPartnerUser->phone }}" type="text"
-                                class="form-control" id="street" name="street" placeholder="Street">
-                        </div>
-                    </div>
-                </div>
+                    {{-- @endif --}}
+                @endcan
             </div>
         </div>
-
-        <div class="tab-pane fade" id="financial" role="tabpanel">
+        @can('View Adder Details')
             <div class="card mt-1">
                 <div class="card-body">
-                    @can('View Financial Details')
-                        <div class="card-header py-3 px-0 d-sm-flex align-items-center  justify-content-between border-bottom">
-                            <h3 class=" fw-bold flex-fill mb-0 mt-sm-0" data-bs-toggle="collapse" data-bs-target="#finance"
-                                aria-expanded="false" aria-controls="finance">Financial Details</h3>
-                        </div>
-                        <div class="row g-3 mb-3">
-                            <div class="col-sm-3 ">
-                                <label for="finance_option_id" class="form-label">Finance Option</label>
-                                <input type="text" class="form-control"
-                                    value="{{ $project->customer->finances->finance->name }}">
-                            </div>
-                            @if ($project->customer->finances->finance->name != 'Cash')
-                                <div class="col-sm-3  loandiv">
-                                    <label for="loan_term_id" class="form-label">Loan Term</label>
-                                    <input type="text" class="form-control"
-                                        value="{{ !empty($project->customer->finances->term) ? $project->customer->finances->term->year : '' }}"
-                                        id="loan_term_id" name="loan_term_id">
-                                </div>
-                                <div class="col-sm-3  loandiv">
-                                    <label for="loan_apr_id" class="form-label">Loan Apr</label>
-                                    <input type="text" class="form-control"
-                                        value="{{ !empty($project->customer->finances->apr) ? $project->customer->finances->apr->apr : '' }}"
-                                        id="loan_apr_id" name="loan_apr_id">
-                                </div>
-                            @endif
-                            <div class="col-sm-3 ">
-                                <label for="contract_amount" class="form-label">Contract Amount</label>
-                                <input type="text" class="form-control"
-                                    value="$ {{ number_format($project->customer->finances->contract_amount, 2) }}"
-                                    id="contract_amount" name="contract_amount">
-                            </div>
-                            @php
-                                $totalOverridePanelCost =
-                                    $project->customer->panel_qty * $project->overwrite_panel_price;
-                                $totalOverride = $totalOverridePanelCost + $project->overwrite_base_price;
-                                $actualRedlineCost = $project->customer->finances->redline_costs - $totalOverride;
-                                $totalCommission = $totalOverride + $project->customer->finances->commission;
-                                // $project->customer->finances->redline_costs
-                            @endphp
-                            <div class="col-sm-3 ">
-                                <label for="redline_costs" class="form-label">Redline Costs</label>
-                                <input type="text" class="form-control"
-                                    value="$ {{ number_format($actualRedlineCost, 2) }}" id="redline_costs"
-                                    name="redline_costs">
-                            </div>
-                            <div class="col-sm-3 ">
-                                <label for="adders" class="form-label">Adders</label>
-                                <input type="text" class="form-control"
-                                    value="$ {{ number_format($project->customer->finances->adders, 2) }}" id="adders_amount"
-                                    name="adders_amount">
-                            </div>
-                            <div class="col-sm-3 ">
-                                <label for="commission" class="form-label">Commission</label>
-                                <input type="text" class="form-control"
-                                    value="$ {{ number_format($totalCommission, 2) }}" id="commission" name="commission">
-                            </div>
-                            <div class="col-sm-3 ">
-                                <label for="dealer_fee" class="form-label">Dealer Fee</label>
-                                <input type="text" class="form-control"
-                                    value="{{ $project->customer->finances->dealer_fee }}" id="dealer_fee"
-                                    name="dealer_fee">
-                            </div>
-                            <div class="col-sm-3 ">
-                                <label for="dealer_fee_amount" class="form-label">Dealer Fee Amount</label>
-                                <input type="text" class="form-control"
-                                    value="$ {{ number_format($project->customer->finances->dealer_fee_amount, 2) }}"
-                                    id="dealer_fee_amount" name="dealer_fee_amount">
-                            </div>
-                        </div>
-                        <div class="col-sm-12 mb-3">
-                            <button type="submit" class="btn btn-dark me-1 mt-1 w-sm-100"><i
-                                    class="icofont-arrow-left me-2 fs-6"></i>Submit</button>
-                        </div>
-                        {{-- @endif --}}
-                    @endcan
-                </div>
-            </div>
-            @can('View Adder Details')
-                <div class="card mt-1">
-                    <div class="card-body">
-                        <div class="card-header py-3 px-0 d-sm-flex align-items-center  border-bottom">
-                            <h3 class=" fw-bold flex-fill mb-0 mt-sm-0" data-bs-toggle="collapse"
-                                data-bs-target="#adderTable" aria-expanded="false" aria-controls="adderTable">Adders Details
-                            </h3>
-                        </div>
-                        <form method="post" action="{{ route('projects.adders') }}">
-                            @csrf
-                            <input type="hidden" name="project_id" value="{{ $project->id }}">
-                            <input type="hidden" name="customer_id" value="{{ $project->customer->id }}">
-                            <input type="hidden" name="finance_option_id"
-                                value="{{ $project->customer->finances->finance->id }}">
-                            @if (in_array('Manager', auth()->user()->getRoleNames()->toArray()) or
-                                    in_array('Admin', auth()->user()->getRoleNames()->toArray()) or
-                                    in_array('Super Admin', auth()->user()->getRoleNames()->toArray()))
-                                <div class="row g-4 mb-3">
-                                    <div class="col-sm-3 mt-5">
-                                        <div class="col-sm-12 mb-1">
-                                            <label for="adders" class="form-label">Adders</label><br />
-                                            <select style="width: 100%;" class="form-select select2"
-                                                aria-label="Default select Adders" id="adders" name="adders">
-                                                <option value="">Select Adders</option>
-                                                @foreach ($adders as $adder)
-                                                    <option value="{{ $adder->id }}">
-                                                        {{ $adder->name }}
-                                                    </option>
-                                                @endforeach
-                                            </select>
-                                        </div>
-                                    </div>
-                                    <div class="col-sm-3 mt-5">
-                                        <label for="uom" class="form-label">UOM</label><br />
-                                        <select style="width: 100%;" class="form-control select2"
-                                            aria-label="Default select UOM" id="uom">
-                                            <option value="">Select UOM</option>
-                                            @foreach ($uoms as $uom)
-                                                <option value="{{ $uom->id }}">
-                                                    {{ $uom->name }}
+                    <div class="card-header py-3 px-0 d-sm-flex align-items-center  border-bottom">
+                        <h3 class=" fw-bold flex-fill mb-0 mt-sm-0" data-bs-toggle="collapse"
+                            data-bs-target="#adderTable" aria-expanded="false" aria-controls="adderTable">Adders Details
+                        </h3>
+                    </div>
+                    <form method="post" action="{{ route('projects.adders') }}">
+                        @csrf
+                        <input type="hidden" name="project_id" value="{{ $project->id }}">
+                        <input type="hidden" name="customer_id" value="{{ $project->customer->id }}">
+                        <input type="hidden" name="finance_option_id"
+                            value="{{ $project->customer->finances->finance->id }}">
+                        @if (in_array('Manager', auth()->user()->getRoleNames()->toArray()) or
+                                in_array('Admin', auth()->user()->getRoleNames()->toArray()) or
+                                in_array('Super Admin', auth()->user()->getRoleNames()->toArray()))
+                            <div class="row g-4 mb-3">
+                                <div class="col-sm-3 mt-5">
+                                    <div class="col-sm-12 mb-1">
+                                        <label for="adders" class="form-label">Adders</label><br />
+                                        <select style="width: 100%;" class="form-select select2"
+                                            aria-label="Default select Adders" id="adders" name="adders">
+                                            <option value="">Select Adders</option>
+                                            @foreach ($adders as $adder)
+                                                <option value="{{ $adder->id }}">
+                                                    {{ $adder->name }}
                                                 </option>
                                             @endforeach
                                         </select>
-                                        @error('uom')
-                                            <div class="text-danger message mt-2">{{ $message }}</div>
-                                        @enderror
-                                    </div>
-                                    <div class="col-sm-2 mt-5">
-                                        <label for="amount" class="form-label">Amount</label>
-                                        <input type="text" class="form-control" id="amount" name="amount"
-                                            placeholder="Adders Amount">
-                                        @error('amount')
-                                            <div class="text-danger message mt-2">{{ $message }}</div>
-                                        @enderror
-                                    </div>
-                                    <div class="col-sm-2 mt-5">
-                                        <button type="button" id="btnAdder" class="btn btn-primary mt-4"><i
-                                                class="icofont-save me-2 fs-6"></i>Add</button>
                                     </div>
                                 </div>
-                                </hr>
-                            @endif
-                            <table id="adderTable" class="table table-bordered table-striped">
-                                <thead>
-                                    <tr>
-                                        <th>No.</th>
-                                        <th>Adder</th>
-                                        <th>Unit</th>
-                                        <th>Amount</th>
-                                        <th>Actions</th>
+                                <div class="col-sm-3 mt-5">
+                                    <label for="uom" class="form-label">UOM</label><br />
+                                    <select style="width: 100%;" class="form-control select2"
+                                        aria-label="Default select UOM" id="uom">
+                                        <option value="">Select UOM</option>
+                                        @foreach ($uoms as $uom)
+                                            <option value="{{ $uom->id }}">
+                                                {{ $uom->name }}
+                                            </option>
+                                        @endforeach
+                                    </select>
+                                    @error('uom')
+                                        <div class="text-danger message mt-2">{{ $message }}</div>
+                                    @enderror
+                                </div>
+                                <div class="col-sm-2 mt-5">
+                                    <label for="amount" class="form-label">Amount</label>
+                                    <input type="text" class="form-control" id="amount" name="amount"
+                                        placeholder="Adders Amount">
+                                    @error('amount')
+                                        <div class="text-danger message mt-2">{{ $message }}</div>
+                                    @enderror
+                                </div>
+                                <div class="col-sm-2 mt-5">
+                                    <button type="button" id="btnAdder" class="btn btn-primary mt-4"><i
+                                            class="icofont-save me-2 fs-6"></i>Add</button>
+                                </div>
+                            </div>
+                            </hr>
+                        @endif
+                        <table id="adderTable" class="table table-bordered table-striped">
+                            <thead>
+                                <tr>
+                                    <th>No.</th>
+                                    <th>Adder</th>
+                                    <th>Unit</th>
+                                    <th>Amount</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach ($project->customer->adders as $key => $adder)
+                                    @php $index = ++$key; @endphp
+                                    <tr id="row{{ $key }}">
+                                        <input type="hidden" value="{{ $adder->adder_type_id }}" name="adders[]" />
+                                        <!-- <input type="hidden" value="{{ $adder->adder_sub_type_id }}" name="subadders[]" /> -->
+                                        <input type="hidden" value="{{ $adder->adder_unit_id }}" name="uom[]" />
+                                        <input type="hidden" value="{{ $adder->amount }}" name="amount[]" />
+                                        <td>{{ $index }}</td>
+                                        <td>{{ $adder->type->name }}</td>
+                                        <td>{{ $adder->unit->name }}</td>
+                                        <td>$ {{ number_format($adder->amount, 2) }}</td>
+                                        <td>
+                                            <i style='cursor: pointer;' class='icofont-trash text-danger'
+                                                onClick="deleteItem('{{ $index }}','{{ $adder->id }}')">
+                                                Delete</i>
+                                        </td>
                                     </tr>
-                                </thead>
-                                <tbody>
-                                    @foreach ($project->customer->adders as $key => $adder)
-                                        @php $index = ++$key; @endphp
-                                        <tr id="row{{ $key }}">
-                                            <input type="hidden" value="{{ $adder->adder_type_id }}" name="adders[]" />
-                                            <!-- <input type="hidden" value="{{ $adder->adder_sub_type_id }}" name="subadders[]" /> -->
-                                            <input type="hidden" value="{{ $adder->adder_unit_id }}" name="uom[]" />
-                                            <input type="hidden" value="{{ $adder->amount }}" name="amount[]" />
-                                            <td>{{ $index }}</td>
-                                            <td>{{ $adder->type->name }}</td>
-                                            <td>{{ $adder->unit->name }}</td>
-                                            <td>$ {{ number_format($adder->amount, 2) }}</td>
-                                            <td>
-                                                <i style='cursor: pointer;' class='icofont-trash text-danger'
-                                                    onClick="deleteItem('{{ $index }}','{{ $adder->id }}')">
-                                                    Delete</i>
-                                            </td>
-                                        </tr>
-                                    @endforeach
-                                </tbody>
-                            </table>
-                        </form>
-                    </div>
+                                @endforeach
+                            </tbody>
+                        </table>
+                    </form>
                 </div>
-            @endcan
-        </div>
-        <div class="tab-pane fade" id="communication" role="tabpanel">
-            <div class="card mt-1">
-                <div class="card-body">
-                    <ul class="nav nav-tabs px-3 border-bottom-0" role="tablist">
-                        <li class="nav-item"><a class="nav-link active" data-bs-toggle="tab" href="#calls"
-                                role="tab">Calls</a></li>
-                        <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#emails"
-                                role="tab">Emails</a></li>
-                        <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#acceptance"
-                                role="tab">Acceptance</a></li>
-                    </ul>
-                    <div class="tab-content">
-                        <div class="tab-pane fade show active" id="calls" role="tabpanel">
-                            @if (!in_array('Sales Person', auth()->user()->getRoleNames()->toArray()))
-                                <div class="row">
-                                    <div class="col-md-4">
-                                        <div class="card card-info mt-2">
-                                            <div class="card-body">
-                                                <div class="row clearfix">
-                                                    <div class="col-md-12">
-                                                        <div class="card border-0 mb-4 no-bg">
-                                                            <div
-                                                                class="card-header py-3 px-0 d-sm-flex align-items-center  justify-content-between border-bottom">
-                                                                <h3 class=" fw-bold flex-fill mb-0 mt-sm-0 m-4">Call Logs
-                                                                </h3>
-                                                            </div>
+            </div>
+        @endcan
+    </div>
+    <div class="tab-pane fade" id="communication" role="tabpanel">
+        <div class="card mt-1">
+            <div class="card-body">
+                <ul class="nav nav-tabs px-3 border-bottom-0" role="tablist">
+                    <li class="nav-item"><a class="nav-link active" data-bs-toggle="tab" href="#calls"
+                            role="tab">Calls</a></li>
+                    <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#emails"
+                            role="tab">Emails</a></li>
+                    <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#acceptance"
+                            role="tab">Acceptance</a></li>
+                </ul>
+                <div class="tab-content">
+                    <div class="tab-pane fade show active" id="calls" role="tabpanel">
+                        @if (!in_array('Sales Person', auth()->user()->getRoleNames()->toArray()))
+                            <div class="row">
+                                <div class="col-md-4">
+                                    <div class="card card-info mt-2">
+                                        <div class="card-body">
+                                            <div class="row clearfix">
+                                                <div class="col-md-12">
+                                                    <div class="card border-0 mb-4 no-bg">
+                                                        <div
+                                                            class="card-header py-3 px-0 d-sm-flex align-items-center  justify-content-between border-bottom">
+                                                            <h3 class=" fw-bold flex-fill mb-0 mt-sm-0 m-4">Call Logs
+                                                            </h3>
                                                         </div>
                                                     </div>
-                                                    <form id="call-log-form" method="post"
-                                                        action="{{ route('projects.call.logs') }}">
-                                                        @csrf
-                                                        <input type="hidden" name="id"
-                                                            value="{{ $project->id }}">
-                                                        <input type="hidden" name="taskid"
-                                                            value="{{ $task->id }}">
+                                                </div>
+                                                <form id="call-log-form" method="post"
+                                                    action="{{ route('projects.call.logs') }}">
+                                                    @csrf
+                                                    <input type="hidden" name="id"
+                                                        value="{{ $project->id }}">
+                                                    <input type="hidden" name="taskid"
+                                                        value="{{ $task->id }}">
 
+                                                    <div class="row g-3 mb-3">
+                                                        <div class="col-md-12">
+                                                            <div class="col-sm-12 mb-3">
+                                                                <label for="call_no" class="form-label">Select
+                                                                    Call</label><br />
+                                                                <select class=" form-control select2"
+                                                                    aria-label="Default Select call" id="call_no"
+                                                                    name="call_no">
+                                                                    <option value="">Select Call</option>
+                                                                    @foreach ($calls as $call)
+                                                                        <option value="{{ $call->id }}">
+                                                                            {{ $call->name }}
+                                                                        </option>
+                                                                    @endforeach
+                                                                </select>
+                                                                <div id="call_no_message"
+                                                                    class="text-danger message mt-2"></div>
+                                                            </div>
+                                                            <div class="col-sm-12 mb-3">
+                                                                <label for="notes_1"
+                                                                    class="form-label">Comments:</label>
+                                                                <input type="text" class="form-control"
+                                                                    id="notes_1" name="notes_1"
+                                                                    value="{{ old('notes_1') }}" />
+                                                                <div id="notes_1_message"
+                                                                    class="text-danger message mt-2"></div>
+                                                            </div>
+                                                        </div>
+                                                        <div class="col-sm-12 mb-3">
+                                                            <button type="button"
+                                                                class="btn btn-dark me-1 mt-1 w-sm-100"
+                                                                id="saveCallLogs"><i
+                                                                    class="icofont-arrow-left me-2 fs-6"></i>Submit</button>
+                                                        </div>
+                                                    </div>
+                                                </form>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6" id="call_script"
+                                    style="font-size: 15px;text-align: justify;text-justify: inter-word;"></div>
+
+                            </div>
+                        @endif
+                        <div class="card card-info mt-2">
+                            <div class="card-body">
+                                <div class="row clearfix">
+                                    <div class="col-md-12">
+                                        <div class="card border-0 mb-4 no-bg">
+                                            <div
+                                                class="card-header py-3 px-0 d-sm-flex align-items-center  justify-content-between text-center border">
+                                                <h3 class=" fw-bold flex-fill mb-0 mt-sm-0">Project Call Logs </h3>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    @foreach ($departments as $department)
+                                        <div class="col-md-12">
+                                            <div class="card border-0 mb-4 no-bg">
+                                                <div style="background-color: #E5E4E2;"
+                                                    class="card-header py-3 px-0 d-sm-flex align-items-center   justify-content-between border-bottom border-top">
+                                                    <h3 class=" fw-bold flex-fill mb-0 mt-sm-0 px-2">
+                                                        {{ $department->name }}
+                                                    </h3>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        @php
+                                            $logs = $project->logs
+                                                ->filter(function ($item) use ($department) {
+                                                    return $item->department_id == $department->id;
+                                                })
+                                                ->values();
+                                        @endphp
+
+                                        <input type="hidden" id="{{ $department->id }}_log_count"
+                                            value="{{ count($logs) }}" />
+
+                                        @foreach ($logs as $key => $log)
+                                            <div class="col-sm-12 mb-3">
+                                                <label for="formFileMultipleoneone"
+                                                    class="form-label fw-bold flex-fill mb-2 mt-sm-0">
+                                                    {{ $log->call->name }} :</label>
+                                                <textarea class="form-control" disabled rows="3">{{ $log->notes }}</textarea>
+                                            </div>
+                                        @endforeach
+                                    @endforeach
+                                </div>
+                            </div>`
+                        </div>
+                    </div>
+                    <div class="tab-pane fade" id="emails" role="tabpanel">
+                        <div class="container">
+                            @if (!in_array('Sales Person', auth()->user()->getRoleNames()->toArray()))
+                                <form id="emailform" method="post" enctype="multipart/form-data">
+                                    @csrf
+                                    <input type="hidden" name="project_id" value="{{ $project->id }}">
+                                    <input type="hidden" name="customer_id" value="{{ $project->customer_id }}">
+                                    <input type="hidden" name="department_id"
+                                        value="{{ $project->department_id }}" />
+                                    <input type="hidden" name="customer_email"
+                                        value="{{ $project->customer->email }}" />
+                                    <div class="row">
+                                        <div class="col-md-4">
+                                            <div class="card card-info mt-2">
+                                                <div class="card-body">
+                                                    <div class="row clearfix">
+                                                        <div class="col-md-12">
+                                                            <div class="card border-0 mb-4 no-bg">
+                                                                <div
+                                                                    class="card-header py-3 px-0 d-sm-flex align-items-center  justify-content-between border-bottom">
+                                                                    <h3 class=" fw-bold flex-fill mb-0 mt-sm-0 m-4">
+                                                                        Emails
+                                                                    </h3>
+                                                                </div>
+                                                            </div>
+                                                        </div>
                                                         <div class="row g-3 mb-3">
                                                             <div class="col-md-12">
                                                                 <div class="col-sm-12 mb-3">
-                                                                    <label for="call_no" class="form-label">Select
-                                                                        Call</label><br />
+                                                                    <label for="email_no" class="form-label">Select
+                                                                        Email</label><br />
                                                                     <select class=" form-control select2"
-                                                                        aria-label="Default Select call" id="call_no"
-                                                                        name="call_no">
-                                                                        <option value="">Select Call</option>
-                                                                        @foreach ($calls as $call)
-                                                                            <option value="{{ $call->id }}">
-                                                                                {{ $call->name }}
+                                                                        style="width: 100%;"
+                                                                        aria-label="Default Select call"
+                                                                        id="email_no" name="email_no">
+                                                                        <option value="">Select Email</option>
+                                                                        @foreach ($emailTypes as $emailType)
+                                                                            <option value="{{ $emailType->id }}">
+                                                                                {{ $emailType->name }}
                                                                             </option>
                                                                         @endforeach
                                                                     </select>
-                                                                    <div id="call_no_message"
+                                                                    <div id="email_no_message"
                                                                         class="text-danger message mt-2"></div>
                                                                 </div>
-                                                                <div class="col-sm-12 mb-3">
-                                                                    <label for="notes_1"
-                                                                        class="form-label">Comments:</label>
+                                                                <div class="col-md-12 mb-1">
+                                                                    <div class="mb-3">
+                                                                        <label for="ccEmails" class="form-label">CC
+                                                                            Emails</label>
+                                                                        <div class="tags-input" id="ccEmails"></div>
+                                                                        <input type="hidden" name="ccEmails"
+                                                                            id="ccEmailsHidden">
+                                                                        <div class="invalid-feedback" id="emailError">
+                                                                            Please enter valid email addresses separated
+                                                                            by commas.</div>
+                                                                    </div>
+                                                                </div>
+                                                                <div class="col-md-12 mb-1">
+                                                                    <label for="exampleFormControlInput877"
+                                                                        class="form-label">Subject</label>
                                                                     <input type="text" class="form-control"
-                                                                        id="notes_1" name="notes_1"
-                                                                        value="{{ old('notes_1') }}" />
-                                                                    <div id="notes_1_message"
+                                                                        id="subject" name="subject"
+                                                                        placeholder="Enter Subject" value="">
+                                                                    <div id="name_message"
+                                                                        class="text-danger message mt-2"></div>
+                                                                </div>
+                                                                <div class="mb-1">
+                                                                    <label for="exampleFormControlInput877"
+                                                                        class="form-label">Attachments</label>
+                                                                    <input type="file" multiple
+                                                                        class="form-control" id="image"
+                                                                        name="images[]">
+                                                                    <div id="name_message"
                                                                         class="text-danger message mt-2"></div>
                                                                 </div>
                                                             </div>
                                                             <div class="col-sm-12 mb-3">
-                                                                <button type="button"
-                                                                    class="btn btn-dark me-1 mt-1 w-sm-100"
-                                                                    id="saveCallLogs"><i
-                                                                        class="icofont-arrow-left me-2 fs-6"></i>Submit</button>
+                                                                <button id="btnEmail" type="submit"
+                                                                    class="btn btn-dark me-1 mt-1 w-sm-100"><i
+                                                                        class="icofont-arrow-left me-2 fs-6"></i>Send
+                                                                    Email</button>
                                                             </div>
                                                         </div>
-                                                    </form>
+                                                    </div>
                                                 </div>
                                             </div>
                                         </div>
-                                    </div>
-                                    <div class="col-md-6" id="call_script"
-                                        style="font-size: 15px;text-align: justify;text-justify: inter-word;"></div>
 
-                                </div>
+                                        <div class="col-md-6 main-container"
+                                            style="font-size: 15px;text-align: justify;text-justify: inter-word;">
+                                            <textarea id="editor" name="content" class="form-control" rows="5"></textarea>
+                                        </div>
+                                    </div>
+                                </form>
                             @endif
-                            <div class="card card-info mt-2">
-                                <div class="card-body">
-                                    <div class="row clearfix">
-                                        <div class="col-md-12">
-                                            <div class="card border-0 mb-4 no-bg">
-                                                <div
-                                                    class="card-header py-3 px-0 d-sm-flex align-items-center  justify-content-between text-center border">
-                                                    <h3 class=" fw-bold flex-fill mb-0 mt-sm-0">Project Call Logs </h3>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        @foreach ($departments as $department)
-                                            <div class="col-md-12">
-                                                <div class="card border-0 mb-4 no-bg">
-                                                    <div style="background-color: #E5E4E2;"
-                                                        class="card-header py-3 px-0 d-sm-flex align-items-center   justify-content-between border-bottom border-top">
-                                                        <h3 class=" fw-bold flex-fill mb-0 mt-sm-0 px-2">
-                                                            {{ $department->name }}
-                                                        </h3>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                            @php
-                                                $logs = $project->logs
-                                                    ->filter(function ($item) use ($department) {
-                                                        return $item->department_id == $department->id;
-                                                    })
-                                                    ->values();
-                                            @endphp
+                            <div
+                                class="card-header py-3 px-0 d-sm-flex align-items-center  justify-content-between border-bottom">
 
-                                            <input type="hidden" id="{{ $department->id }}_log_count"
-                                                value="{{ count($logs) }}" />
-
-                                            @foreach ($logs as $key => $log)
-                                                <div class="col-sm-12 mb-3">
-                                                    <label for="formFileMultipleoneone"
-                                                        class="form-label fw-bold flex-fill mb-2 mt-sm-0">
-                                                        {{ $log->call->name }} :</label>
-                                                    <textarea class="form-control" disabled rows="3">{{ $log->notes }}</textarea>
-                                                </div>
-                                            @endforeach
-                                        @endforeach
-                                    </div>
-                                </div>`
+                                <a class="btn  text-white me-1 mt-1 w-sm-100" id="openemployee"></a>
+                                <a class="btn btn-dark me-1 mt-1 w-sm-100" onclick="fetchEmails()"><i
+                                        class="icofont-refresh me-2 fs-6"></i>Refresh</a>
                             </div>
-                        </div>
-                        <div class="tab-pane fade" id="emails" role="tabpanel">
-                            <div class="container">
-                                @if (!in_array('Sales Person', auth()->user()->getRoleNames()->toArray()))
-                                    <form id="emailform" method="post" enctype="multipart/form-data">
-                                        @csrf
-                                        <input type="hidden" name="project_id" value="{{ $project->id }}">
-                                        <input type="hidden" name="customer_id" value="{{ $project->customer_id }}">
-                                        <input type="hidden" name="department_id"
-                                            value="{{ $project->department_id }}" />
-                                        <input type="hidden" name="customer_email"
-                                            value="{{ $project->customer->email }}" />
-                                        <div class="row">
-                                            <div class="col-md-4">
-                                                <div class="card card-info mt-2">
-                                                    <div class="card-body">
-                                                        <div class="row clearfix">
-                                                            <div class="col-md-12">
-                                                                <div class="card border-0 mb-4 no-bg">
-                                                                    <div
-                                                                        class="card-header py-3 px-0 d-sm-flex align-items-center  justify-content-between border-bottom">
-                                                                        <h3 class=" fw-bold flex-fill mb-0 mt-sm-0 m-4">
-                                                                            Emails
-                                                                        </h3>
-                                                                    </div>
-                                                                </div>
-                                                            </div>
-                                                            <div class="row g-3 mb-3">
-                                                                <div class="col-md-12">
-                                                                    <div class="col-sm-12 mb-3">
-                                                                        <label for="email_no" class="form-label">Select
-                                                                            Email</label><br />
-                                                                        <select class=" form-control select2"
-                                                                            style="width: 100%;"
-                                                                            aria-label="Default Select call"
-                                                                            id="email_no" name="email_no">
-                                                                            <option value="">Select Email</option>
-                                                                            @foreach ($emailTypes as $emailType)
-                                                                                <option value="{{ $emailType->id }}">
-                                                                                    {{ $emailType->name }}
-                                                                                </option>
-                                                                            @endforeach
-                                                                        </select>
-                                                                        <div id="email_no_message"
-                                                                            class="text-danger message mt-2"></div>
-                                                                    </div>
-                                                                    <div class="col-md-12 mb-1">
-                                                                        <div class="mb-3">
-                                                                            <label for="ccEmails" class="form-label">CC
-                                                                                Emails</label>
-                                                                            <div class="tags-input" id="ccEmails"></div>
-                                                                            <input type="hidden" name="ccEmails"
-                                                                                id="ccEmailsHidden">
-                                                                            <div class="invalid-feedback" id="emailError">
-                                                                                Please enter valid email addresses separated
-                                                                                by commas.</div>
-                                                                        </div>
-                                                                    </div>
-                                                                    <div class="col-md-12 mb-1">
-                                                                        <label for="exampleFormControlInput877"
-                                                                            class="form-label">Subject</label>
-                                                                        <input type="text" class="form-control"
-                                                                            id="subject" name="subject"
-                                                                            placeholder="Enter Subject" value="">
-                                                                        <div id="name_message"
-                                                                            class="text-danger message mt-2"></div>
-                                                                    </div>
-                                                                    <div class="mb-1">
-                                                                        <label for="exampleFormControlInput877"
-                                                                            class="form-label">Attachments</label>
-                                                                        <input type="file" multiple
-                                                                            class="form-control" id="image"
-                                                                            name="images[]">
-                                                                        <div id="name_message"
-                                                                            class="text-danger message mt-2"></div>
-                                                                    </div>
-                                                                </div>
-                                                                <div class="col-sm-12 mb-3">
-                                                                    <button id="btnEmail" type="submit"
-                                                                        class="btn btn-dark me-1 mt-1 w-sm-100"><i
-                                                                            class="icofont-arrow-left me-2 fs-6"></i>Send
-                                                                        Email</button>
-                                                                </div>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </div>
-
-                                            <div class="col-md-6 main-container"
-                                                style="font-size: 15px;text-align: justify;text-justify: inter-word;">
-                                                <textarea id="editor" name="content" class="form-control" rows="5"></textarea>
-                                            </div>
-                                        </div>
-                                    </form>
-                                @endif
-                                <div
-                                    class="card-header py-3 px-0 d-sm-flex align-items-center  justify-content-between border-bottom">
-
-                                    <a class="btn  text-white me-1 mt-1 w-sm-100" id="openemployee"></a>
-                                    <a class="btn btn-dark me-1 mt-1 w-sm-100" onclick="fetchEmails()"><i
-                                            class="icofont-refresh me-2 fs-6"></i>Refresh</a>
-                                </div>
-                                <div id="emailDiv"></div>
-                                {{-- <div class="row clearfix">
+                            <div id="emailDiv"></div>
+                            {{-- <div class="row clearfix">
                                         <div class="col-lg-12">
                                             <div class="card">
                                                 <div class="chat">
@@ -1198,142 +1201,175 @@
                                             </div>
                                         </div>
                                     </div> --}}
+                        </div>
+                    </div>
+                    <div class="tab-pane fade" id="acceptance" role="tabpanel">
+                        <div class="card mt-1">
+                            <div class="card-body">
+                                @if (auth()->user()->hasAnyRole(['Super Admin', 'Admin', 'Employee']))
+                                    <form id="accept-form" method="post" enctype="multipart/form-data">
+                                        @csrf
+                                        <input type="hidden" name="project_id" value="{{ $project->id }}" />
+                                        <input type="hidden" name="sales_partner_id"
+                                            value="{{ $project->customer->sales_partner_id }}" />
+                                        <input type="hidden" name="mode" value="post" />
+                                        <div class="col-md-4 mb-3">
+                                            <label for="formFileMultipleoneone" class="form-label"
+                                                id="requiredfiles">Add
+                                                Design</label>
+                                            <input class="form-control" type="file" id="file" name="file"
+                                                accept=".png,.jpg,.pdf" multiple>
+                                            @error('file')
+                                                <div id="file_message" class="text-danger message mt-2">
+                                                    {{ $message }}
+                                                </div>
+                                            @enderror
+                                            <div id="file_message" class="text-danger message mt-2"></div>
+                                        </div>
+                                        <div class="col-sm-12 mb-3">
+                                            <button type="submit" class="btn btn-dark me-1 mt-1 w-sm-100"
+                                                id="saveFiles"><i
+                                                    class="icofont-arrow-left me-2 fs-6"></i>Submit</button>
+                                        </div>
+                                    </form>
+                                @endif
+                                <div class="row" id="project-acceptance-view"></div>
                             </div>
                         </div>
-                        <div class="tab-pane fade" id="acceptance" role="tabpanel">
-                            <div class="card mt-1">
-                                <div class="card-body">
-                                    @if (auth()->user()->hasAnyRole(['Super Admin', 'Admin', 'Employee']))
-                                        <form id="accept-form" method="post" enctype="multipart/form-data">
-                                            @csrf
-                                            <input type="hidden" name="project_id" value="{{ $project->id }}" />
-                                            <input type="hidden" name="sales_partner_id"
-                                                value="{{ $project->customer->sales_partner_id }}" />
-                                            <input type="hidden" name="mode" value="post" />
-                                            <div class="col-md-4 mb-3">
-                                                <label for="formFileMultipleoneone" class="form-label"
-                                                    id="requiredfiles">Add
-                                                    Design</label>
-                                                <input class="form-control" type="file" id="file" name="file"
-                                                    accept=".png,.jpg,.pdf" multiple>
-                                                @error('file')
-                                                    <div id="file_message" class="text-danger message mt-2">
-                                                        {{ $message }}
-                                                    </div>
-                                                @enderror
-                                                <div id="file_message" class="text-danger message mt-2"></div>
-                                            </div>
-                                            <div class="col-sm-12 mb-3">
-                                                <button type="submit" class="btn btn-dark me-1 mt-1 w-sm-100"
-                                                    id="saveFiles"><i
-                                                        class="icofont-arrow-left me-2 fs-6"></i>Submit</button>
-                                            </div>
-                                        </form>
-                                    @endif
-                                    <div class="row" id="project-acceptance-view"></div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+
+
+    <div class="modal fade" id="createemail" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-lg modal-dialog-scrollable">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title  fw-bold" id="createprojectlLabel"> Send Email</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <form id="emailform1" method="POST" enctype="multipart/form-data">
+                    @csrf
+                    <input type="hidden" name="project_id" value="{{ $project->id }}">
+                    <input type="hidden" name="customer_id" value="{{ $project->customer_id }}">
+                    <input type="hidden" name="department_id" value="{{ $project->department_id }}" />
+                    <div class="modal-body">
+                        <div class="deadline-form" id="empform">
+                            <div class="row g-3 mb-3">
+                                <div class="mb-1">
+                                    <label for="exampleFormControlInput877" class="form-label">Subject</label>
+                                    <input type="text" class="form-control" id="subject1" name="subject"
+                                        placeholder="Enter Subject" value="">
+                                    <div id="name_message" class="text-danger message mt-2"></div>
+                                </div>
+                                <div class="mb-1">
+                                    <label for="exampleFormControlInput877" class="form-label">Content</label>
+                                    <textarea type="text" class="form-control" id="content1" name="content" placeholder="Enter Subject"
+                                        value=""></textarea>
+                                    <div id="name_message" class="text-danger message mt-2"></div>
+                                </div>
+                                <div class="mb-1">
+                                    <label for="exampleFormControlInput877" class="form-label">Attachments</label>
+                                    <input type="file" multiple class="form-control" id="image1"
+                                        name="image[]">
+                                    <div id="name_message" class="text-danger message mt-2"></div>
                                 </div>
                             </div>
                         </div>
                     </div>
-
-                </div>
+                    <div class="modal-footer">
+                        <button type="submit" class="btn btn-primary">Send</button>
+                        <button type="button" class="btn btn-danger text-white"
+                            data-bs-dismiss="modal">Cancel</button>
+                    </div>
+                </form>
             </div>
         </div>
+    </div>
 
-
-
-        <div class="modal fade" id="createemail" tabindex="-1" aria-hidden="true">
-            <div class="modal-dialog modal-dialog-centered modal-lg modal-dialog-scrollable">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h5 class="modal-title  fw-bold" id="createprojectlLabel"> Send Email</h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                    </div>
-                    <form id="emailform1" method="POST" enctype="multipart/form-data">
-                        @csrf
-                        <input type="hidden" name="project_id" value="{{ $project->id }}">
-                        <input type="hidden" name="customer_id" value="{{ $project->customer_id }}">
-                        <input type="hidden" name="department_id" value="{{ $project->department_id }}" />
-                        <div class="modal-body">
-                            <div class="deadline-form" id="empform">
-                                <div class="row g-3 mb-3">
-                                    <div class="mb-1">
-                                        <label for="exampleFormControlInput877" class="form-label">Subject</label>
-                                        <input type="text" class="form-control" id="subject1" name="subject"
-                                            placeholder="Enter Subject" value="">
-                                        <div id="name_message" class="text-danger message mt-2"></div>
-                                    </div>
-                                    <div class="mb-1">
-                                        <label for="exampleFormControlInput877" class="form-label">Content</label>
-                                        <textarea type="text" class="form-control" id="content1" name="content" placeholder="Enter Subject"
-                                            value=""></textarea>
-                                        <div id="name_message" class="text-danger message mt-2"></div>
-                                    </div>
-                                    <div class="mb-1">
-                                        <label for="exampleFormControlInput877" class="form-label">Attachments</label>
-                                        <input type="file" multiple class="form-control" id="image1"
-                                            name="image[]">
-                                        <div id="name_message" class="text-danger message mt-2"></div>
-                                    </div>
+    <div class="modal fade" id="assign-notes" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-lg modal-dialog-scrollable">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title  fw-bold" id="createprojectlLabel"> Assign Notes</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <form id="assignNotes" method="POST" enctype="multipart/form-data">
+                    @csrf
+                    <input type="hidden" name="project_id" value="{{ $project->id }}">
+                    <input type="hidden" name="customer_id" value="{{ $project->customer_id }}">
+                    <input type="hidden" name="department_id" value="{{ $project->department_id }}" />
+                    <div class="modal-body">
+                        <div class="row">
+                            <div class="col-sm-12 mb-3">
+                                <label for="formFileMultipleoneone"
+                                    class="form-label fw-bold flex-fill mb-2 mt-sm-0">Assign Notes</label>
+                                <div class="position-relative">
+                                    <textarea class="form-control bg-white border border-dark" id="notes" name="notes" rows="3"></textarea>
                                 </div>
                             </div>
+                            <div class="col-sm-12 mb-3">
+                                <button type="submit" class="btn btn-primary" style="bottom: 10px; right: 10px;">
+                                    <i class="icofont-save"></i> Save
+                                </button>
+                            </div>
                         </div>
-                        <div class="modal-footer">
-                            <button type="submit" class="btn btn-primary">Send</button>
-                            <button type="button" class="btn btn-danger text-white"
-                                data-bs-dismiss="modal">Cancel</button>
-                        </div>
-                    </form>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    <!-- Modal  Delete Folder/ File-->
+    <div class="modal fade" id="deletefile" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-md modal-dialog-scrollable">
+            <input type="hidden" id="deleteId" />
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title  fw-bold" id="deleteprojectLabel"> Delete item Permanently?</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body justify-content-center flex-column d-flex">
+                    <i class="icofont-ui-delete text-danger display-2 text-center mt-2"></i>
+                    <p class="mt-4 fs-5 text-center">You can only delete this item Permanently</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-danger color-fff"
+                        onclick="deleteFileCall()">Delete</button>
                 </div>
             </div>
         </div>
-        <!-- Modal  Delete Folder/ File-->
-        <div class="modal fade" id="deletefile" tabindex="-1" aria-hidden="true">
-            <div class="modal-dialog modal-dialog-centered modal-md modal-dialog-scrollable">
-                <input type="hidden" id="deleteId" />
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h5 class="modal-title  fw-bold" id="deleteprojectLabel"> Delete item Permanently?</h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                    </div>
-                    <div class="modal-body justify-content-center flex-column d-flex">
-                        <i class="icofont-ui-delete text-danger display-2 text-center mt-2"></i>
-                        <p class="mt-4 fs-5 text-center">You can only delete this item Permanently</p>
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                        <button type="button" class="btn btn-danger color-fff"
-                            onclick="deleteFileCall()">Delete</button>
-                    </div>
+    </div>
+
+    <div class="modal fade" id="dremoveadders" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-md modal-dialog-scrollable">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title  fw-bold" id="dremovetaskLabel"> Remove Adder?</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body justify-content-center flex-column d-flex">
+                    <i class="icofont-ui-rate-remove text-danger display-2 text-center mt-2"></i>
+                    <p class="mt-4 fs-5 text-center">This will be permanently remove from Adders</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-danger color-fff">Remove</button>
                 </div>
             </div>
         </div>
-
-        <div class="modal fade" id="dremoveadders" tabindex="-1" aria-hidden="true">
-            <div class="modal-dialog modal-dialog-centered modal-md modal-dialog-scrollable">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h5 class="modal-title  fw-bold" id="dremovetaskLabel"> Remove Adder?</h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                    </div>
-                    <div class="modal-body justify-content-center flex-column d-flex">
-                        <i class="icofont-ui-rate-remove text-danger display-2 text-center mt-2"></i>
-                        <p class="mt-4 fs-5 text-center">This will be permanently remove from Adders</p>
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                        <button type="button" class="btn btn-danger color-fff">Remove</button>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-    </div>
-    </div><!-- Row End -->
-    </div>
     </div>
 
-    <script type="importmap">
+</div>
+</div><!-- Row End -->
+</div>
+</div>
+
+<script type="importmap">
     {
                 "imports": {
                     "ckeditor5": "https://cdn.ckeditor.com/ckeditor5/42.0.0/ckeditor5.js",
@@ -1341,170 +1377,179 @@
                 }
             }
         </script>
-    <script type="module">
-        import {
-            ClassicEditor,
-            Essentials,
-            Paragraph,
-            Bold,
-            Italic,
-            Font
-        } from 'ckeditor5';
+<script type="module">
+    import {
+        ClassicEditor,
+        Essentials,
+        Paragraph,
+        Bold,
+        Italic,
+        Font
+    } from 'ckeditor5';
 
-        ClassicEditor
-            .create(document.querySelector('#editor'), {
-                plugins: [Essentials, Paragraph, Bold, Italic, Font],
-                toolbar: [
-                    'undo', 'redo', '|', 'bold', 'italic', '|',
-                    'fontSize', 'fontFamily', 'fontColor', 'fontBackgroundColor'
-                ]
-            })
-            .then(editor => {
-                window.editor = editor;
-            })
-            .catch(error => {
-                // console.log(error);
-            });
-    </script>
-    <!-- A friendly reminder to run on a server, remove this during the integration. -->
-    <script>
-        window.onload = function() {
-            if (window.location.protocol === "file:") {
-                alert("This sample requires an HTTP server. Please serve this file with a web server.");
-            }
-        };
-    </script>
+    ClassicEditor
+        .create(document.querySelector('#editor'), {
+            plugins: [Essentials, Paragraph, Bold, Italic, Font],
+            toolbar: [
+                'undo', 'redo', '|', 'bold', 'italic', '|',
+                'fontSize', 'fontFamily', 'fontColor', 'fontBackgroundColor'
+            ]
+        })
+        .then(editor => {
+            window.editor = editor;
+        })
+        .catch(error => {
+            // console.log(error);
+        });
+</script>
+<!-- A friendly reminder to run on a server, remove this during the integration. -->
+<script>
+    window.onload = function() {
+        if (window.location.protocol === "file:") {
+            alert("This sample requires an HTTP server. Please serve this file with a web server.");
+        }
+    };
+</script>
 @endsection
 @section('scripts')
-    <script>
-        $(".additionalFields").css("display", "none");
-        $("#back").prop("disabled", true)
-        $("#forward").prop("disabled", true)
-        $('input[type=radio][name=stage]').change(function() {
-            if (this.value == "back") {
-                $("#back").prop("disabled", false)
-                $("#forward").prop("disabled", true)
-            }
-            if (this.value == "forward") {
-                $("#forward").prop("disabled", false)
-                $("#back").prop("disabled", true)
-            }
-
-        });
-        $("#back").change(function() {
-            getSubDepartments($(this).val())
-        });
-
-        function openEmailModal() {
-            $("#createemail").modal("show");
+<script>
+    $(".additionalFields").css("display", "none");
+    $("#back").prop("disabled", true)
+    $("#forward").prop("disabled", true)
+    $('input[type=radio][name=stage]').change(function() {
+        if (this.value == "back") {
+            $("#back").prop("disabled", false)
+            $("#forward").prop("disabled", true)
         }
-        setTimeout(function() {
-            $("#emailform").submit(function(e) {
-                e.preventDefault();
-                $("#btnEmail").attr('disabled', true);
-                $.ajax({
-                    url: "{{ route('send.email') }}",
-                    type: 'POST',
-                    data: new FormData(this),
-                    dataType: 'JSON',
-                    contentType: false,
-                    cache: false,
-                    processData: false,
-                    success: function(response) {
-                        if (response.status == 200) {
-                            $("#subject").val('');
-                            window.editor.setData('');
-                            $("#email_no").val('').change();
-                            $("#ccEmails").val('');
-                            Swal.fire(
-                                'Sent!',
-                                response.message,
-                                'success'
-                            )
-                            fetchEmails();
-                            $("#btnEmail").removeAttr("disabled");
-                        } else {
-                            Swal.fire(
-                                'Failed!',
-                                response.message,
-                                'error'
-                            )
-                            $("#btnEmail").removeAttr("disabled");
-                        }
-                    },
-                    error: function(error) {
-                        console.log(error);
-                        $("#btnEmail").removeAttr("disabled");
-                    }
-                });
-            });
-        }, 3000);
-
-        $("#forward").change(function() {
-            let totalCount = $("#" + $("#forward").val() + "_length").val();
-            $("#requiredfiles").html(totalCount + " File Required");
-            getSubDepartments($(this).val())
-            getDepartmentsFields($(this).val())
-        });
-
-        function getDepartmentsFields(id) {
-            if (id != "") {
-                $.ajax({
-                    method: "POST",
-                    url: "{{ route('get.departments.fields') }}",
-                    data: {
-                        _token: "{{ csrf_token() }}",
-                        id: id,
-                        projectId: "{{ $project->id }}",
-                    },
-                    success: function(response) {
-                        $("#fieldDiv").html();
-                        $("#fieldDiv").html(response);
-                    },
-                    error: function(error) {
-                        console.log(error);
-                    }
-                })
-            }
+        if (this.value == "forward") {
+            $("#forward").prop("disabled", false)
+            $("#back").prop("disabled", true)
         }
 
-        $("#status").change(function() {
+    });
+    $("#back").change(function() {
+        getSubDepartments($(this).val())
+    });
+
+    function openEmailModal() {
+        $("#createemail").modal("show");
+    }
+    setTimeout(function() {
+        $("#emailform").submit(function(e) {
+            e.preventDefault();
+            $("#btnEmail").attr('disabled', true);
             $.ajax({
-                method: "POST",
-                url: "{{ route('projects.status') }}",
-                data: {
-                    _token: "{{ csrf_token() }}",
-                    status: $(this).val(),
-                    project_id: "{{ $project->id }}",
-                },
+                url: "{{ route('send.email') }}",
+                type: 'POST',
+                data: new FormData(this),
+                dataType: 'JSON',
+                contentType: false,
+                cache: false,
+                processData: false,
                 success: function(response) {
                     if (response.status == 200) {
-                        alert("Status Updated");
+                        $("#subject").val('');
+                        window.editor.setData('');
+                        $("#email_no").val('').change();
+                        $("#ccEmails").val('');
+                        Swal.fire(
+                            'Sent!',
+                            response.message,
+                            'success'
+                        )
+                        fetchEmails();
+                        $("#btnEmail").removeAttr("disabled");
                     } else {
-                        alert("Some error occurred!");
+                        Swal.fire(
+                            'Failed!',
+                            response.message,
+                            'error'
+                        )
+                        $("#btnEmail").removeAttr("disabled");
                     }
+                },
+                error: function(error) {
+                    console.log(error);
+                    $("#btnEmail").removeAttr("disabled");
+                }
+            });
+        });
+    }, 3000);
+
+    $("#forward").change(function() {
+        let totalCount = $("#" + $("#forward").val() + "_length").val();
+        $("#requiredfiles").html(totalCount + " File Required");
+        getSubDepartments($(this).val())
+        getDepartmentsFields($(this).val())
+    });
+
+    function getDepartmentsFields(id) {
+        if (id != "") {
+            $.ajax({
+                method: "POST",
+                url: "{{ route('get.departments.fields') }}",
+                data: {
+                    _token: "{{ csrf_token() }}",
+                    id: id,
+                    projectId: "{{ $project->id }}",
+                },
+                success: function(response) {
+                    $("#fieldDiv").html();
+                    $("#fieldDiv").html(response);
                 },
                 error: function(error) {
                     console.log(error);
                 }
             })
-        });
+        }
+    }
 
-        $("#employee").change(function() {
-            $.ajax({
+    $("#status").change(function() {
+        $.ajax({
+            method: "POST",
+            url: "{{ route('projects.status') }}",
+            data: {
+                _token: "{{ csrf_token() }}",
+                status: $(this).val(),
+                project_id: "{{ $project->id }}",
+            },
+            success: function(response) {
+                if (response.status == 200) {
+                    alert("Status Updated");
+                } else {
+                    alert("Some error occurred!");
+                }
+            },
+            error: function(error) {
+                console.log(error);
+            }
+        })
+    });
+
+    $("#employee").change(function() {
+        if ($(this).val() != "") {
+            $("#assign-notes").modal("show");
+        }
+    });
+
+    $("#assignNotes").submit(function(e){
+        e.preventDefault();
+        $.ajax({
                 method: "POST",
                 url: "{{ route('projects.assign') }}",
                 data: {
                     _token: "{{ csrf_token() }}",
-                    employee: $(this).val(),
+                    employee: $("#employee").val(),
                     project_id: "{{ $project->id }}",
                     task_id: "{{ $task->id }}",
                     sub_department_id: "{{ $task->sub_department_id }}",
                     department_id: "{{ $project->department_id }}",
+                    notes: $("#notes").val(),
                 },
                 success: function(response) {
                     if (response.status == 200) {
-                        alert("Status Updated");
+                        alert("Employee Assigned");
+                        $("#assign-notes").modal("hide");
                     } else {
                         alert("Some error occurred!");
                     }
@@ -1513,627 +1558,627 @@
                     console.log(error);
                 }
             })
-        });
+    })
 
-        function getSubDepartments(id) {
-            if (id != "") {
-                $.ajax({
-                    method: "POST",
-                    url: "{{ route('get.sub.departments') }}",
-                    data: {
-                        _token: "{{ csrf_token() }}",
-                        id: id,
-                    },
-                    dataType: 'json',
-                    success: function(response) {
-                        $('#sub_department').empty();
-                        $('#sub_department').append($('<option value="">Select Sub Department</soption>'));
-                        $.each(response.subdepartments, function(i, value) {
-                            $('#sub_department').append($('<option  value="' + value.id + '">' + value
-                                .name + '</option>'));
-                        });
-                    },
-                    error: function(error) {
-                        console.log(error.responseJSON.message);
-                    }
-                })
-            }
-        }
-
-        $("#saveProject").click(function(e) {
-            $("#file_message").html('')
-            let stage = $('input[name="stage"]:checked').val()
-            let totalCount = $("#" + $("#forward").val() + "_length")
-                .val();
-            let alreadyUploaded = "{{ count($filesCount) }}";
-            let currentproject = "{{ $project->department->id }}";
-            let project = $("#forward").val();
-            let logs = $("#" + ($("#forward").val() - 1) + "_log_count")
-                .val();
-            $("#call_no_1_message").html("");
-            $("#call_no_2_message").html("");
-            $("#notes_1_message").html("");
-            $("#notes_2_message").html("");
-
-            if (project != 1 && project != 8 && logs == 0 && stage == "forward") {
-                if (stage == "forward" && (currentproject != $("#forward").val())) { //&& alreadyUploaded == 0
-                    $("#form").submit();
-                } else {
-                    $("#form").submit();
-                }
-                // }
-            } else {
-                if (stage == "forward" && (currentproject != $("#forward").val())) { //&& alreadyUploaded == 0
-                    $("#form").submit();
-                } else {
-                    $("#form").submit();
-                }
-            }
-
-        });
-
-        $("#saveCallLogs").click(function() {
-            $("#call_no_message").html("");
-            $("#call_no_1_message").html("");
-            $("#notes_1_message").html("");
-            if ($("#call_no").val() == "") {
-                $("#call_no").focus();
-                $("#call_no_message").html("Please Select Call No");
-            } else if ($("#call_no_1").val() == "") {
-                $("#call_no_1").focus();
-                $("#call_no_1_message").html("Please select the desired option");
-            } else if ($("#notes_1").val() == "") {
-                $("#notes_1").focus();
-                $("#notes_1_message").html("Please enter results of the call");
-            } else {
-                $("#call-log-form").submit();
-            }
-        })
-
-        $("#saveFiles").click(function() {
-            $("#files-form").submit();
-        })
-
-        $("#adders").change(function() {
-            if ($(this).val() != "") {
-                $.ajax({
-                    method: "POST",
-                    url: "{{ route('get.adders') }}",
-                    data: {
-                        _token: "{{ csrf_token() }}",
-                        // subadder: $(this).val(),
-                        adder: $(this).val(),
-                    },
-                    dataType: 'json',
-                    success: function(response) {
-                        $("#uom").val(response.adders.adder_unit_id).change();
-                        $("#amount").val(response.adders.price);
-                    },
-                    error: function(error) {
-                        console.log(error.responseJSON.message);
-                    }
-                })
-            }
-        })
-
-        $("#sub_type").change(function() {
-            if ($(this).val() != "") {
-                $.ajax({
-                    method: "POST",
-                    url: "{{ route('get.adders') }}",
-                    data: {
-                        _token: "{{ csrf_token() }}",
-                        subadder: $(this).val(),
-                        adder: $("#adders").val(),
-                    },
-                    dataType: 'json',
-                    success: function(response) {
-                        $("#uom").val(response.adders.adder_unit_id).change();
-                        $("#amount").val(response.adders.price);
-                    },
-                    error: function(error) {
-                        console.log(error.responseJSON.message);
-                    }
-                })
-            }
-        })
-        $("#btnAdder").click(function() {
-            let rowLength = $('#adderTable tbody').find('tr').length;
-            let adders_id = $("#adders").val();
-            let subadder_id = $("#sub_type").val();
-            let unit_id = $("#uom").val();
-            let adders_name = $.trim($("#adders option:selected").text());
-            let subadder_name = $.trim($("#sub_type option:selected").text());
-            let unit_name = $.trim($("#uom option:selected").text());
-            let amount = $("#amount").val();
-            if (unit_id == 3) {
-                let moduleQty = $('#module_qty').val();
-                let panelQty = $('#panel_qty').val();
-                amount = amount * moduleQty; //* panelQty;
-            }
-            if (unit_id == 5) {
-                let panelQty = $('#panel_qty').val();
-                amount = amount * panelQty; //* panelQty;
-            }
-            let result = checkExistence(adders_id, subadder_id, unit_id);
-            if (result == false) {
-                addAdderToDB("{{ $project->customer->id }}", adders_id, unit_id, amount);
-                emptyControls();
-            } else {
-                alert("already added")
-            }
-        });
-
-
-        function deleteItem(id, adderId) {
-            Swal.fire({
-                title: 'Are you sure?',
-                text: "You won't be able to revert this!",
-                icon: 'warning',
-                showCancelButton: true,
-                confirmButtonColor: '#3085d6',
-                cancelButtonColor: '#d33',
-                confirmButtonText: 'Yes, delete it!'
-            }).then((result) => {
-                if (result.isConfirmed) {
-
-                    $.ajax({
-                        url: "{{ route('adders.remove') }}",
-                        method: "POST",
-                        data: {
-                            _token: "{{ csrf_token() }}",
-                            id: adderId,
-                            customer_id: "{{ $project->customer->id }}",
-                        },
-                        dataType: 'json',
-                        success: function(response) {
-                            if (response.status == 200) {
-                                Swal.fire(
-                                    'Deleted!',
-                                    'Adder has been deleted.',
-                                    'success'
-                                )
-                                // $("#row" + id).remove();
-                                populateAddersTable(response.adders);
-                            }
-                        },
-                        error: function(error) {
-                            Swal.fire(
-                                'Error!',
-                                'Some error occurred :)',
-                                'error'
-                            )
-                        }
-                    });
-                }
-                if (result.dismiss) {
-                    Swal.fire(
-                        'Cancelled!',
-                        'Adder is safe :)',
-                        'error'
-                    )
-                }
-            })
-        }
-
-        function addAdderToDB(customerId, adderTypeId, adderUnitId, amount) {
+    function getSubDepartments(id) {
+        if (id != "") {
             $.ajax({
-                url: "{{ route('adders.store') }}",
                 method: "POST",
+                url: "{{ route('get.sub.departments') }}",
                 data: {
                     _token: "{{ csrf_token() }}",
-                    customer_id: customerId,
-                    adder_type_id: adderTypeId,
-                    adder_unit_id: adderUnitId,
-                    amount: amount,
+                    id: id,
                 },
                 dataType: 'json',
                 success: function(response) {
-                    if (response.status == 200) {
-                        Swal.fire(
-                            'Added!',
-                            'Adders has been added.',
-                            'success'
-                        )
-                        populateAddersTable(response.adders)
-                    }
-                },
-                error: function(error) {
-                    Swal.fire(
-                        'Error!',
-                        'Some error occurred :)',
-                        'error'
-                    )
-                }
-            });
-        }
-
-        function populateAddersTable(adders) {
-            $("#adderTable > tbody").empty();
-            $.each(adders, function(index, item) {
-                let newRow = "<tr id='row" + (index + 1) + "'>" +
-                    '<input type="hidden" value="' + item.adder_type_id + '" name="adders[]" />' +
-                    '<input type="hidden" value="' + item.adder_sub_type_id + '" name="subadders[]" />' +
-                    '<input type="hidden" value="' + item.adder_unit_id + '" name="uom[]" />' +
-                    '<input type="hidden" value="' + item.amount + '" name="amount[]" />' +
-
-
-                    "<td>" + (index + 1) + "</td>" +
-                    "<td>" + item.type.name + "</td>" +
-                    "<td>" + item.unit.name + "</td>" +
-                    "<td>" + item.amount + "</td>" +
-
-                    "<td colspan='4'><i style='cursor: pointer;' class='icofont-trash text-danger' onClick=deleteItem(" +
-                    (index + 1) + "," + item.id + ")>&nbsp;&nbsp;Delete</i></td>" +
-                    "</tr>";
-
-                $("#adderTable > tbody").append(newRow);
-            });
-
-        }
-
-        function editItem(id, addersId, subAdderId, uomId, amount) {
-            $("#adders").val(addersId).change();
-            $("#sub_type").val(subAdderId).change()
-            $("#uom").val(uomId).change();
-            $("#amount").val(amount).change();
-
-        }
-
-        function checkExistence(firstval, secondval, thirdval) {
-            let result = false;
-            $("#adderTable tbody tr").each(function(index) {
-                let first = $(this).children().eq(0).val();
-                let second = $(this).children().eq(1).val();
-                let third = $(this).children().eq(2).val();
-                if (firstval == first && secondval == second && thirdval == third) {
-                    result = true;
-                } else {
-                    result = false;
-                }
-            });
-            return result;
-        }
-
-        function calculateAddersAmount() {
-            let adders_amount = 0;
-            $("#adderTable tbody tr").each(function(index) {
-                // console.log($(this).children().eq(8).text() * 1);
-                adders_amount += $(this).children().eq(8).text() * 1;
-            });
-            $("#adders_amount").val(adders_amount);
-            calculateCommission();
-        }
-
-        function emptyControls() {
-            $("#adders").val('').change();
-            $("#sub_type").val('').change();
-            $("#uom").val('').change();
-            $("#amount").val('');
-        }
-
-        function calculateCommission() {
-            let contractAmount = parseFloat($("#contract_amount").val());
-            let dealerFeeAmount = parseFloat($("#dealer_fee_amount").val());
-            let redlineFee = parseFloat($("#redline_costs").val());
-            let adders = parseFloat($("#adders_amount").val());
-            let commission = contractAmount - dealerFeeAmount - redlineFee - adders;
-            $("#commission").val(commission.toFixed(2));
-        }
-
-        $("#hoa").change(function() {
-            alert()
-            if ($(this).val() == "yes") {
-                $("#hoa_select").css("display", "block")
-            } else {
-                $("#hoa_select").css("display", "none")
-            }
-        })
-        $("#mpu_required").change(function() {
-            if ($(this).val() == "yes") {
-                $(".mpuselect").css("display", "block")
-            } else {
-                $(".mpuselect").css("display", "none")
-            }
-        })
-
-        $("#call_no").change(function() {
-            // alert($(this).val());
-            $.ajax({
-                url: "{{ route('projects.call.script') }}",
-                method: "POST",
-                data: {
-                    _token: "{{ csrf_token() }}",
-                    call: $(this).val(),
-                    department: "{{ $project->department_id }}",
-                    project: "{{ $project->id }}",
-                },
-                success: function(response) {
-                    // console.log(response);
-                    $("#call_script").empty();
-                    $("#call_script").html(response);
-                    let customer_name =
-                        "{{ $project->customer->first_name . ' ' . $project->customer->last_name }}";
-                    let salespartner = "{{ $project->customer->salespartner->name }}";
-                    $('#call_script').html(function(i, old) {
-                        return old
-                            .replace("user_name", "<b>{{ auth()->user()->name }}</b>")
-                            .replace("company_name", "<b>Solen Energy Co.</b>")
-                            .replace("customer_name", "<b>" + customer_name + "</b>")
-                            .replace("customer_name_1", "<b>" + customer_name + "</b>")
-                            .replace("salespartner_name", "<b>" + salespartner + "</b>")
-                            .replace("salespartner_name_1", "<b>" + salespartner + "</b>")
-                        // let text = $(this).html();
-                        // let customer_name = "{{ $project->customer->first_name . ' ' . $project->customer->last_name }}"
-                        // console.log(customer_name);
-                        // $(this).html(text.replace("user_name", "<b>{{ auth()->user()->name }}</b>"));
-                        // $(this).html(text.replace("company_name", "<b>Solen Energy Co.</b>"));
-                        // $(this).html(text.replace("customer_name", "<b>"+customer_name+"</b>"));
+                    $('#sub_department').empty();
+                    $('#sub_department').append($('<option value="">Select Sub Department</soption>'));
+                    $.each(response.subdepartments, function(i, value) {
+                        $('#sub_department').append($('<option  value="' + value.id + '">' + value
+                            .name + '</option>'));
                     });
-
                 },
                 error: function(error) {
-                    Swal.fire(
-                        'Error!',
-                        'Some error occurred :)',
-                        'error'
-                    )
-                }
-            });
-        })
-
-        $("#email_no").change(function() {
-            $.ajax({
-                url: "{{ route('projects.email.script') }}",
-                method: "POST",
-                data: {
-                    _token: "{{ csrf_token() }}",
-                    emailType: $(this).val(),
-                    department: "{{ $project->department_id }}",
-                    project: "{{ $project->id }}",
-                },
-                success: function(response) {
-                    window.editor.setData(response);
-                    let customer_name =
-                        "{{ $project->customer->first_name . ' ' . $project->customer->last_name }}";
-                    let salespartner = "{{ $project->customer->salespartner->name }}";
-                    let customerreplace = window.editor.getData();
-                    let customer_replaced_text = customerreplace.replace("customer_name", "<b>" +
-                        customer_name + "</b>");
-                    window.editor.setData(customer_replaced_text);
-                    let customerreplace_1 = window.editor.getData();
-                    let customer_replaced_text_1 = customerreplace_1.replace("customer_name_1", "<b>" +
-                        customer_name + "</b>");
-                    window.editor.setData(customer_replaced_text_1);
-                    let salespartnerName = window.editor.getData();
-                    let sales_partner_text = salespartnerName.replace("salespartner_name", "<b>" +
-                        salespartner +
-                        "</b>");
-                    window.editor.setData(sales_partner_text);
-                    let salespartnerName1 = window.editor.getData();
-                    let sales_partner_text1 = salespartnerName1.replace("salespartner_name_1", "<b>" +
-                        salespartner +
-                        "</b>");
-                    window.editor.setData(sales_partner_text1);
-                },
-                error: function(error) {
-                    Swal.fire(
-                        'Error!',
-                        'Some error occurred :)',
-                        'error'
-                    )
-                }
-            });
-        })
-        // fetchEmails()
-
-        function fetchEmails() {
-            $("#emailDiv").empty();
-            let loadingDiv =
-                '<div class="card-header py-3 px-0 d-sm-flex align-items-center  justify-content-between border-bottom">' +
-                '<h3 class=" fw-bold flex-fill mb-0 mt-sm-0 text-center fs-10 text-uppercase">' +
-                'Fetching Emails. Please Wait.........' +
-                '</h3></div>';
-            $("#emailDiv").append(loadingDiv);
-            $.ajax({
-                method: "POST",
-                url: "{{ route('fetch.emails') }}",
-                data: {
-                    _token: "{{ csrf_token() }}",
-                    project_id: "{{ $project->id }}",
-                    customer_id: "{{ $project->customer_id }}",
-                },
-                success: function(response) {
-
-                    if (response.status == 200) {
-                        showEmails("{{ $project->id }}");
-                    }
-                },
-                error: function(error) {
-                    console.log(error);
+                    console.log(error.responseJSON.message);
                 }
             })
         }
+    }
 
-        function showEmails(projectId) {
+    $("#saveProject").click(function(e) {
+        $("#file_message").html('')
+        let stage = $('input[name="stage"]:checked').val()
+        let totalCount = $("#" + $("#forward").val() + "_length")
+            .val();
+        let alreadyUploaded = "{{ count($filesCount) }}";
+        let currentproject = "{{ $project->department->id }}";
+        let project = $("#forward").val();
+        let logs = $("#" + ($("#forward").val() - 1) + "_log_count")
+            .val();
+        $("#call_no_1_message").html("");
+        $("#call_no_2_message").html("");
+        $("#notes_1_message").html("");
+        $("#notes_2_message").html("");
+
+        if (project != 1 && project != 8 && logs == 0 && stage == "forward") {
+            if (stage == "forward" && (currentproject != $("#forward").val())) { //&& alreadyUploaded == 0
+                $("#form").submit();
+            } else {
+                $("#form").submit();
+            }
+            // }
+        } else {
+            if (stage == "forward" && (currentproject != $("#forward").val())) { //&& alreadyUploaded == 0
+                $("#form").submit();
+            } else {
+                $("#form").submit();
+            }
+        }
+
+    });
+
+    $("#saveCallLogs").click(function() {
+        $("#call_no_message").html("");
+        $("#call_no_1_message").html("");
+        $("#notes_1_message").html("");
+        if ($("#call_no").val() == "") {
+            $("#call_no").focus();
+            $("#call_no_message").html("Please Select Call No");
+        } else if ($("#call_no_1").val() == "") {
+            $("#call_no_1").focus();
+            $("#call_no_1_message").html("Please select the desired option");
+        } else if ($("#notes_1").val() == "") {
+            $("#notes_1").focus();
+            $("#notes_1_message").html("Please enter results of the call");
+        } else {
+            $("#call-log-form").submit();
+        }
+    })
+
+    $("#saveFiles").click(function() {
+        $("#files-form").submit();
+    })
+
+    $("#adders").change(function() {
+        if ($(this).val() != "") {
             $.ajax({
                 method: "POST",
-                url: "{{ route('show.emails') }}",
+                url: "{{ route('get.adders') }}",
                 data: {
                     _token: "{{ csrf_token() }}",
-                    project_id: projectId,
+                    // subadder: $(this).val(),
+                    adder: $(this).val(),
                 },
+                dataType: 'json',
                 success: function(response) {
-                    $("#emailDiv").empty();
-                    $("#emailDiv").html(response);
+                    $("#uom").val(response.adders.adder_unit_id).change();
+                    $("#amount").val(response.adders.price);
                 },
                 error: function(error) {
-                    console.log(error);
+                    console.log(error.responseJSON.message);
                 }
             })
         }
+    })
 
-        function deleteFile(id) {
-            $("#deleteId").val(id);
-            $("#deletefile").modal("show")
-        }
-
-        function deleteFileCall() {
-            // alert();
+    $("#sub_type").change(function() {
+        if ($(this).val() != "") {
             $.ajax({
                 method: "POST",
-                url: "{{ route('delete.file') }}",
+                url: "{{ route('get.adders') }}",
                 data: {
                     _token: "{{ csrf_token() }}",
-                    id: $("#deleteId").val()
+                    subadder: $(this).val(),
+                    adder: $("#adders").val(),
                 },
+                dataType: 'json',
                 success: function(response) {
-                    if (response.status == 200) {
-                        location.reload();
-                    }
+                    $("#uom").val(response.adders.adder_unit_id).change();
+                    $("#amount").val(response.adders.price);
+                },
+                error: function(error) {
+                    console.log(error.responseJSON.message);
                 }
-            });
+            })
         }
-        document.addEventListener('DOMContentLoaded', function() {
-            const tagsInput = document.querySelector('.tags-input');
-            const input = document.createElement('input');
-            const hiddenInput = document.getElementById('ccEmailsHidden');
-            const form = document.getElementById('emailForm');
-            const emailError = document.getElementById('emailError');
+    })
+    $("#btnAdder").click(function() {
+        let rowLength = $('#adderTable tbody').find('tr').length;
+        let adders_id = $("#adders").val();
+        let subadder_id = $("#sub_type").val();
+        let unit_id = $("#uom").val();
+        let adders_name = $.trim($("#adders option:selected").text());
+        let subadder_name = $.trim($("#sub_type option:selected").text());
+        let unit_name = $.trim($("#uom option:selected").text());
+        let amount = $("#amount").val();
+        if (unit_id == 3) {
+            let moduleQty = $('#module_qty').val();
+            let panelQty = $('#panel_qty').val();
+            amount = amount * moduleQty; //* panelQty;
+        }
+        if (unit_id == 5) {
+            let panelQty = $('#panel_qty').val();
+            amount = amount * panelQty; //* panelQty;
+        }
+        let result = checkExistence(adders_id, subadder_id, unit_id);
+        if (result == false) {
+            addAdderToDB("{{ $project->customer->id }}", adders_id, unit_id, amount);
+            emptyControls();
+        } else {
+            alert("already added")
+        }
+    });
 
-            tagsInput.appendChild(input);
 
-            function createTag(email) {
-                const tag = document.createElement('span');
-                tag.classList.add('tag');
-                tag.textContent = email;
+    function deleteItem(id, adderId) {
+        Swal.fire({
+            title: 'Are you sure?',
+            text: "You won't be able to revert this!",
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#3085d6',
+            cancelButtonColor: '#d33',
+            confirmButtonText: 'Yes, delete it!'
+        }).then((result) => {
+            if (result.isConfirmed) {
 
-                const closeIcon = document.createElement('i');
-                closeIcon.classList.add('bi', 'bi-x');
-                closeIcon.addEventListener('click', () => {
-                    tagsInput.removeChild(tag);
-                    updateHiddenInput();
+                $.ajax({
+                    url: "{{ route('adders.remove') }}",
+                    method: "POST",
+                    data: {
+                        _token: "{{ csrf_token() }}",
+                        id: adderId,
+                        customer_id: "{{ $project->customer->id }}",
+                    },
+                    dataType: 'json',
+                    success: function(response) {
+                        if (response.status == 200) {
+                            Swal.fire(
+                                'Deleted!',
+                                'Adder has been deleted.',
+                                'success'
+                            )
+                            // $("#row" + id).remove();
+                            populateAddersTable(response.adders);
+                        }
+                    },
+                    error: function(error) {
+                        Swal.fire(
+                            'Error!',
+                            'Some error occurred :)',
+                            'error'
+                        )
+                    }
+                });
+            }
+            if (result.dismiss) {
+                Swal.fire(
+                    'Cancelled!',
+                    'Adder is safe :)',
+                    'error'
+                )
+            }
+        })
+    }
+
+    function addAdderToDB(customerId, adderTypeId, adderUnitId, amount) {
+        $.ajax({
+            url: "{{ route('adders.store') }}",
+            method: "POST",
+            data: {
+                _token: "{{ csrf_token() }}",
+                customer_id: customerId,
+                adder_type_id: adderTypeId,
+                adder_unit_id: adderUnitId,
+                amount: amount,
+            },
+            dataType: 'json',
+            success: function(response) {
+                if (response.status == 200) {
+                    Swal.fire(
+                        'Added!',
+                        'Adders has been added.',
+                        'success'
+                    )
+                    populateAddersTable(response.adders)
+                }
+            },
+            error: function(error) {
+                Swal.fire(
+                    'Error!',
+                    'Some error occurred :)',
+                    'error'
+                )
+            }
+        });
+    }
+
+    function populateAddersTable(adders) {
+        $("#adderTable > tbody").empty();
+        $.each(adders, function(index, item) {
+            let newRow = "<tr id='row" + (index + 1) + "'>" +
+                '<input type="hidden" value="' + item.adder_type_id + '" name="adders[]" />' +
+                '<input type="hidden" value="' + item.adder_sub_type_id + '" name="subadders[]" />' +
+                '<input type="hidden" value="' + item.adder_unit_id + '" name="uom[]" />' +
+                '<input type="hidden" value="' + item.amount + '" name="amount[]" />' +
+
+
+                "<td>" + (index + 1) + "</td>" +
+                "<td>" + item.type.name + "</td>" +
+                "<td>" + item.unit.name + "</td>" +
+                "<td>" + item.amount + "</td>" +
+
+                "<td colspan='4'><i style='cursor: pointer;' class='icofont-trash text-danger' onClick=deleteItem(" +
+                (index + 1) + "," + item.id + ")>&nbsp;&nbsp;Delete</i></td>" +
+                "</tr>";
+
+            $("#adderTable > tbody").append(newRow);
+        });
+
+    }
+
+    function editItem(id, addersId, subAdderId, uomId, amount) {
+        $("#adders").val(addersId).change();
+        $("#sub_type").val(subAdderId).change()
+        $("#uom").val(uomId).change();
+        $("#amount").val(amount).change();
+
+    }
+
+    function checkExistence(firstval, secondval, thirdval) {
+        let result = false;
+        $("#adderTable tbody tr").each(function(index) {
+            let first = $(this).children().eq(0).val();
+            let second = $(this).children().eq(1).val();
+            let third = $(this).children().eq(2).val();
+            if (firstval == first && secondval == second && thirdval == third) {
+                result = true;
+            } else {
+                result = false;
+            }
+        });
+        return result;
+    }
+
+    function calculateAddersAmount() {
+        let adders_amount = 0;
+        $("#adderTable tbody tr").each(function(index) {
+            // console.log($(this).children().eq(8).text() * 1);
+            adders_amount += $(this).children().eq(8).text() * 1;
+        });
+        $("#adders_amount").val(adders_amount);
+        calculateCommission();
+    }
+
+    function emptyControls() {
+        $("#adders").val('').change();
+        $("#sub_type").val('').change();
+        $("#uom").val('').change();
+        $("#amount").val('');
+    }
+
+    function calculateCommission() {
+        let contractAmount = parseFloat($("#contract_amount").val());
+        let dealerFeeAmount = parseFloat($("#dealer_fee_amount").val());
+        let redlineFee = parseFloat($("#redline_costs").val());
+        let adders = parseFloat($("#adders_amount").val());
+        let commission = contractAmount - dealerFeeAmount - redlineFee - adders;
+        $("#commission").val(commission.toFixed(2));
+    }
+
+    $("#hoa").change(function() {
+        alert()
+        if ($(this).val() == "yes") {
+            $("#hoa_select").css("display", "block")
+        } else {
+            $("#hoa_select").css("display", "none")
+        }
+    })
+    $("#mpu_required").change(function() {
+        if ($(this).val() == "yes") {
+            $(".mpuselect").css("display", "block")
+        } else {
+            $(".mpuselect").css("display", "none")
+        }
+    })
+
+    $("#call_no").change(function() {
+        // alert($(this).val());
+        $.ajax({
+            url: "{{ route('projects.call.script') }}",
+            method: "POST",
+            data: {
+                _token: "{{ csrf_token() }}",
+                call: $(this).val(),
+                department: "{{ $project->department_id }}",
+                project: "{{ $project->id }}",
+            },
+            success: function(response) {
+                // console.log(response);
+                $("#call_script").empty();
+                $("#call_script").html(response);
+                let customer_name =
+                    "{{ $project->customer->first_name . ' ' . $project->customer->last_name }}";
+                let salespartner = "{{ $project->customer->salespartner->name }}";
+                $('#call_script').html(function(i, old) {
+                    return old
+                        .replace("user_name", "<b>{{ auth()->user()->name }}</b>")
+                        .replace("company_name", "<b>Solen Energy Co.</b>")
+                        .replace("customer_name", "<b>" + customer_name + "</b>")
+                        .replace("customer_name_1", "<b>" + customer_name + "</b>")
+                        .replace("salespartner_name", "<b>" + salespartner + "</b>")
+                        .replace("salespartner_name_1", "<b>" + salespartner + "</b>")
+                    // let text = $(this).html();
+                    // let customer_name = "{{ $project->customer->first_name . ' ' . $project->customer->last_name }}"
+                    // console.log(customer_name);
+                    // $(this).html(text.replace("user_name", "<b>{{ auth()->user()->name }}</b>"));
+                    // $(this).html(text.replace("company_name", "<b>Solen Energy Co.</b>"));
+                    // $(this).html(text.replace("customer_name", "<b>"+customer_name+"</b>"));
                 });
 
-                tag.appendChild(closeIcon);
-                tagsInput.insertBefore(tag, input);
+            },
+            error: function(error) {
+                Swal.fire(
+                    'Error!',
+                    'Some error occurred :)',
+                    'error'
+                )
+            }
+        });
+    })
 
+    $("#email_no").change(function() {
+        $.ajax({
+            url: "{{ route('projects.email.script') }}",
+            method: "POST",
+            data: {
+                _token: "{{ csrf_token() }}",
+                emailType: $(this).val(),
+                department: "{{ $project->department_id }}",
+                project: "{{ $project->id }}",
+            },
+            success: function(response) {
+                window.editor.setData(response);
+                let customer_name =
+                    "{{ $project->customer->first_name . ' ' . $project->customer->last_name }}";
+                let salespartner = "{{ $project->customer->salespartner->name }}";
+                let customerreplace = window.editor.getData();
+                let customer_replaced_text = customerreplace.replace("customer_name", "<b>" +
+                    customer_name + "</b>");
+                window.editor.setData(customer_replaced_text);
+                let customerreplace_1 = window.editor.getData();
+                let customer_replaced_text_1 = customerreplace_1.replace("customer_name_1", "<b>" +
+                    customer_name + "</b>");
+                window.editor.setData(customer_replaced_text_1);
+                let salespartnerName = window.editor.getData();
+                let sales_partner_text = salespartnerName.replace("salespartner_name", "<b>" +
+                    salespartner +
+                    "</b>");
+                window.editor.setData(sales_partner_text);
+                let salespartnerName1 = window.editor.getData();
+                let sales_partner_text1 = salespartnerName1.replace("salespartner_name_1", "<b>" +
+                    salespartner +
+                    "</b>");
+                window.editor.setData(sales_partner_text1);
+            },
+            error: function(error) {
+                Swal.fire(
+                    'Error!',
+                    'Some error occurred :)',
+                    'error'
+                )
+            }
+        });
+    })
+    // fetchEmails()
+
+    function fetchEmails() {
+        $("#emailDiv").empty();
+        let loadingDiv =
+            '<div class="card-header py-3 px-0 d-sm-flex align-items-center  justify-content-between border-bottom">' +
+            '<h3 class=" fw-bold flex-fill mb-0 mt-sm-0 text-center fs-10 text-uppercase">' +
+            'Fetching Emails. Please Wait.........' +
+            '</h3></div>';
+        $("#emailDiv").append(loadingDiv);
+        $.ajax({
+            method: "POST",
+            url: "{{ route('fetch.emails') }}",
+            data: {
+                _token: "{{ csrf_token() }}",
+                project_id: "{{ $project->id }}",
+                customer_id: "{{ $project->customer_id }}",
+            },
+            success: function(response) {
+
+                if (response.status == 200) {
+                    showEmails("{{ $project->id }}");
+                }
+            },
+            error: function(error) {
+                console.log(error);
+            }
+        })
+    }
+
+    function showEmails(projectId) {
+        $.ajax({
+            method: "POST",
+            url: "{{ route('show.emails') }}",
+            data: {
+                _token: "{{ csrf_token() }}",
+                project_id: projectId,
+            },
+            success: function(response) {
+                $("#emailDiv").empty();
+                $("#emailDiv").html(response);
+            },
+            error: function(error) {
+                console.log(error);
+            }
+        })
+    }
+
+    function deleteFile(id) {
+        $("#deleteId").val(id);
+        $("#deletefile").modal("show")
+    }
+
+    function deleteFileCall() {
+        // alert();
+        $.ajax({
+            method: "POST",
+            url: "{{ route('delete.file') }}",
+            data: {
+                _token: "{{ csrf_token() }}",
+                id: $("#deleteId").val()
+            },
+            success: function(response) {
+                if (response.status == 200) {
+                    location.reload();
+                }
+            }
+        });
+    }
+    document.addEventListener('DOMContentLoaded', function() {
+        const tagsInput = document.querySelector('.tags-input');
+        const input = document.createElement('input');
+        const hiddenInput = document.getElementById('ccEmailsHidden');
+        const form = document.getElementById('emailForm');
+        const emailError = document.getElementById('emailError');
+
+        tagsInput.appendChild(input);
+
+        function createTag(email) {
+            const tag = document.createElement('span');
+            tag.classList.add('tag');
+            tag.textContent = email;
+
+            const closeIcon = document.createElement('i');
+            closeIcon.classList.add('bi', 'bi-x');
+            closeIcon.addEventListener('click', () => {
+                tagsInput.removeChild(tag);
                 updateHiddenInput();
-            }
-
-            function updateHiddenInput() {
-                const tags = document.querySelectorAll('.tag');
-                const emails = Array.from(tags).map(tag => tag.textContent.trim());
-                hiddenInput.value = emails.join(',');
-            }
-
-            function validateEmails(emails) {
-                const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-                return emails.every(email => emailPattern.test(email));
-            }
-
-            input.addEventListener('keydown', function(e) {
-                if (e.key === 'Enter' || e.key === ',') {
-                    e.preventDefault();
-                    const email = input.value.trim();
-                    if (email && validateEmails([email])) {
-                        createTag(email);
-                        input.value = '';
-                        emailError.style.display = 'none';
-                    } else {
-                        emailError.style.display = 'block';
-                    }
-                }
             });
 
-            tagsInput.addEventListener('click', () => {
-                input.focus();
-            });
+            tag.appendChild(closeIcon);
+            tagsInput.insertBefore(tag, input);
 
-        });
-        $('#accept-form').on('submit', function(e) {
-            e.preventDefault();
-
-            // Create a FormData object
-            var formData = new FormData(this); // Automatically collects all form inputs, including files
-
-            // Send the form data using jQuery AJAX
-            $.ajax({
-                url: "{{ route('project.accept.file') }}", // The URL where the request is sent
-                type: 'POST',
-                data: formData,
-                contentType: false, // Tell jQuery not to set contentType
-                processData: false, // Tell jQuery not to process the data (i.e., don't try to convert it into a string)
-                headers: {
-                    'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr(
-                        'content') // Include the CSRF token from meta tag
-                },
-                success: function(response) {
-                    $("#project-acceptance-view").empty();
-                    $("#project-acceptance-view").html(response);
-                    // if (response.success) {
-                    //     console.log('File uploaded successfully.');
-                    // } else {
-                    //     console.error('Error: ' + response.message);
-                    // }
-                },
-                error: function(xhr) {
-                    console.error('Error uploading file: ' + xhr.responseText);
-                }
-            });
-        });
-        getAcceptanceForm();
-
-        function getAcceptanceForm() {
-            $.ajax({
-                url: "{{ route('project.accept.file') }}", // The URL where the request is sent
-                type: 'POST',
-                data: {
-                    "_token": "{{ csrf_token() }}",
-                    project_id: '{{ $project->id }}',
-                    mode: 'view'
-                },
-                headers: {
-                    'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr(
-                        'content') // Include the CSRF token from meta tag
-                },
-                success: function(response) {
-                    $("#project-acceptance-view").empty();
-                    $("#project-acceptance-view").html(response);
-                    // if (response.success) {
-                    //     console.log('File uploaded successfully.');
-                    // } else {
-                    //     console.error('Error: ' + response.message);
-                    // }
-                },
-                error: function(xhr) {
-                    console.error('Error uploading file: ' + xhr.responseText);
-                }
-            });
+            updateHiddenInput();
         }
 
-        function acceptanceAction(mode, id, projectId) {
-            $.ajax({
-                url: "{{ route('action.project.acceptance') }}", // The URL where the request is sent
-                type: 'POST',
-                data: {
-                    "_token": "{{ csrf_token() }}",
-                    id: id,
-                    projectId: projectId,
-                    mode: mode
-                },
-                success: function(response) {
-                    if (response.status == 200) {
-                        getAcceptanceForm();
-                    }
-                    if (response.status == 500) {
-                        alert(response.message)
-                    }
-                },
-                error: function(xhr) {
-                    console.error('Error uploading file: ' + xhr.responseText);
-                }
-            });
+        function updateHiddenInput() {
+            const tags = document.querySelectorAll('.tag');
+            const emails = Array.from(tags).map(tag => tag.textContent.trim());
+            hiddenInput.value = emails.join(',');
         }
-    </script>
+
+        function validateEmails(emails) {
+            const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            return emails.every(email => emailPattern.test(email));
+        }
+
+        input.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter' || e.key === ',') {
+                e.preventDefault();
+                const email = input.value.trim();
+                if (email && validateEmails([email])) {
+                    createTag(email);
+                    input.value = '';
+                    emailError.style.display = 'none';
+                } else {
+                    emailError.style.display = 'block';
+                }
+            }
+        });
+
+        tagsInput.addEventListener('click', () => {
+            input.focus();
+        });
+
+    });
+    $('#accept-form').on('submit', function(e) {
+        e.preventDefault();
+
+        // Create a FormData object
+        var formData = new FormData(this); // Automatically collects all form inputs, including files
+
+        // Send the form data using jQuery AJAX
+        $.ajax({
+            url: "{{ route('project.accept.file') }}", // The URL where the request is sent
+            type: 'POST',
+            data: formData,
+            contentType: false, // Tell jQuery not to set contentType
+            processData: false, // Tell jQuery not to process the data (i.e., don't try to convert it into a string)
+            headers: {
+                'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr(
+                    'content') // Include the CSRF token from meta tag
+            },
+            success: function(response) {
+                $("#project-acceptance-view").empty();
+                $("#project-acceptance-view").html(response);
+                // if (response.success) {
+                //     console.log('File uploaded successfully.');
+                // } else {
+                //     console.error('Error: ' + response.message);
+                // }
+            },
+            error: function(xhr) {
+                console.error('Error uploading file: ' + xhr.responseText);
+            }
+        });
+    });
+    getAcceptanceForm();
+
+    function getAcceptanceForm() {
+        $.ajax({
+            url: "{{ route('project.accept.file') }}", // The URL where the request is sent
+            type: 'POST',
+            data: {
+                "_token": "{{ csrf_token() }}",
+                project_id: '{{ $project->id }}',
+                mode: 'view'
+            },
+            headers: {
+                'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr(
+                    'content') // Include the CSRF token from meta tag
+            },
+            success: function(response) {
+                $("#project-acceptance-view").empty();
+                $("#project-acceptance-view").html(response);
+                // if (response.success) {
+                //     console.log('File uploaded successfully.');
+                // } else {
+                //     console.error('Error: ' + response.message);
+                // }
+            },
+            error: function(xhr) {
+                console.error('Error uploading file: ' + xhr.responseText);
+            }
+        });
+    }
+
+    function acceptanceAction(mode, id, projectId) {
+        $.ajax({
+            url: "{{ route('action.project.acceptance') }}", // The URL where the request is sent
+            type: 'POST',
+            data: {
+                "_token": "{{ csrf_token() }}",
+                id: id,
+                projectId: projectId,
+                mode: mode
+            },
+            success: function(response) {
+                if (response.status == 200) {
+                    getAcceptanceForm();
+                }
+                if (response.status == 500) {
+                    alert(response.message)
+                }
+            },
+            error: function(xhr) {
+                console.error('Error uploading file: ' + xhr.responseText);
+            }
+        });
+    }
+</script>
 @endsection
