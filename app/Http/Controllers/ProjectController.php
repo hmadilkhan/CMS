@@ -41,7 +41,6 @@ class ProjectController extends Controller
      */
     public function index(Request $request)
     {
-        // return $this->projectQuery($request);
         return view("projects.index", [
             "customers" => Customer::all(),
             "departments" => $this->departmentQuery(),
@@ -173,6 +172,7 @@ class ProjectController extends Controller
             "subdepartments" => $result["subdepartments"],
             "departments" => $result["departments"],
             "value" => $request->id,
+            "ghostProjects" => $result["ghostProjects"],
         ]);
     }
 
@@ -547,8 +547,32 @@ class ProjectController extends Controller
         return [
             "projects" => $query->get(),
             "subdepartments" => $subdepartmentsQuery->get(),
-            "departments" => Department::all(),
+            "departments" => Department::where("id", "!=", 9)->get(),
+            "ghostProjects" => $this->ghostProjects(),
         ];
+    }
+
+    public function ghostProjects()
+    {
+        // Fetch the project IDs that meet your condition
+        $projectIds = Task::where('department_id', 4) // Ensure it was in department 4 at least once
+        ->whereNotExists(function ($query) {
+            $query->select(DB::raw(1))
+                ->from('tasks as t')
+                ->whereColumn('t.project_id', 'tasks.project_id')
+                ->where('t.department_id', '>=', 7); // Exclude if moved to department 7 or beyond
+        })
+        ->groupBy('project_id')
+        ->pluck('project_id'); // Get the relevant project IDs
+
+        $query = Project::with("customer", "customer.salespartner", "department", "subdepartment", "assignedPerson", "assignedPerson.employee", "task", "notes");
+        $query->whereIn("id",$projectIds);
+        return $query->get();
+        // Fetch all tasks for those projects that match your conditions
+        // $result = Task::whereIn('project_id', $projects)
+        // ->whereIn('department_id', [1, 2, 3, 4]) // Allow movement back to departments 1, 2, 3, or stay in 4
+        // ->get();
+        // return $result;
     }
 
     public function getEmployees($departmentId)
@@ -569,6 +593,7 @@ class ProjectController extends Controller
         $result = $this->projectQuery($request);
         return view("projects.list", [
             "projects" => $result["projects"],
+            "ghostProjects" => $result["ghostProjects"],
         ]);
     }
 
