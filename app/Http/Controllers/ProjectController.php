@@ -111,7 +111,12 @@ class ProjectController extends Controller
      */
     public function show(Project $project)
     {
-        $project = Project::with("task", "customer", "department", "logs", "logs.call", "subdepartment", "assignedPerson", "assignedPerson.employee", "departmentnotes", "departmentnotes.user", "salesPartnerUser")->where("id", $project->id)->first();
+        $project = Project::with("task", "customer", "department", "logs", "logs.call", "subdepartment", "assignedPerson", "assignedPerson.employee", "departmentnotes", "departmentnotes.user", "salesPartnerUser")
+            ->withCount(['emails as viewed_emails_count' => function ($query) {
+                $query->where('is_view', 1);
+            }])
+            ->where("id", $project->id)
+            ->first();
         $task = Task::whereIn("status", ["In-Progress", "Hold", "Cancelled"])->where("project_id", $project->id)->first();
         $departments = Department::whereIn("id", Task::where("project_id", $project->id)->whereNotIn("department_id", Department::where("id", ">", $task->department_id)->take(1)->pluck("id"))->groupBy("department_id")->orderBy("department_id")->pluck("department_id"))->get();
         $fwdDepartments =  array_merge($departments->toArray(), Department::where("id", ">", $task->department_id)->take(1)->get()->toArray());
@@ -498,7 +503,7 @@ class ProjectController extends Controller
         } catch (\Throwable $th) {
             DB::rollBack();
             // return $th->getMessage();
-            return response()->json(["status" => 500, "message" => "Error: ".$th->getMessage()]);
+            return response()->json(["status" => 500, "message" => "Error: " . $th->getMessage()]);
             // return redirect()->route("projects.show", $request->project_id)->with("error", $th->getMessage());
         }
     }
@@ -516,13 +521,16 @@ class ProjectController extends Controller
             return response()->json(["status" => 200, "message" => "Status changed successfully"]);
             // return redirect()->route("projects.show", $request->project_id);
         } catch (\Throwable $th) {
-            return response()->json(["status" => 500, "message" => "Error: ".$th->getMessage()]);
+            return response()->json(["status" => 500, "message" => "Error: " . $th->getMessage()]);
         }
     }
 
     public function projectQuery(Request $request)
     {
         $query = Project::with("customer", "customer.salespartner", "department", "subdepartment", "assignedPerson", "assignedPerson.employee", "task", "notes");
+        $query->withCount(['emails as viewed_emails_count' => function ($query) {
+            $query->where('is_view', 1);
+        }]);
         $subdepartmentsQuery = SubDepartment::with("department");
         if (in_array("Sales Manager", auth()->user()->getRoleNames()->toArray())) {
             $query->whereHas("customer", function ($q) {
@@ -556,17 +564,17 @@ class ProjectController extends Controller
     {
         // Fetch the project IDs that meet your condition
         $projectIds = Task::where('department_id', 4) // Ensure it was in department 4 at least once
-        ->whereNotExists(function ($query) {
-            $query->select(DB::raw(1))
-                ->from('tasks as t')
-                ->whereColumn('t.project_id', 'tasks.project_id')
-                ->where('t.department_id', '>=', 7); // Exclude if moved to department 7 or beyond
-        })
-        ->groupBy('project_id')
-        ->pluck('project_id'); // Get the relevant project IDs
+            ->whereNotExists(function ($query) {
+                $query->select(DB::raw(1))
+                    ->from('tasks as t')
+                    ->whereColumn('t.project_id', 'tasks.project_id')
+                    ->where('t.department_id', '>=', 7); // Exclude if moved to department 7 or beyond
+            })
+            ->groupBy('project_id')
+            ->pluck('project_id'); // Get the relevant project IDs
 
         $query = Project::with("customer", "customer.salespartner", "department", "subdepartment", "assignedPerson", "assignedPerson.employee", "task", "notes");
-        $query->whereIn("id",$projectIds);
+        $query->whereIn("id", $projectIds);
         return $query->get();
         // Fetch all tasks for those projects that match your conditions
         // $result = Task::whereIn('project_id', $projects)

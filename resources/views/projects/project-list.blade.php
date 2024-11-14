@@ -1,3 +1,14 @@
+<style>
+    .blink {
+        animation: blinker 1s linear infinite;
+    }
+
+    @keyframes blinker {
+        50% {
+            opacity: 0;
+        }
+    }
+</style>
 @if ($value == 'all')
     @foreach ($departments as $department)
         <div class="container-fluid py-2">
@@ -8,11 +19,11 @@
             </div>
             <div class="d-flex flex-row flex-nowrap overflow-auto">
                 @php
-                $collections = $projects
+                    $collections = $projects
                         ->filter(function ($item) use ($department) {
                             return $item->department_id == $department->id;
                         })
-                    ->values(); 
+                        ->values();
                 @endphp
                 @if (count($collections) > 0)
                     @foreach ($collections as $project)
@@ -28,14 +39,17 @@
                                             <h3 class="mb-0 fw-bold fs-6 mx-3 text-start">{{ $project->project_name }}
                                             </h3>
                                         </div>
-                                        <div class="text-end ms-auto">
-                                            <h6 class="mb-0 fs-6 font-monospace fw-bold">
+                                        <div class="d-flex align-items-center justify-content-between text-end ms-auto">
+                                            <div class="d-flex align-items-center mb-0  px-2">
                                                 @if (empty($project->pto_approval_date))
-                                                    {{ now()->diffInDays(Carbon\Carbon::parse($project->customer->sold_date)) }}
+                                                    <h6 class="fs-6 font-monospace fw-bold m">{{ now()->diffInDays(Carbon\Carbon::parse($project->customer->sold_date)) }}</h6>
                                                 @else
-                                                    {{ Carbon\Carbon::parse($project->pto_approval_date)->diffInDays(Carbon\Carbon::parse($project->customer->sold_date)) }}
+                                                    <h6 class="fs-6 font-monospace fw-bold"> {{ Carbon\Carbon::parse($project->pto_approval_date)->diffInDays(Carbon\Carbon::parse($project->customer->sold_date)) }} </h6>
                                                 @endif
-                                            </h6>
+                                                @if($project->viewed_emails_count)
+                                                    <i class="icofont-email text-danger blink fs-4 m-r-2"></i>
+                                                @endif
+                                            </div>
                                         </div>
                                     </div>
                                     <div class="row g-2 pt-4">
@@ -136,11 +150,11 @@
             <div class="d-flex flex-row flex-nowrap overflow-auto">
                 @if ($subdepartment->id != 21)
                     @php
-                    $collections = $projects
+                        $collections = $projects
                             ->filter(function ($item) use ($subdepartment) {
                                 return $item->sub_department_id == $subdepartment->id;
                             })
-                        ->values(); 
+                            ->values();
                     @endphp
                     @if (count($collections) > 0)
                         @foreach ($collections as $project)
@@ -156,15 +170,19 @@
                                                     class="avatar lg rounded-circle img-thumbnail shadow-sm">
                                                 <h3 class="mb-0 fw-bold fs-6 mx-3 text-start">
                                                     {{ $project->project_name }}</h3>
+                                                    
                                             </div>
-                                            <div class="text-end ms-auto">
-                                                <h6 class="mb-0 fs-6 font-monospace fw-bold">
+                                            <div class="d-flex align-items-center justify-content-between text-end ms-auto">
+                                                <div class="d-flex align-items-center mb-0  px-2">
                                                     @if (empty($project->pto_approval_date))
-                                                        {{ now()->diffInDays(Carbon\Carbon::parse($project->customer->sold_date)) }}
+                                                        <h6 class="fs-6 font-monospace fw-bold m">{{ now()->diffInDays(Carbon\Carbon::parse($project->customer->sold_date)) }}</h6>
                                                     @else
-                                                        {{ Carbon\Carbon::parse($project->pto_approval_date)->diffInDays(Carbon\Carbon::parse($project->customer->sold_date)) }}
+                                                        <h6 class="fs-6 font-monospace fw-bold"> {{ Carbon\Carbon::parse($project->pto_approval_date)->diffInDays(Carbon\Carbon::parse($project->customer->sold_date)) }} </h6>
                                                     @endif
-                                                </h6>
+                                                    @if($project->viewed_emails_count)
+                                                        <i class="icofont-email text-danger blink fs-4 m-r-2"></i>
+                                                    @endif
+                                                </div>
                                             </div>
                                         </div>
                                         <div class="row g-2 pt-4">
@@ -253,12 +271,11 @@
                     @endif
                 @else
                     {{-- GHOST PROJECTS START --}}
-                   
+
                     @if (count($ghostProjects) > 0)
                         @foreach ($ghostProjects as $project)
                             <div class="col-xxl-3 col-xl-3 col-lg-3 col-md-3 col-sm-3 border border-dark border-rounded border-2 "
-                                style="margin-right: 5px;cursor:pointer;"
-                                >
+                                style="margin-right: 5px;cursor:pointer;">
                                 <div class="card">
                                     <div class="card-body">
                                         <div
@@ -359,7 +376,7 @@
                         <div class="col-xxl-12 col-xl-12 col-lg-12 col-md-12 col-sm-12 ">
                             <div class="card">
                                 <div class="card-body">
-                                    <h5>No Records found {{count($ghostCollections)}}</h5>
+                                    <h5>No Records found {{ count($ghostCollections) }}</h5>
                                 </div>
                             </div>
                         </div>

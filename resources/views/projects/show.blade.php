@@ -270,7 +270,7 @@
         .main-container {
             width: 650px;
             /* margin-left: auto;
-                                                                                                margin-right: auto; */
+                                                                                                        margin-right: auto; */
         }
 
         .tags-input {
@@ -307,6 +307,29 @@
         .invalid-feedback {
             display: none;
             color: red;
+        }
+
+        .blink-dot {
+            position: relative;
+        }
+
+        .blink-dot::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 10px;
+            height: 10px;
+            background-color: red;
+            border-radius: 50%;
+            animation: blinker 1s linear infinite;
+            box-shadow: 0 0 10px rgba(255, 0, 0, 0.6);
+        }
+
+        @keyframes blinker {
+            50% {
+                opacity: 0;
+            }
         }
     </style>
     <link rel="stylesheet" href="https://cdn.ckeditor.com/ckeditor5/42.0.0/ckeditor5.css">
@@ -392,7 +415,7 @@
                             <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#financial"
                                     role="tab">Financial</a></li>
                         @endcan
-                        <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#communication"
+                        <li class="nav-item"><a class="nav-link {{$project->viewed_emails_count > 0 ? 'blink-dot' : ''}}" data-bs-toggle="tab" href="#communication"
                                 role="tab">Communication</a></li>
                     </ul>
                 </div>
@@ -1532,32 +1555,32 @@
         }
     });
 
-    $("#assignNotes").submit(function(e){
+    $("#assignNotes").submit(function(e) {
         e.preventDefault();
         $.ajax({
-                method: "POST",
-                url: "{{ route('projects.assign') }}",
-                data: {
-                    _token: "{{ csrf_token() }}",
-                    employee: $("#employee").val(),
-                    project_id: "{{ $project->id }}",
-                    task_id: "{{ $task->id }}",
-                    sub_department_id: "{{ $task->sub_department_id }}",
-                    department_id: "{{ $project->department_id }}",
-                    notes: $("#notes").val(),
-                },
-                success: function(response) {
-                    if (response.status == 200) {
-                        alert("Employee Assigned");
-                        $("#assign-notes").modal("hide");
-                    } else {
-                        alert("Some error occurred!");
-                    }
-                },
-                error: function(error) {
-                    console.log(error);
+            method: "POST",
+            url: "{{ route('projects.assign') }}",
+            data: {
+                _token: "{{ csrf_token() }}",
+                employee: $("#employee").val(),
+                project_id: "{{ $project->id }}",
+                task_id: "{{ $task->id }}",
+                sub_department_id: "{{ $task->sub_department_id }}",
+                department_id: "{{ $project->department_id }}",
+                notes: $("#notes").val(),
+            },
+            success: function(response) {
+                if (response.status == 200) {
+                    alert("Employee Assigned");
+                    $("#assign-notes").modal("hide");
+                } else {
+                    alert("Some error occurred!");
                 }
-            })
+            },
+            error: function(error) {
+                console.log(error);
+            }
+        })
     })
 
     function getSubDepartments(id) {
