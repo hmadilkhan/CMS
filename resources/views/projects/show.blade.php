@@ -270,7 +270,7 @@
         .main-container {
             width: 650px;
             /* margin-left: auto;
-                                                                                                        margin-right: auto; */
+                                                                                                                    margin-right: auto; */
         }
 
         .tags-input {
@@ -378,14 +378,25 @@
                                 id="openemployee"><i class="icofont-arrow-left me-2 fs-6"></i>Back to List</a>
                         </div>
                     </div>
-                    <div class="d-flex justify-content-center align-items-center">
+                    {{-- <div class="d-flex justify-content-center align-items-center">
                         <div class="py-2 project-tab flex-wrap w-sm-100">
                             <ul class="nav nav-tabs tab-body-header rounded ms-3 prtab-set w-sm-100" role="tablist"
                                 style="cursor: pointer;">
                                 @foreach ($departments as $department)
                                     @if ($department->id < $project->department_id)
-                                        <li class="nav-item "><a class="nav-link active bg-success" data-bs-toggle="tab"
-                                                role="tab">{{ $department->name }}</a></li>
+                                        <li class="nav-item dropdown" style="position: relative;">
+                                            <a class="nav-link dropdown-toggle active bg-success" data-bs-toggle="tab"
+                                                role="tab">{{ $department->name }}</a>
+                                            <ul class="dropdown-menu" aria-labelledby="navbarDropdown"
+                                                style="position: relative; top: 100%; left: 0; z-index: 1000;">
+                                                <li><a class="dropdown-item" href="#">Action</a></li>
+                                                <li><a class="dropdown-item" href="#">Another action</a></li>
+                                                <li>
+                                                    <hr class="dropdown-divider">
+                                                </li>
+                                                <li><a class="dropdown-item" href="#">Something else here</a></li>
+                                            </ul>
+                                        </li>
                                     @elseif($department->id == $project->department_id)
                                         <li class="nav-item "><a class="nav-link active " data-bs-toggle="tab"
                                                 role="tab">{{ $department->name }}</a></li>
@@ -396,6 +407,58 @@
                                 @endforeach
                             </ul>
                         </div>
+                    </div> --}}
+                    <div class="d-flex justify-content-center align-items-center">
+                        <nav class="navbar navbar-expand-lg ">
+                            <div class="container-fluid">
+                                <div class="collapse navbar-collapse">
+                                    <ul class="nav nav-tabs tab-body-header rounded ms-3 prtab-set w-sm-100" style="overflow: visible !important;">
+                                        @foreach ($departments as $department)
+                                            @if ($department->id < $project->department_id)
+                                                <li class="nav-item dropdown bg-success">
+                                                    <a class="nav-link dropdown-toggle  text-white" href="#"
+                                                        id="navbarDropdown" role="button" data-bs-toggle="dropdown"
+                                                        aria-expanded="false">
+                                                        {{ $department->name }}
+                                                    </a>
+                                                    @if(!empty($department->subdepartments))
+                                                        <ul class="dropdown-menu" aria-labelledby="navbarDropdown">
+                                                            @foreach($department->subdepartments as $subdepartment)
+                                                                <li><a class="dropdown-item" href="#">{{$subdepartment->name}}</a></li>
+                                                            @endforeach
+                                                        </ul>
+                                                    @endif
+                                                </li>
+                                            @elseif($department->id == $project->department_id)
+                                                <li class="nav-item dropdown bg-success">
+                                                    <a class="nav-link dropdown-toggle active text-white" href="#"
+                                                        id="navbarDropdown" role="button" data-bs-toggle="dropdown"
+                                                        aria-expanded="false">
+                                                        {{ $department->name }}
+                                                    </a>
+                                                    @if(!empty($department->subdepartments))
+                                                        <ul class="dropdown-menu" aria-labelledby="navbarDropdown">
+                                                            @foreach($department->subdepartments as $subdepartment)
+                                                                <li><a class="dropdown-item" href="#">{{$subdepartment->name}}</a></li>
+                                                            @endforeach
+                                                        </ul>
+                                                    @endif
+                                                </li>
+                                            @else
+                                                <li class="nav-item dropdown">
+                                                    <a class="nav-link dropdown-toggle " href="#"
+                                                        id="navbarDropdown" role="button" data-bs-toggle="dropdown"
+                                                        aria-expanded="false">
+                                                        {{ $department->name }}
+                                                    </a>
+                                                </li>
+                                            @endif
+                                        @endforeach
+
+                                    </ul>
+                                </div>
+                            </div>
+                        </nav>
                     </div>
 
                 </div>
@@ -415,8 +478,9 @@
                             <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#financial"
                                     role="tab">Financial</a></li>
                         @endcan
-                        <li class="nav-item"><a class="nav-link {{$project->viewed_emails_count > 0 ? 'blink-dot' : ''}}" data-bs-toggle="tab" href="#communication"
-                                role="tab">Communication</a></li>
+                        <li class="nav-item"><a
+                                class="nav-link {{ $project->viewed_emails_count > 0 ? 'blink-dot' : '' }}"
+                                data-bs-toggle="tab" href="#communication" role="tab">Communication</a></li>
                     </ul>
                 </div>
             </div>

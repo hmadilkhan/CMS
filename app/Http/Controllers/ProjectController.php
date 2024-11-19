@@ -118,7 +118,7 @@ class ProjectController extends Controller
             ->where("id", $project->id)
             ->first();
         $task = Task::whereIn("status", ["In-Progress", "Hold", "Cancelled"])->where("project_id", $project->id)->first();
-        $departments = Department::whereIn("id", Task::where("project_id", $project->id)->whereNotIn("department_id", Department::where("id", ">", $task->department_id)->take(1)->pluck("id"))->groupBy("department_id")->orderBy("department_id")->pluck("department_id"))->get();
+        $departments = Department::whereIn("id", Task::where("project_id", $project->id)->whereNotIn("department_id", Department::where("id", ">", $task->department_id)->take(1)->pluck("id"))->where("id","!=",9)->groupBy("department_id")->orderBy("department_id")->pluck("department_id"))->get();
         $fwdDepartments =  array_merge($departments->toArray(), Department::where("id", ">", $task->department_id)->take(1)->get()->toArray());
         Email::where("project_id", $project->id)->where("department_id", $project->department_id)->update(["is_view" => 0]);
         return view("projects.show", [
@@ -127,7 +127,7 @@ class ProjectController extends Controller
             "backdepartments" => Department::where("id", "<", $task->department_id)->get(),
             "forwarddepartments" => (object)$fwdDepartments, //Department::whereIn("id", Task::where("project_id", $project->id)->pluck("department_id"))->get(),
             "filesCount" => ProjectFile::where("project_id", $project->id)->where("department_id", $project->department_id)->get(),
-            "departments" => Department::all(),
+            "departments" => Department::where("id","!=",9)->get(),
             "employees" => $this->getEmployees($project->department_id),
             "adders" => AdderType::all(),
             "uoms" => AdderUnit::all(),
@@ -555,7 +555,7 @@ class ProjectController extends Controller
         return [
             "projects" => $query->get(),
             "subdepartments" => $subdepartmentsQuery->get(),
-            "departments" => Department::where("id", "!=", 9)->get(),
+            "departments" => Department::with("subdepartments")->where("id", "!=", 9)->get(),
             "ghostProjects" => $this->ghostProjects(),
         ];
     }

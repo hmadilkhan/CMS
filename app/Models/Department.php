@@ -15,4 +15,8 @@ class Department extends Model
     public function logs() : HasMany {
         return $this->hasMany(ProjectCallLog::class,"department_id","id");
     }
+
+    public function subdepartments() : HasMany {
+        return $this->hasMany(SubDepartment::class,"department_id","id");
+    }
 }
