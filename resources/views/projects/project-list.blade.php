@@ -261,7 +261,7 @@
                             </div>
                         @endforeach
                     @else
-                        <div class="col-xxl-12 col-xl-12 col-lg-12 col-md-12 col-sm-12 ">
+                        <div class="col-xxl-12 col-xl-12 col-lg-12 col-md-12 col-sm-12 " >
                             <div class="card">
                                 <div class="card-body">
                                     <h5>No Records found</h5>
@@ -275,7 +275,7 @@
                     @if (count($ghostProjects) > 0)
                         @foreach ($ghostProjects as $project)
                             <div class="col-xxl-3 col-xl-3 col-lg-3 col-md-3 col-sm-3 border border-dark border-rounded border-2 "
-                                style="margin-right: 5px;cursor:pointer;">
+                                style="margin-right: 5px;cursor:pointer;" onclick="showProject('{{ $project->id }}')">
                                 <div class="card">
                                     <div class="card-body">
                                         <div
