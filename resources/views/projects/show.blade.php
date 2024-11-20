@@ -270,7 +270,7 @@
         .main-container {
             width: 650px;
             /* margin-left: auto;
-                                                                                                                    margin-right: auto; */
+                                                                                                                            margin-right: auto; */
         }
 
         .tags-input {
@@ -330,6 +330,18 @@
             50% {
                 opacity: 0;
             }
+        }
+
+        .nav-item.dropdown:hover .dropdown-menu {
+            display: block;
+            position: absolute;
+            /* Optional for controlling positioning */
+            top: 100%;
+            /* Ensures the menu appears below the parent item */
+            left: 0;
+            /* Aligns the dropdown menu with the parent */
+            z-index: 1000;
+            /* Keeps the dropdown menu on top */
         }
     </style>
     <link rel="stylesheet" href="https://cdn.ckeditor.com/ckeditor5/42.0.0/ckeditor5.css">
@@ -412,7 +424,8 @@
                         <nav class="navbar navbar-expand-lg ">
                             <div class="container-fluid">
                                 <div class="collapse navbar-collapse">
-                                    <ul class="nav nav-tabs tab-body-header rounded ms-3 prtab-set w-sm-100" style="overflow: visible !important;">
+                                    <ul class="nav nav-tabs tab-body-header rounded ms-3 prtab-set w-sm-100"
+                                        style="overflow: visible !important;">
                                         @foreach ($departments as $department)
                                             @if ($department->id < $project->department_id)
                                                 <li class="nav-item dropdown bg-success">
@@ -421,10 +434,11 @@
                                                         aria-expanded="false">
                                                         {{ $department->name }}
                                                     </a>
-                                                    @if(!empty($department->subdepartments))
+                                                    @if (!empty($department->subdepartments))
                                                         <ul class="dropdown-menu" aria-labelledby="navbarDropdown">
-                                                            @foreach($department->subdepartments as $subdepartment)
-                                                                <li><a class="dropdown-item" href="#">{{$subdepartment->name}}</a></li>
+                                                            @foreach ($department->subdepartments as $subdepartment)
+                                                                <li><a class="dropdown-item"
+                                                                        href="#">{{ $subdepartment->name }}</a></li>
                                                             @endforeach
                                                         </ul>
                                                     @endif
@@ -436,21 +450,36 @@
                                                         aria-expanded="false">
                                                         {{ $department->name }}
                                                     </a>
-                                                    @if(!empty($department->subdepartments))
+                                                    @if (!empty($department->subdepartments))
                                                         <ul class="dropdown-menu" aria-labelledby="navbarDropdown">
-                                                            @foreach($department->subdepartments as $subdepartment)
-                                                                <li><a class="dropdown-item" href="#">{{$subdepartment->name}}</a></li>
+                                                            @foreach ($department->subdepartments as $subdepartment)
+                                                                <li><a class="dropdown-item"
+                                                                        href="#">{{ $subdepartment->name }}</a></li>
                                                             @endforeach
                                                         </ul>
                                                     @endif
                                                 </li>
                                             @else
                                                 <li class="nav-item dropdown">
-                                                    <a class="nav-link dropdown-toggle " href="#"
-                                                        id="navbarDropdown" role="button" data-bs-toggle="dropdown"
-                                                        aria-expanded="false">
+                                                    <a class="nav-link dropdown-toggle " href="#" id="navbarDropdown"
+                                                        role="button" data-bs-toggle="dropdown" aria-expanded="false">
                                                         {{ $department->name }}
                                                     </a>
+                                                    @php
+                                                        $filtered_collection = $nextSubDepartments
+                                                            ->filter(function ($item) use ($department) {
+                                                                return $item->department_id == $department->id;
+                                                            })
+                                                            ->values();
+                                                    @endphp
+                                                    @if (count($filtered_collection) >  0)
+                                                        <ul class="dropdown-menu" aria-labelledby="navbarDropdown">
+                                                            @foreach ($filtered_collection as $subdepartment)
+                                                                <li><a class="dropdown-item"
+                                                                        href="#">{{ $subdepartment->name }}</a></li>
+                                                            @endforeach
+                                                        </ul>
+                                                    @endif
                                                 </li>
                                             @endif
                                         @endforeach
@@ -478,8 +507,7 @@
                             <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#financial"
                                     role="tab">Financial</a></li>
                         @endcan
-                        <li class="nav-item"><a
-                                class="nav-link {{ $project->viewed_emails_count > 0 ? 'blink-dot' : '' }}"
+                        <li class="nav-item"><a class="nav-link {{ $project->viewed_emails_count > 0 ? 'blink-dot' : '' }}"
                                 data-bs-toggle="tab" href="#communication" role="tab">Communication</a></li>
                     </ul>
                 </div>
@@ -651,7 +679,8 @@
 
                                     <div class="col-sm-6 mb-3">
                                         @livewire('project.notes-section', ['projectId' => $project->id, 'taskId' => $task->id, 'departmentId' => $department->id, 'projectDepartmentId' => $project->department_id], key($project->id))
-                                        @include('projects.partial.show-department-fields')
+                                        {{-- @include('projects.partial.show-department-fields') --}}
+                                        @livewire('project.project-fields', ['project' => $project, 'taskId' => $task->id, 'departmentId' => $department->id, 'projectDepartmentId' => $project->department_id], key($project->id))
                                     </div>
 
                                     <div class="col-sm-6 mb-3">
@@ -1954,7 +1983,6 @@
     }
 
     $("#hoa").change(function() {
-        alert()
         if ($(this).val() == "yes") {
             $("#hoa_select").css("display", "block")
         } else {
