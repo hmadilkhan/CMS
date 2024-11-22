@@ -1,8 +1,12 @@
+<div>
+<form  id="mainForm" wire:submit.prevent="updateProjectFields">
 <div class="row">
+    <input type="hidden" id="project_id" wire:model="formData.project_id" name="project_id" value="{{$project->id}}"/>
+    <input type="hidden" id="forward" name="forward" wire:model="formData.forward" value="{{$project->department_id}}"/>
     @if($departmentId == 1)
     <div class="col-sm-3 mb-3 ">
         <label for="utility_company" class="form-label" id="requiredfiles">Utility Company</label>
-        <input class="form-control" type="text" id="utility_company" name="utility_company" value="{{$project->utility_company}}">
+        <input class="form-control" type="text" id="utility_company" name="utility_company" wire:model="formData.utility_company" value="{{$project->utility_company}}">
         @error("utility_company")
         <div id="utility_company_message" class="text-danger message mt-2">{{$message}}</div>
         @enderror
@@ -10,15 +14,14 @@
     </div>
     <div class="col-sm-3 mb-3 ">
         <label for="ntp_approval_date" class="form-label" id="requiredfiles">NTP Approval Date</label>
-        <input class="form-control" type="date" id="ntp_approval_date" name="ntp_approval_date" value="{{$project->ntp_approval_date}}">
+        <input class="form-control" type="date" id="ntp_approval_date" name="ntp_approval_date" wire:model="formData.ntp_approval_date" value="{{$project->ntp_approval_date}}">
         @error("ntp_approval_date")
         <div id="ntp_approval_date_message" class="text-danger message mt-2">{{$message}}</div>
         @enderror
-        <div id="ntp_approval_date_message" class="text-danger message mt-2"></div>
     </div>
     <div class="col-sm-3 ">
         <label for="hoa" class="form-label">HOA</label>
-        <select class="form-select select2" aria-label="Default select HOA" id="hoa" name="hoa">
+        <select class="form-select select2" aria-label="Default select HOA" wire:model="formData.hoa" id="hoa" name="hoa">
             <option value="">Select HOA</option>
             <option {{$project->hoa != "" && $project->hoa == 'yes' ? 'selected' : '' }} value="yes">Yes</option>
             <option {{$project->hoa != "" && $project->hoa == 'no' ? 'selected' : '' }} value="no">No</option>
@@ -29,7 +32,7 @@
     </div>
     <div class="col-sm-3 mb-3" id="hoa_select" style="display:none;">
         <label for="hoa_phone_number" class="form-label" id="requiredfiles">Phone Number Field</label>
-        <input class="form-control" type="text" id="hoa_phone_number" name="hoa_phone_number" value="{{$project->hoa_phone_number}}">
+        <input class="form-control" type="text" id="hoa_phone_number" name="hoa_phone_number" wire:model="formData.hoa_phone_number" value="{{$project->hoa_phone_number}}">
         @error("hoa_phone_number")
         <div id="hoa_phone_number_message" class="text-danger message mt-2">{{$message}}</div>
         @enderror
@@ -45,7 +48,6 @@
         @enderror
         <div id="site_survey_link_message" class="text-danger message mt-2"></div>
     </div>
-   
     @endif
     @if($departmentId == 3)
     <div class="col-sm-3 ">
@@ -234,8 +236,17 @@
         <div id="coc_packet_mailed_out_date_message" class="text-danger message mt-2"></div>
     </div>
     @endif
+    <div class="row ">
+    <div class="col-sm-12 mb-3 text-end">
+    <button type="submit" class="btn btn-primary" >
+        <i class="icofont-save"></i> Save
+    </button>
+    </div>
+    </div>
 </div>
-
+<form>
+</div>
+@section("scripts")
 <script>
     $('.select2').select2();
     $("#hoa").change(function() {
@@ -252,4 +263,11 @@
             $(".mpuselect").css("display", "none")
         }
     })
+    // function submitForm() {
+    //     const form = document.getElementById('mainForm');
+    //     const formData = new FormData(form);
+    //     const data = Object.fromEntries(formData.entries());
+    //     @this.updateProjectFields(data); // Pass form data to the Livewire method
+    // }
 </script>
+@endsection
