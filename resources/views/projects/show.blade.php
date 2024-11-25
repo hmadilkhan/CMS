@@ -270,7 +270,7 @@
         .main-container {
             width: 650px;
             /* margin-left: auto;
-                                                                                                                            margin-right: auto; */
+                                                                                                                                margin-right: auto; */
         }
 
         .tags-input {
@@ -427,6 +427,13 @@
                                     <ul class="nav nav-tabs tab-body-header rounded ms-3 prtab-set w-sm-100"
                                         style="overflow: visible !important;">
                                         @foreach ($departments as $department)
+                                            @php
+                                                $filtered_collection = $nextSubDepartments
+                                                ->filter(function ($item) use ($department) {
+                                                    return $item->department_id == $department->id;
+                                                })
+                                                ->values();
+                                            @endphp
                                             @if ($department->id < $project->department_id)
                                                 <li class="nav-item dropdown bg-success">
                                                     <a class="nav-link dropdown-toggle  text-white" href="#"
@@ -434,14 +441,23 @@
                                                         aria-expanded="false">
                                                         {{ $department->name }}
                                                     </a>
-                                                    @if (!empty($department->subdepartments))
+                                                    @if (count($filtered_collection) > 0)
                                                         <ul class="dropdown-menu" aria-labelledby="navbarDropdown">
-                                                            @foreach ($department->subdepartments as $subdepartment)
-                                                                <li><a class="dropdown-item"
+                                                            @foreach ($filtered_collection as $subdepartment)
+                                                                <li><a onclick="moveProject()" class="dropdown-item"
                                                                         href="#">{{ $subdepartment->name }}</a></li>
                                                             @endforeach
                                                         </ul>
                                                     @endif
+                                                    {{-- @if (!empty($department->subdepartments))
+                                                        <ul class="dropdown-menu" aria-labelledby="navbarDropdown">
+                                                            @foreach ($department->subdepartments as $subdepartment)
+                                                                <li><a class="dropdown-item"
+                                                                        onclick="moveProject()">{{ $subdepartment->name }}</a>
+                                                                </li>
+                                                            @endforeach
+                                                        </ul>
+                                                    @endif --}}
                                                 </li>
                                             @elseif($department->id == $project->department_id)
                                                 <li class="nav-item dropdown bg-success">
@@ -450,14 +466,23 @@
                                                         aria-expanded="false">
                                                         {{ $department->name }}
                                                     </a>
-                                                    @if (!empty($department->subdepartments))
+                                                    @if (count($filtered_collection) > 0)
                                                         <ul class="dropdown-menu" aria-labelledby="navbarDropdown">
-                                                            @foreach ($department->subdepartments as $subdepartment)
-                                                                <li><a class="dropdown-item"
+                                                            @foreach ($filtered_collection as $subdepartment)
+                                                                <li><a onclick="moveProject()" class="dropdown-item"
                                                                         href="#">{{ $subdepartment->name }}</a></li>
                                                             @endforeach
                                                         </ul>
                                                     @endif
+                                                    {{-- @if (!empty($department->subdepartments))
+                                                        <ul class="dropdown-menu" aria-labelledby="navbarDropdown">
+                                                            @foreach ($department->subdepartments as $subdepartment)
+                                                                <li><a class="dropdown-item"
+                                                                        onclick="moveProject()">{{ $subdepartment->name }}</a>
+                                                                </li>
+                                                            @endforeach
+                                                        </ul>
+                                                    @endif --}}
                                                 </li>
                                             @else
                                                 <li class="nav-item dropdown">
@@ -466,16 +491,16 @@
                                                         {{ $department->name }}
                                                     </a>
                                                     @php
-                                                        $filtered_collection = $nextSubDepartments
-                                                            ->filter(function ($item) use ($department) {
-                                                                return $item->department_id == $department->id;
-                                                            })
-                                                            ->values();
+                                                        // $filtered_collection = $nextSubDepartments
+                                                        //     ->filter(function ($item) use ($department) {
+                                                        //         return $item->department_id == $department->id;
+                                                        //     })
+                                                        //     ->values();
                                                     @endphp
-                                                    @if (count($filtered_collection) >  0)
+                                                    @if (count($filtered_collection) > 0)
                                                         <ul class="dropdown-menu" aria-labelledby="navbarDropdown">
                                                             @foreach ($filtered_collection as $subdepartment)
-                                                                <li><a class="dropdown-item"
+                                                                <li><a onclick="moveProject()" class="dropdown-item"
                                                                         href="#">{{ $subdepartment->name }}</a></li>
                                                             @endforeach
                                                         </ul>
@@ -1487,12 +1512,12 @@
 
 <script type="importmap">
     {
-                "imports": {
-                    "ckeditor5": "https://cdn.ckeditor.com/ckeditor5/42.0.0/ckeditor5.js",
-                    "ckeditor5/": "https://cdn.ckeditor.com/ckeditor5/42.0.0/"
-                }
-            }
-        </script>
+        "imports": {
+            "ckeditor5": "https://cdn.ckeditor.com/ckeditor5/42.0.0/ckeditor5.js",
+            "ckeditor5/": "https://cdn.ckeditor.com/ckeditor5/42.0.0/"
+        }
+    }
+</script>
 <script type="module">
     import {
         ClassicEditor,
@@ -1525,6 +1550,9 @@
             alert("This sample requires an HTTP server. Please serve this file with a web server.");
         }
     };
+    function moveProject() {
+        alert();
+    }
 </script>
 @endsection
 @section('scripts')
