@@ -240,49 +240,7 @@ class ProjectController extends Controller
 
         $validated = $request->validate($validationArray);
 
-        // $validated = $request->validate([
-        //     'stage' => 'required',
-        //     'forward' => 'required_if:stage,forward|integer',
-        //     'back' => 'required_if:stage,back|integer',
-        //     'sub_department' => 'required',
-        //     'utility_company' => 'required_if:forward,2',
-        //     'ntp_approval_date' => 'required_if:forward,2',
-        //     'site_survey_link' => 'required_if:forward,3',
-        //     'hoa' => 'required_if:forward,3',
-        //     'hoa_phone_number' => Rule::requiredIf(function () use ($request) {
-        //         return $request->forward == 3 && !$request->hoa == "yes";
-        //     }), //'required_if:hoa,yes',
-        //     'adders_approve_checkbox' => 'required_if:forward,4',
-        //     'mpu_required' => 'required_if:forward,4',
-        //     'meter_spot_request_date' => 'required_if:mpu_required,yes',
-        //     'meter_spot_request_number' => 'required_if:mpu_required,yes',
-        //     'meter_spot_result' => 'required_if:forward,4',
-        //     'permitting_submittion_date' => 'required_if:forward,5',
-        //     'permitting_approval_date' => 'required_if:forward,5',
-        //     'hoa_approval_request_date' => 'required_if:projecthoa,yes',
-        //     'hoa_approval_date' => 'required_if:projecthoa,yes',
-        //     'solar_install_date' => 'required_if:forward,6',
-        //     'battery_install_date' => 'required_if:forward,6',
-        //     'mpu_install_date' =>   Rule::requiredIf(function () use ($request) {
-        //         return $request->forward == 6 && !$request->projectmpu == "yes";
-        //     }),
-        //     'rough_inspection_date' => 'required_if:forward,7',
-        //     'final_inspection_date' => 'required_if:forward,7',
-        //     'pto_submission_date' => 'required_if:forward,8',
-        //     'pto_approval_date' => 'required_if:forward,8',
-        //     'coc_packet_mailed_out_date' => 'required_if:forward,9',
-        // ]);
         try {
-            // $project = Project::findOrFail($request->id);
-
-            // if ($request->stage == "forward" && $request->alreadyuploaded == 0 && ($project->department_id != $request->forward)) {
-            //     if (!empty($request->file)) {
-            //         foreach ($request->file as $key => $file) {
-            //             $result = $this->uploads($file, 'projects/');
-            //             array_push($filesArray, $result);
-            //         }
-            //     }
-            // }
             DB::beginTransaction();
             if ($request->stage == "forward" && $request->forward == $project->department_id) {
                 $project->department_id = $request->forward;
@@ -301,37 +259,6 @@ class ProjectController extends Controller
                 DB::commit();
                 return redirect()->route("projects.index");
             }
-            // if ($request->stage == "forward" && $request->alreadyuploaded == 0) {
-
-            // $task = Task::findOrFail($request->taskid);
-            // if (!empty($request->file)) {
-            //     foreach ($filesArray as $key => $file) {
-            //         ProjectFile::create([
-            //             "project_id" => $project->id,
-            //             "task_id" => $task->id,
-            //             "department_id" => $project->department_id,
-            //             "filename" => $file["fileName"],
-            //         ]);
-            //     }
-            // }
-            /* THIS CODE IS COMMENTED HERE BECAUSE WE MAKE IT INDEPENDENT IN saveCallLogs FUNCTION */
-
-            // $logsCount = ProjectCallLog::where("project_id", $project->id)->where("department_id", $request->forward)->count();
-            // if ($request->forward != 1 && $request->forward != 8 && $logsCount == 0) {
-            //     ProjectCallLog::create([
-            //         "project_id" => $project->id,
-            //         "department_id" => $project->department_id,
-            //         "call_no" => $request->call_no_1,
-            //         "notes" => $request->notes_1,
-            //     ]);
-            //     ProjectCallLog::create([
-            //         "project_id" => $project->id,
-            //         "department_id" => $project->department_id,
-            //         "call_no" => $request->call_no_2,
-            //         "notes" => $request->notes_2,
-            //     ]);
-            // }
-            // }
             $updateItems = [
                 "department_id" => ($request->stage == "forward" ? $request->forward : $request->back),
                 "sub_department_id" => $request->sub_department,
@@ -419,6 +346,83 @@ class ProjectController extends Controller
             DB::rollBack();
             return $th->getMessage();
         }
+    }
+
+    public function moveProject(Request $request) 
+    {
+        $project = Project::findOrFail($request->projectId);
+
+        if (!$project) {
+            return response()->json(['error' => 'Project not found'], 404);
+        }
+
+        // THIS WILL CHECK THE PROJECT EITHER PROJECT IS FORWARD OR BACKWARD
+        $checkProject = Task::where("project_id",$request->projectId)->where("department_id",$request->departmentId)->count();
+
+        // IF COUNT IS 0 THEN IT THE CASE IS FORWARD
+        if ($checkProject == 0) {
+            // CHECK FIELDS ARE FILLED OR NOT
+            $currentDepartmentId = $project->department_id;
+
+            // Fetch required fields for the current department
+            $requiredFields = DB::table('project_department_fields')
+                ->where('department_id', $currentDepartmentId)
+                ->pluck('field_name');
+        
+            // Check for missing required fields
+            $missingFields = [];
+        
+            foreach ($requiredFields as $field) {
+
+                // Check if 'hoa_phone_number' depends on 'hoa'
+                if ($currentDepartmentId == 1 && $field === 'hoa_phone_number' && $project->hoa === 'yes' && empty($project->hoa_phone_number)) {
+                    $missingFields[] = $field;
+                } elseif ($currentDepartmentId == 3 && ($field === 'meter_spot_request_date' or $field === 'meter_spot_request_number' or $field === 'meter_spot_result') && $project->mpu_required === 'yes' && (empty($project->meter_spot_request_date) or empty($project->meter_spot_request_number)  or empty($project->meter_spot_result) )) {
+                    $missingFields[] = $field;
+                } elseif ($currentDepartmentId == 4 && ($field === 'hoa_approval_request_date' or $field === 'hoa_approval_date') && $project->hoa === 'yes' && (empty($project->hoa_approval_request_date) or empty($project->hoa_approval_date))) {
+                    $missingFields[] = $field;
+                } elseif ($currentDepartmentId == 5 && $field === 'mpu_install_date' && $project->mpu_required === 'yes' && empty($project->mpu_install_date)) {
+                    $missingFields[] = $field;
+                } elseif ( ($field !== 'hoa_phone_number' or $field === 'meter_spot_request_date' or $field === 'meter_spot_request_number' or $field === 'meter_spot_result' or $field === 'hoa_approval_request_date' or $field === 'hoa_approval_date' or $field === 'mpu_install_date') && empty($project->$field)) {
+                    // Standard required field check
+                    $missingFields[] = $field;
+                }
+            }
+
+            if (!empty($missingFields)) {
+                return response()->json([
+                    "status" => 422,
+                    'error' => 'Cannot move project. Missing required fields for the current department.',
+                    'missing_fields' => $missingFields
+                ], 422);
+            }
+        }else{
+
+        }
+        
+        try {
+            DB::beginTransaction();
+            $project->update([
+                "department_id" => $request->departmentId,
+                "sub_department_id" => $request->subDepartmentId,
+            ]);
+            $emp =  Employee::with("department")->whereHas("department", function ($query) use ($request) {
+                $query->where("department_id",$request->departmentId);
+            })->first();
+            Task::where("id", $request->taskId)->update(["status" => "Completed", "notes" => $request->notes]);
+            Task::create([
+                "project_id" => $request->projectId,
+                "employee_id" => $emp->id,
+                "department_id" => $request->departmentId,
+                "sub_department_id" => $request->subDepartmentId,
+            ]);
+            DB::commit();
+            return response()->json(["status" => 200,"message" => "Project Moved Successfully"]);
+        } catch (\Throwable $th) {
+           DB::rollBack();
+           return response()->json(["status" => 500,"message" => "Some Error Occured"]);
+        }
+
     }
 
     public function saveCallLogs(Request $request)

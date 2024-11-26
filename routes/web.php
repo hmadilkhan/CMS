@@ -119,7 +119,8 @@ Route::middleware('auth')->group(function () {
 
     Route::post('project-list', [App\Http\Controllers\ProjectController::class, 'getProjectList'])->name('projects.list');
     Route::post('get-sub-departments', [App\Http\Controllers\ProjectController::class, 'getSubDepartments'])->name('get.sub.departments');
-    Route::post('projects-move', [App\Http\Controllers\ProjectController::class, 'projectMove'])->name('projects.move');
+    Route::post('projects-move', [App\Http\Controllers\ProjectController::class, 'projectMove'])->name('projects.move'); // OLD Should be remove in Future
+    Route::post('move-project', [App\Http\Controllers\ProjectController::class, 'moveProject'])->name('move.project'); // NEW 
     Route::post('project-call-logs', [App\Http\Controllers\ProjectController::class, 'saveCallLogs'])->name('projects.call.logs');
     Route::post('project-call-script', [App\Http\Controllers\ProjectController::class, 'getCallScript'])->name('projects.call.script');
     Route::post('project-email-script', [App\Http\Controllers\ProjectController::class, 'getEmailScript'])->name('projects.email.script');

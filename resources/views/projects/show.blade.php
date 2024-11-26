@@ -270,7 +270,7 @@
         .main-container {
             width: 650px;
             /* margin-left: auto;
-                                                                                                                                margin-right: auto; */
+                                                                                                                                                                        margin-right: auto; */
         }
 
         .tags-input {
@@ -429,23 +429,23 @@
                                         @foreach ($departments as $department)
                                             @php
                                                 $filtered_collection = $nextSubDepartments
-                                                ->filter(function ($item) use ($department) {
-                                                    return $item->department_id == $department->id;
-                                                })
-                                                ->values();
+                                                    ->filter(function ($item) use ($department) {
+                                                        return $item->department_id == $department->id;
+                                                    })
+                                                    ->values();
                                             @endphp
                                             @if ($department->id < $project->department_id)
                                                 <li class="nav-item dropdown bg-success">
-                                                    <a class="nav-link dropdown-toggle  text-white" href="#"
-                                                        id="navbarDropdown" role="button" data-bs-toggle="dropdown"
-                                                        aria-expanded="false">
+                                                    <a class="nav-link dropdown-toggle  text-white" id="navbarDropdown"
+                                                        role="button" data-bs-toggle="dropdown" aria-expanded="false">
                                                         {{ $department->name }}
                                                     </a>
                                                     @if (count($filtered_collection) > 0)
                                                         <ul class="dropdown-menu" aria-labelledby="navbarDropdown">
                                                             @foreach ($filtered_collection as $subdepartment)
-                                                                <li><a onclick="moveProject()" class="dropdown-item"
-                                                                        href="#">{{ $subdepartment->name }}</a></li>
+                                                                <li><a onclick="moveProjectModal('{{ $project->id }}','{{ $task->id }}','{{ $department->id }}','{{ $subdepartment->id }}')"
+                                                                        class="dropdown-item">{{ $subdepartment->name }}</a>
+                                                                </li>
                                                             @endforeach
                                                         </ul>
                                                     @endif
@@ -461,7 +461,7 @@
                                                 </li>
                                             @elseif($department->id == $project->department_id)
                                                 <li class="nav-item dropdown bg-success">
-                                                    <a class="nav-link dropdown-toggle active text-white" href="#"
+                                                    <a class="nav-link dropdown-toggle active text-white"
                                                         id="navbarDropdown" role="button" data-bs-toggle="dropdown"
                                                         aria-expanded="false">
                                                         {{ $department->name }}
@@ -469,8 +469,9 @@
                                                     @if (count($filtered_collection) > 0)
                                                         <ul class="dropdown-menu" aria-labelledby="navbarDropdown">
                                                             @foreach ($filtered_collection as $subdepartment)
-                                                                <li><a onclick="moveProject()" class="dropdown-item"
-                                                                        href="#">{{ $subdepartment->name }}</a></li>
+                                                                <li><a onclick="moveProjectModal('{{ $project->id }}','{{ $task->id }}','{{ $department->id }}','{{ $subdepartment->id }}')"
+                                                                        class="dropdown-item">{{ $subdepartment->name }}</a>
+                                                                </li>
                                                             @endforeach
                                                         </ul>
                                                     @endif
@@ -486,22 +487,16 @@
                                                 </li>
                                             @else
                                                 <li class="nav-item dropdown">
-                                                    <a class="nav-link dropdown-toggle " href="#" id="navbarDropdown"
-                                                        role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                                    <a class="nav-link dropdown-toggle " id="navbarDropdown" role="button"
+                                                        data-bs-toggle="dropdown" aria-expanded="false">
                                                         {{ $department->name }}
                                                     </a>
-                                                    @php
-                                                        // $filtered_collection = $nextSubDepartments
-                                                        //     ->filter(function ($item) use ($department) {
-                                                        //         return $item->department_id == $department->id;
-                                                        //     })
-                                                        //     ->values();
-                                                    @endphp
                                                     @if (count($filtered_collection) > 0)
                                                         <ul class="dropdown-menu" aria-labelledby="navbarDropdown">
                                                             @foreach ($filtered_collection as $subdepartment)
-                                                                <li><a onclick="moveProject()" class="dropdown-item"
-                                                                        href="#">{{ $subdepartment->name }}</a></li>
+                                                                <li><a onclick="moveProjectModal('{{ $project->id }}','{{ $task->id }}','{{ $department->id }}','{{ $subdepartment->id }}')"
+                                                                        class="dropdown-item">{{ $subdepartment->name }}</a>
+                                                                </li>
                                                             @endforeach
                                                         </ul>
                                                     @endif
@@ -672,14 +667,14 @@
                                 <div class="col-md-12">
                                     <div class="card border-0 mb-4 no-bg">
                                         <div
-                                            class="card-header py-3 px-0 d-sm-flex align-items-center text-center  justify-content-between border-bottom">
+                                            class="card-header py-3 px-0 d-sm-flex align-items-center bg-light text-center  justify-content-between border-bottom">
                                             <h3 class=" fw-bold flex-fill mb-0 mt-sm-0">Project Notes </h3>
                                         </div>
                                     </div>
                                 </div>
                                 @foreach ($departments as $department)
                                     <div class="col-md-12">
-                                        <div class="card border-0 mb-4 no-bg">
+                                        <div class="card border-0 mb-4 bg-light text-center">
                                             <div
                                                 class="card-header py-3 px-0 d-sm-flex align-items-center  justify-content-between border-bottom border-top">
                                                 <h3 class=" fw-bold flex-fill mb-0 mt-sm-0 px-2">{{ $department->name }}
@@ -713,7 +708,7 @@
                                     </div>
                                 @endforeach
                             </div>
-                        </div>`
+                        </div>
                     </div>
                 </div>
                 <div class="tab-pane fade" id="departmenttools" role="tabpanel">
@@ -751,6 +746,7 @@
             </div>
         </div>
     </div>
+
     <div class="tab-pane fade" id="customer" role="tabpanel">
         <div class="card mt-1">
             <div class="card-header">
@@ -909,7 +905,8 @@
                 @can('View Financial Details')
                     <div class="card-header py-3 px-0 d-sm-flex align-items-center  justify-content-between border-bottom">
                         <h3 class=" fw-bold flex-fill mb-0 mt-sm-0" data-bs-toggle="collapse" data-bs-target="#finance"
-                            aria-expanded="false" aria-controls="finance">Financial Details</h3>
+                            aria-expanded="false" aria-controls="finance">Financial Details
+                        </h3>
                     </div>
                     <div class="row g-3 mb-3">
                         <div class="col-sm-3 ">
@@ -987,7 +984,8 @@
                 <div class="card-body">
                     <div class="card-header py-3 px-0 d-sm-flex align-items-center  border-bottom">
                         <h3 class=" fw-bold flex-fill mb-0 mt-sm-0" data-bs-toggle="collapse"
-                            data-bs-target="#adderTable" aria-expanded="false" aria-controls="adderTable">Adders Details
+                            data-bs-target="#adderTable" aria-expanded="false" aria-controls="adderTable">Adders
+                            Details
                         </h3>
                     </div>
                     <form method="post" action="{{ route('projects.adders') }}">
@@ -1080,6 +1078,7 @@
             </div>
         @endcan
     </div>
+
     <div class="tab-pane fade" id="communication" role="tabpanel">
         <div class="card mt-1">
             <div class="card-body">
@@ -1103,7 +1102,8 @@
                                                     <div class="card border-0 mb-4 no-bg">
                                                         <div
                                                             class="card-header py-3 px-0 d-sm-flex align-items-center  justify-content-between border-bottom">
-                                                            <h3 class=" fw-bold flex-fill mb-0 mt-sm-0 m-4">Call Logs
+                                                            <h3 class=" fw-bold flex-fill mb-0 mt-sm-0 m-4">Call
+                                                                Logs
                                                             </h3>
                                                         </div>
                                                     </div>
@@ -1204,7 +1204,7 @@
                                         @endforeach
                                     @endforeach
                                 </div>
-                            </div>`
+                            </div>
                         </div>
                     </div>
                     <div class="tab-pane fade" id="emails" role="tabpanel">
@@ -1242,7 +1242,8 @@
                                                                         style="width: 100%;"
                                                                         aria-label="Default Select call"
                                                                         id="email_no" name="email_no">
-                                                                        <option value="">Select Email</option>
+                                                                        <option value="">Select Email
+                                                                        </option>
                                                                         @foreach ($emailTypes as $emailType)
                                                                             <option value="{{ $emailType->id }}">
                                                                                 {{ $emailType->name }}
@@ -1256,11 +1257,13 @@
                                                                     <div class="mb-3">
                                                                         <label for="ccEmails" class="form-label">CC
                                                                             Emails</label>
-                                                                        <div class="tags-input" id="ccEmails"></div>
+                                                                        <div class="tags-input" id="ccEmails">
+                                                                        </div>
                                                                         <input type="hidden" name="ccEmails"
                                                                             id="ccEmailsHidden">
                                                                         <div class="invalid-feedback" id="emailError">
-                                                                            Please enter valid email addresses separated
+                                                                            Please enter valid email addresses
+                                                                            separated
                                                                             by commas.</div>
                                                                     </div>
                                                                 </div>
@@ -1311,37 +1314,37 @@
                             </div>
                             <div id="emailDiv"></div>
                             {{-- <div class="row clearfix">
-                                        <div class="col-lg-12">
-                                            <div class="card">
-                                                <div class="chat">
-                                                    <div class="chat-history">
-                                                        <ul class="m-b-0">
-                                                            <li class="clearfix">
-                                                                <div class="message other-message float-right"> Hi Aiden, how
-                                                                    are you?
-                                                                    How is the project coming along? </div>
-                                                            </li>
-                                                            <li class="clearfix">
-                                                                <div class="message-data">
-                                                                    <span class="message-data-time">10:12 AM, Today</span>
-                                                                </div>
-                                                                <div class="message my-message">Are we meeting today?</div>
-                                                            </li>
-                                                        </ul>
-                                                    </div>
-                                                    <div class="chat-message clearfix">
-                                                        <div class="input-group mb-0">
-                                                            <input type="text" class="form-control"
-                                                                placeholder="Enter text here...">
-                                                            <div class="input-group-prepend"><span class="input-group-text"
-                                                                    onclick="openEmailModal()"><i
-                                                                        class="fa fa-send"></i></span></div>
+                                            <div class="col-lg-12">
+                                                <div class="card">
+                                                    <div class="chat">
+                                                        <div class="chat-history">
+                                                            <ul class="m-b-0">
+                                                                <li class="clearfix">
+                                                                    <div class="message other-message float-right"> Hi Aiden, how
+                                                                        are you?
+                                                                        How is the project coming along? </div>
+                                                                </li>
+                                                                <li class="clearfix">
+                                                                    <div class="message-data">
+                                                                        <span class="message-data-time">10:12 AM, Today</span>
+                                                                    </div>
+                                                                    <div class="message my-message">Are we meeting today?</div>
+                                                                </li>
+                                                            </ul>
+                                                        </div>
+                                                        <div class="chat-message clearfix">
+                                                            <div class="input-group mb-0">
+                                                                <input type="text" class="form-control"
+                                                                    placeholder="Enter text here...">
+                                                                <div class="input-group-prepend"><span class="input-group-text"
+                                                                        onclick="openEmailModal()"><i
+                                                                            class="fa fa-send"></i></span></div>
+                                                            </div>
                                                         </div>
                                                     </div>
                                                 </div>
                                             </div>
-                                        </div>
-                                    </div> --}}
+                                        </div> --}}
                         </div>
                     </div>
                     <div class="tab-pane fade" id="acceptance" role="tabpanel">
@@ -1383,131 +1386,147 @@
             </div>
         </div>
     </div>
+</div>
 
 
-
-    <div class="modal fade" id="createemail" tabindex="-1" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered modal-lg modal-dialog-scrollable">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title  fw-bold" id="createprojectlLabel"> Send Email</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <form id="emailform1" method="POST" enctype="multipart/form-data">
-                    @csrf
-                    <input type="hidden" name="project_id" value="{{ $project->id }}">
-                    <input type="hidden" name="customer_id" value="{{ $project->customer_id }}">
-                    <input type="hidden" name="department_id" value="{{ $project->department_id }}" />
-                    <div class="modal-body">
-                        <div class="deadline-form" id="empform">
-                            <div class="row g-3 mb-3">
-                                <div class="mb-1">
-                                    <label for="exampleFormControlInput877" class="form-label">Subject</label>
-                                    <input type="text" class="form-control" id="subject1" name="subject"
-                                        placeholder="Enter Subject" value="">
-                                    <div id="name_message" class="text-danger message mt-2"></div>
-                                </div>
-                                <div class="mb-1">
-                                    <label for="exampleFormControlInput877" class="form-label">Content</label>
-                                    <textarea type="text" class="form-control" id="content1" name="content" placeholder="Enter Subject"
-                                        value=""></textarea>
-                                    <div id="name_message" class="text-danger message mt-2"></div>
-                                </div>
-                                <div class="mb-1">
-                                    <label for="exampleFormControlInput877" class="form-label">Attachments</label>
-                                    <input type="file" multiple class="form-control" id="image1"
-                                        name="image[]">
-                                    <div id="name_message" class="text-danger message mt-2"></div>
-                                </div>
+<div class="modal fade" id="createemail" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title  fw-bold" id="createprojectlLabel"> Send Email</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="emailform1" method="POST" enctype="multipart/form-data">
+                @csrf
+                <input type="hidden" name="project_id" value="{{ $project->id }}">
+                <input type="hidden" name="customer_id" value="{{ $project->customer_id }}">
+                <input type="hidden" name="department_id" value="{{ $project->department_id }}" />
+                <div class="modal-body">
+                    <div class="deadline-form" id="empform">
+                        <div class="row g-3 mb-3">
+                            <div class="mb-1">
+                                <label for="exampleFormControlInput877" class="form-label">Subject</label>
+                                <input type="text" class="form-control" id="subject1" name="subject"
+                                    placeholder="Enter Subject" value="">
+                                <div id="name_message" class="text-danger message mt-2"></div>
+                            </div>
+                            <div class="mb-1">
+                                <label for="exampleFormControlInput877" class="form-label">Content</label>
+                                <textarea type="text" class="form-control" id="content1" name="content" placeholder="Enter Subject"
+                                    value=""></textarea>
+                                <div id="name_message" class="text-danger message mt-2"></div>
+                            </div>
+                            <div class="mb-1">
+                                <label for="exampleFormControlInput877" class="form-label">Attachments</label>
+                                <input type="file" multiple class="form-control" id="image1" name="image[]">
+                                <div id="name_message" class="text-danger message mt-2"></div>
                             </div>
                         </div>
                     </div>
-                    <div class="modal-footer">
-                        <button type="submit" class="btn btn-primary">Send</button>
-                        <button type="button" class="btn btn-danger text-white"
-                            data-bs-dismiss="modal">Cancel</button>
-                    </div>
-                </form>
-            </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="submit" class="btn btn-primary">Send</button>
+                    <button type="button" class="btn btn-danger text-white" data-bs-dismiss="modal">Cancel</button>
+                </div>
+            </form>
         </div>
     </div>
+</div>
 
-    <div class="modal fade" id="assign-notes" tabindex="-1" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered modal-lg modal-dialog-scrollable">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title  fw-bold" id="createprojectlLabel"> Assign Notes</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <form id="assignNotes" method="POST" enctype="multipart/form-data">
-                    @csrf
-                    <input type="hidden" name="project_id" value="{{ $project->id }}">
-                    <input type="hidden" name="customer_id" value="{{ $project->customer_id }}">
-                    <input type="hidden" name="department_id" value="{{ $project->department_id }}" />
-                    <div class="modal-body">
-                        <div class="row">
-                            <div class="col-sm-12 mb-3">
-                                <label for="formFileMultipleoneone"
-                                    class="form-label fw-bold flex-fill mb-2 mt-sm-0">Assign Notes</label>
-                                <div class="position-relative">
-                                    <textarea class="form-control bg-white border border-dark" id="notes" name="notes" rows="3"></textarea>
-                                </div>
-                            </div>
-                            <div class="col-sm-12 mb-3">
-                                <button type="submit" class="btn btn-primary" style="bottom: 10px; right: 10px;">
-                                    <i class="icofont-save"></i> Save
-                                </button>
+<div class="modal fade" id="assign-notes" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title  fw-bold" id="createprojectlLabel"> Assign Notes</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="assignNotes" method="POST" enctype="multipart/form-data">
+                @csrf
+                <input type="hidden" name="project_id" value="{{ $project->id }}">
+                <input type="hidden" name="customer_id" value="{{ $project->customer_id }}">
+                <input type="hidden" name="department_id" value="{{ $project->department_id }}" />
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-sm-12 mb-3">
+                            <label for="formFileMultipleoneone"
+                                class="form-label fw-bold flex-fill mb-2 mt-sm-0">Assign Notes</label>
+                            <div class="position-relative">
+                                <textarea class="form-control bg-white border border-dark" id="notes" name="notes" rows="3"></textarea>
                             </div>
                         </div>
+                        <div class="col-sm-12 mb-3">
+                            <button type="submit" class="btn btn-primary" style="bottom: 10px; right: 10px;">
+                                <i class="icofont-save"></i> Save
+                            </button>
+                        </div>
                     </div>
-                </form>
-            </div>
+                </div>
+            </form>
         </div>
     </div>
-    <!-- Modal  Delete Folder/ File-->
-    <div class="modal fade" id="deletefile" tabindex="-1" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered modal-md modal-dialog-scrollable">
-            <input type="hidden" id="deleteId" />
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title  fw-bold" id="deleteprojectLabel"> Delete item Permanently?</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body justify-content-center flex-column d-flex">
-                    <i class="icofont-ui-delete text-danger display-2 text-center mt-2"></i>
-                    <p class="mt-4 fs-5 text-center">You can only delete this item Permanently</p>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="button" class="btn btn-danger color-fff"
-                        onclick="deleteFileCall()">Delete</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <div class="modal fade" id="dremoveadders" tabindex="-1" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered modal-md modal-dialog-scrollable">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title  fw-bold" id="dremovetaskLabel"> Remove Adder?</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body justify-content-center flex-column d-flex">
-                    <i class="icofont-ui-rate-remove text-danger display-2 text-center mt-2"></i>
-                    <p class="mt-4 fs-5 text-center">This will be permanently remove from Adders</p>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="button" class="btn btn-danger color-fff">Remove</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
 </div>
-</div><!-- Row End -->
+<!-- Modal  Delete Folder/ File-->
+<div class="modal fade" id="deletefile" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-md modal-dialog-scrollable">
+        <input type="hidden" id="deleteId" />
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title  fw-bold" id="deleteprojectLabel"> Delete item Permanently?</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body justify-content-center flex-column d-flex">
+                <i class="icofont-ui-delete text-danger display-2 text-center mt-2"></i>
+                <p class="mt-4 fs-5 text-center">You can only delete this item Permanently</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-danger color-fff" onclick="deleteFileCall()">Delete</button>
+            </div>
+        </div>
+    </div>
 </div>
+
+<div class="modal fade" id="dremoveadders" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-md modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title  fw-bold" id="dremovetaskLabel"> Remove Adder?</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body justify-content-center flex-column d-flex">
+                <i class="icofont-ui-rate-remove text-danger display-2 text-center mt-2"></i>
+                <p class="mt-4 fs-5 text-center">This will be permanently remove from Adders</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-danger color-fff">Remove</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- PROJECT MOVE MODEL -->
+<div class="modal fade" id="moveProjectModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-md modal-dialog-scrollable">
+        <input type="hidden" id="projectId" />
+        <input type="hidden" id="taskId" />
+        <input type="hidden" id="departmentId" />
+        <input type="hidden" id="subDepartmentId" />
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title  fw-bold" id="deleteprojectLabel"> Move Project ?</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body justify-content-center flex-column d-flex">
+                <i class="icofont-aim text-success display-2 text-center mt-2"></i>
+                <p class="mt-4 fs-5 text-center">Are you sure you want to move the project ?</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-success color-fff" onclick="moveProject()">Move</button>
+            </div>
+        </div>
+    </div>
 </div>
 
 <script type="importmap">
@@ -1544,16 +1563,13 @@
         });
 </script>
 <!-- A friendly reminder to run on a server, remove this during the integration. -->
-<script>
+{{-- <script>
     window.onload = function() {
         if (window.location.protocol === "file:") {
             alert("This sample requires an HTTP server. Please serve this file with a web server.");
         }
     };
-    function moveProject() {
-        alert();
-    }
-</script>
+</script> --}}
 @endsection
 @section('scripts')
 <script>
@@ -1574,6 +1590,59 @@
     $("#back").change(function() {
         getSubDepartments($(this).val())
     });
+
+    function moveProjectModal(projectId, taskId, departmentId, subDepartmentId) {
+        $('#projectId').val(projectId);
+        $('#taskId').val(taskId);
+        $('#departmentId').val(departmentId);
+        $('#subDepartmentId').val(subDepartmentId);
+        $("#moveProjectModal").modal("show");
+    }
+
+    function moveProject(projectId, taskId, departmentId, subDepartmentId) {
+        $("#moveProjectModal").modal("show");
+        $.ajax({
+            url: "{{ route('move.project') }}",
+            type: 'POST',
+            data: {
+                _token: "{{ csrf_token() }}",
+                projectId: $('#projectId').val(),
+                taskId: $('#taskId').val(),
+                departmentId: $('#departmentId').val(),
+                subDepartmentId: $('#subDepartmentId').val(),
+            },
+            success: function(response) {
+                if (response.status == 200) {
+                    Swal.fire(
+                            'Sent!',
+                            response.message,
+                            'success'
+                        )
+                        $("#moveProjectModal").modal("hide");
+                        location.reload();
+                } else if (response.status = 422) {
+                    Swal.fire(
+                        'Failed!',
+                        response.error,
+                        'error'
+                    )
+                } else {
+                    console.log(500);
+                }
+            },
+            error: function(error) {
+                if (error.responseJSON.status == 422) {
+                    $("#moveProjectModal").modal("hide");
+                    Swal.fire(
+                        'Failed!',
+                        error.responseJSON.error,
+                        'error'
+                    )
+                }
+                console.log(error);
+            }
+        });
+    }
 
     function openEmailModal() {
         $("#createemail").modal("show");
@@ -1730,29 +1799,26 @@
     }
 
     $("#saveProject").click(function(e) {
-        $("#file_message").html('')
-        let stage = $('input[name="stage"]:checked').val()
-        let totalCount = $("#" + $("#forward").val() + "_length")
-            .val();
+        $("#file_message").html('');
+        let stage = $('input[name="stage"]:checked').val();
+        let totalCount = $("#" + $("#forward").val() + "_length").val();
         let alreadyUploaded = "{{ count($filesCount) }}";
         let currentproject = "{{ $project->department->id }}";
         let project = $("#forward").val();
-        let logs = $("#" + ($("#forward").val() - 1) + "_log_count")
-            .val();
+        let logs = $("#" + ($("#forward").val() - 1) + "_log_count").val();
         $("#call_no_1_message").html("");
         $("#call_no_2_message").html("");
         $("#notes_1_message").html("");
         $("#notes_2_message").html("");
 
         if (project != 1 && project != 8 && logs == 0 && stage == "forward") {
-            if (stage == "forward" && (currentproject != $("#forward").val())) { //&& alreadyUploaded == 0
+            if (stage == "forward" && (currentproject != $("#forward").val())) {
                 $("#form").submit();
             } else {
                 $("#form").submit();
             }
-            // }
         } else {
-            if (stage == "forward" && (currentproject != $("#forward").val())) { //&& alreadyUploaded == 0
+            if (stage == "forward" && (currentproject != $("#forward").val())) {
                 $("#form").submit();
             } else {
                 $("#form").submit();
@@ -1826,6 +1892,7 @@
             })
         }
     })
+
     $("#btnAdder").click(function() {
         let rowLength = $('#adderTable tbody').find('tr').length;
         let adders_id = $("#adders").val();
