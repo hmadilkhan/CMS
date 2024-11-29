@@ -12,6 +12,7 @@ use App\Http\Controllers\ProjectController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\TaskController;
 use App\Http\Controllers\ToolController;
+use App\Livewire\DynamicReport;
 use App\Livewire\DynamicReport\DynamicReportForm;
 use App\Models\InverterType;
 use Illuminate\Support\Facades\Route;
@@ -220,7 +221,8 @@ Route::middleware('auth')->group(function () {
          Route::get('/override-report-excel-export/{salespartner}/{from}/{to}', 'getOverrideReportExport')->name("override.report.excel.export");
          Route::get('/override-report-pdf-export/{salespartner}/{from}/{to}', 'getOverrideReportPdfExport')->name("override.report.pdf.export");
 
-         Route::get("dynamic-report","DynamicReport");
+        //  Route::get("dynamic-report","DynamicReport");
+         Route::get("dynamic-report",DynamicReport::class);
     });
 
     Route::controller(AuroraController::class)->group(function () {
