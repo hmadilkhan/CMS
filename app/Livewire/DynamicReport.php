@@ -38,13 +38,11 @@ class DynamicReport extends Component
             "col" => $tableName,
         ];
         array_push($this->selectedColumns, $column);
-        // dump($this->selectedColumns);
     }
 
     #[On("saveFilter")]
     public function saveFilter($column, $operator, $value)
     {
-
         $filter = [
             "column" => $column,
             "operator" => $operator,
