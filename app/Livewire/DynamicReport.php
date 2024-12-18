@@ -23,11 +23,11 @@ class DynamicReport extends Component
     public $filters = [];
     public $data = [];
 
-    public function mount()
-    {
-        // Load all table names at mount
-        // $this->tables = DB::select('SHOW TABLES');
-    }
+    // public function mount()
+    // {
+    //     // Load all table names at mount
+    //     // $this->tables = DB::select('SHOW TABLES');
+    // }
 
     #[Computed()]
     public function updatedSelectedTable($tableName)
@@ -50,14 +50,14 @@ class DynamicReport extends Component
             "operator" => $operator,
             "value" => $value,
         ];
-
+       
         array_push($this->selectedFilters, $filter);
     }
 
     #[On('submitData')]
     public function submitData()
     {
-        DB::enableQueryLog();
+        // DB::enableQueryLog();
         $columns = collect($this->selectedColumns)->pluck('value');
         // dd(...$columns);
         $query = Project::query();
@@ -65,6 +65,7 @@ class DynamicReport extends Component
             ->join('customers', 'projects.customer_id', '=', 'customers.id')
             ->join('departments', 'projects.department_id', '=', 'departments.id')
             ->join('sub_departments', 'projects.sub_department_id', '=', 'sub_departments.id');
+            // dump($this->selectedFilters);
         if(count($this->selectedFilters)){
             foreach ($this->selectedFilters as $key => $filter) {
                 $query->where($filter['column'],$filter['operator'],$filter['value']);
