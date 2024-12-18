@@ -1,7 +1,7 @@
 @extends('layouts.master')
 @section('title', 'Projects')
 @section('content')
-    <div class="container-xxl">
+    <div class="container-xxxl">
         <div class="row align-items-center">
             <div class="border-0 mb-4">
                 <div

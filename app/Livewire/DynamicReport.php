@@ -26,7 +26,7 @@ class DynamicReport extends Component
     public function mount()
     {
         // Load all table names at mount
-        $this->tables = DB::select('SHOW TABLES');
+        // $this->tables = DB::select('SHOW TABLES');
     }
 
     #[Computed()]
@@ -34,9 +34,11 @@ class DynamicReport extends Component
     {
         $column = [
             "name" => $this->getTableColumnName($tableName),
-            "value" => $tableName,
+            "value" => $tableName." as ".$tableName,
+            "col" => $tableName,
         ];
         array_push($this->selectedColumns, $column);
+        // dump($this->selectedColumns);
     }
 
     #[On("saveFilter")]
@@ -55,9 +57,9 @@ class DynamicReport extends Component
     #[On('submitData')]
     public function submitData()
     {
-        // DB::enableQueryLog();
+        DB::enableQueryLog();
         $columns = collect($this->selectedColumns)->pluck('value');
-        // dd($columns);
+        // dd(...$columns);
         $query = Project::query();
         $query->with("task", "customer", "department", "logs", "logs.call", "subdepartment", "assignedPerson", "assignedPerson.employee", "departmentnotes", "departmentnotes.user", "salesPartnerUser")
             ->join('customers', 'projects.customer_id', '=', 'customers.id')
@@ -70,14 +72,14 @@ class DynamicReport extends Component
         }
         $query->select(...$columns);
         $this->data = $query->get();
-
+        // dump( $this->data);
         // $this->data = Project::with("task", "customer", "department", "logs", "logs.call", "subdepartment", "assignedPerson", "assignedPerson.employee", "departmentnotes", "departmentnotes.user", "salesPartnerUser")
         //     ->join('customers', 'projects.customer_id', '=', 'customers.id')
         //     ->join('departments', 'projects.department_id', '=', 'departments.id')
         //     ->join('sub_departments', 'projects.sub_department_id', '=', 'sub_departments.id')
         //     ->select(...$columns)
         //     ->get();
-        // dd($this->data);
+        // dd($this->selectedColumns);
         // dd(DB::getQueryLog());
     }
 

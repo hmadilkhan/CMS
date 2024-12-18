@@ -27,7 +27,7 @@
                 @endphp
                 @if (count($collections) > 0)
                     @foreach ($collections as $project)
-                        <div class="col-xxl-3 col-xl-3 col-lg-3 col-md-3 col-sm-3 border border-dark border-rounded border-2 "
+                        <div class="col-xxxl-3 col-xxl-2 col-xl-3 col-lg-3 col-md-3 col-sm-3 border border-dark border-rounded border-2 "
                             style="margin-right: 5px;cursor:pointer;" onclick="showProject('{{ $project->id }}')">
                             <div class="card">
                                 <div class="card-body">

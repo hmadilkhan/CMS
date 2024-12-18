@@ -2,7 +2,7 @@
 @section('title', 'Project List')
 @section('content')
 <div class="body d-flex py-lg-3 py-md-2">
-    <div class="container-xxl">
+    <div class="container-xxxl">
         <div class="row clearfix">
             <div class="col-md-12">
                 <div class="card border-0 mb-4 no-bg">

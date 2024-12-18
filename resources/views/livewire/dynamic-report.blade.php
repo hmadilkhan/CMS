@@ -9,7 +9,7 @@
                         </div>
                         <div class="col-md-3">
                             <select id="table" class="form-control" wire:model="selectedTable[]">
-                                <option value="">-- Select Table --</option>
+                                <option value="">-- Select Columns --</option>
                                 <option value="projects.project_name">Project Name</option>
                                 <option value="customers.first_name">Customer First Name</option>
                                 <option value="customers.last_name">Customer Last Name</option>
@@ -17,10 +17,7 @@
                                 <option value="sub_departments.name">Sub-Department</option>
                             </select>
                         </div>
-                        <div class="col-md-3 col-sm-3">
-                            <button type="submit" class="btn btn-primary"><i
-                                    class="icofont-save me-2 fs-6"></i>Submit</button>
-                        </div>
+
                         <div class="col-md-12 mt-5">
                             <label>Columns Selected.</label>
                             @php
@@ -63,6 +60,14 @@
                                 class="icofont-save me-2 fs-6"></i>Save</button>
                     </div>
                 </div>
+                <form wire:submit="submitData">
+                    <div class="row">
+                        <div class="col-md-12 col-sm-12 text-end">
+                            <button type="submit" class="btn btn-primary"><i
+                                    class="icofont-save me-2 fs-6"></i>Submit</button>
+                        </div>
+                    </div>
+                </form>
                 <div class="row">
                     <div class="col-md-12">
                         <label>Total Filters : {{ count($selectedFilters) }}</label>
@@ -73,29 +78,37 @@
     </section>
 
     <section>
-        <table class="table table-stripped table-bordered mt-5">
-            <thead>
-                @if (!empty($this->selectedColumns))
-                    @foreach ($this->selectedColumns as $column)
-                        <th>{{ $column['name'] }}</th>
-                    @endforeach
-                @endif
-            </thead>
-            <tbody>
+        <div class="card mt-2">
+            <div class="card-body">
+                <table class="table table-stripped table-bordered mt-5">
+                    <thead>
+                        @if (!empty($this->selectedColumns))
+                            @foreach ($this->selectedColumns as $column)
+                                <th>{{ $column['name'] }}</th>
+                            @endforeach
+                        @endif
+                    </thead>
+                    <tbody>
 
-                @foreach ($data as $row)
-                    <tr>
-                        @foreach ($this->selectedColumns as $key => $column)
-                            @php
-                                $column = preg_replace('/^[^.]+\./', '', $column);
-                                // echo $row->{$column}."</br>";
-                            @endphp
-                            <td>{{ $row->{$column['value']} }} </td>
+                        @foreach ($data as $row)
+                            <tr>
+                                @foreach ($this->selectedColumns as $key => $column)
+                                    @php
+                                        $column = preg_replace('/^[^.]+\./', '', $column);
+                                        // Use a regex to get the part after 'AS'
+                                        preg_match('/\bAS\s+(.*)/i', $column['value'], $match);
+
+                                        // The part after 'AS' is in $match[1]
+                                        $afterAs = trim($match[1]);
+                                    @endphp
+                                    <td>{{ $row->{$afterAs} }} </td>
+                                @endforeach
+                            </tr>
                         @endforeach
-                    </tr>
-                @endforeach
-            </tbody>
-        </table>
+                    </tbody>
+                </table>
+            </div>
+        </div>
 
     </section>
 </div>

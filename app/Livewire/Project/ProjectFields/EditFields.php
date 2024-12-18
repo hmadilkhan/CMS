@@ -144,17 +144,32 @@ class EditFields extends Component
 
     public function updateProjectFields()
     {
+        $customMessages = [];
+        $project = Project::findOrFail($this->projectId);
         if ($this->departmentId == 1) {
             $data = [
                 'utility_company' => 'required_if:departmentId,1|string',
                 'ntp_approval_date' => 'required_if:departmentId,1|date',
                 'hoa' => 'required_if:departmentId,1|string',
-                'hoa_phone_number' => 'required_if:departmentId,1|nullable|string',
+                'hoa_phone_number' =>  Rule::requiredIf(function ()  {
+                    return  $this->hoa == "yes";
+                }),
+            ];
+
+            $customMessages = [
+                'utility_company.required_if' => 'The utility company field is required for this department.',
+                'ntp_approval_date.required_if' => 'The NTP approval date is required for this department.',
+                'hoa.required_if' => 'The HOA field is required for this department.',
+                'hoa_phone_number.required_if' => 'The HOA phone number is required when HOA is marked as "yes".',
             ];
         }
         if ($this->departmentId == 2) {
             $data = [
                 'site_survey_link' => 'required_if:departmentId,2|url',
+            ];
+
+            $customMessages = [
+                'site_survey_link.required_if' => 'The site survey link is required for this department.',
             ];
         }
         if ($this->departmentId == 3) {
@@ -165,6 +180,14 @@ class EditFields extends Component
                 'meter_spot_request_number' => 'required_if:mpu_required,yes|string',
                 'meter_spot_result' => 'required_if:departmentId,3|string',
             ];
+
+            $customMessages = [
+                'adders_approve_checkbox.required_if' => 'The adders approve checkbox is required for this department.',
+                'mpu_required.required_if' => 'Please specify if MPU is required.',
+                'meter_spot_request_date.required_if' => 'The meter spot request date is required if MPU is required.',
+                'meter_spot_request_number.required_if' => 'The meter spot request number is required if MPU is required.',
+                'meter_spot_result.required_if' => 'The meter spot result is required for this department.',
+            ];
         }
         if ($this->departmentId == 4) {
             $data = [
@@ -173,12 +196,27 @@ class EditFields extends Component
                 'hoa_approval_request_date' => 'required_if:projecthoa,yes|date',
                 'hoa_approval_date' => 'required_if:projecthoa,yes|date',
             ];
+
+            $customMessages = [
+                'permitting_submittion_date.required_if' => 'The permitting submission date is required for this department.',
+                'permitting_approval_date.required_if' => 'The permitting approval date is required for this department.',
+                'hoa_approval_request_date.required_if' => 'The HOA approval request date is required when HOA is "yes".',
+                'hoa_approval_date.required_if' => 'The HOA approval date is required when HOA is "yes".',
+            ];
         }
         if ($this->departmentId == 5) {
             $data = [
                 'solar_install_date' => 'required_if:departmentId,5|date',
                 'battery_install_date' => 'required_if:departmentId,5|date',
-                'mpu_install_date' => 'required_if:departmentId,5|date',
+                'mpu_install_date' => Rule::requiredIf(function () use ($project) {
+                    return $this->departmentId == 5 && $project->mpu_required == "yes";
+                }),
+            ];
+
+            $customMessages = [
+                'solar_install_date.required_if' => 'The solar install date is required for this department.',
+                'battery_install_date.required_if' => 'The battery install date is required for this department.',
+                'mpu_install_date.required_if' => 'The MPU install date is required if MPU is marked as required for this project.',
             ];
         }
         if ($this->departmentId == 6) {
@@ -186,19 +224,33 @@ class EditFields extends Component
                 'rough_inspection_date' => 'required_if:departmentId,6|date',
                 'final_inspection_date' => 'required_if:departmentId,6|date',
             ];
+
+            $customMessages = [
+                'rough_inspection_date.required_if' => 'The rough inspection date is required for this department.',
+                'final_inspection_date.required_if' => 'The final inspection date is required for this department.',
+            ];
         }
         if ($this->departmentId == 7) {
             $data = [
                 'pto_submission_date' => 'required_if:departmentId,7|date',
                 'pto_approval_date' => 'required_if:departmentId,7|date',
             ];
+
+            $customMessages = [
+                'pto_submission_date.required_if' => 'The PTO submission date is required for this department.',
+                'pto_approval_date.required_if' => 'The PTO approval date is required for this department.',
+            ];
         }
         if ($this->departmentId == 8) {
             $data = [
                 'coc_packet_mailed_out_date' => 'required_if:departmentId,8|date',
             ];
+
+            $customMessages = [
+                'coc_packet_mailed_out_date.required_if' => 'The COC packet mailed out date is required for this department.',
+            ];
         }
-        $this->validate($data);
+        $this->validate($data, $customMessages);
 
         $updateItems = [];
         if ($this->departmentId == 1) {

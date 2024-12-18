@@ -122,8 +122,8 @@ class ProjectController extends Controller
         $fwdDepartments =  array_merge($departments->toArray(), Department::where("id", ">", $task->department_id)->take(1)->get()->toArray());
         $fwdIds= collect($fwdDepartments)->pluck("id");
         $nextSubDepartments =  SubDepartment::whereIn("department_id",$fwdIds)->get() ;
-        
-        Email::where("project_id", $project->id)->where("department_id", $project->department_id)->update(["is_view" => 0]);
+
+        Email::where("project_id", $project->id)->update(["is_view" => 0]);//->where("department_id", $project->department_id)
         return view("projects.show", [
             "project" => $project,
             "task" => $task,

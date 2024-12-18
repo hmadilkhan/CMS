@@ -27,7 +27,7 @@
                 </div>
                 <div class="col-sm-3 ">
                     <label for="hoa" class="form-label">HOA</label>
-                    <select class="form-select" aria-label="Default select HOA" wire:model="hoa" id="hoa"
+                    <select class="form-select" aria-label="Default select HOA" wire:model.live="hoa" id="hoa"
                         name="hoa">
                         <option value="">Select HOA</option>
                         <option {{ $project->hoa != '' && $project->hoa == 'yes' ? 'selected' : '' }} value="yes">Yes
@@ -78,9 +78,9 @@
                     @enderror
                 </div>
                 <div class="col-sm-3 ">
-                    <label for="mpu_required" class="form-label">MPU Required</label>
-                    <select class="form-select select2" aria-label="Default select MPU Required" id="mpu_required"
-                        name="mpu_required" wire:model="mpu_required">
+                    <label for="mpu_required" class="form-label">MPU Required {{ $mpu_required }}</label>
+                    <select class="form-select" aria-label="Default select MPU Required" id="mpu_required"
+                        name="mpu_required" wire:model.live="mpu_required">
                         <option value="">Select MPU Required</option>
                         <option {{ $project->mpu_required != '' && $project->mpu_required == 'yes' ? 'selected' : '' }}
                             value="yes">Yes</option>
@@ -91,26 +91,32 @@
                         <div class="text-danger message mt-2">{{ $message }}</div>
                     @enderror
                 </div>
-                <div class="col-sm-3 mb-3 mpuselect" style="display:none;">
-                    <label for="meter_spot_request_date" class="form-label" id="requiredfiles">Meter Spot Request
-                        Date</label>
-                    <input class="form-control" type="date" id="meter_spot_request_date"
-                        name="meter_spot_request_date" wire:model="meter_spot_request_date">
-                    @error('meter_spot_request_date')
-                        <div id="meter_spot_request_date_message" class="text-danger message mt-2">{{ $message }}
-                        </div>
-                    @enderror
-                </div>
-                <div class="col-sm-3 mb-3 mpuselect" style="display:none;">
-                    <label for="meter_spot_request_number" class="form-label" id="requiredfiles">Meter Spot Request
-                        Number</label>
-                    <input class="form-control" type="text" id="meter_spot_request_number"
-                        name="meter_spot_request_number" wire:model="meter_spot_request_number">
-                    @error('meter_spot_request_number')
-                        <div id="meter_spot_request_number_message" class="text-danger message mt-2">{{ $message }}
-                        </div>
-                    @enderror
-                </div>
+                @if ($mpu_required == 'yes')
+                    <div class="col-sm-3 mb-3 mpuselect">
+                        <label for="meter_spot_request_date" class="form-label" id="requiredfiles">Meter Spot Request
+                            Date</label>
+                        <input class="form-control" type="date" id="meter_spot_request_date"
+                            name="meter_spot_request_date" wire:model="meter_spot_request_date">
+                        @error('meter_spot_request_date')
+                            <div id="meter_spot_request_date_message" class="text-danger message mt-2">
+                                {{ $message }}
+                            </div>
+                        @enderror
+                    </div>
+
+                    <div class="col-sm-3 mb-3 mpuselect">
+                        <label for="meter_spot_request_number" class="form-label" id="requiredfiles">Meter Spot
+                            Request
+                            Number</label>
+                        <input class="form-control" type="text" id="meter_spot_request_number"
+                            name="meter_spot_request_number" wire:model="meter_spot_request_number">
+                        @error('meter_spot_request_number')
+                            <div id="meter_spot_request_number_message" class="text-danger message mt-2">
+                                {{ $message }}
+                            </div>
+                        @enderror
+                    </div>
+                @endif
                 <div class="col-sm-3 ">
                     <label for="meter_spot_result" class="form-label">Meter Spot Result</label>
                     <select class="form-select" aria-label="Default select Meter Spot Result" id="meter_spot_result"
@@ -128,6 +134,7 @@
                     @enderror
                 </div>
             @endif
+
             @if ($departmentId == 4)
                 <div class="col-sm-3 mb-3 ">
                     <label for="permitting_submittion_date" class="form-label">Permit Submission Date</label>
@@ -210,7 +217,6 @@
                         <div id="actual_material_cost_message" class="text-danger message mt-2">{{ $message }}</div>
                     @enderror
                 </div>
-                <input type="hidden" name="projectmpu" value="{{ $project->mpu_required }}" />
                 @if ($project->mpu_required == 'yes')
                     <div class="col-sm-3 mb-3 ">
                         <label for="mpu_install_date" class="form-label">MPU Install Date</label>
@@ -263,7 +269,7 @@
             @if ($departmentId == 8)
                 <div class="col-sm-3 mb-3 ">
                     <label for="coc_packet_mailed_out_date" class="form-label">COC Packet</label>
-                    <input class="form-control" type="text" id="coc_packet_mailed_out_date"
+                    <input class="form-control" type="date" id="coc_packet_mailed_out_date"
                         name="coc_packet_mailed_out_date" wire:model="coc_packet_mailed_out_date">
                     @error('coc_packet_mailed_out_date')
                         <div id="coc_packet_mailed_out_date_message" class="text-danger message mt-2">{{ $message }}

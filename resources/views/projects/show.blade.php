@@ -2084,13 +2084,13 @@
             $("#hoa_select").css("display", "none")
         }
     })
-    $("#mpu_required").change(function() {
-        if ($(this).val() == "yes") {
-            $(".mpuselect").css("display", "block")
-        } else {
-            $(".mpuselect").css("display", "none")
-        }
-    })
+    // $("#mpu_required").change(function() {
+    //     if ($(this).val() == "yes") {
+    //         $(".mpuselect").css("display", "block")
+    //     } else {
+    //         $(".mpuselect").css("display", "none")
+    //     }
+    // })
 
     $("#call_no").change(function() {
         // alert($(this).val());
