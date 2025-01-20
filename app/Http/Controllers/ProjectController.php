@@ -679,7 +679,11 @@ class ProjectController extends Controller
                 })
                 ->where('code', $request->code)->first();
             $url = URL::to('/track-your-project/' . Crypt::encrypt($project->code));
-            return response()->json(["status" => 200, "url" => $url]);
+            return response()->json(["status" => 200, "url" => $url])
+                    ->header('Access-Control-Allow-Origin', 'https://solenenergyco.com')
+                    ->header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS')
+                    ->header('Access-Control-Allow-Headers', 'Content-Type, Authorization')
+                    ->header('Access-Control-Allow-Credentials', 'true');
         } catch (\Throwable $th) {
             return response()->json(["status" => 500, "error" => $th->getMessage()]);
         }
