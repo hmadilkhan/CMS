@@ -176,8 +176,12 @@ class EditFields extends Component
             $data = [
                 'adders_approve_checkbox' => 'required_if:departmentId,3',
                 'mpu_required' => 'required_if:departmentId,3|in:yes,no',
-                'meter_spot_request_date' => 'required_if:mpu_required,yes|date',
-                'meter_spot_request_number' => 'required_if:mpu_required,yes|string',
+                'meter_spot_request_date' =>  Rule::requiredIf(function ()  {
+                    return  $this->mpu_required == "yes";
+                }),
+                'meter_spot_request_number' =>  Rule::requiredIf(function ()  {
+                    return  $this->mpu_required == "yes";
+                }),
                 'meter_spot_result' => 'required_if:departmentId,3|string',
             ];
 
@@ -193,8 +197,12 @@ class EditFields extends Component
             $data = [
                 'permitting_submittion_date' => 'required_if:departmentId,4|date',
                 'permitting_approval_date' => 'required_if:departmentId,4|date',
-                'hoa_approval_request_date' => 'required_if:projecthoa,yes|date',
-                'hoa_approval_date' => 'required_if:projecthoa,yes|date',
+                'hoa_approval_request_date' =>  Rule::requiredIf(function ()  {
+                    return  $this->hoa == "yes";
+                }),
+                'hoa_approval_date' =>  Rule::requiredIf(function ()  {
+                    return  $this->hoa == "yes";
+                }),
             ];
 
             $customMessages = [

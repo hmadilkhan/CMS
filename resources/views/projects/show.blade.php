@@ -876,22 +876,22 @@
                 <div class="row g-3 mb-3 mt-1">
                     <div
                         class="col-sm-3d-flex align-items-center justify-content-between profile-av pe-xl-4 pe-md-2 pe-sm-4 pe-4 w220">
-                        <img src="{{ $project->salesPartnerUser->image != '' ? asset('storage/users/' . $project->salesPartnerUser->image) : asset('assets/images/profile_av.png') }}"
+                        <img src="{{ !empty($project->salesPartnerUser) && $project->salesPartnerUser->image != '' ? asset('storage/users/' . $project->salesPartnerUser->image) : asset('assets/images/profile_av.png') }}"
                             alt="" class="avatar xl rounded-circle img-thumbnail shadow-sm">
                     </div>
                     <div class="col-sm-3 ">
                         <label for="exampleFormControlInput877" class="form-label">Sales Person Name</label>
-                        <input disabled value="{{ $project->salesPartnerUser->name }}" type="text"
+                        <input disabled value="{{ $project->salesPartnerUser->name ?? "-" }}" type="text"
                             class="form-control" id="first_name" name="first_name" placeholder="First Name">
                     </div>
                     <div class="col-sm-3 ">
                         <label for="exampleFormControlInput877" class="form-label">Email</label>
-                        <input disabled value="{{ $project->salesPartnerUser->email }}" type="text"
+                        <input disabled value="{{ $project->salesPartnerUser->email ?? "-" }}" type="text"
                             class="form-control" id="last_name" name="last_name" placeholder="Last Name">
                     </div>
                     <div class="col-sm-3 ">
                         <label for="exampleFormControlInput877" class="form-label">Phone</label>
-                        <input disabled value="{{ $project->salesPartnerUser->phone }}" type="text"
+                        <input disabled value="{{ $project->salesPartnerUser->phone ?? "-" }}" type="text"
                             class="form-control" id="street" name="street" placeholder="Street">
                     </div>
                 </div>

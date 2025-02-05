@@ -24,6 +24,20 @@
                             return $item->department_id == $department->id;
                         })
                         ->values();
+                    $acceptanceStatus = "Not Initiated";
+                    $acceptanceClass = "";
+                    if (!empty($project->projectAcceptance)) {
+                        if ($project->projectAcceptance->status == 0) {
+                            $acceptanceStatus = "Pending";
+                            $acceptanceClass = "text-warning";
+                        }else if ($project->projectAcceptance->status == 1) {
+                            $acceptanceStatus = "Approved";
+                            $acceptanceClass = "text-success";
+                        }else if ($project->projectAcceptance->status == 2) {
+                            $acceptanceStatus = "Rejected";
+                            $acceptanceClass = "text-danger";
+                        } 
+                    }
                 @endphp
                 @if (count($collections) > 0)
                     @foreach ($collections as $project)
@@ -100,6 +114,19 @@
                                                 <i class="icofont-ui-text-chat"></i>
                                                 <span
                                                     class="ms-2">{{ $project->assignedPerson[0]->employee->name }}</span>
+                                            </div>
+                                        </div>
+                                        <div class="col-6">
+                                            <div class="d-flex align-items-center">
+                                                <i class="icofont-group-students "></i>
+                                                <span class="ms-2">Acceptance</span>
+                                            </div>
+                                        </div>
+                                        <div class="col-6">
+                                            <div class="d-flex align-items-center">
+                                                <i class="icofont-ui-text-chat"></i>
+                                                <span
+                                                    class="ms-2 {{$acceptanceClass}}">{{ $acceptanceStatus }}</span>
                                             </div>
                                         </div>
                                         <div class="col-12">

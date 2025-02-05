@@ -68,4 +68,9 @@ class Project extends Model
     {
         return $this->belongsTo(User::class,"sales_partner_user_id","id");
     }
+
+    public function projectAcceptance()
+    {
+        return $this->belongsTo(ProjectAcceptance::class,"id","project_id")->latest();
+    }
 }
