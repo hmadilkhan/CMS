@@ -51,7 +51,7 @@
             </form>
         @endif
     @endcan
-    <div wire:loading.class="d-flex flex-column" wire:loading class="card-body">
+    <div wire:loading.class="d-flex flex-column" wire:target="files" wire:loading class="card-body">
         <div
             class='position-relative w-100 h-100 d-flex flex-column align-items-center bg-white justify-content-center'>
             <div class='spinner-border text-dark' role='status'>
@@ -59,7 +59,7 @@
             </div>
         </div>
     </div>
-    <div wire:loading.remove class="mt-4">
+    <div wire:loading.remove wire:target="files" class="mt-4">
         <label for="formFileMultipleoneone" class="form-label fw-bold flex-fill mb-2 mt-sm-0">Files</label>
         <ul class="list-group list-group-custom">
             @if (count($departmentFiles) > 0)
