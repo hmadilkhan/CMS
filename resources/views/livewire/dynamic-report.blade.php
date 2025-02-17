@@ -8,8 +8,8 @@
                             <label>Select Columns</label>
                         </div>
                         <div class="col-md-3">
-                            <select id="table" class="form-control" wire:model="selectedTable[]">
-                                <option value="">-- Select Columns --</option>
+                            <select id="table" class="form-control select2" wire:model="selectedTable[]">
+                                <option value="">-- Select Fields --</option>
                                 <option value="projects.project_name">Project Name</option>
                                 <option value="customers.first_name">Customer First Name</option>
                                 <option value="customers.last_name">Customer Last Name</option>
@@ -18,22 +18,22 @@
                             </select>
                         </div>
 
-                        <div class="col-md-12 mt-5">
+                        {{-- <div class="col-md-12 mt-5">
                             <label>Columns Selected.</label>
                             @php
                                 $values = array_column($selectedColumns, 'value'); // Extract 'value' field
                             @endphp
                             <label>{{ implode(',', $values) }}</label>
-                        </div>
+                        </div> --}}
                     </div>
                 </form>
-                <div class="row">
+                <div class="row mt-4">
                     <div class="col-md-12">
                         <label>Add Filter</label>
                     </div>
                     <div class="col-md-3">
-                        <select id="filtercolumns" class="form-control">
-                            <option value="">-- Select Table --</option>
+                        <select id="filtercolumns" class="form-control select2" style="line-height: 31px !important;">
+                            <option value="">-- Select Filters --</option>
                             <option value="projects.project_name">Project Name</option>
                             <option value="customers.first_name">Customer First Name</option>
                             <option value="customers.last_name">Customer Last Name</option>
@@ -46,10 +46,10 @@
                             <option value="=">=</option>
                             <option value=">">></option>
                             <option value="<">
-                                << /option>
+                                < </option>
                             <option value=">=">>=</option>
                             <option value="<=">
-                                <=< /option>
+                                <= </option>
                         </select>
                     </div>
                     <div class="col-md-3">
@@ -71,6 +71,32 @@
                 <div class="row">
                     <div class="col-md-12">
                         <label>Total Filters : {{ count($selectedFilters) }}</label>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="row">
+                            @if (count($selectedFilters) > 0)
+                                <div class="col-md-12">
+                                    <table class="table table-stripped table-bordered mt-5">
+                                        <thead>
+                                            <tr>
+                                                <th>Column</th>
+                                                <th>Operator</th>
+                                                <th>Value</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            @foreach ($selectedFilters as $filter)
+                                                <tr>
+                                                    <td>{{ $filter['text'] }}</td>
+                                                    <td>{{ $filter['operator'] }}</td>
+                                                    <td>{{ $filter['value'] }}</td>
+                                                </tr>
+                                            @endforeach
+                                        </tbody>
+                                    </table>
+                                </div>
+                            @endif
+                        </div>
                     </div>
                 </div>
             </div>
@@ -114,6 +140,16 @@
 </div>
 @script
     <script>
+        $(document).ready(function() {
+            $(".select2").select2();
+
+            Livewire.hook('morph.updating', ({
+                component,
+                cleanup
+            }) => {
+                $('.select2').select2();
+            })
+        })
         $("#table").change(function() {
             var data = $('#table').val();
             @this.set('selectedTable', data);
@@ -131,15 +167,18 @@
         })
 
         $("#filter-add").click(function() {
-
-            Livewire.dispatch('saveFilter', {
-                column: $("#filtercolumns").val(),
-                operator: $("#filteroperator").val(),
-                value: $("#filtervalue").val()
-            })
-            $("#filtercolumns").val('')
-            $("#filteroperator").val('')
-            $("#filtervalue").val('')
+            let data = $('#filtercolumns').select2('data');
+            if (data) {
+                Livewire.dispatch('saveFilter', {
+                    text : data[0].text,
+                    column: data[0].id,
+                    operator: $("#filteroperator").val(),
+                    value: $("#filtervalue").val()
+                })
+                $("#filtercolumns").val('')
+                $("#filteroperator").val('')
+                $("#filtervalue").val('')
+            }
 
         })
     </script>

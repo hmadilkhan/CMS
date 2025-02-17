@@ -23,12 +23,6 @@ class DynamicReport extends Component
     public $filters = [];
     public $data = [];
 
-    // public function mount()
-    // {
-    //     // Load all table names at mount
-    //     // $this->tables = DB::select('SHOW TABLES');
-    // }
-
     #[Computed()]
     public function updatedSelectedTable($tableName)
     {
@@ -41,9 +35,10 @@ class DynamicReport extends Component
     }
 
     #[On("saveFilter")]
-    public function saveFilter($column, $operator, $value)
+    public function saveFilter($text, $column, $operator, $value)
     {
         $filter = [
+            "text" => $text,
             "column" => $column,
             "operator" => $operator,
             "value" => $value,
