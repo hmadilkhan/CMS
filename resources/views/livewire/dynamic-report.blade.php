@@ -18,6 +18,13 @@
                             </select>
                         </div>
 
+                        <div class="d-grid gap-2 d-md-block mt-2 mb-2">
+                            @foreach ($this->selectedColumns as $colKey => $column)
+                                <button type="button" wire:click="deleteColumn('{{ $colKey }}')"
+                                    style="cursor: pointer" class="badge bg-primary">{{ $column['col'] }} <i
+                                        class="icofont-ui-delete text-white"></i></button>
+                            @endforeach
+                        </div>
                         {{-- <div class="col-md-12 mt-5">
                             <label>Columns Selected.</label>
                             @php
@@ -41,6 +48,7 @@
                             <option value="sub_departments.name">Sub-Department</option>
                         </select>
                     </div>
+
                     <div class="col-md-1">
                         <select id="filteroperator" class="form-control">
                             <option value="=">=</option>
@@ -60,19 +68,22 @@
                                 class="icofont-save me-2 fs-6"></i>Save</button>
                     </div>
                 </div>
-                <form wire:submit="submitData">
-                    <div class="row">
-                        <div class="col-md-12 col-sm-12 text-end">
-                            <button type="submit" class="btn btn-primary"><i
-                                    class="icofont-save me-2 fs-6"></i>Submit</button>
-                        </div>
-                    </div>
-                </form>
+
                 <div class="row">
                     <div class="col-md-12">
                         <label>Total Filters : {{ count($selectedFilters) }}</label>
                     </div>
-                    <div class="col-md-6">
+                    @if (count($selectedFilters) > 0)
+                        <div class="d-grid gap-2 d-md-block mt-2 mb-2">
+                            @foreach ($selectedFilters as $colKey => $filter)
+                                <button type="button" wire:click="deleteColumn('{{ $colKey }}')"
+                                    style="cursor: pointer"
+                                    class="badge bg-primary">{{ $filter['text'] . ' ' . $filter['operator'] . ' ' . $filter['value'] }}
+                                    <i class="icofont-ui-delete text-white"></i></button>
+                            @endforeach
+                        </div>
+                    @endif
+                    {{-- <div class="col-md-6">
                         <div class="row">
                             @if (count($selectedFilters) > 0)
                                 <div class="col-md-12">
@@ -97,45 +108,59 @@
                                 </div>
                             @endif
                         </div>
-                    </div>
+                    </div> --}}
                 </div>
+                <form wire:submit="submitData">
+                    <div class="row">
+                        <div class="col-md-12 col-sm-12 text-end">
+                            <button type="submit" class="btn btn-primary"><i
+                                    class="icofont-save me-2 fs-6"></i>Submit</button>
+                        </div>
+                    </div>
+                </form>
             </div>
         </div>
     </section>
 
     <section>
-        <div class="card mt-2">
-            <div class="card-body">
-                <table class="table table-stripped table-bordered mt-5">
-                    <thead>
-                        @if (!empty($this->selectedColumns))
-                            @foreach ($this->selectedColumns as $column)
-                                <th>{{ $column['name'] }}</th>
-                            @endforeach
-                        @endif
-                    </thead>
-                    <tbody>
-
-                        @foreach ($data as $row)
-                            <tr>
-                                @foreach ($this->selectedColumns as $key => $column)
-                                    @php
-                                        $column = preg_replace('/^[^.]+\./', '', $column);
-                                        // Use a regex to get the part after 'AS'
-                                        preg_match('/\bAS\s+(.*)/i', $column['value'], $match);
-
-                                        // The part after 'AS' is in $match[1]
-                                        $afterAs = trim($match[1]);
-                                    @endphp
-                                    <td>{{ $row->{$afterAs} }} </td>
+        @if (count($selectedColumns) > 0)
+            <div class="card mt-2">
+                <div class="card-body">
+                    <table class="table table-stripped table-bordered mt-5">
+                        <thead>
+                            @if (!empty($this->selectedColumns))
+                                @foreach ($this->selectedColumns as $column)
+                                    <th>{{ $column['name'] }}</th>
                                 @endforeach
-                            </tr>
-                        @endforeach
-                    </tbody>
-                </table>
-            </div>
-        </div>
+                            @endif
+                        </thead>
+                        <tbody>
+                            @if (!empty($data))
+                                @foreach ($data as $row)
+                                    <tr>
+                                        @foreach ($this->selectedColumns as $key => $column)
+                                            @php
+                                                $column = preg_replace('/^[^.]+\./', '', $column);
+                                                // Use a regex to get the part after 'AS'
+                                                preg_match('/\bAS\s+(.*)/i', $column['value'], $match);
 
+                                                // The part after 'AS' is in $match[1]
+                                                $afterAs = trim($match[1]);
+                                            @endphp
+                                            <td>{{ $row->{$afterAs} }} </td>
+                                        @endforeach
+                                    </tr>
+                                @endforeach
+                            @elseif(!empty($data) && count($selectedColumns) > 0)
+                                <tr>
+                                    <td colspan="{{ count($selectedColumns) }}">No Record Found</td>
+                                </tr>
+                            @endif
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        @endif
     </section>
 </div>
 @script
@@ -170,7 +195,7 @@
             let data = $('#filtercolumns').select2('data');
             if (data) {
                 Livewire.dispatch('saveFilter', {
-                    text : data[0].text,
+                    text: data[0].text,
                     column: data[0].id,
                     operator: $("#filteroperator").val(),
                     value: $("#filtervalue").val()
@@ -180,6 +205,9 @@
                 $("#filtervalue").val('')
             }
 
+            function deleteColumn(index) {
+                alert();
+            }
         })
     </script>
 @endscript

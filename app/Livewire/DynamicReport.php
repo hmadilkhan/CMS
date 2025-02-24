@@ -92,6 +92,12 @@ class DynamicReport extends Component
         return $formattedString;
     }
 
+    public function deleteColumn($index)
+    {
+        unset($this->selectedColumns[$index]); 
+        $this->selectedColumns = array_values($this->selectedColumns); // Reindex the array
+    }
+
 
     public function render()
     {
