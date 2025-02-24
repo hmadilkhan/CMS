@@ -8,20 +8,34 @@
                             <label>Select Columns</label>
                         </div>
                         <div class="col-md-3">
-                            <select id="table" class="form-control select2" wire:model="selectedTable[]">
+                            <select id="selectedFields" class="form-control select2">
                                 <option value="">-- Select Fields --</option>
-                                <option value="projects.project_name">Project Name</option>
-                                <option value="customers.first_name">Customer First Name</option>
-                                <option value="customers.last_name">Customer Last Name</option>
-                                <option value="departments.name">Department</option>
-                                <option value="sub_departments.name">Sub-Department</option>
+                                <optgroup class="default" label="Customer">
+                                    <option value="customers.first_name">Customer First Name</option>
+                                    <option value="customers.last_name">Customer Last Name</option>
+                                    <option value="customers.email">Email</option>
+                                    <option value="customers.city">City</option>
+                                    <option value="customers.state">State</option>
+                                    <option value="customers.zipcode">Zip Code</option>
+                                </optgroup>
+                                <optgroup class="default" label="Project">
+                                    <option value="projects.project_name">Project Name</option>
+                                    <option value="departments.name">Department</option>
+                                    <option value="sub_departments.name">Sub-Department</option>
+                                    <option value="sales_partners.name">Sales Partner</option>
+                                    <option value="customers.sold_date">Sold Date</option>
+                                    <option value="customers.panel_qty">ُPanel Qty</option>
+                                    <option value="customers.panel_qty">Inverter Qty</option>
+                                    <option value="module_types.name">Module Type</option>
+                                    <option value="inverter_types.name">Inverter Type</option>
+                                </optgroup>
                             </select>
                         </div>
 
                         <div class="d-grid gap-2 d-md-block mt-2 mb-2">
                             @foreach ($this->selectedColumns as $colKey => $column)
                                 <button type="button" wire:click="deleteColumn('{{ $colKey }}')"
-                                    style="cursor: pointer" class="badge bg-primary">{{ $column['col'] }} <i
+                                    style="cursor: pointer" class="badge bg-primary">{{ $column['text'] }} <i
                                         class="icofont-ui-delete text-white"></i></button>
                             @endforeach
                         </div>
@@ -41,11 +55,25 @@
                     <div class="col-md-3">
                         <select id="filtercolumns" class="form-control select2" style="line-height: 31px !important;">
                             <option value="">-- Select Filters --</option>
-                            <option value="projects.project_name">Project Name</option>
-                            <option value="customers.first_name">Customer First Name</option>
-                            <option value="customers.last_name">Customer Last Name</option>
-                            <option value="departments.name">Department</option>
-                            <option value="sub_departments.name">Sub-Department</option>
+                            <optgroup class="default" label="Customer">
+                                <option value="customers.first_name">Customer First Name</option>
+                                <option value="customers.last_name">Customer Last Name</option>
+                                <option value="customers.email">Email</option>
+                                <option value="customers.city">City</option>
+                                <option value="customers.state">State</option>
+                                <option value="customers.zipcode">Zip Code</option>
+                            </optgroup>
+                            <optgroup class="default" label="Project">
+                                <option value="projects.project_name">Project Name</option>
+                                <option value="departments.name">Department</option>
+                                <option value="sub_departments.name">Sub-Department</option>
+                                <option value="sales_partners.name">Sales Partner</option>
+                                <option value="customers.sold_date">Sold Date</option>
+                                <option value="customers.panel_qty">ُPanel Qty</option>
+                                <option value="customers.panel_qty">Inverter Qty</option>
+                                <option value="module_types.name">Module Type</option>
+                                <option value="inverter_types.name">Inverter Type</option>
+                            </optgroup>
                         </select>
                     </div>
 
@@ -65,7 +93,7 @@
                     </div>
                     <div class="col-md-3 col-sm-3">
                         <button type="button" id="filter-add" class="btn btn-primary"><i
-                                class="icofont-save me-2 fs-6"></i>Save</button>
+                                class="icofont-save me-2 fs-6"></i>Add Filter</button>
                     </div>
                 </div>
 
@@ -76,7 +104,7 @@
                     @if (count($selectedFilters) > 0)
                         <div class="d-grid gap-2 d-md-block mt-2 mb-2">
                             @foreach ($selectedFilters as $colKey => $filter)
-                                <button type="button" wire:click="deleteColumn('{{ $colKey }}')"
+                                <button type="button" wire:click="deleteFilter('{{ $colKey }}')"
                                     style="cursor: pointer"
                                     class="badge bg-primary">{{ $filter['text'] . ' ' . $filter['operator'] . ' ' . $filter['value'] }}
                                     <i class="icofont-ui-delete text-white"></i></button>
@@ -113,8 +141,8 @@
                 <form wire:submit="submitData">
                     <div class="row">
                         <div class="col-md-12 col-sm-12 text-end">
-                            <button type="submit" class="btn btn-primary"><i
-                                    class="icofont-save me-2 fs-6"></i>Submit</button>
+                            <button type="submit" class="btn btn-primary"><i class="icofont-save me-2 fs-6"></i>Run
+                                Report</button>
                         </div>
                     </div>
                 </form>
@@ -130,7 +158,7 @@
                         <thead>
                             @if (!empty($this->selectedColumns))
                                 @foreach ($this->selectedColumns as $column)
-                                    <th>{{ $column['name'] }}</th>
+                                    <th>{{ $column['text'] }}</th>
                                 @endforeach
                             @endif
                         </thead>
@@ -175,9 +203,16 @@
                 $('.select2').select2();
             })
         })
-        $("#table").change(function() {
-            var data = $('#table').val();
-            @this.set('selectedTable', data);
+        $("#selectedFields").change(function() {
+            let data = $('#selectedFields').val();
+            let text = $("#selectedFields option:selected").text();
+            console.log(data, text);
+
+            // @this.set('selectedTable', data);
+            Livewire.dispatch('selectedFields', {
+                value: data,
+                text: text
+            });
         })
 
         $("#btnSubmit").click(function() {

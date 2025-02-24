@@ -34,6 +34,18 @@ class DynamicReport extends Component
         array_push($this->selectedColumns, $column);
     }
 
+    #[On("selectedFields")]
+    public function selectedFields($value,$text)
+    {
+        $column = [
+            "name" => $this->getTableColumnName($value),
+            "value" => $value." as ".$value,
+            "col" => $value,
+            "text" => $text,
+        ];
+        array_push($this->selectedColumns, $column);
+    }
+
     #[On("saveFilter")]
     public function saveFilter($text, $column, $operator, $value)
     {
@@ -57,7 +69,11 @@ class DynamicReport extends Component
         $query->with("task", "customer", "department", "logs", "logs.call", "subdepartment", "assignedPerson", "assignedPerson.employee", "departmentnotes", "departmentnotes.user", "salesPartnerUser")
             ->join('customers', 'projects.customer_id', '=', 'customers.id')
             ->join('departments', 'projects.department_id', '=', 'departments.id')
-            ->join('sub_departments', 'projects.sub_department_id', '=', 'sub_departments.id');
+            ->join('sub_departments', 'projects.sub_department_id', '=', 'sub_departments.id')
+            ->join('sales_partners', 'sales_partners.id', '=', 'customers.sales_partner_id')
+            ->join('module_types', 'module_types.id', '=', 'customers.module_type_id')
+            ->join('inverter_types', 'inverter_types.id', '=', 'customers.inverter_type_id');
+
             // dump($this->selectedFilters);
         if(count($this->selectedFilters)){
             foreach ($this->selectedFilters as $key => $filter) {
@@ -96,6 +112,11 @@ class DynamicReport extends Component
     {
         unset($this->selectedColumns[$index]); 
         $this->selectedColumns = array_values($this->selectedColumns); // Reindex the array
+    }
+    public function deleteFilter($index)
+    {
+        unset($this->selectedFilters[$index]); 
+        $this->selectedFilters = array_values($this->selectedFilters); // Reindex the array
     }
 
 
