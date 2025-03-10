@@ -32,6 +32,7 @@ use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Validation\Rule;
+use Maatwebsite\Excel\Concerns\ToArray;
 
 class ProjectController extends Controller
 {
@@ -118,12 +119,12 @@ class ProjectController extends Controller
             ->where("id", $project->id)
             ->first();
         $task = Task::whereIn("status", ["In-Progress", "Hold", "Cancelled"])->where("project_id", $project->id)->first();
-        $departments = Department::whereIn("id", Task::where("project_id", $project->id)->whereNotIn("department_id", Department::where("id", ">", $task->department_id)->take(1)->pluck("id"))->where("id","!=",9)->groupBy("department_id")->orderBy("department_id")->pluck("department_id"))->get();
+        $departments = Department::whereIn("id", Task::where("project_id", $project->id)->whereNotIn("department_id", Department::where("id", ">", $task->department_id)->take(1)->pluck("id"))->where("id", "!=", 9)->groupBy("department_id")->orderBy("department_id")->pluck("department_id"))->get();
         $fwdDepartments =  array_merge($departments->toArray(), Department::where("id", ">", $task->department_id)->take(1)->get()->toArray());
-        $fwdIds= collect($fwdDepartments)->pluck("id");
-        $nextSubDepartments =  SubDepartment::whereIn("department_id",$fwdIds)->get() ;
+        $fwdIds = collect($fwdDepartments)->pluck("id");
+        $nextSubDepartments =  SubDepartment::whereIn("department_id", $fwdIds)->get();
 
-        Email::where("project_id", $project->id)->update(["is_view" => 0]);//->where("department_id", $project->department_id)
+        Email::where("project_id", $project->id)->update(["is_view" => 0]); //->where("department_id", $project->department_id)
         return view("projects.show", [
             "project" => $project,
             "task" => $task,
@@ -348,7 +349,7 @@ class ProjectController extends Controller
         }
     }
 
-    public function moveProject(Request $request) 
+    public function moveProject(Request $request)
     {
         $project = Project::findOrFail($request->projectId);
 
@@ -357,7 +358,7 @@ class ProjectController extends Controller
         }
 
         // THIS WILL CHECK THE PROJECT EITHER PROJECT IS FORWARD OR BACKWARD
-        $checkProject = Task::where("project_id",$request->projectId)->where("department_id",$request->departmentId)->count();
+        $checkProject = Task::where("project_id", $request->projectId)->where("department_id", $request->departmentId)->count();
 
         // IF COUNT IS 0 THEN IT THE CASE IS FORWARD
         if ($checkProject == 0) {
@@ -368,23 +369,58 @@ class ProjectController extends Controller
             $requiredFields = DB::table('project_department_fields')
                 ->where('department_id', $currentDepartmentId)
                 ->pluck('field_name');
-        
+
             // Check for missing required fields
             $missingFields = [];
-        
+
             foreach ($requiredFields as $field) {
 
                 // Check if 'hoa_phone_number' depends on 'hoa'
+                // if ($currentDepartmentId == 1 && $field === 'hoa_phone_number' && $project->hoa === 'yes' && empty($project->hoa_phone_number)) {
+                //     $missingFields[] = $field;
+                // } elseif ($currentDepartmentId == 3 &&  $project->mpu_required === 'yes' && ( $field === 'meter_spot_request_date' or $field === 'meter_spot_request_number' or $field === 'meter_spot_result') && ($project->mpu_required === 'yes' && (empty($project->meter_spot_request_date) or empty($project->meter_spot_request_number)  or empty($project->meter_spot_result) ))) {
+                //     $missingFields[] = $field;
+                // } elseif ($currentDepartmentId == 4 && ($field === 'hoa_approval_request_date' or $field === 'hoa_approval_date') && $project->hoa === 'yes' && (empty($project->hoa_approval_request_date) or empty($project->hoa_approval_date))) {
+                //     $missingFields[] = $field;
+                // } elseif ($currentDepartmentId == 5 && $field === 'mpu_install_date' && $project->mpu_required === 'yes' && empty($project->mpu_install_date)) {
+                //     $missingFields[] = $field;
+                // } elseif ( ($field !== 'hoa_phone_number' or $field === 'meter_spot_request_date' or $field === 'meter_spot_request_number' or $field === 'meter_spot_result' or $field === 'hoa_approval_request_date' or $field === 'hoa_approval_date' or $field === 'mpu_install_date') && empty($project->$field)) {
+                //     // Standard required field check
+                //     $missingFields[] = $field;
+                // }
+                // Department 1: Check if 'hoa_phone_number' is required
                 if ($currentDepartmentId == 1 && $field === 'hoa_phone_number' && $project->hoa === 'yes' && empty($project->hoa_phone_number)) {
                     $missingFields[] = $field;
-                } elseif ($currentDepartmentId == 3 && ($field === 'meter_spot_request_date' or $field === 'meter_spot_request_number' or $field === 'meter_spot_result') && $project->mpu_required === 'yes' && (empty($project->meter_spot_request_date) or empty($project->meter_spot_request_number)  or empty($project->meter_spot_result) )) {
+                }
+
+                // Department 3: Check if MPU-related fields are required
+                elseif (
+                    $currentDepartmentId == 3 && $project->mpu_required === 'yes'
+                    && in_array($field, ['meter_spot_request_date', 'meter_spot_request_number', 'meter_spot_result'])
+                    && (empty($project->meter_spot_request_date) || empty($project->meter_spot_request_number) || empty($project->meter_spot_result))
+                ) {
                     $missingFields[] = $field;
-                } elseif ($currentDepartmentId == 4 && ($field === 'hoa_approval_request_date' or $field === 'hoa_approval_date') && $project->hoa === 'yes' && (empty($project->hoa_approval_request_date) or empty($project->hoa_approval_date))) {
+                }
+
+                // Department 4: Check if HOA approval fields are required
+                elseif (
+                    $currentDepartmentId == 4 && $project->hoa === 'yes'
+                    && in_array($field, ['hoa_approval_request_date', 'hoa_approval_date'])
+                    && (empty($project->hoa_approval_request_date) || empty($project->hoa_approval_date))
+                ) {
                     $missingFields[] = $field;
-                } elseif ($currentDepartmentId == 5 && $field === 'mpu_install_date' && $project->mpu_required === 'yes' && empty($project->mpu_install_date)) {
+                }
+
+                // Department 5: Check if MPU install date is required
+                elseif ($currentDepartmentId == 5 && $field === 'mpu_install_date' && $project->mpu_required === 'yes' && empty($project->mpu_install_date)) {
                     $missingFields[] = $field;
-                } elseif ( ($field !== 'hoa_phone_number' or $field === 'meter_spot_request_date' or $field === 'meter_spot_request_number' or $field === 'meter_spot_result' or $field === 'hoa_approval_request_date' or $field === 'hoa_approval_date' or $field === 'mpu_install_date') && empty($project->$field)) {
-                    // Standard required field check
+                }
+
+                // Standard required field check for other fields
+                elseif (
+                    !in_array($field, ['hoa_phone_number', 'meter_spot_request_date', 'meter_spot_request_number', 'meter_spot_result', 'hoa_approval_request_date', 'hoa_approval_date', 'mpu_install_date'])
+                    && empty($project->$field)
+                ) {
                     $missingFields[] = $field;
                 }
             }
@@ -392,14 +428,14 @@ class ProjectController extends Controller
             if (!empty($missingFields)) {
                 return response()->json([
                     "status" => 422,
-                    'error' => 'Cannot move project. Missing required fields for the current department.',
-                    'missing_fields' => $missingFields
+                    'error' => 'Cannot move project. Missing required fields for the current department.' . $currentDepartmentId,
+                    'missing_fields' => $missingFields,
+                    'requiredFields' => $requiredFields,
                 ], 422);
             }
-        }else{
-
+        } else {
         }
-        
+
         try {
             DB::beginTransaction();
             $project->update([
@@ -407,7 +443,7 @@ class ProjectController extends Controller
                 "sub_department_id" => $request->subDepartmentId,
             ]);
             $emp =  Employee::with("department")->whereHas("department", function ($query) use ($request) {
-                $query->where("department_id",$request->departmentId);
+                $query->where("department_id", $request->departmentId);
             })->first();
             Task::where("id", $request->taskId)->update(["status" => "Completed", "notes" => $request->notes]);
             Task::create([
@@ -417,12 +453,11 @@ class ProjectController extends Controller
                 "sub_department_id" => $request->subDepartmentId,
             ]);
             DB::commit();
-            return response()->json(["status" => 200,"message" => "Project Moved Successfully"]);
+            return response()->json(["status" => 200, "message" => "Project Moved Successfully"]);
         } catch (\Throwable $th) {
-           DB::rollBack();
-           return response()->json(["status" => 500,"message" => "Some Error Occured"]);
+            DB::rollBack();
+            return response()->json(["status" => 500, "message" => "Some Error Occured"]);
         }
-
     }
 
     public function saveCallLogs(Request $request)
@@ -535,7 +570,7 @@ class ProjectController extends Controller
 
     public function projectQuery(Request $request)
     {
-        $query = Project::with("customer", "customer.salespartner", "department", "subdepartment", "assignedPerson", "assignedPerson.employee", "task", "notes","projectAcceptance");
+        $query = Project::with("customer", "customer.salespartner", "department", "subdepartment", "assignedPerson", "assignedPerson.employee", "task", "notes", "projectAcceptance");
         $query->withCount(['emails as viewed_emails_count' => function ($query) {
             $query->where('is_view', 1);
         }]);
@@ -560,10 +595,15 @@ class ProjectController extends Controller
         if ($request->id == "all") {
             $subdepartmentsQuery->groupBy("department_id");
         }
+        if (in_array("Employee",auth()->user()->getRoleNames()->toArray())) {
+            $departments = Department::with("subdepartments")->whereIN("id", EmployeeDepartment::whereIn("employee_id", Employee::where("user_id", auth()->user()->id)->pluck("id"))->pluck("department_id"))->get();
+        }else{
+            $departments = Department::with("subdepartments")->where("id", "!=", 9)->get();
+        }
         return [
             "projects" => $query->get(),
             "subdepartments" => $subdepartmentsQuery->get(),
-            "departments" => Department::with("subdepartments")->where("id", "!=", 9)->get(),
+            "departments" =>  $departments,
             "ghostProjects" => $this->ghostProjects(),
         ];
     }
@@ -680,10 +720,10 @@ class ProjectController extends Controller
                 ->where('code', $request->code)->first();
             $url = URL::to('/track-your-project/' . Crypt::encrypt($project->code));
             return response()->json(["status" => 200, "url" => $url])
-                    ->header('Access-Control-Allow-Origin', 'https://solenenergyco.com')
-                    ->header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS')
-                    ->header('Access-Control-Allow-Headers', 'Content-Type, Authorization')
-                    ->header('Access-Control-Allow-Credentials', 'true');
+                ->header('Access-Control-Allow-Origin', 'https://solenenergyco.com')
+                ->header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS')
+                ->header('Access-Control-Allow-Headers', 'Content-Type, Authorization')
+                ->header('Access-Control-Allow-Credentials', 'true');
         } catch (\Throwable $th) {
             return response()->json(["status" => 500, "error" => $th->getMessage()]);
         }

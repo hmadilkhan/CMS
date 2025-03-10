@@ -31,10 +31,12 @@ class EmployeeService
 
     public function getFormEditData(Employee $employee)
     {
+        $user = User::findOrFail($employee->user_id);
         return [
             "employee" => $employee,
             "roles" => Role::all(),
             "departments" => Department::all(),
+            "userRoles" => $user->getRoleNames(),
         ];
     }
 
@@ -53,7 +55,9 @@ class EmployeeService
                 'overwrite_base_price' => $data['overwrite_base_price'],
                 'overwrite_panel_price' => $data['overwrite_panel_price'],
             ]);
-            $user->assignRole($data['roles']);
+            foreach ($data['roles'] as $key => $role) {
+                $user->assignRole($role);
+            }
 
             $employee = Employee::create(array_merge($data->except(["file", "id", "previous_logo", "roles", "username", "password", "password_confirmation", "user_id", "departments", "overwrite_base_price", "overwrite_panel_price"]), ['user_id' => $user->id, 'image' => $result["fileName"]]));
 

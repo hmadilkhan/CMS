@@ -380,9 +380,13 @@ class CustomerController extends Controller
                 "customer_id" => $request->customer_id,
                 "customer_email" => $request->customer_email,
             ];
-            
+            $salesPersonEmail = User::whereIn("id",Project::where("id",$request->project_id)->pluck("sales_partner_user_id"))->first();
             if ($request->ccEmails != "") {
                 $ccEmails = $this->handleCommaSeparatedValues($request->ccEmails);
+            }
+
+            if (!empty($salesPersonEmail)) {
+                array_push($ccEmails, $salesPersonEmail->email);
             }
             
             if (!empty($request->images) && count($request->images) > 0) {
@@ -392,7 +396,7 @@ class CustomerController extends Controller
                 }
             }
             dispatch(new SendEmailJob($details, $attachments, $ccEmails));
-            return response()->json(["status" => 200, "message" => "Email has been sent"]);
+            return response()->json(["status" => 200, "message" => "Email has been sent","ccEmails" => $ccEmails]);
         } catch (\Throwable $th) {
             return response()->json(["status" => 500, "message" => "Error : " . $th->getMessage()]);
         }

@@ -78,7 +78,7 @@
         </div>
         <div class="col">
             <label class="form-label">Roles</label>
-            <select class="form-select select2" aria-label="Default select Project Category" id="role" name="roles">
+            <select class="form-select select2" aria-label="Default select Project Category" id="role" name="roles[]" multiple>
                 @foreach ($roles as $role)
                 <option value="{{ $role->id }}" {{ !empty($employee) ? (in_array($role->id, $employee->user->roles->pluck('id')->toArray()) ? 'selected' : '') : '' }} >
                     {{ $role->name }}
