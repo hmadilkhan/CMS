@@ -595,10 +595,10 @@ class ProjectController extends Controller
         if ($request->id == "all") {
             $subdepartmentsQuery->groupBy("department_id");
         }
-        if (in_array("Employee",auth()->user()->getRoleNames()->toArray())) {
-            $departments = Department::with("subdepartments")->whereIN("id", EmployeeDepartment::whereIn("employee_id", Employee::where("user_id", auth()->user()->id)->pluck("id"))->pluck("department_id"))->get();
-        }else{
+        if (in_array("Super Admin",auth()->user()->getRoleNames()->toArray())) {
             $departments = Department::with("subdepartments")->where("id", "!=", 9)->get();
+        }else{
+            $departments = Department::with("subdepartments")->whereIN("id", EmployeeDepartment::whereIn("employee_id", Employee::where("user_id", auth()->user()->id)->pluck("id"))->pluck("department_id"))->get();
         }
         return [
             "projects" => $query->get(),
