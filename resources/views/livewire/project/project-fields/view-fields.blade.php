@@ -50,11 +50,11 @@
     </div>
     @endif
     @if($project->hoa == "yes")
-    <div class="col-sm-6 mb-3 ">
+    <div class="col-sm-6 mt-3 ">
         <label for="hoa_approval_request_date" class="form-label">HOA Approval Request Date</label>
         <input disabled class="form-control" type="date" value="{{$project->hoa_approval_request_date}}">
     </div>
-    <div class="col-sm-6 mb-3 ">
+    <div class="col-sm-6 mt-3 ">
         <label for="hoa_approval_date" class="form-label">HOA Approval Date</label>
         <input disabled class="form-control" type="date" value="{{$project->hoa_approval_date}}">
     </div>
