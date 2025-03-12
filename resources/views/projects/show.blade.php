@@ -1439,7 +1439,7 @@
                                                                     <th>Department Name</th>
                                                                     <th>Entry Date</th>
                                                                     <th>Exit Date</th>
-                                                                    <th>User Name</th>
+                                                                    <th>Action By</th>
                                                                     <th>Total Duration</th>
                                                                 </thead>
                                                                 <tbody>
