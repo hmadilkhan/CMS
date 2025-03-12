@@ -7,14 +7,28 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Spatie\Activitylog\LogOptions;
+use Spatie\Activitylog\Traits\LogsActivity;
 
 class Employee extends Model
 {
-   use HasFactory, SoftDeletes;
+   use HasFactory, SoftDeletes, LogsActivity;
 
    protected $guarded = [];
 
    protected $with = ["user"];
+
+   protected static $logAttributes = ['*']; // Logs all attributes
+
+   protected static $logOnlyDirty = true; // Logs only changed attributes
+
+   protected static $logName = 'Employee'; // Custom log name
+
+   public function getActivitylogOptions(): LogOptions
+   {
+      return LogOptions::defaults()
+         ->setDescriptionForEvent(fn(string $eventName) => "This Employee has been {$eventName}");
+   }
 
    public function user()
    {
@@ -28,7 +42,7 @@ class Employee extends Model
 
    public function department(): BelongsToMany
    {
-      return $this->belongsToMany(Department::class,'employee_departments');
+      return $this->belongsToMany(Department::class, 'employee_departments');
    }
 
    public function scopeGetUser($query, $departmentId, $roles)

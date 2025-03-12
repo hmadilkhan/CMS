@@ -24,6 +24,7 @@ use App\Models\SubDepartment;
 use App\Models\Task;
 use App\Models\Tool;
 use App\Traits\MediaTrait;
+use Carbon\Carbon;
 use FPDF;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Crypt;
@@ -98,6 +99,7 @@ class ProjectController extends Controller
                 "employee_id" => $request->assigntask,
                 "department_id" => 1,
                 "sub_department_id" => $subdepartment->id,
+                "user_id" => auth()->user()->id,
             ]);
             DB::commit();
             return response()->json(["status" => 200, "messsage" => "Project created successfully"]);
@@ -112,6 +114,25 @@ class ProjectController extends Controller
      */
     public function show(Project $project)
     {
+        $projectLogs  = Task::with("employee", "user", "department", "subdepartment")->where("project_id", $project->id)->get();
+        $totalDaysByDepartment = $projectLogs->groupBy('department_id')->map(function ($group) {
+            return $group->sum(function ($item) {
+                return Carbon::parse($item['created_at'])->diffInDays(Carbon::parse($item['updated_at']));
+            });
+        });
+        // Get department names
+        $departments = DB::table('departments')->pluck('name', 'id');
+
+        // Merge department names with total days
+        $results = collect($totalDaysByDepartment)->map(function ($days, $id) use ($departments) {
+            return [
+                'department_id' => (int) $id,  // Ensure ID is an integer
+                'department' => $departments[$id] ?? 'Unknown',
+                'days' => $days
+            ];
+        }) ->sortBy('department_id')->values();
+
+
         $project = Project::with("task", "customer", "department", "logs", "logs.call", "subdepartment", "assignedPerson", "assignedPerson.employee", "departmentnotes", "departmentnotes.user", "salesPartnerUser")
             ->withCount(['emails as viewed_emails_count' => function ($query) {
                 $query->where('is_view', 1);
@@ -123,7 +144,6 @@ class ProjectController extends Controller
         $fwdDepartments =  array_merge($departments->toArray(), Department::where("id", ">", $task->department_id)->take(1)->get()->toArray());
         $fwdIds = collect($fwdDepartments)->pluck("id");
         $nextSubDepartments =  SubDepartment::whereIn("department_id", $fwdIds)->get();
-
         Email::where("project_id", $project->id)->update(["is_view" => 0]); //->where("department_id", $project->department_id)
         return view("projects.show", [
             "project" => $project,
@@ -139,6 +159,8 @@ class ProjectController extends Controller
             "tools" => Tool::where("department_id", $project->department_id)->get(),
             "calls" => Call::all(),
             "emailTypes" => EmailType::all(),
+            "projectLogs" => $projectLogs,
+            "totalDaysOfDepartments" => $results,
         ]);
     }
 
@@ -255,7 +277,8 @@ class ProjectController extends Controller
                     "department_id" => $request->forward,
                     "sub_department_id" => $request->sub_department,
                     "assign_to_notes" => $request->notes,
-                    "status" => "In-Progress"
+                    "status" => "In-Progress",
+                    "user_id" => auth()->user()->id,
                 ]);
                 DB::commit();
                 return redirect()->route("projects.index");
@@ -340,6 +363,7 @@ class ProjectController extends Controller
                 "employee_id" => $emp->id,
                 "department_id" => ($request->stage == "forward" ? $request->forward : $request->back),
                 "sub_department_id" => $request->sub_department,
+                "user_id" => auth()->user()->id,
             ]);
             DB::commit();
             return redirect()->route("projects.index");
@@ -451,6 +475,7 @@ class ProjectController extends Controller
                 "employee_id" => $emp->id,
                 "department_id" => $request->departmentId,
                 "sub_department_id" => $request->subDepartmentId,
+                "user_id" => auth()->user()->id,
             ]);
             DB::commit();
             return response()->json(["status" => 200, "message" => "Project Moved Successfully"]);
@@ -526,7 +551,8 @@ class ProjectController extends Controller
                     "department_id" => $request->department_id,
                     "sub_department_id" => $request->sub_department,
                     "assign_to_notes" => $request->notes,
-                    "status" => "In-Progress"
+                    "status" => "In-Progress",
+                    "user_id" => auth()->user()->id,
                 ]);
             } else {
                 Task::where("id", $request->task_id)->update(["status" => "Completed", "notes" => "New assign to notes added"]);
@@ -537,7 +563,8 @@ class ProjectController extends Controller
                     "department_id" => $task->department_id,
                     "sub_department_id" => $task->sub_department,
                     "assign_to_notes" => $request->notes,
-                    "status" => "In-Progress"
+                    "status" => "In-Progress",
+                    "user_id" => auth()->user()->id,
                 ]);
             }
             DB::commit();
@@ -595,9 +622,9 @@ class ProjectController extends Controller
         if ($request->id == "all") {
             $subdepartmentsQuery->groupBy("department_id");
         }
-        if (in_array("Super Admin",auth()->user()->getRoleNames()->toArray())) {
+        if (in_array("Super Admin", auth()->user()->getRoleNames()->toArray())) {
             $departments = Department::with("subdepartments")->where("id", "!=", 9)->get();
-        }else{
+        } else {
             $departments = Department::with("subdepartments")->whereIN("id", EmployeeDepartment::whereIn("employee_id", Employee::where("user_id", auth()->user()->id)->pluck("id"))->pluck("department_id"))->get();
         }
         return [

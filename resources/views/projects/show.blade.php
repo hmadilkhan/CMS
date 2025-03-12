@@ -529,6 +529,8 @@
                         @endcan
                         <li class="nav-item"><a class="nav-link {{ $project->viewed_emails_count > 0 ? 'blink-dot' : '' }}"
                                 data-bs-toggle="tab" href="#communication" role="tab">Communication</a></li>
+                        <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#history"
+                                    role="tab">Project History</a></li>
                     </ul>
                 </div>
             </div>
@@ -1383,6 +1385,108 @@
                     </div>
                 </div>
 
+            </div>
+        </div>
+    </div>
+
+    <div class="tab-content">
+        <div class="tab-pane fade show active" id="history" role="tabpanel">
+
+            <ul class="nav nav-tabs px-3 border-bottom-0" role="tablist">
+                <li class="nav-item"><a class="nav-link active" data-bs-toggle="tab" href="#interaction"
+                        role="tab">Interaction</a></li>
+                {{-- @can('Department Tools') --}}
+                    <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#logs"
+                            role="tab">Department Logs</a></li>
+                {{-- @endcan --}}
+            </ul>
+            <div class="tab-content">
+                <div class="tab-pane fade show active" id="interaction" role="tabpanel">
+                    <div class="card card-info mt-2">
+                        <div class="card-body">
+                            <div class="row clearfix">
+                                <div class="col-md-12">
+                                    <div class="card border-0 mb-4 no-bg">
+                                        <div
+                                            class="card-header py-3 px-0 d-sm-flex align-items-center bg-light text-center  justify-content-between border-bottom">
+                                            <h3 class=" fw-bold flex-fill mb-0 mt-sm-0">Project Interaction </h3>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+                </div>
+                <div class="tab-pane fade" id="logs" role="tabpanel">
+                    <div class="card card-info mt-2">
+                        <div class="card-body">
+                            <div class="row clearfix">
+                                <div class="col-md-12">
+                                    <div class="card border-0 mb-4 no-bg">
+                                        <div
+                                            class="card-header py-3 px-0 d-sm-flex align-items-center bg-light text-center  justify-content-between border-bottom">
+                                            <h3 class=" fw-bold flex-fill mb-0 mt-sm-0">Department Logs </h3>
+                                        </div>
+                                        <div class="card-body">
+                                            <div class="row">
+                                                <div class="col-md-7">
+                                                    <div class="card">
+                                                        <div class="card-body">
+                                                            <table class="table">
+                                                                <thead class="bg-light">
+                                                                    <th>Department Name</th>
+                                                                    <th>Entry Date</th>
+                                                                    <th>Exit Date</th>
+                                                                    <th>User Name</th>
+                                                                    <th>Total Duration</th>
+                                                                </thead>
+                                                                <tbody>
+                                                                    @foreach ($projectLogs as $log)
+                                                                        <tr>
+                                                                            <td>{{$log->department->name}}</td>
+                                                                            <td>{{date("d M Y",strtotime($log->created_at))}}</td>
+                                                                            <td>{{date("d M Y",strtotime($log->updated_at))}}</td>
+                                                                            <td>{{$log->user->name ?? 'N/A'}}</td>
+                                                                            <td>{{ \Carbon\Carbon::parse($log->created_at)->diffInDays(\Carbon\Carbon::parse($log->updated_at)) }} Days</td>
+                                                                        </tr>
+                                                                    @endforeach
+                                                                </tbody>
+                                                            </table>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-1">
+                                                </div>
+                                                <div class="col-md-4">
+                                                    <div class="card">
+                                                        <div class="card-body">
+                                                            <table class="table">
+                                                                <thead class="bg-light">
+                                                                    <th>Department Name</th>
+                                                                    <th>Total Days</th>
+                                                                </thead>
+                                                                <tbody>
+                                                                    @foreach ($totalDaysOfDepartments as $departmentDays)
+                                                                        <tr>
+                                                                            <td>{{$departmentDays["department"] ?? 'N/A'}}</td>
+                                                                            <td>{{$departmentDays["days"] ?? 'N/A'}}</td>
+                                                                        </tr>
+                                                                    @endforeach
+                                                                </tbody>
+                                                            </table>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
