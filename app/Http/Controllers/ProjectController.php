@@ -34,6 +34,7 @@ use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Validation\Rule;
 use Maatwebsite\Excel\Concerns\ToArray;
+use Spatie\Activitylog\Models\Activity;
 
 class ProjectController extends Controller
 {
@@ -117,7 +118,7 @@ class ProjectController extends Controller
         $projectLogs  = Task::with("employee", "user", "department", "subdepartment")->where("project_id", $project->id)->get();
         $totalDaysByDepartment = $projectLogs->groupBy('department_id')->map(function ($group) {
             return $group->sum(function ($item) {
-                return Carbon::parse($item['created_at'])->diffInDays(Carbon::parse($item['updated_at']));
+                return max(1, Carbon::parse($item['created_at'])->diffInDays(Carbon::parse($item['updated_at'])));
             });
         });
         // Get department names
@@ -130,7 +131,7 @@ class ProjectController extends Controller
                 'department' => $departments[$id] ?? 'Unknown',
                 'days' => $days
             ];
-        }) ->sortBy('department_id')->values();
+        })->sortBy('department_id')->values();
 
 
         $project = Project::with("task", "customer", "department", "logs", "logs.call", "subdepartment", "assignedPerson", "assignedPerson.employee", "departmentnotes", "departmentnotes.user", "salesPartnerUser")
@@ -161,6 +162,7 @@ class ProjectController extends Controller
             "emailTypes" => EmailType::all(),
             "projectLogs" => $projectLogs,
             "totalDaysOfDepartments" => $results,
+            "interactions" => Activity::where("log_name","project")->where("subject_id",$project->id)->orderBy("id","desc")->get(),
         ]);
     }
 
@@ -477,6 +479,19 @@ class ProjectController extends Controller
                 "sub_department_id" => $request->subDepartmentId,
                 "user_id" => auth()->user()->id,
             ]);
+            // Log the custom message
+            $oldLane = Department::findOrFail($currentDepartmentId);
+            $newLane = Department::findOrFail($request->departmentId);
+            $username = auth()->user()->name;
+            activity('project')
+                ->performedOn($project)
+                ->causedBy(auth()->user()) // Log who did the action
+                ->withProperties([
+                    'old_lane' => $oldLane->name,
+                    'new_lane' => $newLane->name,
+                ])
+                ->setEvent("move")
+                ->log("{$username} moved the project from {$oldLane->name} to {$newLane->name}.");
             DB::commit();
             return response()->json(["status" => 200, "message" => "Project Moved Successfully"]);
         } catch (\Throwable $th) {

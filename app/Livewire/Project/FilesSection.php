@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Project;
 
+use App\Models\Project;
 use App\Models\ProjectFile;
 use App\Traits\MediaTrait;
 use Illuminate\Support\Facades\Storage;
@@ -20,7 +21,7 @@ class FilesSection extends Component
     public $projectDepartmentId = "";
     public $deleteId;
 
-    protected $listeners = ['deleteConfirmation','refreshComponent' => '$refresh'];
+    protected $listeners = ['deleteConfirmation', 'refreshComponent' => '$refresh'];
 
     protected $rules = [
         'image' => 'required'
@@ -83,6 +84,18 @@ class FilesSection extends Component
                     "department_id" => $this->departmentId,
                     "filename" => $imageName,
                 ]);
+
+                $username = auth()->user()->name;
+                $project = Project::findOrFail($this->projectId);
+                // Get the changed field names
+                activity('project')
+                    ->performedOn($project)
+                    ->causedBy(auth()->user()) // Log who did the action
+                    ->setEvent("updated")
+                    ->withProperties([
+                        'files' => $imageName,
+                    ])
+                    ->log("{$username} added the file to the project : {$imageName}.");
             }
         }
 

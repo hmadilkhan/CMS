@@ -151,7 +151,7 @@ class EditFields extends Component
                 'utility_company' => 'required_if:departmentId,1|string',
                 'ntp_approval_date' => 'required_if:departmentId,1|date',
                 'hoa' => 'required_if:departmentId,1|string',
-                'hoa_phone_number' =>  Rule::requiredIf(function ()  {
+                'hoa_phone_number' =>  Rule::requiredIf(function () {
                     return  $this->hoa == "yes";
                 }),
             ];
@@ -176,10 +176,10 @@ class EditFields extends Component
             $data = [
                 'adders_approve_checkbox' => 'required_if:departmentId,3',
                 'mpu_required' => 'required_if:departmentId,3|in:yes,no',
-                'meter_spot_request_date' =>  Rule::requiredIf(function ()  {
+                'meter_spot_request_date' =>  Rule::requiredIf(function () {
                     return  $this->mpu_required == "yes";
                 }),
-                'meter_spot_request_number' =>  Rule::requiredIf(function ()  {
+                'meter_spot_request_number' =>  Rule::requiredIf(function () {
                     return  $this->mpu_required == "yes";
                 }),
                 'meter_spot_result' => 'required_if:departmentId,3|string',
@@ -197,10 +197,10 @@ class EditFields extends Component
             $data = [
                 'permitting_submittion_date' => 'required_if:departmentId,4|date',
                 'permitting_approval_date' => 'required_if:departmentId,4|date',
-                'hoa_approval_request_date' =>  Rule::requiredIf(function ()  {
+                'hoa_approval_request_date' =>  Rule::requiredIf(function () {
                     return  $this->hoa == "yes";
                 }),
-                'hoa_approval_date' =>  Rule::requiredIf(function ()  {
+                'hoa_approval_date' =>  Rule::requiredIf(function () {
                     return  $this->hoa == "yes";
                 }),
             ];
@@ -330,6 +330,16 @@ class EditFields extends Component
 
         try {
             Project::where("id", $this->projectId)->update($updateItems);
+            $username = auth()->user()->name;
+            // Get the changed field names
+            $changedFields = collect($updateItems)->keys()->implode(', ');
+            activity('project')
+                ->performedOn($project)
+                ->causedBy(auth()->user()) // Log who did the action
+                ->withProperties($updateItems)
+                ->setEvent("updated")
+                ->log("{$username} updated the project fields: {$changedFields}.");
+
             $this->message = 'Data updated successfully!';
             $this->messageType = 'success';
         } catch (\Exception $e) {

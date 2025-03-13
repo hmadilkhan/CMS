@@ -3,6 +3,7 @@
 namespace App\Livewire\Project;
 
 use App\Models\DepartmentNote;
+use App\Models\Project;
 use Livewire\Component;
 
 class NotesSection extends Component
@@ -28,6 +29,17 @@ class NotesSection extends Component
                 "notes" => $this->departmentNote,
                 "user_id" => auth()->user()->id,
             ]);
+            $project = Project::findOrFail($this->projectId);
+            $username = auth()->user()->name;
+            
+            activity('project')
+                ->performedOn($project)
+                ->causedBy(auth()->user()) // Log who did the action
+                ->setEvent("updated")
+                ->withProperties([
+                    'notes' => $this->departmentNote,
+                ])
+                ->log("{$username} added the notes to the project : {$this->departmentNote}.");
     
             $this->departmentNote = "";
 

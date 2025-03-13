@@ -148,6 +148,12 @@ class CustomerController extends Controller
                 "overwrite_base_price" =>  $request->overwrite_base_price,
                 "overwrite_panel_price" =>  $request->overwrite_panel_price,
             ]);
+            $username = auth()->user()->name;
+            activity('project')
+                ->performedOn($project)
+                ->causedBy(auth()->user()) // Log who did the action
+                ->setEvent("update")
+                ->log("{$username} created the project.");
             Task::create([
                 "project_id" => $project->id,
                 "employee_id" => 1,

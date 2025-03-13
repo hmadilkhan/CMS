@@ -529,8 +529,10 @@
                         @endcan
                         <li class="nav-item"><a class="nav-link {{ $project->viewed_emails_count > 0 ? 'blink-dot' : '' }}"
                                 data-bs-toggle="tab" href="#communication" role="tab">Communication</a></li>
+                        @can('Project History')
                         <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#history"
                                     role="tab">Project History</a></li>
+                        @endcan
                     </ul>
                 </div>
             </div>
@@ -1393,14 +1395,17 @@
         <div class="tab-pane fade show active" id="history" role="tabpanel">
 
             <ul class="nav nav-tabs px-3 border-bottom-0" role="tablist">
+                @can('Project Interaction')
                 <li class="nav-item"><a class="nav-link active" data-bs-toggle="tab" href="#interaction"
                         role="tab">Interaction</a></li>
-                {{-- @can('Department Tools') --}}
+                @endcan
+                @can('Department Logs')
                     <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#logs"
                             role="tab">Department Logs</a></li>
-                {{-- @endcan --}}
+                @endcan
             </ul>
             <div class="tab-content">
+                @can('Project Interaction')
                 <div class="tab-pane fade show active" id="interaction" role="tabpanel">
                     <div class="card card-info mt-2">
                         <div class="card-body">
@@ -1411,14 +1416,38 @@
                                             class="card-header py-3 px-0 d-sm-flex align-items-center bg-light text-center  justify-content-between border-bottom">
                                             <h3 class=" fw-bold flex-fill mb-0 mt-sm-0">Project Interaction </h3>
                                         </div>
+                                        <div class="card-body">
+                                            <div class="row">
+                                                <div class="col-md-12">
+                                                    <div class="card">
+                                                        <div class="card-body">
+                                                            <table class="table">
+                                                                <thead class="bg-light">
+                                                                    <th>Date Time</th>
+                                                                    <th>Description</th>
+                                                                </thead>
+                                                                <tbody>
+                                                                    @foreach ($interactions as $interaction)
+                                                                        <tr>
+                                                                            <td>{{$interaction->created_at}}</td>
+                                                                            <td>{{$interaction->description ?? 'N/A'}}</td>
+                                                                        </tr>
+                                                                    @endforeach
+                                                                </tbody>
+                                                            </table>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
                         </div>
                     </div>
                 </div>
-            </div>
-                </div>
+                @endcan
+                @can('Department Logs')
                 <div class="tab-pane fade" id="logs" role="tabpanel">
                     <div class="card card-info mt-2">
                         <div class="card-body">
@@ -1449,7 +1478,7 @@
                                                                             <td>{{date("d M Y",strtotime($log->created_at))}}</td>
                                                                             <td>{{date("d M Y",strtotime($log->updated_at))}}</td>
                                                                             <td>{{$log->user->name ?? 'N/A'}}</td>
-                                                                            <td>{{ \Carbon\Carbon::parse($log->created_at)->diffInDays(\Carbon\Carbon::parse($log->updated_at)) }} Days</td>
+                                                                            <td>{{ max(1,\Carbon\Carbon::parse($log->created_at)->diffInDays(\Carbon\Carbon::parse($log->updated_at))) }} Days</td>
                                                                         </tr>
                                                                     @endforeach
                                                                 </tbody>
@@ -1487,6 +1516,7 @@
                         </div>
                     </div>
                 </div>
+                @endcan
             </div>
         </div>
     </div>
