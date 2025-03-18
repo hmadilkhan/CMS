@@ -1475,7 +1475,7 @@
                                                             <tbody>
                                                                 @foreach ($projectLogs as $log)
                                                                 @php
-                                                                if ($log->status != "In-Progress") {
+                                                                if ($log->status == "In-Progress") {
                                                                     $exitDate = date("Y-m-d H:i:s");
                                                                 }else{
                                                                     $exitDate = $log->updated_at;
