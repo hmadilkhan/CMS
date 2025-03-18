@@ -120,7 +120,7 @@ class ProjectController extends Controller
             return $group->sum(function ($item) {
                 if ($item['status'] == "In-Progress") {
                     $exitDate = date("Y-m-d H:i:s");
-                }else{
+                } else {
                     $exitDate = $item['updated_at'];
                 }
                 return max(1, Carbon::parse($item['created_at'])->diffInDays(Carbon::parse($exitDate)));
@@ -167,7 +167,7 @@ class ProjectController extends Controller
             "emailTypes" => EmailType::all(),
             "projectLogs" => $projectLogs,
             "totalDaysOfDepartments" => $results,
-            "interactions" => Activity::where("log_name","project")->where("subject_id",$project->id)->orderBy("id","desc")->get(),
+            "interactions" => Activity::where("log_name", "project")->where("subject_id", $project->id)->orderBy("id", "desc")->get(),
         ]);
     }
 
@@ -501,7 +501,7 @@ class ProjectController extends Controller
             return response()->json(["status" => 200, "message" => "Project Moved Successfully"]);
         } catch (\Throwable $th) {
             DB::rollBack();
-            return response()->json(["status" => 500, "message" => "Some Error Occured".$th->getMessage()]);
+            return response()->json(["status" => 500, "message" => "Some Error Occured" . $th->getMessage()]);
         }
     }
 
@@ -893,6 +893,13 @@ class ProjectController extends Controller
                 ]);
                 $emailText = "<p>Hi " . $project->salesPartnerUser->name . "</p><p>The Project Acceptance Review for the project " . $project->customer->first_name . " " . $project->customer->last_name . " is ready to be approved.</p><p>Please login to the CRM and navigate to the “Acceptance” tab within the project to approve or dispute the commission amount.</p><p>We look forward to getting a reply within the next 24 hours, after which we will assume the commission as approved.</p><p>If you have any questions, please reach out to us at engineering@solenenergyco.com</p><p>Thank you for your continued support!</p><p>The Solen Energy Construction Engineering Team</p>";
                 $this->sendEmailForProjectAcceptance($project, "Project Acceptance Review - " . $project->customer->first_name . " " . $project->customer->last_name, $emailText, $project->salesPartnerUser->email);
+                // Log the custom message
+                $username = auth()->user()->name;
+                activity('project')
+                    ->performedOn($project)
+                    ->causedBy(auth()->user()) // Log who did the action
+                    ->setEvent("move")
+                    ->log("{$username} send the Project Acceptance Review to the Sales Partner. ");
                 if (!empty($projectAcceptance)) {
                     return view("projects.project-acceptance", [
                         "image" => $result["fileName"],
@@ -1043,6 +1050,13 @@ class ProjectController extends Controller
             ]);
             $emailText = "<p>Hi " . $project->assignedPerson[0]->employee->name . "</p><p>The Project Acceptance Review for " . $project->customer->first_name . " " . $project->customer->last_name . " has been " . ($request->mode == 1 ? 'approved' : 'rejected') . "</p><p>Please take the necessary steps to continue moving the job forward.</p><p>Thank you!.</p>";
             $this->sendEmailForProjectAcceptance($project, "Project Acceptance Review Status - " . $project->customer->first_name . " " . $project->customer->last_name, $emailText, "engineering@solenenergyco.com");
+            // Log the custom message
+            $username = auth()->user()->name;
+            activity('project')
+                ->performedOn($project)
+                ->causedBy(auth()->user()) // Log who did the action
+                ->setEvent("move")
+                ->log("The Project Acceptance Review for " . $project->customer->first_name . " " . $project->customer->last_name . " has been " . ($request->mode == 1 ? 'approved' : 'rejected') ." by {$username}  ");
             return response()->json(["status" => 200, "message" => "Project Acceptance Approved"]);
         } catch (\Throwable $th) {
             return response()->json(["status" => 500, "message" => "Error: " . $th->getMessage()]);
