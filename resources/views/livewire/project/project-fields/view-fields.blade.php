@@ -49,16 +49,7 @@
         <input disabled class="form-control" type="text" value="{{$project->meter_spot_result}}">
     </div>
     @endif
-    @if($project->hoa == "yes")
-    <div class="col-sm-6 mt-3 ">
-        <label for="hoa_approval_request_date" class="form-label">HOA Approval Request Date</label>
-        <input disabled class="form-control" type="date" value="{{$project->hoa_approval_request_date}}">
-    </div>
-    <div class="col-sm-6 mt-3 ">
-        <label for="hoa_approval_date" class="form-label">HOA Approval Date</label>
-        <input disabled class="form-control" type="date" value="{{$project->hoa_approval_date}}">
-    </div>
-    @endif
+   
     @endif
     @if($departmentId == 4)
     <div class="col-sm-6 mb-3 ">
@@ -75,8 +66,18 @@
         <label for="permitting_approval_date" class="form-label">Permit Approval Date</label>
         <input disabled class="form-control" type="date" value="{{$project->permitting_approval_date}}">
     </div>
-    
+    @if($project->hoa == "yes")
+    <div class="col-sm-6 mt-3 ">
+        <label for="hoa_approval_request_date" class="form-label">HOA Approval Request Date</label>
+        <input disabled class="form-control" type="date" value="{{$project->hoa_approval_request_date}}">
+    </div>
+    <div class="col-sm-6 mt-3 ">
+        <label for="hoa_approval_date" class="form-label">HOA Approval Date</label>
+        <input disabled class="form-control" type="date" value="{{$project->hoa_approval_date}}">
+    </div>
     @endif
+    @endif
+
     @if($departmentId == 5)
     @can('Actual Labor Cost')
     <div class="col-sm-6 mb-3 ">
