@@ -1486,7 +1486,8 @@
                                                                         <td>{{date("d M Y H:i:s",strtotime($log->created_at))}}</td>
                                                                         <td>{{($log->status != "In-Progress" ? date("d M Y H:i:s",strtotime($log->updated_at)) : 'N/A')}}</td>
                                                                         <td>{{$log->user->name ?? 'N/A'}}</td>
-                                                                        <td>{{ max(1,\Carbon\Carbon::parse($log->created_at)->diffInDays(\Carbon\Carbon::parse($exitDate))) }} Days</td>
+                                                                        <td>{{  max(1,\Carbon\Carbon::parse($log->created_at)->diffInDays(\Carbon\Carbon::parse($exitDate))) }} Days</td> 
+                                                                        {{-- max(1,\Carbon\Carbon::parse($log->created_at)->diffInDays(\Carbon\Carbon::parse($exitDate))) --}}
                                                                     </tr>
                                                                 @endforeach
                                                             </tbody>
