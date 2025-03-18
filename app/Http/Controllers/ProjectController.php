@@ -385,11 +385,11 @@ class ProjectController extends Controller
 
         // THIS WILL CHECK THE PROJECT EITHER PROJECT IS FORWARD OR BACKWARD
         $checkProject = Task::where("project_id", $request->projectId)->where("department_id", $request->departmentId)->count();
+        $currentDepartmentId = $project->department_id;
 
         // IF COUNT IS 0 THEN IT THE CASE IS FORWARD
         if ($checkProject == 0) {
             // CHECK FIELDS ARE FILLED OR NOT
-            $currentDepartmentId = $project->department_id;
 
             // Fetch required fields for the current department
             $requiredFields = DB::table('project_department_fields')
@@ -496,7 +496,7 @@ class ProjectController extends Controller
             return response()->json(["status" => 200, "message" => "Project Moved Successfully"]);
         } catch (\Throwable $th) {
             DB::rollBack();
-            return response()->json(["status" => 500, "message" => "Some Error Occured"]);
+            return response()->json(["status" => 500, "message" => "Some Error Occured".$th->getMessage()]);
         }
     }
 
