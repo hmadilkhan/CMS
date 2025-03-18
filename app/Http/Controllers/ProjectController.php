@@ -118,7 +118,12 @@ class ProjectController extends Controller
         $projectLogs  = Task::with("employee", "user", "department", "subdepartment")->where("project_id", $project->id)->get();
         $totalDaysByDepartment = $projectLogs->groupBy('department_id')->map(function ($group) {
             return $group->sum(function ($item) {
-                return max(1, Carbon::parse($item['created_at'])->diffInDays(Carbon::parse($item['updated_at'])));
+                if ($item['status'] == "In-Progress") {
+                    $exitDate = date("Y-m-d H:i:s");
+                }else{
+                    $exitDate = $item['updated_at'];
+                }
+                return max(1, Carbon::parse($item['created_at'])->diffInDays(Carbon::parse($exitDate)));
             });
         });
         // Get department names
