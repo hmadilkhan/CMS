@@ -24,6 +24,11 @@
                             return $item->department_id == $department->id;
                         })
                         ->values();
+                    
+                @endphp
+                @if (count($collections) > 0)
+                    @foreach ($collections as $project)
+                    @php
                     $acceptanceStatus = "Not Initiated";
                     $acceptanceClass = "";
                     if (!empty($project->projectAcceptance)) {
@@ -37,10 +42,8 @@
                             $acceptanceStatus = "Rejected";
                             $acceptanceClass = "text-danger";
                         } 
-                    }
-                @endphp
-                @if (count($collections) > 0)
-                    @foreach ($collections as $project)
+                    }    
+                    @endphp
                         <div class="col-xxxl-3 col-xxl-2 col-xl-3 col-lg-3 col-md-3 col-sm-3 border border-dark border-rounded border-2 "
                             style="margin-right: 5px;cursor:pointer;" onclick="showProject('{{ $project->id }}')">
                             <div class="card">
@@ -302,7 +305,7 @@
                     @if (count($ghostProjects) > 0)
                         @foreach ($ghostProjects as $project)
                             <div class="col-xxl-2 col-xl-3 col-lg-3 col-md-3 col-sm-3 border border-dark border-rounded border-2 "
-                                style="margin-right: 5px;cursor:pointer;" onclick="showProject('{{ $project->id }}')">
+                                style="margin-right: 5px;cursor:pointer;" onclick="showGhostProject('{{ $project->id }}','ghost')">
                                 <div class="card">
                                     <div class="card-body">
                                         <div
@@ -484,6 +487,9 @@
 
     function showProject(id) {
         window.location.href = "{{ url('projects') }}" + "/" + id;
+    }
+    function showGhostProject(id,ghost) {
+        window.location.href = "{{ url('projects') }}" + "/" + id + "/ghost" ;
     }
 </script>
 <!-- <div class="row g-3 gy-5 py-3 row-deck">

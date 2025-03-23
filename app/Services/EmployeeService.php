@@ -6,6 +6,7 @@ use App\Models\Department;
 use App\Models\Employee;
 use App\Models\EmployeeDepartment;
 use App\Models\User;
+use App\Models\UserType;
 use App\Traits\MediaTrait;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
@@ -26,6 +27,7 @@ class EmployeeService
             "employee" => [],
             "roles" => Role::all(),
             "departments" => Department::all(),
+            "types" => UserType::whereIn("name",["User","Employee"])->get(),
         ];
     }
 
@@ -37,6 +39,7 @@ class EmployeeService
             "roles" => Role::all(),
             "departments" => Department::all(),
             "userRoles" => $user->getRoleNames(),
+            "types" => UserType::whereIn("name",["User","Employee"])->get(),
         ];
     }
 
@@ -51,7 +54,7 @@ class EmployeeService
                 'email' => $data['email'],
                 'password' => Hash::make($data['password']),
                 'username' => $data['username'],
-                'user_type_id' => 2,
+                'user_type_id' => $data["type"],
                 'overwrite_base_price' => $data['overwrite_base_price'],
                 'overwrite_panel_price' => $data['overwrite_panel_price'],
             ]);
@@ -59,7 +62,7 @@ class EmployeeService
                 $user->assignRole($role);
             }
 
-            $employee = Employee::create(array_merge($data->except(["file", "id", "previous_logo", "roles", "username", "password", "password_confirmation", "user_id", "departments", "overwrite_base_price", "overwrite_panel_price"]), ['user_id' => $user->id, 'image' => $result["fileName"]]));
+            $employee = Employee::create(array_merge($data->except(["file", "id", "previous_logo", "roles", "username", "password", "password_confirmation", "user_id", "departments", "overwrite_base_price", "overwrite_panel_price","type"]), ['user_id' => $user->id, 'image' => $result["fileName"]]));
 
             $this->attachDepartments($employee->id, $data['departments']);
 
@@ -83,11 +86,12 @@ class EmployeeService
                 'email' => $data["email"],
                 'overwrite_base_price' => $data['overwrite_base_price'],
                 'overwrite_panel_price' => $data['overwrite_panel_price'],
+                'user_type_id' => $data["type"],
             ]);
             $user->syncRoles($data["roles"]);
             $employee->update(
                 array_merge(
-                    $data->except(["file", "id", "previous_logo", "roles", "username", "password", "password_confirmation", "user_id", "departments", "overwrite_base_price", "overwrite_panel_price"]),
+                    $data->except(["file", "id", "previous_logo", "roles", "username", "password", "password_confirmation", "user_id", "departments", "overwrite_base_price", "overwrite_panel_price","type"]),
                     [
                         "user_id" => $data["user_id"],
                         "image" => (!empty($result) ? $result["fileName"] : $data["previous_logo"]),

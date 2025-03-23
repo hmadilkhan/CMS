@@ -19,6 +19,7 @@ class FilesSection extends Component
     public $departmentId = "";
     public $files = [];
     public $projectDepartmentId = "";
+    public $ghost;
     public $deleteId;
 
     protected $listeners = ['deleteConfirmation', 'refreshComponent' => '$refresh'];

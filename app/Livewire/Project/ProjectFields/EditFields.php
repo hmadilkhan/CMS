@@ -10,6 +10,7 @@ class EditFields extends Component
 {
     // PROJECT OBJECT
     public $project;
+    public $ghost;
 
     // MAIN FIELDS
     public $projectId;

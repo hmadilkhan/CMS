@@ -34,7 +34,12 @@
         }
     </style>
     @can('Files Section')
-        @if ($departmentId == $projectDepartmentId)
+        @php
+            $showEditFields =
+                ($ghost == 'ghost' && $departmentId == 7) ||
+                ($ghost != 'ghost' && $departmentId == $projectDepartmentId);
+        @endphp
+        @if ($showEditFields)
             <form wire:submit.prevent="save">
                 <div class="drop-zone" id="dropZone" x-data="{ isDropping: false }" x-on:dragover.prevent="isDropping = true"
                     x-on:dragleave.prevent="isDropping = false"

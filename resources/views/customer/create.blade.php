@@ -154,15 +154,15 @@
                     </div>
                     <!-- <div class="col-sm-4"> -->
                     <!-- <label class="form-label">Battery Type</label>
-                                <select class="form-select select2" aria-label="Default select Battery Type" id="battery_type_id" name="battery_type_id">
-                                    <option value="">Select Battery Type</option>
-                                    @foreach ($battery_types as $battery)
+                                    <select class="form-select select2" aria-label="Default select Battery Type" id="battery_type_id" name="battery_type_id">
+                                        <option value="">Select Battery Type</option>
+                                        @foreach ($battery_types as $battery)
     <option value="{{ $battery->id }}">
-                                        {{ $battery->name }}
-                                    </option>
+                                            {{ $battery->name }}
+                                        </option>
     @endforeach
-                                </select>
-                                @error('battery_type_id')
+                                    </select>
+                                    @error('battery_type_id')
         <div class="text-danger message mt-2">{{ $message }}</div>
     @enderror -->
                     <!-- </div> -->
@@ -183,10 +183,23 @@
                         @enderror
                     </div>
 
+                    <div class="col-sm-4 mt-4">
+                        <label for="adu" class="form-label">Is ADU?</label></br>
+                        <select class="form-select select2" aria-label="Default select ADU" id="adu"
+                            name="adu">
+                            <option value="">Select ADU</option>
+                            <option value="1">Yes</option>
+                            <option selected value="0">No</option>
+                        </select>
+                        @error('adu')
+                            <div class="text-danger message mt-2">{{ $message }}</div>
+                        @enderror
+                    </div>
+
                     <div class="col-sm-4 mb-3">
                         <!-- <label for="exampleFormControlInput877" class="form-label">Battery Qty</label>
-                                <input type="text" class="form-control" id="battery_qty" name="battery_qty" placeholder="Battery Qty">
-                                @error('battery_qty')
+                                    <input type="text" class="form-control" id="battery_qty" name="battery_qty" placeholder="Battery Qty">
+                                    @error('battery_qty')
         <div class="text-danger message mt-2">{{ $message }}</div>
     @enderror -->
                     </div>
@@ -216,11 +229,11 @@
                         </select>
                     </div>
                     <!-- <div class="col-sm-3 mb-3">
-                                <label for="sub_type" class="form-label">Sub Type</label>
-                                <select class="form-select select2" aria-label="Default select Sub Type" id="sub_type" name="sub_type">
-                                    <option value="">Select Sub Type</option>
-                                </select>
-                            </div> -->
+                                    <label for="sub_type" class="form-label">Sub Type</label>
+                                    <select class="form-select select2" aria-label="Default select Sub Type" id="sub_type" name="sub_type">
+                                        <option value="">Select Sub Type</option>
+                                    </select>
+                                </div> -->
                     <div class="col-sm-3 mb-3">
                         <label for="uom" class="form-label">UOM</label>
                         <select class="form-select select2" aria-label="Default select UOM" id="uom">
@@ -548,7 +561,7 @@
             overwriteBaseCost = parseFloat(overwriteBaseCost);
 
             $("#module_qty").val(panelQty * systemSize);
-            let redlinecost = baseCost + (panelQty * moduleCost)+ overwriteBaseCost + totalOverwritePanelCost;
+            let redlinecost = baseCost + (panelQty * moduleCost) + overwriteBaseCost + totalOverwritePanelCost;
             // console.log("Redline Cost", redlinecost);
             $("#redline_costs").val(redlinecost);
             // console.log("Base Cost", baseCost);

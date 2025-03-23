@@ -113,8 +113,11 @@ class ProjectController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show(Project $project)
+    public function show(Project $project,Request $request)
     {
+        if ($request->ghost == "ghost") {
+            $project = Project::findOrFail($request->id);
+        }
         $projectLogs  = Task::with("employee", "user", "department", "subdepartment")->where("project_id", $project->id)->get();
         $totalDaysByDepartment = $projectLogs->groupBy('department_id')->map(function ($group) {
             return $group->sum(function ($item) {
@@ -168,8 +171,10 @@ class ProjectController extends Controller
             "projectLogs" => $projectLogs,
             "totalDaysOfDepartments" => $results,
             "interactions" => Activity::where("log_name", "project")->where("subject_id", $project->id)->orderBy("id", "desc")->get(),
+            "ghost" => $request->ghost,
         ]);
     }
+
 
     /**
      * Show the form for editing the specified resource.

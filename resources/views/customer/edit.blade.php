@@ -201,6 +201,19 @@
                         @enderror
                     </div>
 
+                    <div class="col-sm-4 mt-4">
+                        <label for="adu" class="form-label">Is ADU?</label></br>
+                        <select class="form-select select2" aria-label="Default select ADU" id="adu"
+                            name="adu">
+                            <option value="">Select ADU</option>
+                            <option @selected($customer->is_adu == 1) value="1">Yes</option>
+                            <option @selected($customer->is_adu == 0) value="0">No</option>
+                        </select>
+                        @error('adu')
+                            <div class="text-danger message mt-2">{{ $message }}</div>
+                        @enderror
+                    </div>
+
                     <div class="col-sm-4 mb-3">
                         <!-- <label for="exampleFormControlInput877" class="form-label">Battery Qty</label>
                         <input type="text" class="form-control" id="battery_qty" name="battery_qty" placeholder="Battery Qty">

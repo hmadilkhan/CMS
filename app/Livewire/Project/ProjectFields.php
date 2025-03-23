@@ -10,6 +10,7 @@ class ProjectFields extends Component
     public $taskId;
     public $departmentId;
     public $projectDepartmentId;
+    public $ghost;
 
     public function render()
     {

@@ -105,6 +105,7 @@ class CustomerController extends Controller
                 "module_value" => $request->module_qty,
                 "module_value" => $request->module_qty,
                 "notes" => $request->notes,
+                "is_adu" => $request->adu,
             ]);
 
             CustomerFinance::create([
@@ -231,6 +232,7 @@ class CustomerController extends Controller
                 "inverter_qty" => $request->inverter_qty,
                 "module_value" => $request->module_qty,
                 "notes" => $request->notes,
+                "is_adu" => $request->adu,
             ]);
             if (!empty($request->uom)) {
                 $customer->adders()->delete();

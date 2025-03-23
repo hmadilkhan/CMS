@@ -13,6 +13,7 @@ class NotesSection extends Component
     public $departmentId = "";
     public $departmentNote = "";
     public $projectDepartmentId = "";
+    public $ghost = "";
 
     protected $rules = [
         'departmentNote' => 'required',

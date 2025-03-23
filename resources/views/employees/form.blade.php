@@ -33,6 +33,17 @@
             <div id="username_message" class="text-danger message mt-2"></div>
         </div>
         <div class="col">
+            <label class="form-label">Type</label>
+            <select class="form-select " aria-label="Default select Project Category" id="type" name="type">
+                @foreach ($types as $type)
+                <option value="{{ $type->id }}" {{ (!empty($employee->user) && $type->id == $employee->user->user_type_id) ? 'selected' : '' }}>{{ $type->name }}</option>
+                @endforeach
+            </select>
+            <div id="department_id_message" class="text-danger message mt-2"></div>
+        </div>
+    </div>
+    <div class="row g-3 mb-3">
+        <div class="col">
             <label for="password" class="form-label">Password</label>
             <input type="Password" class="form-control" id="password" name="password" placeholder="Password" {{!empty($employee) ? 'readonly' : ''}} value="{{!empty($employee) ? $employee->user->password : ''}}">
             <div id="password_message" class="text-danger message mt-2"></div>
@@ -42,6 +53,7 @@
             <input {{ !empty($user) ? 'disabled' : '' }} type="password" class="form-control" id="password_confirmation" name="password_confirmation" placeholder="Enter Confirm Password" {{!empty($employee) ? 'readonly' : ''}} value="{{!empty($employee) ? $employee->user->password : ''}}">
         </div>
     </div>
+    
     <div class="row g-3 mb-3">
         <div class="col">
             <label for="overwrite_base_price" class="form-label">Override Base Price</label>
