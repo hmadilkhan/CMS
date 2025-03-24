@@ -428,11 +428,20 @@
                                         style="overflow: visible !important;">
                                         @foreach ($departments as $department)
                                             @php
-                                                $filtered_collection = $nextSubDepartments
-                                                    ->filter(function ($item) use ($department) {
-                                                        return $item->department_id == $department->id;
-                                                    })
-                                                    ->values();
+                                                if ($project->customer->is_adu == 0) {
+                                                    # code...
+                                                    $filtered_collection = $nextSubDepartments
+                                                        ->filter(function ($item) use ($department) {
+                                                            return $item->department_id == $department->id;
+                                                        })
+                                                        ->values();
+                                                }else{
+                                                    $filtered_collection = $nextSubDepartments
+                                                        ->filter(function ($item) use ($department) {
+                                                            return $item->department_id == $department->id && $item->name == "ADU";
+                                                        })
+                                                        ->values();
+                                                }
                                             @endphp
                                             @if ($department->id < $project->department_id)
                                                 <li class="nav-item dropdown bg-success">

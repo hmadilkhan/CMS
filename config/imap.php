@@ -47,7 +47,7 @@ return [
     'accounts' => [
 
         'default' => [// account identifier
-            'host'  => env('DEALREVIEW_IMAP_HOST', 'localhost'),
+            'host'  => env('DEALREVIEW_IMAP_HOST', 'imap.hostinger.com'),
             'port'  => env('DEALREVIEW_IMAP_PORT', 993),
             'protocol'  => env('DEALREVIEW_IMAP_PROTOCOL', 'imap'), //might also use imap, [pop3 or nntp (untested)]
             'encryption'    => env('DEALREVIEW_IMAP_ENCRYPTION', 'ssl'), // Supported: false, 'ssl', 'tls', 'notls', 'starttls'
@@ -66,13 +66,13 @@ return [
         ],
 
         'sitesurvey' => [// account identifier
-            'host'  => env('SITESURVEY_IMAP_HOST', 'localhost'),
+            'host'  => env('SITESURVEY_IMAP_HOST', 'imap.hostinger.com'),
             'port'  => env('SITESURVEY_IMAP_PORT', 993),
             'protocol'  => env('SITESURVEY_IMAP_PROTOCOL', 'imap'), //might also use imap, [pop3 or nntp (untested)]
             'encryption'    => env('SITESURVEY_IMAP_ENCRYPTION', 'ssl'), // Supported: false, 'ssl', 'tls', 'notls', 'starttls'
             'validate_cert' => env('SITESURVEY_IMAP_VALIDATE_CERT', true),
             'username' => env('SITESURVEY_IMAP_USERNAME', 'sitesurvey@solaroperations.info'),
-            'password' => env('SITESURVEY_IMAP_PASSWORD', 'Site@247'),
+            'password' => env('SITESURVEY_IMAP_PASSWORD', 'Dawood#12'),
             'authentication' => env('SITESURVEY_IMAP_AUTHENTICATION', null),
             'proxy' => [
                 'socket' => null,
@@ -85,7 +85,7 @@ return [
         ],
 
         'engineering' => [// account identifier
-            'host'  => env('ENGINEERING_IMAP_HOST', 'localhost'),
+            'host'  => env('ENGINEERING_IMAP_HOST', 'imap.hostinger.com'),
             'port'  => env('ENGINEERING_IMAP_PORT', 993),
             'protocol'  => env('ENGINEERING_IMAP_PROTOCOL', 'imap'), //might also use imap, [pop3 or nntp (untested)]
             'encryption'    => env('ENGINEERING_IMAP_ENCRYPTION', 'ssl'), // Supported: false, 'ssl', 'tls', 'notls', 'starttls'
@@ -105,7 +105,7 @@ return [
 
 
         'permitting' => [// account identifier
-            'host'  => env('PERMITTING_IMAP_HOST', 'localhost'),
+            'host'  => env('PERMITTING_IMAP_HOST', 'imap.hostinger.com'),
             'port'  => env('PERMITTING_IMAP_PORT', 993),
             'protocol'  => env('PERMITTING_IMAP_PROTOCOL', 'imap'), //might also use imap, [pop3 or nntp (untested)]
             'encryption'    => env('PERMITTING_IMAP_ENCRYPTION', 'ssl'), // Supported: false, 'ssl', 'tls', 'notls', 'starttls'
@@ -124,7 +124,7 @@ return [
         ],
 
         'installation' => [// account identifier
-            'host'  => env('INSTALLATION_IMAP_HOST', 'localhost'),
+            'host'  => env('INSTALLATION_IMAP_HOST', 'imap.hostinger.com'),
             'port'  => env('INSTALLATION_IMAP_PORT', 993),
             'protocol'  => env('INSTALLATION_IMAP_PROTOCOL', 'imap'), //might also use imap, [pop3 or nntp (untested)]
             'encryption'    => env('INSTALLATION_IMAP_ENCRYPTION', 'ssl'), // Supported: false, 'ssl', 'tls', 'notls', 'starttls'
@@ -143,7 +143,7 @@ return [
         ],
 
         'inspection' => [// account identifier
-            'host'  => env('INSPECTION_IMAP_HOST', 'localhost'),
+            'host'  => env('INSPECTION_IMAP_HOST', 'imap.hostinger.com'),
             'port'  => env('INSPECTION_IMAP_PORT', 993),
             'protocol'  => env('INSPECTION_IMAP_PROTOCOL', 'imap'), //might also use imap, [pop3 or nntp (untested)]
             'encryption'    => env('INSPECTION_IMAP_ENCRYPTION', 'ssl'), // Supported: false, 'ssl', 'tls', 'notls', 'starttls'
@@ -162,7 +162,7 @@ return [
         ],
 
         'pto' => [// account identifier
-            'host'  => env('PTO_IMAP_HOST', 'localhost'),
+            'host'  => env('PTO_IMAP_HOST', 'imap.hostinger.com'),
             'port'  => env('PTO_IMAP_PORT', 993),
             'protocol'  => env('PTO_IMAP_PROTOCOL', 'imap'), //might also use imap, [pop3 or nntp (untested)]
             'encryption'    => env('PTO_IMAP_ENCRYPTION', 'ssl'), // Supported: false, 'ssl', 'tls', 'notls', 'starttls'
@@ -181,7 +181,7 @@ return [
         ],
 
         'coc' => [// account identifier
-            'host'  => env('COC_IMAP_HOST', 'localhost'),
+            'host'  => env('COC_IMAP_HOST', 'imap.hostinger.com'),
             'port'  => env('COC_IMAP_PORT', 993),
             'protocol'  => env('COC_IMAP_PROTOCOL', 'imap'), //might also use imap, [pop3 or nntp (untested)]
             'encryption'    => env('COC_IMAP_ENCRYPTION', 'ssl'), // Supported: false, 'ssl', 'tls', 'notls', 'starttls'

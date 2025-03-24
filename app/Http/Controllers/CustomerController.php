@@ -78,7 +78,6 @@ class CustomerController extends Controller
             'finance_option_id' => 'required',
             'contract_amount' => 'required',
             'redline_costs' => 'required',
-            // 'adders' => 'required',
             'commission' => 'required',
             'dealer_fee' => 'required',
             'sales_partner_user_id' => 'required',
@@ -86,7 +85,6 @@ class CustomerController extends Controller
 
         try {
             DB::beginTransaction();
-            // Customer::create($request->except(["finance_option_id", "contract_amount", "redline_costs", "adders", "commission", "dealer_fee","loan_term_id","loan_apr_id","dealer_fee_amount"]));
             $customer = Customer::create([
                 "first_name" => $request->first_name,
                 "last_name" => $request->last_name,
@@ -129,14 +127,22 @@ class CustomerController extends Controller
                         CustomerAdder::create([
                             "customer_id" => $customer->id,
                             "adder_type_id" => $request->adders[$i],
-                            // "adder_sub_type_id" => $request->subadders[$i],
                             "adder_unit_id" => $request->uom[$i],
                             "amount" => $request->amount[$i],
                         ]);
                     }
                 }
             }
-            $subdepartment = SubDepartment::where("department_id", 1)->first();
+
+            //$subDepartmentId = $request->adu == 1 ? 22 : 1; // If ADU is Yes Then Select ADU else select 1st Subdepartment of Deal Review
+            $subdepartment = SubDepartment::query();
+            if ($request->adu == 1) {
+                $subdepartment->where("name", "ADU");
+            } else {
+                $subdepartment->where("department_id", 1);
+            }
+            $subdepartment = $subdepartment->first();
+
             $project = Project::create([
                 "customer_id" => $customer->id,
                 "project_name" => $request->first_name . "-" . $request->last_name,
@@ -388,7 +394,7 @@ class CustomerController extends Controller
                 "customer_id" => $request->customer_id,
                 "customer_email" => $request->customer_email,
             ];
-            $salesPersonEmail = User::whereIn("id",Project::where("id",$request->project_id)->pluck("sales_partner_user_id"))->first();
+            $salesPersonEmail = User::whereIn("id", Project::where("id", $request->project_id)->pluck("sales_partner_user_id"))->first();
             if ($request->ccEmails != "") {
                 $ccEmails = $this->handleCommaSeparatedValues($request->ccEmails);
             }
@@ -396,7 +402,7 @@ class CustomerController extends Controller
             if (!empty($salesPersonEmail)) {
                 array_push($ccEmails, $salesPersonEmail->email);
             }
-            
+
             if (!empty($request->images) && count($request->images) > 0) {
                 foreach ($request->images  as $file) {
                     $savedFile = $this->uploads($file, 'emails/');
@@ -404,7 +410,7 @@ class CustomerController extends Controller
                 }
             }
             dispatch(new SendEmailJob($details, $attachments, $ccEmails));
-            return response()->json(["status" => 200, "message" => "Email has been sent","ccEmails" => $ccEmails]);
+            return response()->json(["status" => 200, "message" => "Email has been sent", "ccEmails" => $ccEmails]);
         } catch (\Throwable $th) {
             return response()->json(["status" => 500, "message" => "Error : " . $th->getMessage()]);
         }

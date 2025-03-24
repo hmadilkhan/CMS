@@ -130,7 +130,7 @@ class ImapController extends Controller
             }
             return response()->json(["status" => 200, "message" => "Email fetched completed."]);
         } catch (\Throwable $th) {
-            return response()->json(["status" => 500, "message" => "Some Error Occurred.", "error" => $th->getMessage()]);
+            return response()->json(["status" => 500, "message" => "Some Error Occurred.", "error" => $account->account." - ".$th->getMessage()]);
         }
     }
 
