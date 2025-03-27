@@ -85,6 +85,8 @@ class CustomerController extends Controller
 
         try {
             DB::beginTransaction();
+            $inverterBaseCost = InverterTypeRate::where("inverter_type_id",$request->inverter_type_id)->first();
+            $moduleCost = ModuleType::where("inverter_type_id",$request->inverter_type_id)->where("id",$request->module_type_id)->first();
             $customer = Customer::create([
                 "first_name" => $request->first_name,
                 "last_name" => $request->last_name,
@@ -119,6 +121,8 @@ class CustomerController extends Controller
                 "dealer_fee_amount" => $request->dealer_fee_amount,
                 "total_overwrite_base_price" => $request->overwrite_base_price,
                 "total_overwrite_panel_price" => ($request->overwrite_panel_price * $request->panel_qty),
+                "module_type_cost" => $moduleCost->amount,
+                "inverter_base_cost" => $inverterBaseCost->base_cost,
             ]);
             if (!empty($request->uom)) {
                 $count = count($request->uom);
@@ -221,6 +225,8 @@ class CustomerController extends Controller
     {
         try {
             DB::beginTransaction();
+            $inverterBaseCost = InverterTypeRate::where("inverter_type_id",$request->inverter_type_id)->first();
+            $moduleCost = ModuleType::where("inverter_type_id",$request->inverter_type_id)->where("id",$request->module_type_id)->first();
             $customer->update([
                 "first_name" => $request->first_name,
                 "last_name" => $request->last_name,
@@ -266,6 +272,8 @@ class CustomerController extends Controller
                 "commission" => $request->commission,
                 "dealer_fee" => $request->dealer_fee,
                 "dealer_fee_amount" => $request->dealer_fee_amount,
+                "module_type_cost" => $moduleCost->amount,
+                "inverter_base_cost" => $inverterBaseCost->base_cost,
             ]);
             if ($request->sales_partner_user_id != "") {
                 $customer->project()->update([
