@@ -27,6 +27,7 @@
                             <th>Employee</th>
                             <th>Department</th>
                             <th>Sub Department</th>
+                            <th>Address</th>
                             <th>Status</th>
                             <th>Actions</th>
                         </tr>
@@ -41,6 +42,7 @@
                             <td>{{ $project->assignedPerson[0]->employee->name }}</td>
                             <td>{{ $project->department->name }}</td>
                             <td>{{ $project->subdepartment->name }}</td>
+                            <td>{{ $project->customer->street }}</td>
                             <td>
                                 <span class="small  {{($project->status == 'In-Progress' ? 'light-danger-bg' : 'light-success-bg')}}  p-1 rounded"><i class="icofont-ui-clock"></i> {{$project->assignedPerson[0]->status}}</span>
                             </td>

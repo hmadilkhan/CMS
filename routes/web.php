@@ -195,6 +195,12 @@ Route::middleware('auth')->group(function () {
         Route::post('/email-scripts-store', 'emailScriptStore')->name("email.scripts.store");
         Route::post('/email-scripts-update', 'emailScriptUpdate')->name("email.scripts.update");
         Route::post('/email-scripts-delete', 'emailScriptDelete')->name("email.scripts.delete");
+
+        // LOAN TERM VIEW
+        Route::get('/view-loan-term/{id?}', 'loanTermView')->name("loan.term");
+        Route::post('/loan-term-store', 'loanTermStore')->name("loan.term.store");
+        Route::post('/loan-term-update', 'loanTermUpdate')->name("loan.term.update");
+        Route::post('/loan-term-delete', 'loanTermDelete')->name("loan.term.delete");
     });
 
     Route::controller(InverterTypeController::class)->group(function () {
@@ -209,21 +215,21 @@ Route::middleware('auth')->group(function () {
         Route::post('/reports-profilt', 'getProfitabilityReport')->name("reports.profit");
         Route::get('/profitable-report-excel-export/{from}/{to}', 'getProfitableReportExport')->name("profitable.report.excel.export");
         Route::get('/profitable-report-pdf-export/{from}/{to}', 'getProfitableReportPdfExport')->name("profitable.report.pdf.export");
-        
+
         // FORECAST REPORT
         Route::get('/forecast-report', 'forecastReport')->name("forecast.report");
         Route::post('/forecast-report', 'getForecastReport')->name("forecast.report");
         Route::get('/forecast-report-excel-export/{from}/{to}', 'getForecastReportExport')->name("forecast.report.excel.export");
         Route::get('/forecast-report-pdf-export/{from}/{to}', 'getForecastReportPdfExport')->name("forecast.report.pdf.export");
 
-         // OVERRIDE REPORT
-         Route::get('/override-report', 'overrideReport')->name("override.report");
-         Route::post('/override-report', 'getOverrideReport')->name("override.report");
-         Route::get('/override-report-excel-export/{salespartner}/{from}/{to}', 'getOverrideReportExport')->name("override.report.excel.export");
-         Route::get('/override-report-pdf-export/{salespartner}/{from}/{to}', 'getOverrideReportPdfExport')->name("override.report.pdf.export");
+        // OVERRIDE REPORT
+        Route::get('/override-report', 'overrideReport')->name("override.report");
+        Route::post('/override-report', 'getOverrideReport')->name("override.report");
+        Route::get('/override-report-excel-export/{salespartner}/{from}/{to}', 'getOverrideReportExport')->name("override.report.excel.export");
+        Route::get('/override-report-pdf-export/{salespartner}/{from}/{to}', 'getOverrideReportPdfExport')->name("override.report.pdf.export");
 
         //  Route::get("dynamic-report","DynamicReport");
-         Route::get("dynamic-report",DynamicReport::class);
+        Route::get("dynamic-report", DynamicReport::class);
     });
 
     Route::controller(AuroraController::class)->group(function () {
@@ -242,8 +248,6 @@ Route::middleware('auth')->group(function () {
     Route::get('fetch-emails', [App\Http\Controllers\ImapController::class, 'fetchEmails']);
     Route::post('show-emails', [App\Http\Controllers\ImapController::class, 'showEmails'])->name("show.emails");
     Route::post('fetch-emails', [App\Http\Controllers\ImapController::class, 'fetchDepartmentMails'])->name("fetch.emails");
-
-   
 });
 
 require __DIR__ . '/auth.php';

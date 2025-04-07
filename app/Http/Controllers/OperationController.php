@@ -548,4 +548,65 @@ class OperationController extends Controller
     }
 
     /************************************ EMAIL SCRIPTS ENDS **************************************************************/
+
+    public function loanTermView(Request $request)
+    {
+        if ($request->id != "") {
+            $loanTerm = LoanTerm::where("id", $request->id)->first();
+        }
+        return view("operations/loan-term/index", [
+            "financeOptions" => FinanceOption::all(),
+            "loanTerms" => LoanTerm::with('finance')->get(),
+            "loanTerm" => ($request->id != "" ? $loanTerm : []),
+        ]);
+    }
+
+    public function loanTermStore(Request $request)
+    {
+        try {
+            $count = LoanTerm::where("finance_option_id", $request->finance_option_id)->where("year", $request->year)->count();
+
+            if ($count == 0) {
+                DB::beginTransaction();
+                LoanTerm::create([
+                    "finance_option_id" => $request->finance_option_id,
+                    "year" => $request->year,
+                ]);
+                DB::commit();
+                return redirect()->route("loan.term")->with("success", "Data Saved Successfully");
+            } else {
+                DB::rollBack();
+                return redirect()->route("loan.term")->with("error", "Data already exists");
+            }
+        } catch (\Throwable $th) {
+
+            return redirect()->route("loan.term")->with("error", $th->getMessage());
+        }
+    }
+
+    public function loanTermUpdate(Request $request)
+    {
+        try {
+            $loanTerm = LoanTerm::find($request->id);
+            $loanTerm->finance_option_id = $request->finance_option_id;
+            $loanTerm->year = $request->year;
+            $loanTerm->save();
+            return redirect()->route("loan.term");
+        } catch (\Throwable $th) {
+            return redirect()->route("loan.term")->with('error', $th->getMessage());
+        }
+    }
+
+    public function loanTermDelete(Request $request)
+    {
+        try {
+            DB::beginTransaction();
+            LoanTerm::where("id", $request->id)->delete();
+            DB::commit();
+            return response()->json(["status" => 200]);
+        } catch (\Throwable $th) {
+            DB::rollBack();
+            return response()->json(["status" => 500]);
+        }
+    }
 }

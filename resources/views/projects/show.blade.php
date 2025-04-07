@@ -562,7 +562,7 @@
             </ul>
             <div class="tab-content">
                 <div class="tab-pane fade show active" id="actionmenu" role="tabpanel">
-                    @can('Project Move')
+                    {{-- @can('Project Move')
                         <div class="card card-info mt-2">
                             <div class="card-body">
                                 <div class="row clearfix">
@@ -672,7 +672,7 @@
                                 </div>
                             </div>
                         </div>
-                    @endcan
+                    @endcan --}}
 
                     <div class="card card-info mt-2">
                         <div class="card-body">

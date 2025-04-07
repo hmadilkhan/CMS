@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Jobs\AcceptanceEmailJob;
 use App\Mail\AcceptanceEmail;
+use App\Models\Adder;
 use App\Models\AdderType;
 use App\Models\AdderUnit;
 use App\Models\Call;
@@ -113,7 +114,7 @@ class ProjectController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show(Project $project,Request $request)
+    public function show(Project $project, Request $request)
     {
         if ($request->ghost == "ghost") {
             $project = Project::findOrFail($request->id);
@@ -708,6 +709,7 @@ class ProjectController extends Controller
     public function projectAdders(Request $request)
     {
         $customer = Customer::findOrFail($request->customer_id);
+
         DB::beginTransaction();
         try {
             if (!empty($request->uom)) {
@@ -1061,7 +1063,7 @@ class ProjectController extends Controller
                 ->performedOn($project)
                 ->causedBy(auth()->user()) // Log who did the action
                 ->setEvent("move")
-                ->log("The Project Acceptance Review for " . $project->customer->first_name . " " . $project->customer->last_name . " has been " . ($request->mode == 1 ? 'approved' : 'rejected') ." by {$username}  ");
+                ->log("The Project Acceptance Review for " . $project->customer->first_name . " " . $project->customer->last_name . " has been " . ($request->mode == 1 ? 'approved' : 'rejected') . " by {$username}  ");
             return response()->json(["status" => 200, "message" => "Project Acceptance Approved"]);
         } catch (\Throwable $th) {
             return response()->json(["status" => 500, "message" => "Error: " . $th->getMessage()]);
