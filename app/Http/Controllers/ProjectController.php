@@ -212,6 +212,7 @@ class ProjectController extends Controller
     public function getProjectList(Request $request)
     {
         $result =  $this->projectQuery($request);
+
         return view("projects.project-list", [
             "projects" => $result["projects"],
             "subdepartments" => $result["subdepartments"],
