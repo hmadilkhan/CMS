@@ -171,6 +171,13 @@ Route::middleware('auth')->group(function () {
         Route::post('/adders-type-update', 'addersTypeUpdate')->name("adder.type.update");
         Route::post('/adders-type-delete', 'addersTypeDelete')->name("adder.type.delete");
 
+
+        // UTILITY COMPANY 
+        Route::get('/view-utility-company/{id?}', 'utilityCompanyView')->name("view.utility.types");
+        Route::post('/utility-company-store', 'utilityCompanyStore')->name("utility.type.store");
+        Route::post('/utility-company-update', 'utilityCompanyUpdate')->name("utility.type.update");
+        Route::post('/utility-company-delete', 'utilityCompanyDelete')->name("utility.type.delete");
+
         // FINANCE OPTION VIEW
         Route::get('/view-finance-option/{id?}', 'financeOptionView')->name("finance.option.types");
         Route::post('/finance-option-store', 'financeOptionStore')->name("finance.option.store");

@@ -19,6 +19,7 @@ use App\Models\LoanTerm;
 use App\Models\ModuleType;
 use App\Models\SalesPartner;
 use App\Models\User;
+use App\Models\UtilityCompany;
 use App\Traits\MediaTrait;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\Request;
@@ -606,6 +607,56 @@ class OperationController extends Controller
             return response()->json(["status" => 200]);
         } catch (\Throwable $th) {
             DB::rollBack();
+            return response()->json(["status" => 500]);
+        }
+    }
+
+    public function utilityCompanyView(Request $request)
+    {
+        if ($request->id != "") {
+            $utility = UtilityCompany::where("id", $request->id)->first();
+        }
+        return view("operations/utility-company/index", [
+            "utilityCompanies" => UtilityCompany::all(),
+            "utility" => ($request->id != "" ? $utility : []),
+        ]);
+    }
+
+    public function utilityCompanyStore(Request $request)
+    {
+        try {
+            $count = UtilityCompany::where("name", $request->name)->count();
+            if ($count == 0) {
+                UtilityCompany::create([
+                    "name" => $request->name,
+                ]);
+                return redirect()->route("view.utility.types")->with("success", "Data Saved Successfully");
+            } else {
+                return redirect()->route("view.utility.types")->with("error", "Data already exists");
+            }
+        } catch (\Throwable $th) {
+            return redirect()->route("view.utility.types")->with("error", $th->getMessage());
+        }
+    }
+
+    public function utilityCompanyUpdate(Request $request)
+    {
+        try {
+            $adder = UtilityCompany::find($request->id);
+            $adder->name = $request->name;
+            $adder->save();
+            return redirect()->route("view.utility.types");
+        } catch (\Throwable $th) {
+            return redirect()->route("view.utility.types")->with('error', $th->getMessage());
+        }
+    }
+
+    public function utilityCompanyDelete(Request $request)
+    {
+        try {
+            UtilityCompany::where("id", $request->id)->delete();
+            return response()->json(["status" => 200]);
+        } catch (\Throwable $th) {
             return response()->json(["status" => 500]);
         }
     }
