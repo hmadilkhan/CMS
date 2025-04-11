@@ -3,6 +3,7 @@
 namespace App\Livewire\Project\ProjectFields;
 
 use App\Models\Project;
+use App\Models\UtilityCompany;
 use Illuminate\Validation\Rule;
 use Livewire\Component;
 
@@ -59,6 +60,8 @@ class EditFields extends Component
 
     public $message;
     public $messageType;
+
+    public $utilityCompanies;
 
 
     protected $rules = [
@@ -140,6 +143,8 @@ class EditFields extends Component
 
         // EIGHT DEPARTMENT
         $this->coc_packet_mailed_out_date = $this->project->coc_packet_mailed_out_date;
+
+        $this->utilityCompanies = UtilityCompany::all();
     }
 
 
@@ -327,7 +332,6 @@ class EditFields extends Component
                 "coc_packet_mailed_out_date" => $this->coc_packet_mailed_out_date,
             ]);
         }
-
 
         try {
             Project::where("id", $this->projectId)->update($updateItems);

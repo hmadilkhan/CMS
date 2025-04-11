@@ -11,8 +11,15 @@
             @if ($departmentId == 1)
                 <div class="col-sm-3 mb-3 ">
                     <label for="utility_company" class="form-label" id="requiredfiles">Utility Company</label>
-                    <input class="form-control" type="text" id="utility_company" name="utility_company"
-                        wire:model="utility_company">
+                    <select class="form-select" aria-label="Default select HOA" wire:model.live="utility_company" id="utility_company"
+                        name="utility_company">
+                        <option value="">Select Utility Company</option>
+                        @foreach ($utilityCompanies as $utility)
+                            <option {{ $project->utility_company != '' && $project->utility_company == $utility->name ? 'selected' : '' }} value="{{$utility->name}}">{{$utility->name}}</option>
+                        @endforeach
+                    </select>
+                    {{-- <input class="form-control" type="text" id="utility_company" name="utility_company"
+                        wire:model="utility_company"> --}}
                     @error('utility_company')
                         <div id="utility_company_message" class="text-danger message mt-2">{{ $message }}</div>
                     @enderror
