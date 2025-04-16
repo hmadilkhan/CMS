@@ -1092,7 +1092,9 @@
                 </div>
             </div>
         @endcan
-        @livewire('project.project-cost', ['project' => $project], key($project->id))
+        @can('Pre and Post Project Cost')
+            @livewire('project.project-cost', ['project' => $project], key($project->id))
+        @endcan
     </div>
 
     <div class="tab-pane fade" id="communication" role="tabpanel">
