@@ -35,8 +35,7 @@
                     <div class="text-danger message mt-2">{{$message}}</div>
                     @enderror
                 </div>
-                <div class="col-sm-4">
-                    <!-- <div class="form-group"> -->
+                <div class="col-sm-2">
                     <label>Base Cost</label>
                     <input type="text" class="form-control @error('base_cost') is-invalid @enderror" id="base_cost" name="base_cost" placeholder="Enter Redline Cost" value="{{ !empty($redline) ? $redline->base_cost : old('base_cost') }}">
                     @error('base_cost')
@@ -44,9 +43,26 @@
                         <strong>{{ $message }}</strong>
                     </span>
                     @enderror
-                    <!-- </div> -->
                 </div>
-                <div class="col-4 mt-3">
+                <div class="col-sm-2">
+                    <label>Internal Base Cost</label>
+                    <input type="text" class="form-control @error('internal_base_cost') is-invalid @enderror" id="internal_base_cost" name="internal_base_cost" placeholder="Enter Internal Base Cost" value="{{ !empty($redline) ? $redline->internal_base_cost : old('internal_base_cost') }}">
+                    @error('internal_base_cost')
+                    <span class="invalid-feedback" role="alert">
+                        <strong>{{ $message }}</strong>
+                    </span>
+                    @enderror
+                </div>
+                <div class="col-sm-2">
+                    <label>Internal Labor Cost</label>
+                    <input type="text" class="form-control @error('internal_labor_cost') is-invalid @enderror" id="internal_labor_cost" name="internal_labor_cost" placeholder="Enter Internal Labor Cost" value="{{ !empty($redline) ? $redline->internal_labor_cost : old('internal_labor_cost') }}">
+                    @error('internal_labor_cost')
+                    <span class="invalid-feedback" role="alert">
+                        <strong>{{ $message }}</strong>
+                    </span>
+                    @enderror
+                </div>
+                <div class="col-2 mt-3">
                     <label></label>
                     <div class="form-group float-left ">
                         <button type="button" class="btn btn-danger float-right ml-2 text-white"><i class="icofont-ban"></i>
@@ -66,12 +82,14 @@
         <h4 class="card-title">Base Cost List</h3>
     </div>
     <div class="card-body">
-        <table id="example1" class="table table-bordered table-striped datatable table-responsive">
+        <table id="example1" class="table table-bordered table-striped datatable table-responsive mt-2">
             <thead>
                 <tr>
                     <th>No.</th>
                     <th>Inverter</th>
                     <th>Base Cost</th>
+                    <th>Internal Base Cost</th>
+                    <th>Internal Labor Cost</th>
                     <th>Actions</th>
                 </tr>
             </thead>
@@ -81,6 +99,8 @@
                     <td>{{ ++$key }}</td>
                     <td>{{ $list->inverter->name }}</td>
                     <td>$ {{ number_format($list->base_cost,2) }}</td>
+                    <td>$ {{ number_format($list->internal_base_cost,2) }}</td>
+                    <td>$ {{ number_format($list->internal_labor_cost,2) }}</td>
                     <td class="text-center">
                         <a style="cursor: pointer;" data-toggle="tooltip" title="Edit" href="{{ route('view-redline-cost',$list->id)}}">
                             <i class="icofont-pencil text-warning"></i></a>

@@ -1218,6 +1218,7 @@
                                                     class="form-label fw-bold flex-fill mb-2 mt-sm-0">
                                                     {{ $log->call->name }} :</label>
                                                 <textarea class="form-control" disabled rows="3">{{ $log->notes }}</textarea>
+                                                <label class="float-right mb-4 fst-italic">{{ (!empty($log->user) ? $log->user->name : '') .' on '. date("m/d/Y H:i:s",strtotime($log->created_at)) }}</label>
                                             </div>
                                         @endforeach
                                     @endforeach

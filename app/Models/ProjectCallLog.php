@@ -17,4 +17,8 @@ class ProjectCallLog extends Model
         return $this->belongsTo(Call::class,"call_no","id");
     }
 
+    public function user() : BelongsTo {
+        return $this->belongsTo(User::class,"user_id","id");
+    }
+
 }

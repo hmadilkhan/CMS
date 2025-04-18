@@ -143,7 +143,7 @@ class ProjectController extends Controller
         })->sortBy('department_id')->values();
 
 
-        $project = Project::with("task", "customer", "department", "logs", "logs.call", "subdepartment", "assignedPerson", "assignedPerson.employee", "departmentnotes", "departmentnotes.user", "salesPartnerUser")
+        $project = Project::with("task", "customer", "department", "logs", "logs.call","logs.user", "subdepartment", "assignedPerson", "assignedPerson.employee", "departmentnotes", "departmentnotes.user", "salesPartnerUser")
             ->withCount(['emails as viewed_emails_count' => function ($query) {
                 $query->where('is_view', 1);
             }])
@@ -524,6 +524,7 @@ class ProjectController extends Controller
                 "department_id" => $project->department_id,
                 "call_no" => $request->call_no,
                 "notes" => $request->notes_1,
+                "user_id" => auth()->user()->id,
             ]);
             // }
             DB::commit();

@@ -43,8 +43,10 @@ class EditFields extends Component
     // FIFTH DEPARTMENT
     public $solar_install_date;
     public $battery_install_date;
-    public $actual_labor_cost;
-    public $actual_material_cost;
+    // public $actual_labor_cost;
+    // public $actual_material_cost;
+    public $placards_ordered;
+    public $placards_note;
     public $mpu_install_date;
 
     // SIXTH DEPARTMENT
@@ -62,41 +64,6 @@ class EditFields extends Component
     public $messageType;
 
     public $utilityCompanies;
-
-
-    protected $rules = [
-        // 'utility_company' => 'required_if:departmentId,1|string',
-        // 'ntp_approval_date' => 'required_if:departmentId,1|date',
-        // 'hoa' => 'required_if:departmentId,1|string',
-        // 'hoa_phone_number' => 'required_if:departmentId,1|nullable|string',
-
-        // 'site_survey_link' => 'required_if:departmentId,2|url',
-
-        // 'permitting_submittion_date' => 'required_if:departmentId,4|date',
-        // 'permitting_approval_date' => 'required_if:departmentId,4|date',
-        // 'hoa_approval_request_date' => 'required_if:projecthoa,yes|date',
-        // 'hoa_approval_date' => 'required_if:projecthoa,yes|date',
-
-        // 'solar_install_date' => 'required_if:departmentId,5|date',
-        // 'battery_install_date' => 'required_if:departmentId,5|date',
-        // 'mpu_install_date' => 'required_if:departmentId,5|date',
-
-        // 'rough_inspection_date' => 'required_if:departmentId,6|date',
-        // 'final_inspection_date' => 'required_if:departmentId,6|date',
-
-        // 'pto_submission_date' => 'required_if:departmentId,7|date',
-        // 'pto_approval_date' => 'required_if:departmentId,7|date',
-
-        // 'coc_packet_mailed_out_date' => 'required_if:departmentId,8|date',
-    ];
-
-    // protected $messages = [
-    //     'utility_company.required_if' => 'The utility_company field is required.',
-    //     'ntp_approval_date.required_if' => 'The ntp_approval_date field is required.',
-    //     'hoa.required_if' => 'The hoa field is required.',
-    //     'hoa_phone_number.required_if' => 'The HOA phone number field is required.',
-    //     // Add custom messages for other fields as needed
-    // ];
 
     public function mount()
     {
@@ -129,8 +96,10 @@ class EditFields extends Component
         // FIFTH DEPARTMENT
         $this->solar_install_date = $this->project->solar_install_date;
         $this->battery_install_date = $this->project->battery_install_date;
-        $this->actual_labor_cost = $this->project->actual_labor_cost;
-        $this->actual_material_cost = $this->project->actual_material_cost;
+        // $this->actual_labor_cost = $this->project->actual_labor_cost;
+        // $this->actual_material_cost = $this->project->actual_material_cost;
+        $this->placards_ordered = $this->project->placards_ordered;
+        $this->placards_note = $this->project->placards_note;
         $this->mpu_install_date = $this->project->mpu_install_date;
 
         // SIXTH DEPARTMENT
@@ -222,6 +191,8 @@ class EditFields extends Component
             $data = [
                 'solar_install_date' => 'required_if:departmentId,5|date',
                 'battery_install_date' => 'required_if:departmentId,5|date',
+                'placards_ordered' => 'required_if:departmentId,5',
+                'placards_note' => 'required_if:departmentId,5',
                 'mpu_install_date' => Rule::requiredIf(function () use ($project) {
                     return $this->departmentId == 5 && $project->mpu_required == "yes";
                 }),
@@ -231,6 +202,8 @@ class EditFields extends Component
                 'solar_install_date.required_if' => 'The solar install date is required for this department.',
                 'battery_install_date.required_if' => 'The battery install date is required for this department.',
                 'mpu_install_date.required_if' => 'The MPU install date is required if MPU is marked as required for this project.',
+                'placards_ordered.required_if' => 'The Placard Ordered field is required.',
+                'placards_note.required_if' => 'The Placard Note field is required.',
             ];
         }
         if ($this->departmentId == 6) {
@@ -306,8 +279,10 @@ class EditFields extends Component
         if ($this->departmentId == 5) {
             $updateItems = array_merge($updateItems, [
                 "solar_install_date" => $this->solar_install_date,
-                "actual_labor_cost" => $this->actual_labor_cost,
-                "actual_material_cost" => $this->actual_material_cost,
+                // "actual_labor_cost" => $this->actual_labor_cost,
+                // "actual_material_cost" => $this->actual_material_cost,
+                "placards_ordered" => $this->placards_ordered,
+                "placards_note" => $this->placards_note,
                 "battery_install_date" => $this->battery_install_date,
                 "mpu_install_date" => $this->mpu_install_date,
             ]);

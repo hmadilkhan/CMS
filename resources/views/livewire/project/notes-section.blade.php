@@ -24,8 +24,14 @@
             <label for="formFileMultipleoneone" class="form-label fw-bold flex-fill mb-2 mt-sm-0">Department Notes</label>
             @foreach ($notes as $value)
                 @if ($value->notes != '')
-                    <label class="form-control" disabled rows="3">{{ $value->notes }}
-                        <b><i>{{ !empty($value->user) ? '( Added by ' . $value->user->name . ')' : '' }}</i></b></label>
+                    <div>
+                        <label class="form-control mt-3" disabled rows="3">{{ $value->notes }}
+                            <b><i>{{ !empty($value->user) ? '( Added by ' . $value->user->name . ')' : '' }}</i></b></label>
+                        <label
+                            class="float-right mb-4 fst-italic">{{ !empty($value->user) ? $value->user->name .' on '.date("m/d/Y H:i:s",strtotime($value->user->created_at))  : '' }}</label>
+
+                        <br />
+                    </div>
                 @endif
             @endforeach
         </div>

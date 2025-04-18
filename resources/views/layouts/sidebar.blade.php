@@ -67,6 +67,7 @@
                     <li><a class="ms-link {{ Route::currentRouteName() == 'view-dealer-fee' ? 'active' : '' }}" href="{{route('view-dealer-fee')}}"><span>Dealer Fee</span></a></li>
                     <li><a class="ms-link {{ Route::currentRouteName() == 'tools.index' ? 'active' : '' }}" href="{{route('tools.index')}}"><span>Tools</span></a></li>
                     <li><a class="ms-link {{ Route::currentRouteName() == 'office-costs.index' ? 'active' : '' }}" href="{{route('office-costs.index')}}"><span>Office Cost</span></a></li>
+                    <li><a class="ms-link {{ Route::currentRouteName() == 'labor-costs.index' ? 'active' : '' }}" href="{{route('labor-costs.index')}}"><span>Labor Cost</span></a></li>
                     <li><a class="ms-link {{ Route::currentRouteName() == 'view-adders' ? 'active' : '' }}" href="{{route('view-adders')}}"><span>Adders</span></a></li>
                     <li><a class="ms-link {{ Route::currentRouteName() == 'view.adder.types' ? 'active' : '' }}" href="{{route('view.adder.types')}}"><span>Adder Types</span></a></li>
                     <li><a class="ms-link {{ Route::currentRouteName() == 'view-inverter-type' ? 'active' : '' }}" href="{{route('view-inverter-type')}}"><span>Inverter Types</span></a></li>

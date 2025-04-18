@@ -26,12 +26,12 @@
                         </tr>
                         <tr>
                             <td>Pre-Estimated Material Cost</td>
-                            <td><input type="text" class="form-control w-50" wire:model="preEstimateMaterialCost" />
+                            <td><input type="text" class="form-control w-50" readonly wire:model="preEstimateMaterialCost" />
                             </td>
                         </tr>
                         <tr>
                             <td>Pre-Estimated Labor Cost</td>
-                            <td><input type="text" class="form-control w-50" wire:model="preEstimateLaborCost" />
+                            <td><input type="text" class="form-control w-50" readonly wire:model="preEstimateLaborCost" />
                             </td>
                         </tr>
                         <tr>

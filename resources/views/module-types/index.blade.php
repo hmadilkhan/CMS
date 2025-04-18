@@ -55,6 +55,15 @@
                     </span>
                     @enderror
                 </div>
+                <div class="col-sm-3">
+                    <label>Internal Module Cost</label>
+                    <input type="text" class="form-control @error('internal_module_cost') is-invalid @enderror" id="internal_module_cost" name="internal_module_cost" placeholder="Enter Internal Module Cost" value="{{ !empty($type) ? $type->internal_module_cost : old('internal_module_cost') }}">
+                    @error('internal_module_cost')
+                    <span class="invalid-feedback" role="alert">
+                        <strong>{{ $message }}</strong>
+                    </span>
+                    @enderror
+                </div>
                 <div class="col-3">
                     <label></label>
                     <div class="form-group ">
@@ -83,6 +92,7 @@
                     <th>Inverter Type</th>
                     <th>Watt</th>
                     <th>Amount</th>
+                    <th>Internal Module Cost</th>
                     <th>Actions</th>
                 </tr>
             </thead>
@@ -94,6 +104,7 @@
                     <td>{{ $type->inverter->name }}</td>
                     <td>{{ $type->value }}</td>
                     <td>{{ $type->amount }}</td>
+                    <td>{{ $type->internal_module_cost }}</td>
                     <td class="text-center">
                         <a style="cursor: pointer;" data-toggle="tooltip" title="Edit" href="{{ route('module-types.edit',$type->id)}}">
                             <i class="icofont-pencil text-warning"></i></a>

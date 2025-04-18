@@ -50,6 +50,8 @@ class OperationController extends Controller
         try {
             $inverterTypeRate = InverterTypeRate::find($request->id);
             $inverterTypeRate->base_cost = $request->base_cost;
+            $inverterTypeRate->internal_base_cost = $request->internal_base_cost;
+            $inverterTypeRate->internal_labor_cost = $request->internal_labor_cost;
             $inverterTypeRate->save();
             return redirect()->route("view-redline-cost");
         } catch (\Throwable $th) {
@@ -69,6 +71,8 @@ class OperationController extends Controller
                 InverterTypeRate::create([
                     "inverter_type_id" => $request->inverter_type_id,
                     "base_cost" => $request->base_cost,
+                    "internal_base_cost" => $request->internal_base_cost,
+                    "internal_labor_cost" => $request->internal_labor_cost,
                 ]);
                 return redirect()->route("view-redline-cost")->with("success", "Data Saved Successfully");
             } else {

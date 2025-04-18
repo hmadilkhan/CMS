@@ -2,6 +2,10 @@
 
 namespace App\Livewire\Project;
 
+use App\Models\InverterType;
+use App\Models\InverterTypeRate;
+use App\Models\LaborCost;
+use App\Models\ModuleType;
 use App\Models\Project;
 use Livewire\Attributes\Computed;
 use Livewire\Component;
@@ -33,6 +37,11 @@ class ProjectCost extends Component
     public string $messageType = 'success'; // or 'danger'
     public bool $showMessage = false;
 
+    public $moduleType ;
+    public $inverterType ;
+    public $panelQty;
+    public $laborCost;
+
 
     public function mount()
     {
@@ -46,6 +55,11 @@ class ProjectCost extends Component
         $this->postEstimateMaterialCost = $this->project->actual_material_cost;
         $this->postEstimateLaborCost = $this->project->actual_labor_cost;
         $this->postEstimatePermitCost = $this->project->actual_permit_fee;
+
+        $this->moduleType = ModuleType::where("id",$this->project->customer->module_type_id)->where("inverter_type_id",$this->project->customer->inverter_type_id)->first();
+        $this->inverterType = InverterTypeRate::where("inverter_type_id",$this->project->customer->inverter_type_id)->first();
+        $this->panelQty = $this->project->customer->panel_qty;
+        $this->laborCost = LaborCost::first();
     }
 
     public function calculateProfit()
@@ -86,8 +100,8 @@ class ProjectCost extends Component
             $project  = Project::find($this->projectId);
 
             $project->update([
-                'pre_estimated_material_costs' => $this->preEstimateMaterialCost,
-                'pre_estimated_labor_costs' => $this->preEstimateLaborCost,
+                // 'pre_estimated_material_costs' => $this->preEstimateMaterialCost,
+                // 'pre_estimated_labor_costs' => $this->preEstimateLaborCost,
                 'pre_estimated_permit_costs' => $this->preEstimatePermitCost,
                 'actual_material_cost' => $this->postEstimateMaterialCost,
                 'actual_labor_cost' => $this->postEstimateLaborCost,
@@ -104,9 +118,16 @@ class ProjectCost extends Component
         }
     }
 
+    public function calcaulatePreEstimatedFields()
+    {
+        $this->preEstimateMaterialCost = $this->inverterType->internal_base_cost + ($this->panelQty * $this->moduleType->internal_module_cost);
+        $this->preEstimateLaborCost = $this->inverterType->internal_labor_cost + ($this->panelQty * $this->laborCost->cost);
+    }
+
     public function render()
     {
         $this->calculateProfit();
+        $this->calcaulatePreEstimatedFields();
         return view('livewire.project.project-cost');
     }
 }

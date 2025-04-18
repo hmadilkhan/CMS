@@ -246,6 +246,11 @@ class CustomerController extends Controller
                 "notes" => $request->notes,
                 "is_adu" => $request->adu,
             ]);
+            
+            $customer->project->update([
+                "project_name" => $request->first_name . "-" . $request->last_name,
+            ]);
+
             if (!empty($request->uom)) {
                 $customer->adders()->delete();
                 $count = count($request->uom);

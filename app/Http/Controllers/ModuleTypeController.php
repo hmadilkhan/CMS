@@ -81,6 +81,7 @@ class ModuleTypeController extends Controller
             $moduleType->value = $request->value;
             $moduleType->amount = $request->amount;
             $moduleType->inverter_type_id = $request->inverter_type_id;
+            $moduleType->internal_module_cost = $request->internal_module_cost;
             $moduleType->save();
             return redirect()->route("module-types.index");
         } catch (\Throwable $th) {

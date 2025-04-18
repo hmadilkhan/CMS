@@ -79,7 +79,7 @@
     @endif
 
     @if($departmentId == 5)
-    @can('Actual Labor Cost')
+    {{-- @can('Actual Labor Cost')
     <div class="col-sm-6 mb-3 ">
         <label for="actual_labor_cost" class="form-label">Actual Labor Cost</label>
         <input disabled class="form-control" type="text" value="{{$project->actual_labor_cost}}">
@@ -90,7 +90,15 @@
         <label for="actual_material_cost" class="form-label">Actual Material Cost</label>
         <input disabled class="form-control" type="text" value="{{$project->actual_material_cost}}">
     </div>
-    @endcan
+    @endcan --}}
+    <div class="col-sm-6 mb-3 ">
+        <label for="placards_ordered" class="form-label">Placards Ordered</label>
+        <input disabled class="form-control" type="text" value="{{$project->placards_ordered}}">
+    </div>
+    <div class="col-sm-6 mb-3 ">
+        <label for="placards_ordered" class="form-label">Placards Note</label>
+        <input disabled class="form-control" type="text" value="{{$project->placards_note}}">
+    </div>
     <div class="col-sm-6 mb-3 ">
         <label for="solar_install_date" class="form-label">Solar Install Date </label>
         <input disabled class="form-control" type="date" value="{{$project->solar_install_date}}">
