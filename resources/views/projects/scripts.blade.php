@@ -4,10 +4,11 @@
 
     projectList("all");
     function projectList(value) {
+        let search = $("#search").val();
         $.ajax({
             method: "POST",
             url: "{{ route('projects.list') }}",
-            data : {"_token": "{{ csrf_token() }}",id:value},
+            data : {"_token": "{{ csrf_token() }}",id:value,search:search},
             success: function(response) {
                 $('#projectlist').empty();
                 $('#projectlist').append(response);
@@ -17,6 +18,12 @@
             }
         })
     }
+
+    $("#btnSearch").click(function(){
+        projectList('all');
+    })
+
+
 
     $("#openproject").click(function() {
         $("#createproject").modal("show");

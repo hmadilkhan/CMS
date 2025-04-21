@@ -1,24 +1,28 @@
 <div class="card">
     <div class="card-body">
         @if (!empty($projectAcceptance) && $projectAcceptance->action_by != 0)
-        <div class="row mt-4 mx-3">
-            <table class="table table-bordered">
-                <tr class="bg-light">
-                    <th class="fw-bold">Approved By</th>
-                    <th class="fw-bold">Status</th>
-                    <th class="fw-bold">Action Date</th>
-                </tr>
-                <tr>
-                    <td>{{$projectAcceptance->user->name}}</td>
-                    <td>{{$projectAcceptance->status == 1 ? "Approved" : "Rejected" }}</td>
-                    <td>{{date("d M Y" , strtotime($projectAcceptance->approved_date)). " ". date("H:i a" , strtotime($projectAcceptance->approved_date))}}</td>
-                </tr>
-            </table>
-        </div>
+            <div class="row mt-4 mx-3">
+                <table class="table table-bordered">
+                    <tr class="bg-light">
+                        <th class="fw-bold">Approved By</th>
+                        <th class="fw-bold">Status</th>
+                        <th class="fw-bold">Action Date</th>
+                        <th class="fw-bold">Reason</th>
+                    </tr>
+                    <tr>
+                        <td>{{ $projectAcceptance->user->name }}</td>
+                        <td>{{ $projectAcceptance->status == 1 ? 'Approved' : 'Rejected' }}</td>
+                        <td>{{ date('d M Y', strtotime($projectAcceptance->approved_date)) . ' ' . date('H:i a', strtotime($projectAcceptance->approved_date)) }}
+                        <td>{{ $projectAcceptance->reason }}</td>
+                        </td>
+                    </tr>
+                </table>
+            </div>
         @endif
         <div class="row">
             <div class="col-md-12 d-flex justify-content-center">
-                <img src="{{ asset('storage/solen_logo.png') }}" width="250" height="200" alt="" class="">
+                <img src="{{ asset('storage/solen_logo.png') }}" width="250" height="200" alt=""
+                    class="">
             </div>
             <div class="col-md-12 d-flex justify-content-center mb-2">
                 <h4 class=" fw-bold flex-fill mb-0 mt-sm-0 text-center fs-10 text-uppercase">Project Acceptance
@@ -34,7 +38,9 @@
                         {{ $project->customer->first_name . ' ' . $project->customer->last_name }}</h5>
                 </div>
                 <div class="col-md-12 ">
-                    <h5 class="fs-10  flex-fill">Address : {{ $project->customer->state." ".$project->customer->city." ".$project->customer->street }}</h5>
+                    <h5 class="fs-10  flex-fill">Address :
+                        {{ $project->customer->state . ' ' . $project->customer->city . ' ' . $project->customer->street }}
+                    </h5>
                 </div>
                 <div class="col-md-12 ">
                     <h5 class="fs-10  flex-fill">Phone : {{ $project->customer->phone }}</h5>
@@ -43,7 +49,7 @@
         </div>
         <div class="col-md-12 d-flex justify-content-center mx-3">
             <img src="{{ !empty($projectAcceptance) ? asset('storage/project-acceptance/' . $projectAcceptance->image) : '' }}"
-                 width="100%" alt="" class=" mx-auto d-block">
+                width="100%" alt="" class=" mx-auto d-block">
         </div>
         <div class="row mt-4">
             <div class="col-md-12 d-flex justify-content-center">
@@ -51,9 +57,9 @@
             </div>
         </div>
         @php
-        // $basePrice = $project->customer->inverter->invertertyperates->base_cost + $project->overwrite_base_price;
-        $basePrice = $project->customer->finances->inverter_base_cost + $project->overwrite_base_price;
-        $moduleQtyPrice = $project->customer->module->amount + $project->overwrite_panel_price;
+            // $basePrice = $project->customer->inverter->invertertyperates->base_cost + $project->overwrite_base_price;
+            $basePrice = $project->customer->finances->inverter_base_cost + $project->overwrite_base_price;
+            $moduleQtyPrice = $project->customer->module->amount + $project->overwrite_panel_price;
         @endphp
         <div class="row mt-4 mx-3 bg-light">
             <table class="table table-bordered table-striped">
@@ -103,6 +109,16 @@
                 </h5>
             </div>
         </div>
+        @if (!empty($projectAcceptance) && $projectAcceptance->action_by == 0)
+            <div class="row mx-4 border-bottom mt-3">
+                <div class="col-md-12 ">
+                    <label for="customer_id" class="form-label">Reason : </label>
+                    <textarea class="form-control" id="reason" name="reason" rows="3"
+                        placeholder="Enter Reason in case of Rejection"></textarea>
+                    <span id="reason_message" class="text-danger"></span>
+                </div>
+            </div>
+        @endif
         @if ($mode == 'view')
             <div class="row mt-4 mx-3">
                 @if (!auth()->user()->hasAnyRole(['Manager', 'Sales Person']))
@@ -112,12 +128,14 @@
                     </div> --}}
                 @else
                     @if (!empty($projectAcceptance) && $projectAcceptance->action_by == 0)
-                        <div class="col-md-12">
-                            <button onclick="acceptanceAction('2','{{ $projectAcceptance->id }}','{{ $projectAcceptance->project_id }}')" type="button"
-                                class="btn btn-danger me-1 w-sm-100 float-right text-white"><i
+                        <div class="col-md-12 ">
+                            <button
+                                onclick="acceptanceAction('2','{{ $projectAcceptance->id }}','{{ $projectAcceptance->project_id }}')"
+                                type="button" class="btn btn-danger me-1 w-sm-100 float-right text-white"><i
                                     class="mr-1 icofont-close me-2 fs-6"></i>Reject</button>
-                            <button onclick="acceptanceAction('1','{{ $projectAcceptance->id }}','{{ $projectAcceptance->project_id }}')" type="button"
-                                class="btn btn-success me-1 w-sm-100 float-right text-white"><i
+                            <button
+                                onclick="acceptanceAction('1','{{ $projectAcceptance->id }}','{{ $projectAcceptance->project_id }}')"
+                                type="button" class="btn btn-success me-1 w-sm-100 float-right text-white"><i
                                     class="mr-1 icofont-tick-mark me-2 fs-6"></i> Approve</button>
                         </div>
                     @endif

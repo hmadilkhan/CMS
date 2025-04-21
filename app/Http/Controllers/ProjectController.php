@@ -647,6 +647,12 @@ class ProjectController extends Controller
             $query->where("department_id", $request->id);
             $subdepartmentsQuery->where("department_id", $request->id);
         }
+        if ($request->search != "") {
+            $query->whereHas('customer', function ($q) use ($request) {
+                $q->where('first_name', 'like', '%' . $request->search . '%')->orWhere('last_name', 'like', '%' . $request->search . '%')
+                  ->orWhere('street', 'like', '%' . $request->search . '%');
+            });
+        }
         if ($request->id == "all") {
             $subdepartmentsQuery->groupBy("department_id");
         }
@@ -1056,6 +1062,7 @@ class ProjectController extends Controller
                 "action_by" => auth()->user()->id,
                 "status" => $request->mode,
                 "approved_date" => date("Y-m-d H:i:s"),
+                "reason" => $request->reason,
             ]);
             $emailText = "<p>Hi " . $project->assignedPerson[0]->employee->name . "</p><p>The Project Acceptance Review for " . $project->customer->first_name . " " . $project->customer->last_name . " has been " . ($request->mode == 1 ? 'approved' : 'rejected') . "</p><p>Please take the necessary steps to continue moving the job forward.</p><p>Thank you!.</p>";
             $this->sendEmailForProjectAcceptance($project, "Project Acceptance Review Status - " . $project->customer->first_name . " " . $project->customer->last_name, $emailText, "engineering@solenenergyco.com");

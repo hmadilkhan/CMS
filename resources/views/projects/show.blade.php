@@ -2524,27 +2524,35 @@
     }
 
     function acceptanceAction(mode, id, projectId) {
-        $.ajax({
-            url: "{{ route('action.project.acceptance') }}", // The URL where the request is sent
-            type: 'POST',
-            data: {
-                "_token": "{{ csrf_token() }}",
-                id: id,
-                projectId: projectId,
-                mode: mode
-            },
-            success: function(response) {
-                if (response.status == 200) {
-                    getAcceptanceForm();
+        let reason = $("#reason").val();
+        $("#reason_message").html('');
+
+        if (mode == 2 && reason == "") {
+            $("#reason_message").html("Please Enter Reason");
+        }else{
+            $.ajax({
+                url: "{{ route('action.project.acceptance') }}", // The URL where the request is sent
+                type: 'POST',
+                data: {
+                    "_token": "{{ csrf_token() }}",
+                    id: id,
+                    projectId: projectId,
+                    mode: mode,
+                    reason: reason,
+                },
+                success: function(response) {
+                    if (response.status == 200) {
+                        getAcceptanceForm();
+                    }
+                    if (response.status == 500) {
+                        alert(response.message)
+                    }
+                },
+                error: function(xhr) {
+                    console.error('Error uploading file: ' + xhr.responseText);
                 }
-                if (response.status == 500) {
-                    alert(response.message)
-                }
-            },
-            error: function(xhr) {
-                console.error('Error uploading file: ' + xhr.responseText);
-            }
-        });
+            });
+        }
     }
 </script>
 @endsection
