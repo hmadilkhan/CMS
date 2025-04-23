@@ -22,6 +22,9 @@ class HomeController extends Controller
         if (!empty(auth()->user()->employee)) {
             $emails = Email::with("project","customer")->whereIn("project_id", Task::where("employee_id", auth()->user()->employee->id)->where("status", "!=", "Completed")->pluck("project_id"))->where("is_view", 1)->get();
         }
+        if (auth()->user()->hasRole("Super Admin")) {
+            return view('executive-dashboard');
+        }
         return view('dashboard', [
             "projects" => $this->projectService->projectQuery($request),
             "emails" => $emails
