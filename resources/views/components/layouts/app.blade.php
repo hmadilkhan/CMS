@@ -45,6 +45,26 @@
     <!-- Jquery Page Js -->
     <script src="{{ asset('page/template.js') }}"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script type="text/javascript">
+        $(document).ready(function() {
+            $('.select2').select2();
+        });
+        $('.datatable')
+            .addClass('nowrap')
+            .dataTable({
+                responsive: true,
+                columnDefs: [{
+                    targets: [-1, -3],
+                    className: 'dt-body-right'
+                }]
+            });
+        $(".sidebar").hover(function() {
+            $(".sidebar").removeClass("sidebar-mini")
+        }, function() {
+            $(".sidebar").addClass("sidebar-mini")
+        })
+        $(".sidebar").addClass("sidebar-mini")
+    </script>
     @livewireScripts
     @stack('scripts')
 </body>

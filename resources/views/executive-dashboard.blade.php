@@ -12,6 +12,5 @@
             <livewire:installation-chart :key="2" />
         </div>
     </div>
-
 </div>
 @endsection

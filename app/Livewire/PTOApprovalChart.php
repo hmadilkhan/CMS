@@ -7,7 +7,7 @@ use Livewire\Component;
 use Illuminate\Support\Facades\Log;
 use Carbon\Carbon;
 
-class InstallationChart extends Component
+class PTOApprovalChart extends Component
 {
     public $startDate;
     public $endDate;
@@ -29,34 +29,32 @@ class InstallationChart extends Component
 
     public function render()
     {
-        $installationStats = Project::selectRaw('
-            inverter_types.name as inverter_type,
-            COUNT(projects.id) as installation_count
+        $ptoStats = Project::selectRaw('
+            utility_company,
+            COUNT(projects.id) as pto_count
         ')
-        ->join('customers', 'projects.customer_id', '=', 'customers.id')
-        ->join('inverter_types', 'customers.inverter_type_id', '=', 'inverter_types.id')
-        ->whereDate('projects.solar_install_date', '>=', $this->startDate)
-        ->whereDate('projects.solar_install_date', '<=', $this->endDate)
-        ->whereNotNull('projects.solar_install_date')
-        ->groupBy('inverter_types.id', 'inverter_types.name')
+        ->whereDate('projects.pto_approval_date', '>=', $this->startDate)
+        ->whereDate('projects.pto_approval_date', '<=', $this->endDate)
+        ->whereNotNull('projects.pto_approval_date')
+        ->groupBy('utility_company')
         ->get();
 
         // Ensure we have at least some dummy data for testing
-        if ($installationStats->isEmpty()) {
-            $installationStats = collect([
+        if ($ptoStats->isEmpty()) {
+            $ptoStats = collect([
                 (object)[
-                    'inverter_type' => 'No Installations',
-                    'installation_count' => 0
+                    'utility_company' => 'No PTO Approvals',
+                    'pto_count' => 0
                 ]
             ]);
         }
 
         // Validate and format data
-        $labels = $installationStats->pluck('inverter_type')->map(function($label) {
+        $labels = $ptoStats->pluck('utility_company')->map(function($label) {
             return $label ?: 'Unknown';
         })->toArray();
 
-        $data = $installationStats->pluck('installation_count')->map(function($count) {
+        $data = $ptoStats->pluck('pto_count')->map(function($count) {
             return is_numeric($count) ? floatval($count) : 0;
         })->toArray();
 
@@ -82,7 +80,7 @@ class InstallationChart extends Component
                 '#f8f9fc'
             ]
         ];
-        $this->dispatch('refreshInstallationChart');
-        return view('livewire.dashboard.installation-chart');
+        $this->dispatch('refreshChart');
+        return view('livewire.dashboard.pto-approval-chart');
     }
 }

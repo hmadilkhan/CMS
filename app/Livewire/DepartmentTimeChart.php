@@ -4,9 +4,29 @@ namespace App\Livewire;
 
 use App\Models\Task;
 use Livewire\Component;
+use Illuminate\Support\Facades\Log;
+use Carbon\Carbon;
 
 class DepartmentTimeChart extends Component
 {
+    public $startDate;
+    public $endDate;
+    public $departmentChartData;
+
+    protected $listeners = ['datesUpdated' => 'updateDates'];
+
+    public function mount($startDate = null, $endDate = null)
+    {
+        $this->startDate = $startDate ? Carbon::parse($startDate)->format('Y-m-d') : Carbon::now()->startOfMonth()->format('Y-m-d');
+        $this->endDate = $endDate ? Carbon::parse($endDate)->format('Y-m-d') : Carbon::now()->endOfMonth()->format('Y-m-d');
+    }
+
+    public function updateDates($dates)
+    {
+        $this->startDate = Carbon::parse($dates['startDate'])->format('Y-m-d');
+        $this->endDate = Carbon::parse($dates['endDate'])->format('Y-m-d');
+    }
+
     public function render()
     {
         $departmentStats = Task::selectRaw('
@@ -15,6 +35,8 @@ class DepartmentTimeChart extends Component
             COUNT(tasks.id) as task_count
         ')
         ->join('departments', 'tasks.department_id', '=', 'departments.id')
+        ->whereDate('tasks.created_at', '>=', $this->startDate)
+        ->whereDate('tasks.created_at', '<=', $this->endDate)
         ->groupBy('departments.id', 'departments.name')
         ->get();
 
@@ -22,33 +44,37 @@ class DepartmentTimeChart extends Component
         if ($departmentStats->isEmpty()) {
             $departmentStats = collect([
                 (object)[
-                    'department_name' => 'Sample Department',
-                    'average_duration' => 5,
-                    'task_count' => 1
+                    'department_name' => 'No Data',
+                    'average_duration' => 0,
+                    'task_count' => 0
                 ]
             ]);
         }
 
-        // Convert data to proper numeric format and ensure no null values
-        $chartData = [
-            'labels' => $departmentStats->pluck('department_name')->toArray(),
-            'data' => $departmentStats->map(function($item) {
-                return floatval($item->average_duration);
-            })->toArray(),
+        // Validate and format data
+        $labels = $departmentStats->pluck('department_name')->map(function($label) {
+            return $label ?: 'Unknown';
+        })->toArray();
+
+        $data = $departmentStats->pluck('average_duration')->map(function($duration) {
+            return is_numeric($duration) ? floatval($duration) : 0;
+        })->toArray();
+
+        // Ensure we have valid data
+        if (empty($data) || array_sum($data) === 0) {
+            $labels = ['No Data'];
+            $data = [0];
+        }
+
+        $this->departmentChartData = [
+            'labels' => $labels,
+            'data' => $data,
             'colors' => [
                 '#4e73df', '#1cc88a', '#36b9cc', '#f6c23e', '#e74a3b',
                 '#5a5c69', '#858796', '#6f42c1', '#20c9a6', '#f8f9fc'
             ]
         ];
-
-        // Ensure we have at least one data point
-        if (empty($chartData['data'])) {
-            $chartData['data'] = [0];
-            $chartData['labels'] = ['No Data'];
-        }
-
-        return view('livewire.dashboard.department-time-chart', [
-            'chartData' => $chartData
-        ]);
+        $this->dispatch('refreshDepartmentChart');
+        return view('livewire.dashboard.department-time-chart');
     }
 } 

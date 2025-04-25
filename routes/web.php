@@ -13,6 +13,7 @@ use App\Http\Controllers\ProjectController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\TaskController;
 use App\Http\Controllers\ToolController;
+use App\Livewire\AdminDashboard;
 use App\Livewire\DynamicReport;
 use App\Livewire\DynamicReport\DynamicReportForm;
 use App\Models\InverterType;
@@ -63,6 +64,7 @@ Route::get('/track-your-project/{project_id}', [App\Http\Controllers\ProjectCont
 Route::post('show-website-emails', [App\Http\Controllers\ImapController::class, 'showEmails'])->name("show.website.emails");
 
 Route::middleware('auth')->group(function () {
+    Route::get('/admin-dashboard', AdminDashboard::class);
     Route::get('/dashboard', [App\Http\Controllers\HomeController::class, 'dashboard'])->name('dashboard');
     /* ADMIN ROUTES */
     Route::group(['middleware' => ['role:Super Admin']], function () {
