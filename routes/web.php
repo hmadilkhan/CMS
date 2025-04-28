@@ -64,8 +64,13 @@ Route::get('/track-your-project/{project_id}', [App\Http\Controllers\ProjectCont
 Route::post('show-website-emails', [App\Http\Controllers\ImapController::class, 'showEmails'])->name("show.website.emails");
 
 Route::middleware('auth')->group(function () {
-    Route::get('/admin-dashboard', AdminDashboard::class);
-    Route::get('/dashboard', [App\Http\Controllers\HomeController::class, 'dashboard'])->name('dashboard');
+    Route::get('/dashboard', [App\Http\Controllers\HomeController::class, 'dashboard'])
+        ->middleware('check.admin')
+        ->name('dashboard');
+    
+    Route::get('/admin-dashboard', AdminDashboard::class)
+        ->middleware('role:Super Admin')
+        ->name('admin.dashboard');
     /* ADMIN ROUTES */
     Route::group(['middleware' => ['role:Super Admin']], function () {
         Route::get('register/{id?}', [App\Http\Controllers\Auth\RegisteredUserController::class, 'create'])->name('get.register');
