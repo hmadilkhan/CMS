@@ -7,7 +7,7 @@ use Livewire\Component;
 use Illuminate\Support\Facades\Log;
 use Carbon\Carbon;
 
-class PTOApprovalChart extends Component
+class PtoApprovalChart extends Component
 {
     public $startDate;
     public $endDate;
