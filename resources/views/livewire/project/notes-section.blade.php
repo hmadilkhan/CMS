@@ -28,7 +28,7 @@
                         <label class="form-control mt-3" disabled rows="3">{{ $value->notes }}
                             <b><i>{{ !empty($value->user) ? '( Added by ' . $value->user->name . ')' : '' }}</i></b></label>
                         <label
-                            class="float-right mb-4 fst-italic">{{ !empty($value->user) ? $value->user->name .' on '.date("m/d/Y H:i:s",strtotime($value->user->created_at))  : '' }}</label>
+                            class="float-right mb-4 fst-italic">{{ !empty($value->user) ? $value->user->name .' on '.date("m/d/Y H:i:s",strtotime($value->created_at))  : '' }}</label>
 
                         <br />
                     </div>
