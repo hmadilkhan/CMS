@@ -120,8 +120,8 @@ class ProjectCost extends Component
 
     public function calcaulatePreEstimatedFields()
     {
-        $this->preEstimateMaterialCost = $this->inverterType->internal_base_cost + ($this->panelQty * $this->moduleType->internal_module_cost);
-        $this->preEstimateLaborCost = $this->inverterType->internal_labor_cost + ($this->panelQty * $this->laborCost->cost);
+        $this->preEstimateMaterialCost = $this->inverterType->internal_base_cost ?? 0 + ($this->panelQty ?? 0 * $this->moduleType->internal_module_cost ?? 0);
+        $this->preEstimateLaborCost = $this->inverterType->internal_labor_cost ?? 0 + ($this->panelQty ?? 0 * $this->laborCost->cost ?? 0);
     }
 
     public function render()
