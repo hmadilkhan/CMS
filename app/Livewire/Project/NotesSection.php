@@ -50,6 +50,11 @@ class NotesSection extends Component
         }
     }
 
+    public function deleteNote()
+    {
+        
+    }
+
     public function render()
     {
         $notes = DepartmentNote::where("project_id", $this->projectId)->where("department_id", $this->departmentId)->get();
