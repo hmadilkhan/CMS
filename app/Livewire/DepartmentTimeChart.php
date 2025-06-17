@@ -31,7 +31,7 @@ class DepartmentTimeChart extends Component
     {
         $departmentStats = Task::selectRaw('
             departments.name as department_name,
-            COALESCE(AVG(TIMESTAMPDIFF(HOUR, tasks.created_at, tasks.updated_at)), 0) as average_duration,
+             COALESCE(AVG(TIMESTAMPDIFF(DAY, tasks.created_at, tasks.updated_at)), 0) as average_duration,
             COUNT(tasks.id) as task_count
         ')
         ->join('departments', 'tasks.department_id', '=', 'departments.id')
@@ -39,6 +39,7 @@ class DepartmentTimeChart extends Component
         ->whereDate('tasks.created_at', '<=', $this->endDate)
         ->groupBy('departments.id', 'departments.name')
         ->get();
+
 
         // Ensure we have at least some dummy data for testing
         if ($departmentStats->isEmpty()) {

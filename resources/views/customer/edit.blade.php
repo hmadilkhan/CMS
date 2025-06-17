@@ -214,6 +214,14 @@
                         @enderror
                     </div>
 
+                    <div id="loadIdDiv" class="col-sm-4 ">
+                        <label for="exampleFormControlInput877" class="form-label">Loan Id</label>
+                        <input type="text" class="form-control" id="loanId" name="loanId" placeholder="loan Id" value="{{$customer->loan_id}}">
+                        @error('loanId')
+                            <div class="text-danger message mt-2">{{ $message }}</div>
+                        @enderror
+                    </div>
+
                     <div class="col-sm-4 mb-3">
                         <!-- <label for="exampleFormControlInput877" class="form-label">Battery Qty</label>
                         <input type="text" class="form-control" id="battery_qty" name="battery_qty" placeholder="Battery Qty">

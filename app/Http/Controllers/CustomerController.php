@@ -29,6 +29,7 @@ use Illuminate\Http\Request;
 use Illuminate\Mail\Mailables\Attachment;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Validation\Rule;
 
 class CustomerController extends Controller
 {
@@ -81,12 +82,17 @@ class CustomerController extends Controller
             'commission' => 'required',
             'dealer_fee' => 'required',
             'sales_partner_user_id' => 'required',
+            'loanId' => [
+                Rule::requiredIf(function () use ($request) {
+                    return !in_array((int) $request->finance_option_id, [1, 5]);
+                }),
+            ],
         ]);
 
         try {
             DB::beginTransaction();
-            $inverterBaseCost = InverterTypeRate::where("inverter_type_id",$request->inverter_type_id)->first();
-            $moduleCost = ModuleType::where("inverter_type_id",$request->inverter_type_id)->where("id",$request->module_type_id)->first();
+            $inverterBaseCost = InverterTypeRate::where("inverter_type_id", $request->inverter_type_id)->first();
+            $moduleCost = ModuleType::where("inverter_type_id", $request->inverter_type_id)->where("id", $request->module_type_id)->first();
             $customer = Customer::create([
                 "first_name" => $request->first_name,
                 "last_name" => $request->last_name,
@@ -106,6 +112,7 @@ class CustomerController extends Controller
                 "module_value" => $request->module_qty,
                 "notes" => $request->notes,
                 "is_adu" => $request->adu,
+                "loan_id" => $request->loadId,
             ]);
 
             CustomerFinance::create([
@@ -225,8 +232,8 @@ class CustomerController extends Controller
     {
         try {
             DB::beginTransaction();
-            $inverterBaseCost = InverterTypeRate::where("inverter_type_id",$request->inverter_type_id)->first();
-            $moduleCost = ModuleType::where("inverter_type_id",$request->inverter_type_id)->where("id",$request->module_type_id)->first();
+            $inverterBaseCost = InverterTypeRate::where("inverter_type_id", $request->inverter_type_id)->first();
+            $moduleCost = ModuleType::where("inverter_type_id", $request->inverter_type_id)->where("id", $request->module_type_id)->first();
             $customer->update([
                 "first_name" => $request->first_name,
                 "last_name" => $request->last_name,
@@ -245,8 +252,9 @@ class CustomerController extends Controller
                 "module_value" => $request->module_qty,
                 "notes" => $request->notes,
                 "is_adu" => $request->adu,
+                "loan_id" => $request->loadId,
             ]);
-            
+
             $customer->project->update([
                 "project_name" => $request->first_name . "-" . $request->last_name,
             ]);

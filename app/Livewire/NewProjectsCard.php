@@ -29,9 +29,11 @@ class NewProjectsCard extends Component
 
     public function render()
     {
-        $newProjects = Project::selectRaw('sales_partners.name as sales_partner_name, COUNT(projects.id) as project_count')
+        $newProjects = Project::selectRaw('sales_partners.name as sales_partner_name, COUNT(projects.id) as project_count, COALESCE(SUM(customer_finances.contract_amount), 0) as total_contract_amount')
             ->join('users', 'projects.sales_partner_user_id', '=', 'users.id')
             ->join('sales_partners', 'users.sales_partner_id', '=', 'sales_partners.id')
+            ->join('customers', 'projects.customer_id', '=', 'customers.id')
+            ->join('customer_finances', 'customers.id', '=', 'customer_finances.customer_id')
             ->whereDate('projects.created_at', '>=', $this->startDate)
             ->whereDate('projects.created_at', '<=', $this->endDate)
             ->whereNotNull('projects.sales_partner_user_id')
@@ -40,11 +42,14 @@ class NewProjectsCard extends Component
             ->get();
 			
 			$totalProjects = $newProjects->sum('project_count');
+            $totalContractAmount = $newProjects->sum('total_contract_amount');
+	
 
 
         return view('livewire.dashboard.new-projects-card', [
             'newProjects' => $newProjects,
-            'totalProjects' => $totalProjects
+            'totalProjects' => $totalProjects,
+            'totalContractAmount' => $totalContractAmount,
         ]);
     }
 } 

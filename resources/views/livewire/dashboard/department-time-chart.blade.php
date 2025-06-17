@@ -21,7 +21,7 @@
 
             const rawLabels = data.labels || ['No Data'];
             const rawData = data.data || [0];
-            const colors = data.colors || ['#ccc'];
+            const colors = data.colors || ['#fff'];
 
             const newData = {
                 labels: rawLabels,
@@ -103,7 +103,7 @@
                 tooltip: {
                     y: {
                         formatter: function(val) {
-                            return val.toFixed(1) + ' hours'
+                            return val.toFixed(1) + ' days'
                         }
                     }
                 }

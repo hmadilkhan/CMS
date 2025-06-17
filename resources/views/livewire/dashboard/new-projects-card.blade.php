@@ -18,7 +18,8 @@
                     <div class="d-flex w-100 justify-content-between align-items-center">
                         <div>
                             <h6 class="mb-1 fw-bold">{{ $partner->sales_partner_name }}</h6>
-                            <small class="text-muted">{{ $partner->project_count }} {{ Str::plural('project', $partner->project_count) }}</small>
+                            <small class="text-muted">{{ $partner->project_count }}
+                                {{ Str::plural('project', $partner->project_count) }}</small>
                         </div>
                         <span class="badge bg-primary rounded-pill">{{ $partner->project_count }}</span>
                     </div>
@@ -30,4 +31,14 @@
             @endforelse
         </div>
     </div>
-</div> 
+    <div class="card-footer bg-primary">
+        <div class="d-flex justify-content-between align-items-center ">
+            <div>
+                <h5 class="card-title mb-1 fw-bold text-white">Total Revenue</h5>
+            </div>
+            <div class="text-end">
+                <span class="badge bg-primary fw-bold text-white rounded-pill fs-6">$ {{ number_format($totalContractAmount,2) }}</span>
+            </div>
+        </div>
+    </div>
+</div>

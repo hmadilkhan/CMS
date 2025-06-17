@@ -8,11 +8,13 @@
                         <form wire:submit.prevent="updateDates" class="d-flex align-items-center gap-3">
                             <div class="d-flex align-items-center gap-2">
                                 <label for="startDate" class="form-label mb-0">From:</label>
-                                <input type="date" class="form-control form-control-sm" id="startDate" wire:model="startDate" style="width: 150px;">
+                                <input type="date" class="form-control form-control-sm" id="startDate"
+                                    wire:model="startDate" style="width: 150px;">
                             </div>
                             <div class="d-flex align-items-center gap-2">
                                 <label for="endDate" class="form-label mb-0">To:</label>
-                                <input type="date" class="form-control form-control-sm" id="endDate" wire:model="endDate" style="width: 150px;">
+                                <input type="date" class="form-control form-control-sm" id="endDate"
+                                    wire:model="endDate" style="width: 150px;">
                             </div>
                             <button type="submit" class="btn btn-primary btn-sm">Apply Filter</button>
                         </form>
@@ -21,10 +23,10 @@
             </div>
         </div>
         <div class="row g-4 mt-2">
-             <div class="col-md-4">
+            <div class="col-md-4">
                 <livewire:new-projects-card :startDate="$startDate" :endDate="$endDate" :key="'new-projects-' . time()" />
             </div>
-           <div class="col-md-4">
+            <div class="col-md-4">
                 <livewire:department-time-chart :startDate="$startDate" :endDate="$endDate" :key="'department-time-' . time()" />
             </div>
             <div class="col-md-4">
@@ -32,6 +34,12 @@
             </div>
             <div class="col-md-4">
                 <livewire:pto-approval-chart :startDate="$startDate" :endDate="$endDate" :key="'pto-approval-' . time()" />
+            </div>
+            <div class="col-md-4">
+                <livewire:dashboard.stats-cards :startDate="$startDate" :endDate="$endDate" :key="'stats-cards-' . time()" />
+            </div>
+            <div class="col-md-4">
+                <livewire:dashboard.widgets-cards :startDate="$startDate" :endDate="$endDate" :key="'widget-cards-' . time()" />
             </div>
         </div>
     </div>
