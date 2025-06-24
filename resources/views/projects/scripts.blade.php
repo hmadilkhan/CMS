@@ -19,7 +19,11 @@
         })
     }
 
-    $("#btnSearch").click(function(){
+    // $("#btnSearch").click(function(){
+    //     projectList('all');
+    // })
+    
+    $("#search").keypress(function(){
         projectList('all');
     })
 

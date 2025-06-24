@@ -492,7 +492,7 @@
         window.location.href = "{{ url('projects') }}" + "/" + id + "/ghost" ;
     }
 </script>
-<!-- <div class="row g-3 gy-5 py-3 row-deck">
+{{-- <div class="row g-3 gy-5 py-3 row-deck">
     @foreach ($projects as $project)
 <div class="col-xxl-4 col-xl-4 col-lg-4 col-md-6 col-sm-6">
         <div class="card">
@@ -565,4 +565,4 @@
     </div>
 @endforeach
 
-</div> -->
+</div> --}}
