@@ -11,6 +11,7 @@ use Livewire\Component;
 
 class NotesSection extends Component
 {
+    public $editingNoteId = null;
     public $projectId = "";
     public $taskId = "";
     public $departmentId = "";
@@ -75,6 +76,15 @@ class NotesSection extends Component
             //throw $th;
             dd($th->getMessage());
         }
+    }
+
+    public function editNote($id)
+    {
+        $note = DepartmentNote::findOrFail($id);
+        $this->departmentNote = $note->notes;
+        $this->projectId = $note->project_id;
+        $this->taskId = $note->task_id;
+        $this->departmentId = $note->department_id;
     }
 
     public function deleteNote($id)

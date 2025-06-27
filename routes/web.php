@@ -115,6 +115,7 @@ Route::middleware('auth')->group(function () {
 
     Route::post('get-employees-with-department', [App\Http\Controllers\EmployeeController::class, 'getDepartmentEmployees'])->name('get.employee.department');
 
+    Route::post('get-finance-option-by-id', [App\Http\Controllers\CustomerController::class, 'getFinanceOptionById'])->name('get.finance.option.by.id');
     Route::post('get-loan-terms', [App\Http\Controllers\CustomerController::class, 'getLoanTerms'])->name('get.loan.terms');
     Route::post('get-loan-aprs', [App\Http\Controllers\CustomerController::class, 'getLoanAprs'])->name('get.loan.aprs');
     Route::post('get-dealer-fee', [App\Http\Controllers\CustomerController::class, 'getDealerFee'])->name('get.dealer.fee');

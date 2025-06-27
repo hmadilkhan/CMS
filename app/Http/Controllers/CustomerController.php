@@ -113,6 +113,7 @@ class CustomerController extends Controller
                 "notes" => $request->notes,
                 "is_adu" => $request->adu,
                 "loan_id" => $request->loadId,
+                "sold_production_value" => $request->sold_production_value,
             ]);
 
             CustomerFinance::create([
@@ -253,6 +254,7 @@ class CustomerController extends Controller
                 "notes" => $request->notes,
                 "is_adu" => $request->adu,
                 "loan_id" => $request->loadId,
+                "sold_production_value" => $request->sold_production_value,
             ]);
 
             $customer->project->update([
@@ -323,6 +325,16 @@ class CustomerController extends Controller
         try {
             $terms = LoanTerm::where("finance_option_id", $request->id)->get();
             return response()->json(["status" => 200, "terms" => $terms]);
+        } catch (\Throwable $th) {
+            return response()->json(["status" => 200, "message" => $th->getMessage()]);
+        }
+    }
+
+    public function getFinanceOptionById(Request $request)
+    {
+        try {
+            $financeOptions = FinanceOption::where("id", $request->id)->first();
+            return response()->json(["status" => 200, "finance_options" => $financeOptions]);
         } catch (\Throwable $th) {
             return response()->json(["status" => 200, "message" => $th->getMessage()]);
         }

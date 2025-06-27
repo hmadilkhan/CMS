@@ -247,6 +247,10 @@ class OperationController extends Controller
                 DB::beginTransaction();
                 $finance = FinanceOption::create([
                     "name" => $request->name,
+                    "loan_id" => $request->loan_id,
+                    "production_requirements" => $request->production_requirements,
+                    "positive_variance" => $request->positive_variance,
+                    "negative_variance" => $request->negative_variance,
                 ]);
                 LoanTerm::create([
                     "finance_option_id" => $finance->id,
@@ -273,6 +277,10 @@ class OperationController extends Controller
         try {
             $adder = FinanceOption::find($request->id);
             $adder->name = $request->name;
+            $adder->loan_id = $request->loan_id;
+            $adder->production_requirements = $request->production_requirements;
+            $adder->positive_variance = $request->positive_variance;
+            $adder->negative_variance = $request->negative_variance;
             $adder->save();
             return redirect()->route("finance.option.types");
         } catch (\Throwable $th) {

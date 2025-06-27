@@ -58,11 +58,14 @@
                 @if ($value->notes != '')
                     <div>
                         <div class="d-flex justify-content-between  align-items-center">
-                            <label class="form-control mt-3" disabled rows="3">{{ $value->notes }}
-                                <b><i>{{ !empty($value->user) ? '( Added by ' . $value->user->name . ')' : '' }}</i></b></label>
-                            <i class="icofont-trash text-danger mt-2 fs-4 ml-1" style="cursor: pointer;"
-                                wire:click="deleteNote({{ $value->id }})"
-                                wire:confirm="Are you sure that you want to delete ?"></i>
+                            <label class="form-control mt-3" disabled rows="3">{{ $value->notes }}</label>
+                            @if ($value->user_id == auth()->user()->id)
+                                <i class="icofont-pencil text-warning mt-2 fs-4 ml-1" style="cursor: pointer;"
+                                    wire:click="editNote({{ $value->id }})"></i>
+                                <i class="icofont-trash text-danger mt-2 fs-4 ml-1" style="cursor: pointer;"
+                                    wire:click="deleteNote({{ $value->id }})"
+                                    wire:confirm="Are you sure that you want to delete ?"></i>
+                            @endif
                         </div>
                         <div class="float-right">
                             <label
