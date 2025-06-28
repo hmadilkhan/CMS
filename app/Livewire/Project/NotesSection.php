@@ -35,8 +35,15 @@ class NotesSection extends Component
         try {
             // Optional: get mentions from frontend (pass as hidden input or refetch from note)
             $project = Project::with("department")->findOrFail($this->projectId);
-            preg_match_all('/@([\w\s]+)/', $this->departmentNote, $matches);
+            preg_match_all('/@(\d+):([^@\s]+)/', $this->departmentNote, $matches);
             $mentionedIds = $matches[1];
+
+            // Create clean note text with only names (no IDs)
+            $cleanNote = $this->departmentNote;
+            foreach ($matches[0] as $index => $fullMatch) {
+                $employeeName = $matches[2][$index];
+                $cleanNote = str_replace($fullMatch, "@{$employeeName}", $cleanNote);
+            }
 
             $employees = Employee::whereIn('id', $mentionedIds)->get();
             foreach ($employees as $employee) {
@@ -45,7 +52,7 @@ class NotesSection extends Component
                     "department_id" =>$this->departmentId,
                     "employee_id" => $employee->id,
                 ]);
-                Mail::raw("You have been mentioned in a new note in the (".$project->department->name.") department by (".auth()->user()->name.")", function ($message) use ($employee, $project) {
+                Mail::raw("You have been mentioned in a new note in the department (".$project->department->name.") added by (".auth()->user()->name.")", function ($message) use ($employee, $project) {
                     $message->to($employee->email)
                         ->subject('New Project Notes Mention - (' . $project->project_name . ') - (' . $project->department->name . ')');
                 });
@@ -55,7 +62,7 @@ class NotesSection extends Component
                 "project_id" => $this->projectId,
                 "task_id" => $this->taskId,
                 "department_id" => $this->departmentId,
-                "notes" => $this->departmentNote,
+                "notes" => $cleanNote, // Store clean note with only names
                 "user_id" => auth()->user()->id,
             ]);
 
@@ -66,9 +73,9 @@ class NotesSection extends Component
                 ->causedBy(auth()->user()) // Log who did the action
                 ->setEvent("updated")
                 ->withProperties([
-                    'notes' => $this->departmentNote,
+                    'notes' => $cleanNote,
                 ])
-                ->log("{$username} added the notes to the project : {$this->departmentNote}.");
+                ->log("{$username} added the notes to the project : {$cleanNote}.");
 
             $this->departmentNote = "";
             $this->dispatch('refresh');
@@ -81,10 +88,77 @@ class NotesSection extends Component
     public function editNote($id)
     {
         $note = DepartmentNote::findOrFail($id);
+        $this->editingNoteId = $id;
         $this->departmentNote = $note->notes;
         $this->projectId = $note->project_id;
         $this->taskId = $note->task_id;
         $this->departmentId = $note->department_id;
+    }
+
+    public function updateNote()
+    {
+        $this->validate();
+        try {
+            $note = DepartmentNote::findOrFail($this->editingNoteId);
+            $oldNote = $note->notes;
+            
+            // Get mentions from the updated note
+            $project = Project::with("department")->findOrFail($this->projectId);
+            preg_match_all('/@(\d+):([^@\s]+)/', $this->departmentNote, $matches);
+            $mentionedIds = $matches[1];
+
+            // Create clean note text with only names (no IDs)
+            $cleanNote = $this->departmentNote;
+            foreach ($matches[0] as $index => $fullMatch) {
+                $employeeName = $matches[2][$index];
+                $cleanNote = str_replace($fullMatch, "@{$employeeName}", $cleanNote);
+            }
+
+            // Send emails to mentioned employees
+            $employees = Employee::whereIn('id', $mentionedIds)->get();
+            foreach ($employees as $employee) {
+                NotesMention::create([
+                    "project_id" => $this->projectId,
+                    "department_id" => $this->departmentId,
+                    "employee_id" => $employee->id,
+                ]);
+                Mail::raw("You have been mentioned in an updated note in the department (".$project->department->name.") added by (".auth()->user()->name.")", function ($message) use ($employee, $project) {
+                    $message->to($employee->email)
+                        ->subject('Updated Project Notes Mention - (' . $project->project_name . ') - (' . $project->department->name . ')');
+                });
+            }
+            
+            // Update the note with clean text (only names)
+            $note->update([
+                "notes" => $cleanNote,
+            ]);
+
+            $username = auth()->user()->name;
+
+            activity('project')
+                ->performedOn($project)
+                ->causedBy(auth()->user()) // Log who did the action
+                ->setEvent("updated")
+                ->withProperties([
+                    'old_notes' => $oldNote,
+                    'new_notes' => $cleanNote,
+                ])
+                ->log("{$username} updated the notes from '{$oldNote}' to '{$cleanNote}'.");
+
+            // Reset editing state
+            $this->editingNoteId = null;
+            $this->departmentNote = "";
+            $this->dispatch('refresh');
+        } catch (\Throwable $th) {
+            //throw $th;
+            dd($th->getMessage());
+        }
+    }
+
+    public function cancelEdit()
+    {
+        $this->editingNoteId = null;
+        $this->departmentNote = "";
     }
 
     public function deleteNote($id)
