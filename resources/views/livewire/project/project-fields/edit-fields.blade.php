@@ -9,13 +9,15 @@
             <input type="hidden" id="project_id" wire:model="projectId" name="project_id" />
             <input type="hidden" id="forward" name="forward" />
             @if ($departmentId == 1)
-                <div class="col-sm-3 mb-3 ">
+                <div class="col-sm-4 mb-3 ">
                     <label for="utility_company" class="form-label" id="requiredfiles">Utility Company</label>
-                    <select class="form-select" aria-label="Default select HOA" wire:model.live="utility_company" id="utility_company"
-                        name="utility_company">
+                    <select class="form-select" aria-label="Default select HOA" wire:model.live="utility_company"
+                        id="utility_company" name="utility_company">
                         <option value="">Select Utility Company</option>
                         @foreach ($utilityCompanies as $utility)
-                            <option {{ $project->utility_company != '' && $project->utility_company == $utility->name ? 'selected' : '' }} value="{{$utility->name}}">{{$utility->name}}</option>
+                            <option
+                                {{ $project->utility_company != '' && $project->utility_company == $utility->name ? 'selected' : '' }}
+                                value="{{ $utility->name }}">{{ $utility->name }}</option>
                         @endforeach
                     </select>
                     {{-- <input class="form-control" type="text" id="utility_company" name="utility_company"
@@ -24,7 +26,7 @@
                         <div id="utility_company_message" class="text-danger message mt-2">{{ $message }}</div>
                     @enderror
                 </div>
-                <div class="col-sm-3 mb-3 ">
+                <div class="col-sm-4 mb-3 ">
                     <label for="ntp_approval_date" class="form-label" id="requiredfiles">NTP Approval Date</label>
                     <input class="form-control" type="date" id="ntp_approval_date" name="ntp_approval_date"
                         wire:model="ntp_approval_date">
@@ -32,7 +34,7 @@
                         <div id="ntp_approval_date_message" class="text-danger message mt-2">{{ $message }}</div>
                     @enderror
                 </div>
-                <div class="col-sm-3 ">
+                <div class="col-sm-4 ">
                     <label for="hoa" class="form-label">HOA</label>
                     <select class="form-select" aria-label="Default select HOA" wire:model.live="hoa" id="hoa"
                         name="hoa">
@@ -47,7 +49,7 @@
                     @enderror
                 </div>
                 @if ($hoa == 'yes')
-                    <div class="col-sm-3 mb-3" id="hoa_select">
+                    <div class="col-sm-4 mb-3" id="hoa_select">
                         <label for="hoa_phone_number" class="form-label" id="requiredfiles">Phone Number Field</label>
                         <input class="form-control" type="text" id="hoa_phone_number" name="hoa_phone_number"
                             wire:model="hoa_phone_number">
@@ -58,7 +60,7 @@
                 @endif
             @endif
             @if ($departmentId == 2)
-                <div class="col-sm-3 mb-3 ">
+                <div class="col-sm-4 mb-3 ">
                     <label for="site_survey_link" class="form-label" id="requiredfiles">Site Survey Link</label>
                     <input class="form-control" type="text" id="site_survey_link" name="site_survey_link"
                         wire:model="site_survey_link">
@@ -68,7 +70,7 @@
                 </div>
             @endif
             @if ($departmentId == 3)
-                <div class="col-sm-3 ">
+                <div class="col-sm-4 ">
                     <label for="hoa" class="form-label">Adders Approved</label>
                     <select class="form-select" aria-label="Default select Adders Approved" id="adders_approve_checkbox"
                         name="adders_approve_checkbox" wire:model="adders_approve_checkbox">
@@ -84,7 +86,7 @@
                         <div class="text-danger message mt-2">{{ $message }}</div>
                     @enderror
                 </div>
-                <div class="col-sm-3 ">
+                <div class="col-sm-4 ">
                     <label for="mpu_required" class="form-label">MPU Required {{ $mpu_required }}</label>
                     <select class="form-select" aria-label="Default select MPU Required" id="mpu_required"
                         name="mpu_required" wire:model.live="mpu_required">
@@ -99,7 +101,7 @@
                     @enderror
                 </div>
                 @if ($mpu_required == 'yes')
-                    <div class="col-sm-3 mb-3 mpuselect">
+                    <div class="col-sm-4 mb-3 mpuselect">
                         <label for="meter_spot_request_date" class="form-label" id="requiredfiles">Meter Spot Request
                             Date</label>
                         <input class="form-control" type="date" id="meter_spot_request_date"
@@ -111,7 +113,7 @@
                         @enderror
                     </div>
 
-                    <div class="col-sm-3 mb-3 mpuselect">
+                    <div class="col-sm-4 mb-3 mpuselect">
                         <label for="meter_spot_request_number" class="form-label" id="requiredfiles">Meter Spot
                             Request
                             Number</label>
@@ -124,7 +126,7 @@
                         @enderror
                     </div>
                 @endif
-                <div class="col-sm-3 ">
+                <div class="col-sm-4 mb-3">
                     <label for="meter_spot_result" class="form-label">Meter Spot Result</label>
                     <select class="form-select" aria-label="Default select Meter Spot Result" id="meter_spot_result"
                         name="meter_spot_result" wire:model="meter_spot_result">
@@ -140,10 +142,20 @@
                         <div class="text-danger message mt-2">{{ $message }}</div>
                     @enderror
                 </div>
+                @if ($production_requirement == 1)
+                    <div class=" col-sm-5 mb-3 mt-1 ">
+                        <label for="production_value_achieved" class="form-label">Production Value Achieved</label>
+                        <input class="form-control" type="text" id="production_value_achieved"
+                            name="production_value_achieved" wire:model="production_value_achieved">
+                    </div>
+                    @error('production_value_achieved')
+                    <div class="text-danger message mt-2">{{ $message }}</div>
+                @enderror
+                @endif
             @endif
 
             @if ($departmentId == 4)
-                <div class="col-sm-3 mb-3 ">
+                <div class="col-sm-4 mb-3 ">
                     <label for="permitting_submittion_date" class="form-label">Permit Submission Date</label>
                     <input class="form-control" type="date" id="permitting_submittion_date"
                         name="permitting_submittion_date" wire:model="permitting_submittion_date">
@@ -152,7 +164,7 @@
                         </div>
                     @enderror
                 </div>
-                <div class="col-sm-3 mb-3 ">
+                <div class="col-sm-4 mb-3 ">
                     <label for="actual_permit_fee" class="form-label">Actual Permit Fee</label>
                     <input class="form-control" type="text" id="actual_permit_fee" name="actual_permit_fee"
                         wire:model="actual_permit_fee">
@@ -160,7 +172,7 @@
                         <div id="actual_permit_fee_message" class="text-danger message mt-2">{{ $message }}</div>
                     @enderror
                 </div>
-                <div class="col-sm-3 mb-3 ">
+                <div class="col-sm-4 mb-3 ">
                     <label for="permitting_approval_date" class="form-label">Permit Approval Date</label>
                     <input class="form-control" type="date" id="permitting_approval_date"
                         name="permitting_approval_date" wire:model="permitting_approval_date">
@@ -171,7 +183,7 @@
                 </div>
                 <input type="hidden" name="projecthoa" value="{{ $project->hoa }}" />
                 @if ($project->hoa == 'yes')
-                    <div class="col-sm-3 mb-3 ">
+                    <div class="col-sm-4 mb-3 ">
                         <label for="hoa_approval_request_date" class="form-label">HOA Approval Request Date</label>
                         <input class="form-control" type="date" id="hoa_approval_request_date"
                             name="hoa_approval_request_date" wire:model="hoa_approval_request_date">
@@ -180,7 +192,7 @@
                                 {{ $message }}</div>
                         @enderror
                     </div>
-                    <div class="col-sm-3 mb-3 ">
+                    <div class="col-sm-4 mb-3 ">
                         <label for="hoa_approval_date" class="form-label">HOA Approval Date</label>
                         <input class="form-control" type="date" id="hoa_approval_date" name="hoa_approval_date"
                             wire:model="hoa_approval_date">
@@ -192,7 +204,7 @@
                 @endif
             @endif
             @if ($departmentId == 5)
-                <div class="col-sm-3 mb-3 ">
+                <div class="col-sm-4 mb-3 ">
                     <label for="solar_install_date" class="form-label">Solar Install Date </label>
                     <input class="form-control" type="date" id="solar_install_date" name="solar_install_date"
                         wire:model="solar_install_date">
@@ -200,7 +212,7 @@
                         <div id="solar_install_date_message" class="text-danger message mt-2">{{ $message }}</div>
                     @enderror
                 </div>
-                <div class="col-sm-3 mb-3 ">
+                <div class="col-sm-4 mb-3 ">
                     <label for="battery_install_date" class="form-label">Battery Install Date</label>
                     <input class="form-control" type="date" id="battery_install_date" name="battery_install_date"
                         wire:model="battery_install_date">
@@ -208,21 +220,23 @@
                         <div id="battery_install_date_message" class="text-danger message mt-2">{{ $message }}</div>
                     @enderror
                 </div>
-                <div class="col-sm-3 ">
+                <div class="col-sm-4 ">
                     <label for="placards_ordered" class="form-label">Placards Required</label>
                     <select class="form-select" aria-label="Default select MPU Required" id="placards_ordered"
                         name="placards_ordered" wire:model.live="placards_ordered">
                         <option value="">Select Placards Required</option>
-                        <option {{ $project->placards_ordered != '' && $project->placards_ordered == 'yes' ? 'selected' : '' }}
+                        <option
+                            {{ $project->placards_ordered != '' && $project->placards_ordered == 'yes' ? 'selected' : '' }}
                             value="yes">Yes</option>
-                        <option {{ $project->placards_ordered != '' && $project->placards_ordered == 'no' ? 'selected' : '' }}
+                        <option
+                            {{ $project->placards_ordered != '' && $project->placards_ordered == 'no' ? 'selected' : '' }}
                             value="no">No</option>
                     </select>
                     @error('placards_ordered')
                         <div class="text-danger message mt-2">{{ $message }}</div>
                     @enderror
                 </div>
-                <div class="col-sm-3 mb-3 ">
+                <div class="col-sm-4 mb-3 ">
                     <label for="placards_note" class="form-label">Placards Note</label>
                     <input class="form-control" type="text" id="placards_note" name="placards_note"
                         wire:model="placards_note">
@@ -230,7 +244,7 @@
                         <div id="placards_note_message" class="text-danger message mt-2">{{ $message }}</div>
                     @enderror
                 </div>
-                {{-- <div class="col-sm-3 mb-3 ">
+                {{-- <div class="col-sm-4 mb-3 ">
                     <label for="actual_labor_cost" class="form-label">Actual Labor Cost</label>
                     <input class="form-control" type="text" id="actual_labor_cost" name="actual_labor_cost"
                         wire:model="actual_labor_cost">
@@ -238,7 +252,7 @@
                         <div id="actual_labor_cost_message" class="text-danger message mt-2">{{ $message }}</div>
                     @enderror
                 </div>
-                <div class="col-sm-3 mb-3 ">
+                <div class="col-sm-4 mb-3 ">
                     <label for="actual_material_cost" class="form-label">Actual Material Cost</label>
                     <input class="form-control" type="text" id="actual_material_cost" name="actual_material_cost"
                         wire:model="actual_material_cost">
@@ -247,7 +261,7 @@
                     @enderror
                 </div> --}}
                 @if ($project->mpu_required == 'yes')
-                    <div class="col-sm-3 mb-3 ">
+                    <div class="col-sm-4 mb-3 ">
                         <label for="mpu_install_date" class="form-label">MPU Install Date</label>
                         <input class="form-control" type="date" id="mpu_install_date" name="mpu_install_date"
                             wire:model="mpu_install_date">
@@ -258,7 +272,7 @@
                 @endif
             @endif
             @if ($departmentId == 6)
-                <div class="col-sm-3 mb-3 ">
+                <div class="col-sm-4 mb-3 ">
                     <label for="rough_inspection_date" class="form-label">Rough Inspection Date</label>
                     <input class="form-control" type="date" id="rough_inspection_date"
                         name="rough_inspection_date" wire:model="rough_inspection_date">
@@ -267,7 +281,7 @@
                         </div>
                     @enderror
                 </div>
-                <div class="col-sm-3 mb-3 ">
+                <div class="col-sm-4 mb-3 ">
                     <label for="final_inspection_date" class="form-label">Final Inspection Date</label>
                     <input class="form-control" type="date" id="final_inspection_date"
                         name="final_inspection_date" wire:model="final_inspection_date">
@@ -278,7 +292,7 @@
                 </div>
             @endif
             @if ($departmentId == 7)
-                <div class="col-sm-3 mb-3 ">
+                <div class="col-sm-4 mb-3 ">
                     <label for="pto_submission_date" class="form-label">PTO Submission Date</label>
                     <input class="form-control" type="date" id="pto_submission_date" name="pto_submission_date"
                         wire:model="pto_submission_date">
@@ -286,7 +300,7 @@
                         <div id="pto_submission_date_message" class="text-danger message mt-2">{{ $message }}</div>
                     @enderror
                 </div>
-                <div class="col-sm-3 mb-3 ">
+                <div class="col-sm-4 mb-3 ">
                     <label for="pto_approval_date" class="form-label">PTO Approval Date</label>
                     <input class="form-control" type="date" id="pto_approval_date" name="pto_approval_date"
                         wire:model="pto_approval_date">
@@ -296,7 +310,7 @@
                 </div>
             @endif
             @if ($departmentId == 8)
-                <div class="col-sm-3 mb-3 ">
+                <div class="col-sm-4 mb-3 ">
                     <label for="coc_packet_mailed_out_date" class="form-label">COC Packet</label>
                     <input class="form-control" type="date" id="coc_packet_mailed_out_date"
                         name="coc_packet_mailed_out_date" wire:model="coc_packet_mailed_out_date">

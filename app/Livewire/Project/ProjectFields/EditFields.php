@@ -12,6 +12,7 @@ class EditFields extends Component
     // PROJECT OBJECT
     public $project;
     public $ghost;
+    public $production_requirement;
 
     // MAIN FIELDS
     public $projectId;
@@ -32,6 +33,7 @@ class EditFields extends Component
     public $meter_spot_request_date;
     public $meter_spot_request_number;
     public $meter_spot_result;
+    public $production_value_achieved;
 
     // FORTH DEPARTMENT
     public $permitting_submittion_date;
@@ -69,7 +71,9 @@ class EditFields extends Component
     {
         $this->projectId = $this->project->id;
         $this->departmentId = $this->project->department_id;
-
+        $this->project = Project::with('customer','customer.finances','customer.finances.finance','customer.finances.term','customer.finances.apr')->findOrFail($this->projectId);
+        $this->production_requirement = $this->project->customer->finances->finance->production_requirements;
+        
         // FIRST DEPARTMENT
         $this->utility_company = $this->project->utility_company;
         $this->ntp_approval_date = $this->project->ntp_approval_date;
@@ -85,6 +89,7 @@ class EditFields extends Component
         $this->meter_spot_request_date = $this->project->meter_spot_request_date;
         $this->meter_spot_request_number = $this->project->meter_spot_request_number;
         $this->meter_spot_result = $this->project->meter_spot_result;
+        $this->production_value_achieved = $this->project->production_value_achieved;
 
         // FORTH DEPARTMENT
         $this->permitting_submittion_date = $this->project->permitting_submittion_date;
@@ -120,7 +125,9 @@ class EditFields extends Component
     public function updateProjectFields()
     {
         $customMessages = [];
-        $project = Project::findOrFail($this->projectId);
+        $project = $this->project;//Project::with('customer','customer.finances','customer.finances.finance','customer.finances.term','customer.finances.apr')->findOrFail($this->projectId);
+        $this->production_requirement = $project->customer->finances->finance->production_requirements;
+
         if ($this->departmentId == 1) {
             $data = [
                 'utility_company' => 'required_if:departmentId,1|string',
@@ -158,7 +165,11 @@ class EditFields extends Component
                     return  $this->mpu_required == "yes";
                 }),
                 'meter_spot_result' => 'required_if:departmentId,3|string',
+                'production_value_achieved' =>  Rule::requiredIf(function () {
+                    return  $this->production_requirement == 1;
+                }),
             ];
+            
 
             $customMessages = [
                 'adders_approve_checkbox.required_if' => 'The adders approve checkbox is required for this department.',
@@ -166,6 +177,7 @@ class EditFields extends Component
                 'meter_spot_request_date.required_if' => 'The meter spot request date is required if MPU is required.',
                 'meter_spot_request_number.required_if' => 'The meter spot request number is required if MPU is required.',
                 'meter_spot_result.required_if' => 'The meter spot result is required for this department.',
+                'production_value_achieved.required_if' => 'The production value achieved is required for this department.',
             ];
         }
         if ($this->departmentId == 4) {
@@ -257,12 +269,33 @@ class EditFields extends Component
         }
 
         if ($this->departmentId == 3) {
+            $positive = $project->customer->finances->finance->positive_variance;
+            $negative = $project->customer->finances->finance->negative_variance * -1; // Make negative
+            $sold_production_value = $project->customer->sold_production_value;
+
+            $calculatePercentage = ((($this->production_value_achieved/ $sold_production_value) - 1) * 100);
+            // dd($calculatePercentage, $negative,bccomp($calculatePercentage, $negative, 2),bccomp($calculatePercentage, $positive, 2));
+            // Check if calculated percentage is within the allowed variance range (inclusive)
+            // if (bccomp($calculatePercentage, $negative, 2) == -1) {
+            //     $this->addError('production_value_achieved', "Calculated Percentage (" . number_format($calculatePercentage, 2) . "%) is exceeding the allowed variance range.");
+            //     return;
+            // }else if(bccomp($calculatePercentage, $positive, 2) == -1){
+            //     $this->addError('production_value_achieved', "Calculated Percentage (" . number_format($calculatePercentage, 2) . "%) is exceeding the allowed variance range.");
+            //     return;
+            // }
+
+            if (bccomp($calculatePercentage, $negative, 2) <= 0 || bccomp($calculatePercentage, $positive, 2) >= 0) {
+                $this->addError('production_value_achieved', "Calculated Percentage (" . number_format($calculatePercentage, 2) . "%) is exceeding the allowed variance range.");
+                return;
+            }
+
             $updateItems = array_merge($updateItems, [
                 "adders_approve_checkbox" => $this->adders_approve_checkbox,
                 "mpu_required" => $this->mpu_required,
                 "meter_spot_request_date" => $this->meter_spot_request_date,
                 "meter_spot_request_number" => $this->meter_spot_request_number,
                 "meter_spot_result" => $this->meter_spot_result,
+                "production_value_achieved" => $this->production_value_achieved,
             ]);
         }
 
