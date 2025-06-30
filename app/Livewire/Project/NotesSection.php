@@ -45,17 +45,19 @@ class NotesSection extends Component
                 $cleanNote = str_replace($fullMatch, "@{$employeeName}", $cleanNote);
             }
 
-            $employees = Employee::whereIn('id', $mentionedIds)->get();
+            $employees = Employee::with("user")->whereIn('id', $mentionedIds)->get();
             foreach ($employees as $employee) {
                 NotesMention::create([
                     "project_id" => $this->projectId,
-                    "department_id" =>$this->departmentId,
+                    "department_id" => $this->departmentId,
                     "employee_id" => $employee->id,
                 ]);
-                Mail::raw("You have been mentioned in a new note in the department (".$project->department->name.") added by (".auth()->user()->name.")", function ($message) use ($employee, $project) {
-                    $message->to($employee->email)
-                        ->subject('New Project Notes Mention - (' . $project->project_name . ') - (' . $project->department->name . ')');
-                });
+                if ($employee->user && $employee->user->email_preference == 1) {
+                    Mail::raw("You have been mentioned in a new note in the department (" . $project->department->name . ") added by (" . auth()->user()->name . ")", function ($message) use ($employee, $project) {
+                        $message->to($employee->email)
+                            ->subject('New Project Notes Mention - (' . $project->project_name . ') - (' . $project->department->name . ')');
+                    });
+                }
             }
 
             DepartmentNote::create([
@@ -101,7 +103,7 @@ class NotesSection extends Component
         try {
             $note = DepartmentNote::findOrFail($this->editingNoteId);
             $oldNote = $note->notes;
-            
+
             // Get mentions from the updated note
             $project = Project::with("department")->findOrFail($this->projectId);
             preg_match_all('/@(\d+):([^@\s]+)/', $this->departmentNote, $matches);
@@ -115,19 +117,21 @@ class NotesSection extends Component
             }
 
             // Send emails to mentioned employees
-            $employees = Employee::whereIn('id', $mentionedIds)->get();
+            $employees = Employee::with("user")->whereIn('id', $mentionedIds)->get();
             foreach ($employees as $employee) {
                 NotesMention::create([
                     "project_id" => $this->projectId,
                     "department_id" => $this->departmentId,
                     "employee_id" => $employee->id,
                 ]);
-                Mail::raw("You have been mentioned in an updated note in the department (".$project->department->name.") added by (".auth()->user()->name.")", function ($message) use ($employee, $project) {
-                    $message->to($employee->email)
-                        ->subject('Updated Project Notes Mention - (' . $project->project_name . ') - (' . $project->department->name . ')');
-                });
+                if ($employee->user && $employee->user->email_preference == 1) {
+                    Mail::raw("You have been mentioned in an updated note in the department (" . $project->department->name . ") added by (" . auth()->user()->name . ")", function ($message) use ($employee, $project) {
+                        $message->to($employee->email)
+                            ->subject('Updated Project Notes Mention - (' . $project->project_name . ') - (' . $project->department->name . ')');
+                    });
+                }
             }
-            
+
             // Update the note with clean text (only names)
             $note->update([
                 "notes" => $cleanNote,

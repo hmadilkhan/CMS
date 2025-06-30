@@ -28,6 +28,9 @@ class ProfileController extends Controller
     {
         $request->user()->fill($request->validated());
 
+        // Explicitly set email_preference from the request
+        $request->user()->email_preference = $request->boolean('email_preference', true);
+
         if ($request->user()->isDirty('email')) {
             $request->user()->email_verified_at = null;
         }
