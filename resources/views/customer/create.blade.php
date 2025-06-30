@@ -437,7 +437,7 @@
         }
         $("#finance_option_id").change(function() {
             getFinanceOptionById($(this).val())
-            if ($(this).val() != 1) {
+            if ($(this).val() != 1 && $(this).val() != 5) {
                 $(".loandiv").css("display", "block");
             } else {
                 $(".loandiv").css("display", "none");
