@@ -5,7 +5,15 @@
 
             <!-- header rightbar icon -->
             <div class="h-right d-flex align-items-center mr-5 mr-lg-0 order-1">
-               
+                <div class="dropdown notifications zindex-popover">
+                    <a class="nav-link dropdown-toggle pulse" href="#" role="button" data-bs-toggle="dropdown">
+                        <i class="icofont-alarm fs-5"></i>
+                        <span class="pulse-ring"></span>
+                    </a>
+                    <div id="NotificationsDiv" class="dropdown-menu rounded-lg shadow border-0 dropdown-animation dropdown-menu-sm-end p-0 m-0">
+                        @livewire('notifications')
+                    </div>
+                </div>
                 <div class="dropdown user-profile ml-2 ml-sm-3 d-flex align-items-center zindex-popover">
                     <div class="u-info me-2">
                         <p class="mb-0 text-end line-height-sm "><span class="font-weight-bold">{{auth()->user()->name}}</span></p>

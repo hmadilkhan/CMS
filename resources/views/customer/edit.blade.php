@@ -170,20 +170,6 @@
                         @enderror
                     </div>
 
-                    <!-- <div class="col-sm-4"> -->
-                    <!-- <label class="form-label">Battery Type</label>
-                        <select class="form-select select2" aria-label="Default select Battery Type" id="battery_type_id" name="battery_type_id">
-                            <option value="">Select Battery Type</option>
-                            @foreach ($battery_types as $battery)
-    <option value="{{ $battery->id }}">
-                                {{ $battery->name }}
-                            </option>
-    @endforeach
-                        </select>
-                        @error('battery_type_id')
-        <div class="text-danger message mt-2">{{ $message }}</div>
-    @enderror -->
-                    <!-- </div> -->
                     <div class="col-sm-4 mb-3">
                         <label for="exampleFormControlInput877" class="form-label">System Size</label>
                         <input type="text" class="form-control" id="module_qty" name="module_qty"
@@ -222,12 +208,17 @@
                         @enderror
                     </div>
 
+                    <div id="soldProductionValueDiv" class="col-sm-4 ">
+                        <label for="exampleFormControlInput877" class="form-label">Sold Production Value</label>
+                        <input type="text" class="form-control" id="sold_production_value"
+                            name="sold_production_value" placeholder="Sold Production Value">
+                        @error('sold_production_value')
+                            <div class="text-danger message mt-2">{{ $message }}</div>
+                        @enderror
+                    </div>
+
                     <div class="col-sm-4 mb-3">
-                        <!-- <label for="exampleFormControlInput877" class="form-label">Battery Qty</label>
-                        <input type="text" class="form-control" id="battery_qty" name="battery_qty" placeholder="Battery Qty">
-                        @error('battery_qty')
-        <div class="text-danger message mt-2">{{ $message }}</div>
-    @enderror -->
+                  
                     </div>
                 </div>
                 <div class="row clearfix">
@@ -254,12 +245,7 @@
                             @endforeach
                         </select>
                     </div>
-                    <!-- <div class="col-sm-3 mb-3">
-                        <label for="sub_type" class="form-label">Sub Type</label>
-                        <select class="form-select select2" aria-label="Default select Sub Type" id="sub_type" name="sub_type">
-                            <option value="">Select Sub Type</option>
-                        </select>
-                    </div> -->
+          
                     <div class="col-sm-3 mb-3">
                         <label for="uom" class="form-label">UOM</label>
                         <select class="form-select select2" aria-label="Default select UOM" id="uom">
@@ -432,10 +418,46 @@
         var baseCost = 0;
         $(document).ready(function() {
             $(".loandiv").css("display", "none");
+            getFinanceOptionById({{ $customer->finances->finance_option_id }});
         });
+       
+        function getFinanceOptionById(id) {
+            console.log(id);
+            $.ajax({
+                method: "POST",
+                url: "{{ route('get.finance.option.by.id') }}",
+                data: {
+                    _token: "{{ csrf_token() }}",
+                    id: id,
+                },
+                dataType: 'json',
+                success: function(response) {
+                    if (response.status == 200) {
+                        let finance = response.finance_options;
+                        if (finance.loan_id == 1) {
+                            $("#loadIdDiv").css("display", "block");
+                        } else {
+                            $("#loadIdDiv").css("display", "none");
+                        }
+                        if (finance.production_requirements == 1) {
+                            $("#soldProductionValueDiv").css("display", "block");
+                        } else {
+                            $("#soldProductionValueDiv").css("display", "none");
+                        }
+
+                    } else {
+                        console.log(response.message);
+                    }
+                },
+                error: function(error) {
+                    console.log(error.responseJSON.message);
+                }
+            })
+        }
         $("#finance_option_id").change(function() {
+            getFinanceOptionById($(this).val());
             if ($(this).val() != 1 && $(this).val() != 5) {
-                $(".loandiv").css("display", "block");
+                // $(".loandiv").css("display", "block");
                 $.ajax({
                     method: "POST",
                     url: "{{ route('get.loan.terms') }}",
@@ -457,7 +479,7 @@
                     }
                 })
             } else {
-                $(".loandiv").css("display", "none");
+                // $(".loandiv").css("display", "none");
                 $("#dealer_fee").val(0);
                 $("#dealer_fee_amount").val(0);
                 calculateCommission()

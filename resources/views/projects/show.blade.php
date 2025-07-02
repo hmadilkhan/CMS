@@ -270,7 +270,7 @@
         .main-container {
             width: 650px;
             /* margin-left: auto;
-                                                                                                                                                                        margin-right: auto; */
+                                                                                                                                                                            margin-right: auto; */
         }
 
         .tags-input {
@@ -435,10 +435,11 @@
                                                             return $item->department_id == $department->id;
                                                         })
                                                         ->values();
-                                                }else{
+                                                } else {
                                                     $filtered_collection = $nextSubDepartments
                                                         ->filter(function ($item) use ($department) {
-                                                            return $item->department_id == $department->id && $item->name == "ADU";
+                                                            return $item->department_id == $department->id &&
+                                                                $item->name == 'ADU';
                                                         })
                                                         ->values();
                                                 }
@@ -539,8 +540,8 @@
                         <li class="nav-item"><a class="nav-link {{ $project->viewed_emails_count > 0 ? 'blink-dot' : '' }}"
                                 data-bs-toggle="tab" href="#communication" role="tab">Communication</a></li>
                         @can('Project History')
-                        <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#history"
-                                    role="tab">Project History</a></li>
+                            <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#history" role="tab">Project
+                                    History</a></li>
                         @endcan
                     </ul>
                 </div>
@@ -894,17 +895,17 @@
                     </div>
                     <div class="col-sm-3 ">
                         <label for="exampleFormControlInput877" class="form-label">Sales Person Name</label>
-                        <input disabled value="{{ $project->salesPartnerUser->name ?? "-" }}" type="text"
+                        <input disabled value="{{ $project->salesPartnerUser->name ?? '-' }}" type="text"
                             class="form-control" id="first_name" name="first_name" placeholder="First Name">
                     </div>
                     <div class="col-sm-3 ">
                         <label for="exampleFormControlInput877" class="form-label">Email</label>
-                        <input disabled value="{{ $project->salesPartnerUser->email ?? "-" }}" type="text"
+                        <input disabled value="{{ $project->salesPartnerUser->email ?? '-' }}" type="text"
                             class="form-control" id="last_name" name="last_name" placeholder="Last Name">
                     </div>
                     <div class="col-sm-3 ">
                         <label for="exampleFormControlInput877" class="form-label">Phone</label>
-                        <input disabled value="{{ $project->salesPartnerUser->phone ?? "-" }}" type="text"
+                        <input disabled value="{{ $project->salesPartnerUser->phone ?? '-' }}" type="text"
                             class="form-control" id="street" name="street" placeholder="Street">
                     </div>
                 </div>
@@ -927,7 +928,9 @@
                             <input type="text" class="form-control"
                                 value="{{ $project->customer->finances->finance->name }}">
                         </div>
-                        @if ($project->customer->finances->finance->name != 'Cash' && $project->customer->finances->finance->name != 'LightReach PPA')
+                        @if (
+                            $project->customer->finances->finance->name != 'Cash' &&
+                                $project->customer->finances->finance->name != 'LightReach PPA')
                             <div class="col-sm-3  loandiv">
                                 <label for="loan_term_id" class="form-label">Loan Term</label>
                                 <input type="text" class="form-control"
@@ -971,19 +974,21 @@
                             <input type="text" class="form-control"
                                 value="$ {{ number_format($totalCommission, 2) }}" id="commission" name="commission">
                         </div>
-                        @if ($project->customer->finances->finance->name != 'Cash' && $project->customer->finances->finance->name != 'LightReach PPA')
-                        <div class="col-sm-3 ">
-                            <label for="dealer_fee" class="form-label">Dealer Fee</label>
-                            <input type="text" class="form-control"
-                                value="{{ $project->customer->finances->dealer_fee }}" id="dealer_fee"
-                                name="dealer_fee">
-                        </div>
-                        <div class="col-sm-3 ">
-                            <label for="dealer_fee_amount" class="form-label">Dealer Fee Amount</label>
-                            <input type="text" class="form-control"
-                                value="$ {{ number_format($project->customer->finances->dealer_fee_amount, 2) }}"
-                                id="dealer_fee_amount" name="dealer_fee_amount">
-                        </div>
+                        @if (
+                            $project->customer->finances->finance->name != 'Cash' &&
+                                $project->customer->finances->finance->name != 'LightReach PPA')
+                            <div class="col-sm-3 ">
+                                <label for="dealer_fee" class="form-label">Dealer Fee</label>
+                                <input type="text" class="form-control"
+                                    value="{{ $project->customer->finances->dealer_fee }}" id="dealer_fee"
+                                    name="dealer_fee">
+                            </div>
+                            <div class="col-sm-3 ">
+                                <label for="dealer_fee_amount" class="form-label">Dealer Fee Amount</label>
+                                <input type="text" class="form-control"
+                                    value="$ {{ number_format($project->customer->finances->dealer_fee_amount, 2) }}"
+                                    id="dealer_fee_amount" name="dealer_fee_amount">
+                            </div>
                         @endif
                     </div>
                     <div class="col-sm-12 mb-3">
@@ -1094,6 +1099,10 @@
         @endcan
         @can('Pre and Post Project Cost')
             @livewire('project.project-cost', ['project' => $project], key($project->id))
+        @endcan
+        {{-- Insert AccountTransactions Livewire component here --}}
+        @can('Account Transactions View')
+            @livewire('account-transactions', ['project_id' => $project->id], key($project->id))
         @endcan
     </div>
 
@@ -1218,7 +1227,8 @@
                                                     class="form-label fw-bold flex-fill mb-2 mt-sm-0">
                                                     {{ $log->call->name }} :</label>
                                                 <textarea class="form-control" disabled rows="3">{{ $log->notes }}</textarea>
-                                                <label class="float-right mb-4 fst-italic">{{ (!empty($log->user) ? $log->user->name : '') .' on '. date("m/d/Y H:i:s",strtotime($log->created_at)) }}</label>
+                                                <label
+                                                    class="float-right mb-4 fst-italic">{{ (!empty($log->user) ? $log->user->name : '') . ' on ' . date('m/d/Y H:i:s', strtotime($log->created_at)) }}</label>
                                             </div>
                                         @endforeach
                                     @endforeach
@@ -1410,45 +1420,47 @@
 
         <ul class="nav nav-tabs px-3 border-bottom-0" role="tablist">
             @can('Project Interaction')
-            <li class="nav-item"><a class="nav-link active" data-bs-toggle="tab" href="#interaction"
-                    role="tab">Interaction</a></li>
+                <li class="nav-item"><a class="nav-link active" data-bs-toggle="tab" href="#interaction"
+                        role="tab">Interaction</a></li>
             @endcan
             @can('Department Logs')
-                <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#logs"
-                        role="tab">Department Logs</a></li>
+                <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#logs" role="tab">Department
+                        Logs</a></li>
             @endcan
         </ul>
         <div class="tab-content">
             @can('Project Interaction')
-            <div class="tab-pane fade show active" id="interaction" role="tabpanel">
-                <div class="card card-info mt-2">
-                    <div class="card-body">
-                        <div class="row clearfix">
-                            <div class="col-md-12">
-                                <div class="card border-0 mb-4 no-bg">
-                                    <div
-                                        class="card-header py-3 px-0 d-sm-flex align-items-center bg-light text-center  justify-content-between border-bottom">
-                                        <h3 class=" fw-bold flex-fill mb-0 mt-sm-0">Project Interaction </h3>
-                                    </div>
-                                    <div class="card-body">
-                                        <div class="row">
-                                            <div class="col-md-12">
-                                                <div class="card">
-                                                    <div class="card-body">
-                                                        <table class="table">
-                                                            <thead class="bg-light">
-                                                                <th>Date Time</th>
-                                                                <th>Description</th>
-                                                            </thead>
-                                                            <tbody>
-                                                                @foreach ($interactions as $interaction)
-                                                                    <tr>
-                                                                        <td>{{$interaction->created_at}}</td>
-                                                                        <td>{{$interaction->description ?? 'N/A'}}</td>
-                                                                    </tr>
-                                                                @endforeach
-                                                            </tbody>
-                                                        </table>
+                <div class="tab-pane fade show active" id="interaction" role="tabpanel">
+                    <div class="card card-info mt-2">
+                        <div class="card-body">
+                            <div class="row clearfix">
+                                <div class="col-md-12">
+                                    <div class="card border-0 mb-4 no-bg">
+                                        <div
+                                            class="card-header py-3 px-0 d-sm-flex align-items-center bg-light text-center  justify-content-between border-bottom">
+                                            <h3 class=" fw-bold flex-fill mb-0 mt-sm-0">Project Interaction </h3>
+                                        </div>
+                                        <div class="card-body">
+                                            <div class="row">
+                                                <div class="col-md-12">
+                                                    <div class="card">
+                                                        <div class="card-body">
+                                                            <table class="table">
+                                                                <thead class="bg-light">
+                                                                    <th>Date Time</th>
+                                                                    <th>Description</th>
+                                                                </thead>
+                                                                <tbody>
+                                                                    @foreach ($interactions as $interaction)
+                                                                        <tr>
+                                                                            <td>{{ $interaction->created_at }}</td>
+                                                                            <td>{{ $interaction->description ?? 'N/A' }}
+                                                                            </td>
+                                                                        </tr>
+                                                                    @endforeach
+                                                                </tbody>
+                                                            </table>
+                                                        </div>
                                                     </div>
                                                 </div>
                                             </div>
@@ -1459,74 +1471,79 @@
                         </div>
                     </div>
                 </div>
-            </div>
             @endcan
             @can('Department Logs')
-            <div class="tab-pane fade" id="logs" role="tabpanel">
-                <div class="card card-info mt-2">
-                    <div class="card-body">
-                        <div class="row clearfix">
-                            <div class="col-md-12">
-                                <div class="card border-0 mb-4 no-bg">
-                                    <div
-                                        class="card-header py-3 px-0 d-sm-flex align-items-center bg-light text-center  justify-content-between border-bottom">
-                                        <h3 class=" fw-bold flex-fill mb-0 mt-sm-0">Department Logs </h3>
-                                    </div>
-                                    <div class="card-body">
-                                        <div class="row">
-                                            <div class="col-md-7">
-                                                <div class="card">
-                                                    <div class="card-body">
-                                                        <table class="table">
-                                                            <thead class="bg-light">
-                                                                <th>Department Name</th>
-                                                                <th>Entry Date</th>
-                                                                <th>Exit Date</th>
-                                                                <th>Action By</th>
-                                                                <th>Total Duration</th>
-                                                            </thead>
-                                                            <tbody>
-                                                                @foreach ($projectLogs as $log)
-                                                                @php
-                                                                if ($log->status == "In-Progress") {
-                                                                    $exitDate = date("Y-m-d H:i:s");
-                                                                }else{
-                                                                    $exitDate = $log->updated_at;
-                                                                }
-                                                                @endphp
-                                                                    <tr>
-                                                                        <td>{{$log->department->name}}</td>
-                                                                        <td>{{date("d M Y H:i:s",strtotime($log->created_at))}}</td>
-                                                                        <td>{{($log->status != "In-Progress" ? date("d M Y H:i:s",strtotime($log->updated_at)) : 'N/A')}}</td>
-                                                                        <td>{{$log->user->name ?? 'N/A'}}</td>
-                                                                        <td>{{  max(1,\Carbon\Carbon::parse($log->created_at)->diffInDays(\Carbon\Carbon::parse($exitDate))) }} Days</td> 
-                                                                        {{-- max(1,\Carbon\Carbon::parse($log->created_at)->diffInDays(\Carbon\Carbon::parse($exitDate))) --}}
-                                                                    </tr>
-                                                                @endforeach
-                                                            </tbody>
-                                                        </table>
+                <div class="tab-pane fade" id="logs" role="tabpanel">
+                    <div class="card card-info mt-2">
+                        <div class="card-body">
+                            <div class="row clearfix">
+                                <div class="col-md-12">
+                                    <div class="card border-0 mb-4 no-bg">
+                                        <div
+                                            class="card-header py-3 px-0 d-sm-flex align-items-center bg-light text-center  justify-content-between border-bottom">
+                                            <h3 class=" fw-bold flex-fill mb-0 mt-sm-0">Department Logs </h3>
+                                        </div>
+                                        <div class="card-body">
+                                            <div class="row">
+                                                <div class="col-md-7">
+                                                    <div class="card">
+                                                        <div class="card-body">
+                                                            <table class="table">
+                                                                <thead class="bg-light">
+                                                                    <th>Department Name</th>
+                                                                    <th>Entry Date</th>
+                                                                    <th>Exit Date</th>
+                                                                    <th>Action By</th>
+                                                                    <th>Total Duration</th>
+                                                                </thead>
+                                                                <tbody>
+                                                                    @foreach ($projectLogs as $log)
+                                                                        @php
+                                                                            if ($log->status == 'In-Progress') {
+                                                                                $exitDate = date('Y-m-d H:i:s');
+                                                                            } else {
+                                                                                $exitDate = $log->updated_at;
+                                                                            }
+                                                                        @endphp
+                                                                        <tr>
+                                                                            <td>{{ $log->department->name }}</td>
+                                                                            <td>{{ date('d M Y H:i:s', strtotime($log->created_at)) }}
+                                                                            </td>
+                                                                            <td>{{ $log->status != 'In-Progress' ? date('d M Y H:i:s', strtotime($log->updated_at)) : 'N/A' }}
+                                                                            </td>
+                                                                            <td>{{ $log->user->name ?? 'N/A' }}</td>
+                                                                            <td>{{ max(1, \Carbon\Carbon::parse($log->created_at)->diffInDays(\Carbon\Carbon::parse($exitDate))) }}
+                                                                                Days</td>
+                                                                            {{-- max(1,\Carbon\Carbon::parse($log->created_at)->diffInDays(\Carbon\Carbon::parse($exitDate))) --}}
+                                                                        </tr>
+                                                                    @endforeach
+                                                                </tbody>
+                                                            </table>
+                                                        </div>
                                                     </div>
                                                 </div>
-                                            </div>
-                                            <div class="col-md-1">
-                                            </div>
-                                            <div class="col-md-4">
-                                                <div class="card">
-                                                    <div class="card-body">
-                                                        <table class="table">
-                                                            <thead class="bg-light">
-                                                                <th>Department Name</th>
-                                                                <th>Total Days</th>
-                                                            </thead>
-                                                            <tbody>
-                                                                @foreach ($totalDaysOfDepartments as $departmentDays)
-                                                                    <tr>
-                                                                        <td>{{$departmentDays["department"] ?? 'N/A'}}</td>
-                                                                        <td>{{$departmentDays["days"] ?? 'N/A'}}</td>
-                                                                    </tr>
-                                                                @endforeach
-                                                            </tbody>
-                                                        </table>
+                                                <div class="col-md-1">
+                                                </div>
+                                                <div class="col-md-4">
+                                                    <div class="card">
+                                                        <div class="card-body">
+                                                            <table class="table">
+                                                                <thead class="bg-light">
+                                                                    <th>Department Name</th>
+                                                                    <th>Total Days</th>
+                                                                </thead>
+                                                                <tbody>
+                                                                    @foreach ($totalDaysOfDepartments as $departmentDays)
+                                                                        <tr>
+                                                                            <td>{{ $departmentDays['department'] ?? 'N/A' }}
+                                                                            </td>
+                                                                            <td>{{ $departmentDays['days'] ?? 'N/A' }}
+                                                                            </td>
+                                                                        </tr>
+                                                                    @endforeach
+                                                                </tbody>
+                                                            </table>
+                                                        </div>
                                                     </div>
                                                 </div>
                                             </div>
@@ -1537,7 +1554,6 @@
                         </div>
                     </div>
                 </div>
-            </div>
             @endcan
         </div>
     </div>
@@ -1770,12 +1786,12 @@
             success: function(response) {
                 if (response.status == 200) {
                     Swal.fire(
-                            'Sent!',
-                            response.message,
-                            'success'
-                        )
-                        $("#moveProjectModal").modal("hide");
-                        location.reload();
+                        'Sent!',
+                        response.message,
+                        'success'
+                    )
+                    $("#moveProjectModal").modal("hide");
+                    location.reload();
                 } else if (response.status = 422) {
                     Swal.fire(
                         'Failed!',
@@ -2529,7 +2545,7 @@
 
         if (mode == 2 && reason == "") {
             $("#reason_message").html("Please Enter Reason");
-        }else{
+        } else {
             $.ajax({
                 url: "{{ route('action.project.acceptance') }}", // The URL where the request is sent
                 type: 'POST',

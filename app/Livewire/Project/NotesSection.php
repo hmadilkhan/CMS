@@ -8,6 +8,9 @@ use App\Models\NotesMention;
 use App\Models\Project;
 use Illuminate\Support\Facades\Mail;
 use Livewire\Component;
+use Illuminate\Support\Facades\Notification;
+use App\Notifications\NoteMentionedNotification;
+use Illuminate\Support\Facades\Log;
 
 class NotesSection extends Component
 {
@@ -52,11 +55,14 @@ class NotesSection extends Component
                     "department_id" => $this->departmentId,
                     "employee_id" => $employee->id,
                 ]);
+                $message = "You have been mentioned in an updated note in the department (" . $project->department->name . ") added by (" . auth()->user()->name . ")";
+                // Send notification (below mail code)
+                Notification::send($employee->user, new NoteMentionedNotification($project, $message, auth()->user()));
                 if ($employee->user && $employee->user->email_preference == 1) {
-                    Mail::raw("You have been mentioned in a new note in the department (" . $project->department->name . ") added by (" . auth()->user()->name . ")", function ($message) use ($employee, $project) {
-                        $message->to($employee->email)
-                            ->subject('New Project Notes Mention - (' . $project->project_name . ') - (' . $project->department->name . ')');
-                    });
+                    // Mail::raw($message, function ($message) use ($employee, $project) {
+                    //     $message->to($employee->email)
+                    //         ->subject('New Project Notes Mention - (' . $project->project_name . ') - (' . $project->department->name . ')');
+                    // });
                 }
             }
 
@@ -124,11 +130,23 @@ class NotesSection extends Component
                     "department_id" => $this->departmentId,
                     "employee_id" => $employee->id,
                 ]);
+                $message = "You have been mentioned in an updated note in the department (" . $project->department->name . ") added by (" . auth()->user()->name . ")";
+                // Debug: Log and dump user and notification data
+                \Log::info('Notification Debug', [
+                    'employee_id' => $employee->id,
+                    'user' => $employee->user,
+                    'project_id' => $project->id,
+                    'note' => $message,
+                    'mentioned_by' => auth()->user()->id,
+                ]);
+               
+                // Send notification (below mail code)
+                Notification::send($employee->user, new NoteMentionedNotification($project, $message, auth()->user()));
                 if ($employee->user && $employee->user->email_preference == 1) {
-                    Mail::raw("You have been mentioned in an updated note in the department (" . $project->department->name . ") added by (" . auth()->user()->name . ")", function ($message) use ($employee, $project) {
-                        $message->to($employee->email)
-                            ->subject('Updated Project Notes Mention - (' . $project->project_name . ') - (' . $project->department->name . ')');
-                    });
+                    // Mail::raw($message, function ($message) use ($employee, $project) {
+                    //     $message->to($employee->email)
+                    //         ->subject('Updated Project Notes Mention - (' . $project->project_name . ') - (' . $project->department->name . ')');
+                    // });
                 }
             }
 

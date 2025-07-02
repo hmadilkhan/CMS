@@ -207,7 +207,7 @@
                     <div id="soldProductionValueDiv" class="col-sm-4 ">
                         <label for="exampleFormControlInput877" class="form-label">Sold Production Value</label>
                         <input type="text" class="form-control" id="sold_production_value"
-                            name="sold_production_value" placeholder="loan Id">
+                            name="sold_production_value" placeholder="Sold Production Valu">
                         @error('sold_production_value')
                             <div class="text-danger message mt-2">{{ $message }}</div>
                         @enderror
