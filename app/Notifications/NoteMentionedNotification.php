@@ -6,6 +6,7 @@ use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
+use Illuminate\Support\Facades\Log;
 
 class NoteMentionedNotification extends Notification implements ShouldQueue
 {
@@ -56,7 +57,7 @@ class NoteMentionedNotification extends Notification implements ShouldQueue
      */
     public function toArray(object $notifiable): array
     {
-        return [
+        $data = [
             'project_id' => $this->project->id,
             'project_name' => $this->project->project_name,
             'note' => $this->note,
@@ -64,5 +65,7 @@ class NoteMentionedNotification extends Notification implements ShouldQueue
             'message' => $this->mentionedBy->name . ' mentioned you in a note on project: ' . $this->project->project_name,
             'url' => url('/projects/' . $this->project->id),
         ];
+        Log::info('NoteMentionedNotification toArray', $data);
+        return $data;
     }
 }
