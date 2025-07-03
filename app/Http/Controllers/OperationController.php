@@ -251,6 +251,7 @@ class OperationController extends Controller
                     "production_requirements" => $request->production_requirements,
                     "positive_variance" => $request->positive_variance,
                     "negative_variance" => $request->negative_variance,
+                    "dealer_fee" => $request->dealer_fee,
                 ]);
                 LoanTerm::create([
                     "finance_option_id" => $finance->id,
@@ -281,6 +282,7 @@ class OperationController extends Controller
             $adder->production_requirements = $request->production_requirements;
             $adder->positive_variance = $request->positive_variance;
             $adder->negative_variance = $request->negative_variance;
+            $adder->dealer_fee = $request->dealer_fee;
             $adder->save();
             return redirect()->route("finance.option.types");
         } catch (\Throwable $th) {

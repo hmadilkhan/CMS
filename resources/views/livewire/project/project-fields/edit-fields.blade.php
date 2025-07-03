@@ -181,6 +181,18 @@
                         </div>
                     @enderror
                 </div>
+                <div class="col-sm-4 ">
+                    <label for="placards_ordered" class="form-label">Fire Review Required</label>
+                    <select class="form-select" aria-label="Default select Fire Review Required" id="fire_review_required"
+                        name="fire_review_required" wire:model.live="fire_review_required">
+                        <option value="">Fire Review Required</option>
+                        <option @selected($project->fire_review_required) value="1">Yes</option>
+                        <option @selected($project->fire_review_required) value="0">No</option>
+                    </select>
+                    @error('placards_ordered')
+                        <div class="text-danger message mt-2">{{ $message }}</div>
+                    @enderror
+                </div>
                 <input type="hidden" name="projecthoa" value="{{ $project->hoa }}" />
                 @if ($project->hoa == 'yes')
                     <div class="col-sm-4 mb-3 ">
@@ -290,6 +302,17 @@
                         </div>
                     @enderror
                 </div>
+                @if ($project->fire_review_required == 1)
+                    <div class="col-sm-4 mb-3 ">
+                        <label for="final_inspection_date" class="form-label">Fire Inspection Date</label>
+                        <input class="form-control" type="date" id="fire_inspection_date"
+                            name="fire_inspection_date" wire:model="fire_inspection_date">
+                        @error('fire_inspection_date')
+                            <div id="fire_inspection_date_message" class="text-danger message mt-2">{{ $message }}
+                            </div>
+                        @enderror
+                    </div>
+                @endif
             @endif
             @if ($departmentId == 7)
                 <div class="col-sm-4 mb-3 ">

@@ -211,7 +211,7 @@
                     <div id="soldProductionValueDiv" class="col-sm-4 ">
                         <label for="exampleFormControlInput877" class="form-label">Sold Production Value</label>
                         <input type="text" class="form-control" id="sold_production_value"
-                            name="sold_production_value" placeholder="Sold Production Value">
+                            name="sold_production_value" placeholder="Sold Production Value" value="{{$customer->sold_production_value}}">
                         @error('sold_production_value')
                             <div class="text-danger message mt-2">{{ $message }}</div>
                         @enderror
@@ -418,11 +418,12 @@
         var baseCost = 0;
         $(document).ready(function() {
             $(".loandiv").css("display", "none");
+            $("#soldProductionValueDiv").css("display", "none");
+            $("#loadIdDiv").css("display", "none");
             getFinanceOptionById({{ $customer->finances->finance_option_id }});
         });
        
         function getFinanceOptionById(id) {
-            console.log(id);
             $.ajax({
                 method: "POST",
                 url: "{{ route('get.finance.option.by.id') }}",
@@ -444,6 +445,16 @@
                         } else {
                             $("#soldProductionValueDiv").css("display", "none");
                         }
+                        
+                        if (finance.dealer_fee == 1) {
+                            $(".loandiv").css("display", "block");
+                            getLoanTerms(id);
+                        } else {
+                            $(".loandiv").css("display", "none");
+                            $("#dealer_fee").val(0);
+                            $("#dealer_fee_amount").val(0);
+                            calculateCommission()
+                        }
 
                     } else {
                         console.log(response.message);
@@ -456,35 +467,57 @@
         }
         $("#finance_option_id").change(function() {
             getFinanceOptionById($(this).val());
-            if ($(this).val() != 1 && $(this).val() != 5) {
-                // $(".loandiv").css("display", "block");
-                $.ajax({
-                    method: "POST",
-                    url: "{{ route('get.loan.terms') }}",
-                    data: {
-                        _token: "{{ csrf_token() }}",
-                        id: $(this).val(),
-                    },
-                    dataType: 'json',
-                    success: function(response) {
-                        $('#loan_term_id').empty();
-                        $('#loan_term_id').append($('<option value="">Select Loan Term</soption>'));
-                        $.each(response.terms, function(i, term) {
-                            $('#loan_term_id').append($('<option  value="' + term.id + '">' +
-                                term.year + '</option>'));
-                        });
-                    },
-                    error: function(error) {
-                        console.log(error.responseJSON.message);
-                    }
-                })
-            } else {
-                // $(".loandiv").css("display", "none");
-                $("#dealer_fee").val(0);
-                $("#dealer_fee_amount").val(0);
-                calculateCommission()
-            }
+            // if ($(this).val() != 1 && $(this).val() != 5) {
+            //     // $(".loandiv").css("display", "block");
+            //     $.ajax({
+            //         method: "POST",
+            //         url: "{{ route('get.loan.terms') }}",
+            //         data: {
+            //             _token: "{{ csrf_token() }}",
+            //             id: $(this).val(),
+            //         },
+            //         dataType: 'json',
+            //         success: function(response) {
+            //             $('#loan_term_id').empty();
+            //             $('#loan_term_id').append($('<option value="">Select Loan Term</soption>'));
+            //             $.each(response.terms, function(i, term) {
+            //                 $('#loan_term_id').append($('<option  value="' + term.id + '">' +
+            //                     term.year + '</option>'));
+            //             });
+            //         },
+            //         error: function(error) {
+            //             console.log(error.responseJSON.message);
+            //         }
+            //     })
+            // } else {
+            //     // $(".loandiv").css("display", "none");
+            //     $("#dealer_fee").val(0);
+            //     $("#dealer_fee_amount").val(0);
+            //     calculateCommission()
+            // }
         });
+        function getLoanTerms(id) {
+            $.ajax({
+                method: "POST",
+                url: "{{ route('get.loan.terms') }}",
+                data: {
+                    _token: "{{ csrf_token() }}",
+                    id: id,
+                },
+                dataType: 'json',
+                success: function(response) {
+                    $('#loan_term_id').empty();
+                    $('#loan_term_id').append($('<option value="">Select Loan Term</soption>'));
+                    $.each(response.terms, function(i, term) {
+                        $('#loan_term_id').append($('<option  value="' + term.id + '">' +
+                            term.year + '</option>'));
+                    });
+                },
+                error: function(error) {
+                    console.log(error.responseJSON.message);
+                }
+            })
+        }
         $("#loan_term_id").change(function() {
             if ($(this).val() != "") {
                 $.ajax({

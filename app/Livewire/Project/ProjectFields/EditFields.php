@@ -38,6 +38,7 @@ class EditFields extends Component
     // FORTH DEPARTMENT
     public $permitting_submittion_date;
     public $actual_permit_fee;
+    public $fire_review_required;
     public $permitting_approval_date;
     public $hoa_approval_request_date;
     public $hoa_approval_date;
@@ -54,6 +55,7 @@ class EditFields extends Component
     // SIXTH DEPARTMENT
     public $rough_inspection_date;
     public $final_inspection_date;
+    public $fire_inspection_date;
 
     // SEVENTH DEPARTMENT
     public $pto_submission_date;
@@ -95,6 +97,7 @@ class EditFields extends Component
         $this->permitting_submittion_date = $this->project->permitting_submittion_date;
         $this->actual_permit_fee = $this->project->actual_permit_fee;
         $this->permitting_approval_date = $this->project->permitting_approval_date;
+        $this->fire_review_required = $this->project->fire_review_required;
         $this->hoa_approval_request_date = $this->project->hoa_approval_request_date;
         $this->hoa_approval_date = $this->project->hoa_approval_date;
 
@@ -110,6 +113,7 @@ class EditFields extends Component
         // SIXTH DEPARTMENT
         $this->rough_inspection_date = $this->project->rough_inspection_date;
         $this->final_inspection_date = $this->project->final_inspection_date;
+        $this->fire_inspection_date  = $this->project->fire_inspection_date;
 
         // SEVENTH DEPARTMENT
         $this->pto_submission_date = $this->project->pto_submission_date;
@@ -184,6 +188,7 @@ class EditFields extends Component
             $data = [
                 'permitting_submittion_date' => 'required_if:departmentId,4|date',
                 'permitting_approval_date' => 'required_if:departmentId,4|date',
+                'fire_review_required' => 'required',
                 'hoa_approval_request_date' =>  Rule::requiredIf(function () {
                     return  $this->hoa == "yes";
                 }),
@@ -195,6 +200,7 @@ class EditFields extends Component
             $customMessages = [
                 'permitting_submittion_date.required_if' => 'The permitting submission date is required for this department.',
                 'permitting_approval_date.required_if' => 'The permitting approval date is required for this department.',
+                'fire_review_required.required_if' => 'The fire review field is required for this department.',
                 'hoa_approval_request_date.required_if' => 'The HOA approval request date is required when HOA is "yes".',
                 'hoa_approval_date.required_if' => 'The HOA approval date is required when HOA is "yes".',
             ];
@@ -222,11 +228,13 @@ class EditFields extends Component
             $data = [
                 'rough_inspection_date' => 'required_if:departmentId,6|date',
                 'final_inspection_date' => 'required_if:departmentId,6|date',
+                'fire_inspection_date' => 'required_if:departmentId,6|date',
             ];
 
             $customMessages = [
                 'rough_inspection_date.required_if' => 'The rough inspection date is required for this department.',
                 'final_inspection_date.required_if' => 'The final inspection date is required for this department.',
+                'fire_inspection_date.required_if'  => 'The fire inspection date is required for this department.',
             ];
         }
         if ($this->departmentId == 7) {
@@ -281,15 +289,6 @@ class EditFields extends Component
                 }
 
                 $calculatePercentage = ((($this->production_value_achieved / $sold_production_value) - 1) * 100);
-                // dd($calculatePercentage, $negative,bccomp($calculatePercentage, $negative, 2),bccomp($calculatePercentage, $positive, 2));
-                // Check if calculated percentage is within the allowed variance range (inclusive)
-                // if (bccomp($calculatePercentage, $negative, 2) == -1) {
-                //     $this->addError('production_value_achieved', "Calculated Percentage (" . number_format($calculatePercentage, 2) . "%) is exceeding the allowed variance range.");
-                //     return;
-                // }else if(bccomp($calculatePercentage, $positive, 2) == -1){
-                //     $this->addError('production_value_achieved', "Calculated Percentage (" . number_format($calculatePercentage, 2) . "%) is exceeding the allowed variance range.");
-                //     return;
-                // }
 
                 if (bccomp($calculatePercentage, $negative, 2) <= 0 || bccomp($calculatePercentage, $positive, 2) >= 0) {
                     $this->addError('production_value_achieved', "Calculated Percentage (" . number_format($calculatePercentage, 2) . "%) is exceeding the allowed variance range.");
@@ -315,7 +314,9 @@ class EditFields extends Component
                 "permitting_approval_date" => $this->permitting_approval_date,
                 "hoa_approval_request_date" => $this->hoa_approval_request_date,
                 "hoa_approval_date" => $this->hoa_approval_date,
+                "fire_review_required" => $this->fire_review_required,
             ]);
+            
         }
 
         if ($this->departmentId == 5) {
@@ -334,6 +335,7 @@ class EditFields extends Component
             $updateItems = array_merge($updateItems, [
                 "rough_inspection_date" => $this->rough_inspection_date,
                 "final_inspection_date" => $this->final_inspection_date,
+                "fire_inspection_date" => $this->fire_inspection_date,
             ]);
         }
 
@@ -367,6 +369,7 @@ class EditFields extends Component
         } catch (\Exception $e) {
             $this->message = 'Failed to update data!';
             $this->messageType = 'error';
+            dd($e->getMessage());
         }
     }
 

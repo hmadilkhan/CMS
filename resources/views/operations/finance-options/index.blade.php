@@ -69,6 +69,16 @@
                     </span>
                     @enderror
                 </div>
+                <div class="col-md-3 col-sm-3">
+                    <label class="form-label">Dealer Fee</label>
+                    <select class="form-select select2" aria-label="Default select Dealer Fee" id="dealer_fee" name="dealer_fee">
+                        <option value="1" @if(!empty($finance) && $finance->dealer_fee == 1) selected @endif>Yes</option>
+                        <option value="0" @if(!empty($finance) && $finance->dealer_fee == 0) selected @endif {{ empty($finance) ? 'selected' : '' }}>No</option>
+                    </select>
+                    @error("dealer_fee")
+                    <div class="text-danger message mt-2">{{$message}}</div>
+                    @enderror
+                </div>
                 <div class="col-4 mt-3">
                     <label></label>
                     <div class="form-group float-left ">
@@ -98,6 +108,7 @@
                     <th>Production Requirements</th>
                     <th>Positive Variance</th> 
                     <th>Negative Variance</th>
+                    <th>Dealer Fee</th>
                     <th>Actions</th>
                 </tr>
             </thead>
@@ -110,6 +121,7 @@
                     <td>{{ $financeOption->production_requirements == 1 ? 'Yes' : 'No' }}</td>
                     <td>{{ $financeOption->positive_variance }}</td>
                     <td>{{ $financeOption->negative_variance }}</td>
+                    <td>{{ $financeOption->dealer_fee == 1 ? 'Yes' : 'No' }}</td>
                     <td class="text-center">
                         <a style="cursor: pointer;" data-toggle="tooltip" title="Edit" href="{{ route('finance.option.types',$financeOption->id)}}">
                             <i class="icofont-pencil text-warning"></i></a>
