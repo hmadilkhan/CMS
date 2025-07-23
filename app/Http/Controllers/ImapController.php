@@ -13,6 +13,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Webklex\IMAP\Facades\Client;
 use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Log;
 use Webklex\PHPIMAP\Query\WhereQuery as query;
 
 class ImapController extends Controller
@@ -105,7 +106,7 @@ class ImapController extends Controller
                                 } else {
 
                                     $email = Email::where("message_id", $message->message_id)->first();
-                                    Email::where("message_id", $message->message_id)->update(["received_date" => $message->getDate(), "updated_at" => date("Y-m-d H:i:s")]);
+                                    Email::where("message_id", $message->message_id)->update(["user_id" => $email->user_id,"received_date" => $message->getDate(), "updated_at" => date("Y-m-d H:i:s")]);
 
                                     if ($message->getAttachments()->count() > 0) {
                                         $attachments = $message->getAttachments();

@@ -11,6 +11,8 @@ use App\Models\Project;
 use Webklex\IMAP\Facades\Client;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Notification;
+use App\Notifications\EmailReceivedNotification;
 
 class FetchEmails extends Command
 {
@@ -33,7 +35,7 @@ class FetchEmails extends Command
      */
     public function handle()
     {
-        $projects = Project::with("customer")->whereN("department_id", "!=", 9)->get();
+        $projects = Project::with("customer")->where("department_id", "!=", 9)->get();
         foreach ($projects as $key => $project) {
             $account = ImapAccount::where("department_id", $project->department_id)->first();
             if (!empty($account)) {
@@ -70,6 +72,12 @@ class FetchEmails extends Command
                                         }
                                     }
                                 }
+                                // $user = $project ? $project->user : null; // Adjust as needed
+
+                                // if ($project && $user) {
+                                //     Notification::send($user, new EmailReceivedNotification($project, $email, $email->from ?? null));
+                                // }
+
                             } else {
 
                                 $email = Email::where("message_id", $message->message_id)->first();
@@ -96,5 +104,6 @@ class FetchEmails extends Command
                 $client->disconnect();
             }
         }
+        $this->info('All emails fetched successfully.');
     }
 }
