@@ -45,11 +45,16 @@ class ProjectCost extends Component
 
     public function mount()
     {
+        $laborCost = LaborCost::whereNull('deleted_at')->first();
         $this->projectId = $this->project->id;
         $this->internalContractAmount = $this->project->customer->finances->redline_costs + $this->project->customer->finances->adders;
         # PRE FIELDS
-        $this->preEstimateMaterialCost = $this->project->pre_estimated_material_costs;
-        $this->preEstimateLaborCost = $this->project->pre_estimated_labor_costs;
+        // $this->preEstimateMaterialCost = $this->project->pre_estimated_material_costs;
+        $this->preEstimateMaterialCost =  (($this->project->customer->panel_qty * $this->project->customer->module->internal_module_cost) + $this->project->customer->inverter->invertertyperates->internal_base_cost );
+       
+        // $this->preEstimateLaborCost = $this->project->pre_estimated_labor_costs;
+        $this->preEstimateLaborCost = ($laborCost->cost * $this->project->customer->panel_qty) + $this->project->customer->inverter->invertertyperates->internal_labor_cost;
+
         $this->preEstimatePermitCost = $this->project->pre_estimated_permit_costs;
         # POST FIELDS
         $this->postEstimateMaterialCost = $this->project->actual_material_cost;
@@ -120,8 +125,8 @@ class ProjectCost extends Component
 
     public function calcaulatePreEstimatedFields()
     {
-        $this->preEstimateMaterialCost = $this->inverterType->internal_base_cost ?? 0 + ($this->panelQty ?? 0 * $this->moduleType->internal_module_cost ?? 0);
-        $this->preEstimateLaborCost = $this->inverterType->internal_labor_cost ?? 0 + ($this->panelQty ?? 0 * $this->laborCost->cost ?? 0);
+        // $this->preEstimateMaterialCost = $this->inverterType->internal_base_cost ?? 0 + ($this->panelQty ?? 0 * $this->moduleType->internal_module_cost ?? 0);
+        // $this->preEstimateLaborCost = $this->inverterType->internal_labor_cost ?? 0 + ($this->panelQty ?? 0 * $this->laborCost->cost ?? 0);
     }
 
     public function render()

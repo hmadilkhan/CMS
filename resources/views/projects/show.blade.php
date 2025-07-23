@@ -371,7 +371,7 @@
                                 @endif
                             </div>
                             <h3 class=" fw-bold flex-fill mb-0 mt-sm-0 text-center fs-10 text-uppercase">
-                                {{ $project->project_name }}
+                                {{ $project->project_name }} 
                             </h3>
                             @if (auth()->user()->hasAnyRole(['Super Admin', 'Admin', 'Manager']))
                                 <a class="me-1 mt-1 w-sm-100"><select class="form-select "
@@ -390,36 +390,7 @@
                                 id="openemployee"><i class="icofont-arrow-left me-2 fs-6"></i>Back to List</a>
                         </div>
                     </div>
-                    {{-- <div class="d-flex justify-content-center align-items-center">
-                        <div class="py-2 project-tab flex-wrap w-sm-100">
-                            <ul class="nav nav-tabs tab-body-header rounded ms-3 prtab-set w-sm-100" role="tablist"
-                                style="cursor: pointer;">
-                                @foreach ($departments as $department)
-                                    @if ($department->id < $project->department_id)
-                                        <li class="nav-item dropdown" style="position: relative;">
-                                            <a class="nav-link dropdown-toggle active bg-success" data-bs-toggle="tab"
-                                                role="tab">{{ $department->name }}</a>
-                                            <ul class="dropdown-menu" aria-labelledby="navbarDropdown"
-                                                style="position: relative; top: 100%; left: 0; z-index: 1000;">
-                                                <li><a class="dropdown-item" href="#">Action</a></li>
-                                                <li><a class="dropdown-item" href="#">Another action</a></li>
-                                                <li>
-                                                    <hr class="dropdown-divider">
-                                                </li>
-                                                <li><a class="dropdown-item" href="#">Something else here</a></li>
-                                            </ul>
-                                        </li>
-                                    @elseif($department->id == $project->department_id)
-                                        <li class="nav-item "><a class="nav-link active " data-bs-toggle="tab"
-                                                role="tab">{{ $department->name }}</a></li>
-                                    @else
-                                        <li class="nav-item"><a class="nav-link" data-bs-toggle="tab"
-                                                role="tab">{{ $department->name }}</a></li>
-                                    @endif
-                                @endforeach
-                            </ul>
-                        </div>
-                    </div> --}}
+                    
                     <div class="d-flex justify-content-center align-items-center">
                         <nav class="navbar navbar-expand-lg ">
                             <div class="container-fluid">
@@ -459,15 +430,6 @@
                                                             @endforeach
                                                         </ul>
                                                     @endif
-                                                    {{-- @if (!empty($department->subdepartments))
-                                                        <ul class="dropdown-menu" aria-labelledby="navbarDropdown">
-                                                            @foreach ($department->subdepartments as $subdepartment)
-                                                                <li><a class="dropdown-item"
-                                                                        onclick="moveProject()">{{ $subdepartment->name }}</a>
-                                                                </li>
-                                                            @endforeach
-                                                        </ul>
-                                                    @endif --}}
                                                 </li>
                                             @elseif($department->id == $project->department_id)
                                                 <li class="nav-item dropdown bg-success">
@@ -485,15 +447,6 @@
                                                             @endforeach
                                                         </ul>
                                                     @endif
-                                                    {{-- @if (!empty($department->subdepartments))
-                                                        <ul class="dropdown-menu" aria-labelledby="navbarDropdown">
-                                                            @foreach ($department->subdepartments as $subdepartment)
-                                                                <li><a class="dropdown-item"
-                                                                        onclick="moveProject()">{{ $subdepartment->name }}</a>
-                                                                </li>
-                                                            @endforeach
-                                                        </ul>
-                                                    @endif --}}
                                                 </li>
                                             @else
                                                 <li class="nav-item dropdown">
@@ -848,6 +801,18 @@
                         <input disabled value="{{ $project->customer->inverter_qty }}" type="text"
                             class="form-control" id="inverter_qty" name="inverter_qty" placeholder="Inverter Qty">
                     </div>
+                    @if($project->customer->loan_id)
+                        <div class="col-sm-3">
+                            <label for="inverter_qty" class="form-label">Loan Id</label>
+                            <input disabled value="{{ $project->customer->loan_id }}" type="text" class="form-control" placeholder="Loan Id">
+                        </div>
+                    @endif
+                    @if($project->customer->sold_production_value)
+                        <div class="col-sm-3">
+                            <label for="inverter_qty" class="form-label">Sold Production Value</label>
+                            <input disabled value="{{ $project->customer->sold_production_value }}" type="text" class="form-control" placeholder="Sold Production Value">
+                        </div>
+                    @endif
                 </div>
             </div>
         </div>

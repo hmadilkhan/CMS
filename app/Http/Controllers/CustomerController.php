@@ -155,6 +155,11 @@ class CustomerController extends Controller
             }
             $subdepartment = $subdepartment->first();
 
+            $avgPermitFee = DB::table('projects')
+            ->selectRaw('AVG(actual_permit_fee) as avg_permit_fee')
+            ->whereNotNull('actual_permit_fee')
+            ->first();
+
             $project = Project::create([
                 "customer_id" => $customer->id,
                 "project_name" => $request->first_name . "-" . $request->last_name,
@@ -166,6 +171,7 @@ class CustomerController extends Controller
                 "code" => $this->generateProjectCode(),
                 "overwrite_base_price" =>  $request->overwrite_base_price,
                 "overwrite_panel_price" =>  $request->overwrite_panel_price,
+                "pre_estimated_permit_costs" =>  $avgPermitFee->avg_permit_fee,
             ]);
             $username = auth()->user()->name;
             activity('project')
@@ -253,7 +259,7 @@ class CustomerController extends Controller
                 "module_value" => $request->module_qty,
                 "notes" => $request->notes,
                 "is_adu" => $request->adu,
-                "loan_id" => $request->loadId,
+                "loan_id" => $request->loanId,
                 "sold_production_value" => $request->sold_production_value,
             ]);
 

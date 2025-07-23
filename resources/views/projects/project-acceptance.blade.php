@@ -29,9 +29,6 @@
                     Review</h4>
             </div>
             <hr />
-            @php
-                $modulesAmount = $project->customer->panel_qty * $project->customer->module->amount;
-            @endphp
             <div class="row mx-4">
                 <div class="col-md-12 ">
                     <h5 class="fs-10  flex-fill">Homeowner Name :
@@ -60,6 +57,8 @@
             // $basePrice = $project->customer->inverter->invertertyperates->base_cost + $project->overwrite_base_price;
             $basePrice = $project->customer->finances->inverter_base_cost + $project->overwrite_base_price;
             $moduleQtyPrice = $project->customer->module->amount + $project->overwrite_panel_price;
+            // $modulesAmount = $project->customer->panel_qty * $project->customer->module->amount + $project->overwrite_panel_price;
+            $modulesAmount = $project->customer->panel_qty * $moduleQtyPrice;
         @endphp
         <div class="row mt-4 mx-3 bg-light">
             <table class="table table-bordered table-striped">

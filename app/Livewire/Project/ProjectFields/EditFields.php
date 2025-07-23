@@ -132,132 +132,132 @@ class EditFields extends Component
         $project = $this->project; //Project::with('customer','customer.finances','customer.finances.finance','customer.finances.term','customer.finances.apr')->findOrFail($this->projectId);
         $this->production_requirement = $project->customer->finances->finance->production_requirements;
 
-        if ($this->departmentId == 1) {
-            $data = [
-                'utility_company' => 'required_if:departmentId,1|string',
-                'ntp_approval_date' => 'required_if:departmentId,1|date',
-                'hoa' => 'required_if:departmentId,1|string',
-                'hoa_phone_number' =>  Rule::requiredIf(function () {
-                    return  $this->hoa == "yes";
-                }),
-            ];
+        // if ($this->departmentId == 1) {
+        //     $data = [
+        //         'utility_company' => 'required_if:departmentId,1|string',
+        //         'ntp_approval_date' => 'required_if:departmentId,1|date',
+        //         'hoa' => 'required_if:departmentId,1|string',
+        //         'hoa_phone_number' =>  Rule::requiredIf(function () {
+        //             return  $this->hoa == "yes";
+        //         }),
+        //     ];
 
-            $customMessages = [
-                'utility_company.required_if' => 'The utility company field is required for this department.',
-                'ntp_approval_date.required_if' => 'The NTP approval date is required for this department.',
-                'hoa.required_if' => 'The HOA field is required for this department.',
-                'hoa_phone_number.required_if' => 'The HOA phone number is required when HOA is marked as "yes".',
-            ];
-        }
-        if ($this->departmentId == 2) {
-            $data = [
-                'site_survey_link' => 'required_if:departmentId,2|url',
-            ];
+        //     $customMessages = [
+        //         'utility_company.required_if' => 'The utility company field is required for this department.',
+        //         'ntp_approval_date.required_if' => 'The NTP approval date is required for this department.',
+        //         'hoa.required_if' => 'The HOA field is required for this department.',
+        //         'hoa_phone_number.required_if' => 'The HOA phone number is required when HOA is marked as "yes".',
+        //     ];
+        // }
+        // if ($this->departmentId == 2) {
+        //     $data = [
+        //         'site_survey_link' => 'required_if:departmentId,2|url',
+        //     ];
 
-            $customMessages = [
-                'site_survey_link.required_if' => 'The site survey link is required for this department.',
-            ];
-        }
-        if ($this->departmentId == 3) {
-            $data = [
-                'adders_approve_checkbox' => 'required_if:departmentId,3',
-                'mpu_required' => 'required_if:departmentId,3|in:yes,no',
-                'meter_spot_request_date' =>  Rule::requiredIf(function () {
-                    return  $this->mpu_required == "yes";
-                }),
-                'meter_spot_request_number' =>  Rule::requiredIf(function () {
-                    return  $this->mpu_required == "yes";
-                }),
-                'meter_spot_result' => 'required_if:departmentId,3|string',
-                'production_value_achieved' =>  Rule::requiredIf(function () {
-                    return  $this->production_requirement == 1;
-                }),
-            ];
+        //     $customMessages = [
+        //         'site_survey_link.required_if' => 'The site survey link is required for this department.',
+        //     ];
+        // }
+        // if ($this->departmentId == 3) {
+        //     $data = [
+        //         'adders_approve_checkbox' => 'required_if:departmentId,3',
+        //         'mpu_required' => 'required_if:departmentId,3|in:yes,no',
+        //         'meter_spot_request_date' =>  Rule::requiredIf(function () {
+        //             return  $this->mpu_required == "yes";
+        //         }),
+        //         'meter_spot_request_number' =>  Rule::requiredIf(function () {
+        //             return  $this->mpu_required == "yes";
+        //         }),
+        //         'meter_spot_result' => 'required_if:departmentId,3|string',
+        //         'production_value_achieved' =>  Rule::requiredIf(function () {
+        //             return  $this->production_requirement == 1;
+        //         }),
+        //     ];
 
 
-            $customMessages = [
-                'adders_approve_checkbox.required_if' => 'The adders approve checkbox is required for this department.',
-                'mpu_required.required_if' => 'Please specify if MPU is required.',
-                'meter_spot_request_date.required_if' => 'The meter spot request date is required if MPU is required.',
-                'meter_spot_request_number.required_if' => 'The meter spot request number is required if MPU is required.',
-                'meter_spot_result.required_if' => 'The meter spot result is required for this department.',
-                'production_value_achieved.required_if' => 'The production value achieved is required for this department.',
-            ];
-        }
-        if ($this->departmentId == 4) {
-            $data = [
-                'permitting_submittion_date' => 'required_if:departmentId,4|date',
-                'permitting_approval_date' => 'required_if:departmentId,4|date',
-                'fire_review_required' => 'required',
-                'hoa_approval_request_date' =>  Rule::requiredIf(function () {
-                    return  $this->hoa == "yes";
-                }),
-                'hoa_approval_date' =>  Rule::requiredIf(function () {
-                    return  $this->hoa == "yes";
-                }),
-            ];
+        //     $customMessages = [
+        //         'adders_approve_checkbox.required_if' => 'The adders approve checkbox is required for this department.',
+        //         'mpu_required.required_if' => 'Please specify if MPU is required.',
+        //         'meter_spot_request_date.required_if' => 'The meter spot request date is required if MPU is required.',
+        //         'meter_spot_request_number.required_if' => 'The meter spot request number is required if MPU is required.',
+        //         'meter_spot_result.required_if' => 'The meter spot result is required for this department.',
+        //         'production_value_achieved.required_if' => 'The production value achieved is required for this department.',
+        //     ];
+        // }
+        // if ($this->departmentId == 4) {
+        //     $data = [
+        //         'permitting_submittion_date' => 'required_if:departmentId,4|date',
+        //         'permitting_approval_date' => 'required_if:departmentId,4|date',
+        //         'fire_review_required' => 'required',
+        //         'hoa_approval_request_date' =>  Rule::requiredIf(function () {
+        //             return  $this->hoa == "yes";
+        //         }),
+        //         'hoa_approval_date' =>  Rule::requiredIf(function () {
+        //             return  $this->hoa == "yes";
+        //         }),
+        //     ];
 
-            $customMessages = [
-                'permitting_submittion_date.required_if' => 'The permitting submission date is required for this department.',
-                'permitting_approval_date.required_if' => 'The permitting approval date is required for this department.',
-                'fire_review_required.required_if' => 'The fire review field is required for this department.',
-                'hoa_approval_request_date.required_if' => 'The HOA approval request date is required when HOA is "yes".',
-                'hoa_approval_date.required_if' => 'The HOA approval date is required when HOA is "yes".',
-            ];
-        }
-        if ($this->departmentId == 5) {
-            $data = [
-                'solar_install_date' => 'required_if:departmentId,5|date',
-                'battery_install_date' => 'required_if:departmentId,5|date',
-                'placards_ordered' => 'required_if:departmentId,5',
-                'placards_note' => 'required_if:departmentId,5',
-                'mpu_install_date' => Rule::requiredIf(function () use ($project) {
-                    return $this->departmentId == 5 && $project->mpu_required == "yes";
-                }),
-            ];
+        //     $customMessages = [
+        //         'permitting_submittion_date.required_if' => 'The permitting submission date is required for this department.',
+        //         'permitting_approval_date.required_if' => 'The permitting approval date is required for this department.',
+        //         'fire_review_required.required_if' => 'The fire review field is required for this department.',
+        //         'hoa_approval_request_date.required_if' => 'The HOA approval request date is required when HOA is "yes".',
+        //         'hoa_approval_date.required_if' => 'The HOA approval date is required when HOA is "yes".',
+        //     ];
+        // }
+        // if ($this->departmentId == 5) {
+        //     $data = [
+        //         'solar_install_date' => 'required_if:departmentId,5|date',
+        //         'battery_install_date' => 'required_if:departmentId,5|date',
+        //         'placards_ordered' => 'required_if:departmentId,5',
+        //         'placards_note' => 'required_if:departmentId,5',
+        //         'mpu_install_date' => Rule::requiredIf(function () use ($project) {
+        //             return $this->departmentId == 5 && $project->mpu_required == "yes";
+        //         }),
+        //     ];
 
-            $customMessages = [
-                'solar_install_date.required_if' => 'The solar install date is required for this department.',
-                'battery_install_date.required_if' => 'The battery install date is required for this department.',
-                'mpu_install_date.required_if' => 'The MPU install date is required if MPU is marked as required for this project.',
-                'placards_ordered.required_if' => 'The Placard Ordered field is required.',
-                'placards_note.required_if' => 'The Placard Note field is required.',
-            ];
-        }
-        if ($this->departmentId == 6) {
-            $data = [
-                'rough_inspection_date' => 'required_if:departmentId,6|date',
-                'final_inspection_date' => 'required_if:departmentId,6|date',
-                'fire_inspection_date' => 'required_if:departmentId,6|date',
-            ];
+        //     $customMessages = [
+        //         'solar_install_date.required_if' => 'The solar install date is required for this department.',
+        //         'battery_install_date.required_if' => 'The battery install date is required for this department.',
+        //         'mpu_install_date.required_if' => 'The MPU install date is required if MPU is marked as required for this project.',
+        //         'placards_ordered.required_if' => 'The Placard Ordered field is required.',
+        //         'placards_note.required_if' => 'The Placard Note field is required.',
+        //     ];
+        // }
+        // if ($this->departmentId == 6) {
+        //     $data = [
+        //         'rough_inspection_date' => 'required_if:departmentId,6|date',
+        //         'final_inspection_date' => 'required_if:departmentId,6|date',
+        //         'fire_inspection_date' => 'required_if:departmentId,6|date',
+        //     ];
 
-            $customMessages = [
-                'rough_inspection_date.required_if' => 'The rough inspection date is required for this department.',
-                'final_inspection_date.required_if' => 'The final inspection date is required for this department.',
-                'fire_inspection_date.required_if'  => 'The fire inspection date is required for this department.',
-            ];
-        }
-        if ($this->departmentId == 7) {
-            $data = [
-                'pto_submission_date' => 'required_if:departmentId,7|date',
-                'pto_approval_date' => 'required_if:departmentId,7|date',
-            ];
+        //     $customMessages = [
+        //         'rough_inspection_date.required_if' => 'The rough inspection date is required for this department.',
+        //         'final_inspection_date.required_if' => 'The final inspection date is required for this department.',
+        //         'fire_inspection_date.required_if'  => 'The fire inspection date is required for this department.',
+        //     ];
+        // }
+        // if ($this->departmentId == 7) {
+        //     $data = [
+        //         'pto_submission_date' => 'required_if:departmentId,7|date',
+        //         'pto_approval_date' => 'required_if:departmentId,7|date',
+        //     ];
 
-            $customMessages = [
-                'pto_submission_date.required_if' => 'The PTO submission date is required for this department.',
-                'pto_approval_date.required_if' => 'The PTO approval date is required for this department.',
-            ];
-        }
-        if ($this->departmentId == 8) {
-            $data = [
-                'coc_packet_mailed_out_date' => 'required_if:departmentId,8|date',
-            ];
+        //     $customMessages = [
+        //         'pto_submission_date.required_if' => 'The PTO submission date is required for this department.',
+        //         'pto_approval_date.required_if' => 'The PTO approval date is required for this department.',
+        //     ];
+        // }
+        // if ($this->departmentId == 8) {
+        //     $data = [
+        //         'coc_packet_mailed_out_date' => 'required_if:departmentId,8|date',
+        //     ];
 
-            $customMessages = [
-                'coc_packet_mailed_out_date.required_if' => 'The COC packet mailed out date is required for this department.',
-            ];
-        }
-        $this->validate($data, $customMessages);
+        //     $customMessages = [
+        //         'coc_packet_mailed_out_date.required_if' => 'The COC packet mailed out date is required for this department.',
+        //     ];
+        // }
+        // $this->validate($data, $customMessages);
 
         $updateItems = [];
         if ($this->departmentId == 1) {
@@ -283,16 +283,17 @@ class EditFields extends Component
                 $negative = $project->customer->finances->finance->negative_variance * -1; // Make negative
                 $sold_production_value = $project->customer->sold_production_value;
 
-                if ($sold_production_value == "" || $sold_production_value == null) {
-                    $this->addError('production_value_achieved', "Sold Production Value is required.");
-                    return;
-                }
+                // if ($sold_production_value == "" || $sold_production_value == null) {
+                //     $this->addError('production_value_achieved', "Sold Production Value is required.");
+                //     return;
+                // }
+                if ($sold_production_value != "" || $sold_production_value != null) {
+                    $calculatePercentage = ((($this->production_value_achieved / $sold_production_value) - 1) * 100);
 
-                $calculatePercentage = ((($this->production_value_achieved / $sold_production_value) - 1) * 100);
-
-                if (bccomp($calculatePercentage, $negative, 2) <= 0 || bccomp($calculatePercentage, $positive, 2) >= 0) {
-                    $this->addError('production_value_achieved', "Calculated Percentage (" . number_format($calculatePercentage, 2) . "%) is exceeding the allowed variance range.");
-                    return;
+                    if (bccomp($calculatePercentage, $negative, 2) <= 0 || bccomp($calculatePercentage, $positive, 2) >= 0) {
+                        $this->addError('production_value_achieved', "Calculated Percentage (" . number_format($calculatePercentage, 2) . "%) is exceeding the allowed variance range.");
+                        return;
+                    }
                 }
             }
 

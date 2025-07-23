@@ -49,13 +49,25 @@ class AccountTransactions extends Component
     public function save()
     {
         $this->validate();
-        AccountTransaction::create([
+        $items = [
             'project_id' => $this->project_id,
             'milestone' => $this->milestone,
             'amount' => $this->amount,
             'transaction_date' => $this->transaction_date,
             'transaction_details' => $this->transaction_details,
-        ]);
+        ];
+        $account = AccountTransaction::create($items);
+
+        $username = auth()->user()->name;
+        // Get the changed field names
+        $changedFields = collect($items)->keys()->implode(', ');
+        activity('AccountTransaction')
+            ->performedOn($account)
+            ->causedBy(auth()->user()) // Log who did the action
+            ->withProperties($items)
+            ->setEvent("created")
+            ->log("{$username} created the account transaction: {$changedFields}.");
+
         $this->resetForm();
         $this->fetchTransactions();
         session()->flash('message', 'Transaction added successfully.');
@@ -76,12 +88,23 @@ class AccountTransactions extends Component
     {
         $this->validate();
         $transaction = AccountTransaction::findOrFail($this->transactionIdBeingEdited);
-        $transaction->update([
+        $items = [
             'milestone' => $this->milestone,
             'amount' => $this->amount,
             'transaction_date' => $this->transaction_date,
             'transaction_details' => $this->transaction_details,
-        ]);
+        ];
+        $transaction->update($items);
+        // ADDING TO LOGS
+        $username = auth()->user()->name;
+        // Get the changed field names
+        $changedFields = collect($items)->keys()->implode(', ');
+        activity('AccountTransaction')
+            ->performedOn($transaction)
+            ->causedBy(auth()->user()) // Log who did the action
+            ->withProperties($items)
+            ->setEvent("updated")
+            ->log("{$username} updated the account transaction: {$changedFields}.");
         $this->resetForm();
         $this->fetchTransactions();
         session()->flash('message', 'Transaction updated successfully.');
@@ -94,7 +117,16 @@ class AccountTransactions extends Component
 
     public function delete($id)
     {
+        $account = AccountTransaction::findOrFail($id);
         AccountTransaction::findOrFail($id)->delete();
+        $username = auth()->user()->name;
+        $changedFields = collect($account)->keys()->implode(', ');
+        activity('AccountTransaction')
+            ->performedOn($account)
+            ->causedBy(auth()->user()) // Log who did the action
+            ->withProperties([])
+            ->setEvent("deleted")
+            ->log("{$username} deleted the account transaction: {$changedFields}.");
         $this->fetchTransactions();
         $this->confirmingDeleteId = null;
         session()->flash('message', 'Transaction deleted successfully.');
