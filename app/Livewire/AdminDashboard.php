@@ -2,7 +2,6 @@
 
 namespace App\Livewire;
 
-use App\Models\Notification;
 use Livewire\Attributes\Title;
 use Livewire\Component;
 use Carbon\Carbon;

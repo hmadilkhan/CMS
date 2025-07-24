@@ -71,12 +71,12 @@ class User extends Authenticatable
                 });
     }
 
-    public function notifications()
-    {
-        return $this->hasMany(Notification::class, 'notifiable_id', 'id')->where('notifiable_type', 'App\Models\User');
-    }
-    public function unreadNotifications()
-    {
-        return $this->hasMany(Notification::class, 'notifiable_id', 'id')->whereNull('read_at');
-    }
+    // public function notifications()
+    // {
+    //     return $this->hasMany(Notification::class, 'notifiable_id', 'id')->where('notifiable_type', 'App\Models\User');
+    // }
+    // public function unreadNotifications()
+    // {
+    //     return $this->hasMany(Notification::class, 'notifiable_id', 'id')->whereNull('read_at');
+    // }
 }

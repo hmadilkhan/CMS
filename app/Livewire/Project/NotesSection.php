@@ -6,6 +6,7 @@ use App\Models\DepartmentNote;
 use App\Models\Employee;
 use App\Models\NotesMention;
 use App\Models\Project;
+use App\Models\User;
 use Illuminate\Support\Facades\Mail;
 use Livewire\Component;
 use Illuminate\Support\Facades\Notification;
@@ -58,13 +59,16 @@ class NotesSection extends Component
                 $message = "You have been mentioned in an updated note in the department (" . $project->department->name . ") added by (" . auth()->user()->name . ")";
                 // Send notification (below mail code)
                 $data = [
-                    "employee" => $employee->user,
-                    "project" => $project,
-                    "note" => $cleanNote,
-                    "mentionedBy" => auth()->user(),
+                    "user" => $employee->user->id,
+                    "class" => get_class($employee->user)
                 ];
                 Log::info('BeforeNoteMentionedNotification toArray', $data);
-                Notification::send($employee->user, new NoteMentionedNotification($project, $cleanNote, auth()->user()));
+                $user = User::find($employee->user->id); // or whatever field holds the user id
+                if ($user) {
+                    Notification::send($user, new NoteMentionedNotification($project, $cleanNote, auth()->user()));
+                }
+                // $employee->user->notify(new NoteMentionedNotification($project, $cleanNote, auth()->user()));
+                // Notification::send($employee->user, new NoteMentionedNotification($project, $cleanNote, auth()->user()));
                 if ($employee->user && $employee->user->email_preference == 1) {
                     Mail::raw($message, function ($message) use ($employee, $project) {
                         $message->to($employee->email)
