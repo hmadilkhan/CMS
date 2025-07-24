@@ -57,6 +57,13 @@ class NotesSection extends Component
                 ]);
                 $message = "You have been mentioned in an updated note in the department (" . $project->department->name . ") added by (" . auth()->user()->name . ")";
                 // Send notification (below mail code)
+                $data = [
+                    "employee" => $employee->user,
+                    "project" => $project,
+                    "note" => $cleanNote,
+                    "mentionedBy" => auth()->user(),
+                ];
+                Log::info('BeforeNoteMentionedNotification toArray', $data);
                 Notification::send($employee->user, new NoteMentionedNotification($project, $cleanNote, auth()->user()));
                 if ($employee->user && $employee->user->email_preference == 1) {
                     Mail::raw($message, function ($message) use ($employee, $project) {
