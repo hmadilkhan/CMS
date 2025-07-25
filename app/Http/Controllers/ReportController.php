@@ -183,4 +183,9 @@ class ReportController extends Controller
     {
         return view("dynamic_report");
     }
+
+    public function DynamicReportBuilder()
+    {
+        return view('reports.dynamic-report-builder');
+    }
 }

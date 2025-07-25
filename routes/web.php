@@ -15,6 +15,7 @@ use App\Http\Controllers\TaskController;
 use App\Http\Controllers\ToolController;
 use App\Livewire\AdminDashboard;
 use App\Livewire\DynamicReport;
+use App\Livewire\DynamicReportBuilder;
 use App\Livewire\DynamicReport\DynamicReportForm;
 use App\Models\InverterType;
 use Illuminate\Support\Facades\Route;
@@ -247,6 +248,8 @@ Route::middleware('auth')->group(function () {
 
         //  Route::get("dynamic-report","DynamicReport");
         Route::get("dynamic-report", DynamicReport::class);
+        Route::get("report", DynamicReportBuilder::class);
+        Route::get("dynamic-report-builder", "DynamicReportBuilder")->name("dynamic.report.builder");
     });
 
     Route::controller(AuroraController::class)->group(function () {
