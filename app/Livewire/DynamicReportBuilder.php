@@ -35,6 +35,14 @@ class DynamicReportBuilder extends Component
     public $calcFieldName = '';
     public $calcFieldExpression = '';
     
+    // Calculated field builder UI
+    public $calcInitialField = '';
+    public $builderOperator = '+';
+    public $builderField2 = '';
+    public $builderValue2 = '';
+    public $calcExpressionPreview = '';
+    public $calcExpressionBuilder = [];
+    
     // Available report types
     public $reportTypes = [
         'profitability' => 'Profitability Report',
@@ -62,6 +70,9 @@ class DynamicReportBuilder extends Component
     public function mount()
     {
         $this->reportType = 'profitability';
+
+        // Set default fields based on report type
+        $this->setDefaultFields();
     }
     
     public function getAvailableFieldsProperty()
@@ -123,6 +134,10 @@ class DynamicReportBuilder extends Component
             'projects.placards_note' => 'Placards Note',
             'projects.fire_review_required' => 'Fire Review Required',
             'projects.fire_inspection_date' => 'Fire Inspection Date',
+            'projects.actual_material_cost' => 'Actual Material Cost',
+            'projects.actual_labor_cost' => 'Actual Labor Cost',
+            'projects.actual_permit_fee' => 'Actual Permit Fee',
+            'projects.actual_office_cost' => 'Actual Office Cost',
 
             // Sales Partner fields
             'sales_partners.name' => 'Sales Partner Name',
@@ -251,6 +266,64 @@ class DynamicReportBuilder extends Component
         $this->filters = array_values($this->filters);
     }
     
+    public function addToCalcBuilder()
+    {
+        // First operation: require initial field, operator, and right side
+        if (empty($this->calcExpressionBuilder)) {
+            if ($this->calcInitialField && $this->builderOperator && (($this->builderField2 && !$this->builderValue2) || (!$this->builderField2 && $this->builderValue2 !== ''))) {
+                $part2 = $this->builderField2 ? '{' . $this->builderField2 . '}' : $this->builderValue2;
+                $expression = ' ' . $this->builderOperator . ' ' . $part2;
+                $this->calcExpressionBuilder[] = $expression;
+                $this->updateCalcExpressionPreview();
+                // Reset for next operation
+                $this->builderOperator = '+';
+                $this->builderField2 = '';
+                $this->builderValue2 = '';
+            }
+        } else {
+            // Subsequent operations: only operator and right side
+            if ($this->builderOperator && (($this->builderField2 && !$this->builderValue2) || (!$this->builderField2 && $this->builderValue2 !== ''))) {
+                $part2 = $this->builderField2 ? '{' . $this->builderField2 . '}' : $this->builderValue2;
+                $expression = ' ' . $this->builderOperator . ' ' . $part2;
+                $this->calcExpressionBuilder[] = $expression;
+                $this->updateCalcExpressionPreview();
+                // Reset for next operation
+                $this->builderOperator = '+';
+                $this->builderField2 = '';
+                $this->builderValue2 = '';
+            }
+        }
+    }
+
+    private function updateCalcExpressionPreview()
+    {
+        $this->calcExpressionPreview = $this->calcInitialField ? '{' . $this->calcInitialField . '}' : '';
+        foreach ($this->calcExpressionBuilder as $part) {
+            $this->calcExpressionPreview .= $part;
+        }
+    }
+
+    public function removeLastCalcBuilder()
+    {
+        array_pop($this->calcExpressionBuilder);
+        $this->updateCalcExpressionPreview();
+    }
+
+    public function clearCalcBuilder()
+    {
+        $this->calcInitialField = '';
+        $this->calcExpressionBuilder = [];
+        $this->calcExpressionPreview = '';
+        $this->builderOperator = '+';
+        $this->builderField2 = '';
+        $this->builderValue2 = '';
+    }
+
+    public function useCalcBuilder()
+    {
+        $this->calcFieldExpression = $this->calcExpressionPreview;
+    }
+    
     public function addCalculatedField()
     {
         $this->validate([
@@ -264,6 +337,7 @@ class DynamicReportBuilder extends Component
         ];
         
         $this->reset(['calcFieldName', 'calcFieldExpression']);
+        $this->clearCalcBuilder();
     }
     
     public function removeCalculatedField($index)
@@ -455,7 +529,7 @@ class DynamicReportBuilder extends Component
         if (preg_match('/^[0-9+\-*\/.() ]+$/', $processedExpression)) {
             try {
                 return eval("return $processedExpression;");
-            } catch (Exception $e) {
+            } catch (\Exception $e) {
                 return 'Error';
             }
         }

@@ -195,6 +195,55 @@
                                     <i class="icofont-calculator me-2"></i>Add Calculated Fields
                                 </h6>
                                 
+                                <!-- User-friendly Expression Builder -->
+                                <div class="row g-2 align-items-end mb-2">
+                                    <div class="col-md-3">
+                                        <label>Initial Field</label>
+                                        <select wire:model="calcInitialField" class="form-select" @if($calcExpressionBuilder) disabled @endif>
+                                            <option value="">Select Field</option>
+                                            @foreach($this->availableFields as $field => $name)
+                                                <option value="{{ $field }}">{{ $name }}</option>
+                                            @endforeach
+                                        </select>
+                                    </div>
+                                    <div class="col-md-2">
+                                        <label>Operator</label>
+                                        <select wire:model="builderOperator" class="form-select">
+                                            <option value="+">+</option>
+                                            <option value="-">-</option>
+                                            <option value="*">*</option>
+                                            <option value="/">/</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label>Field / Value</label>
+                                        <select wire:model="builderField2" class="form-select mb-1">
+                                            <option value="">Select Field</option>
+                                            @foreach($this->availableFields as $field => $name)
+                                                <option value="{{ $field }}">{{ $name }}</option>
+                                            @endforeach
+                                        </select>
+                                        <input type="number" wire:model="builderValue2" class="form-control mt-1" placeholder="Or enter a value">
+                                    </div>
+                                    <div class="col-md-2">
+                                        <button type="button" wire:click="addToCalcBuilder" class="btn btn-primary w-100">Add</button>
+                                    </div>
+                                    <div class="col-md-2 d-flex gap-1">
+                                        <button type="button" wire:click="clearCalcBuilder" class="btn btn-outline-secondary w-100">Clear</button>
+                                        <button type="button" wire:click="removeLastCalcBuilder" class="btn btn-outline-danger w-100">Undo</button>
+                                    </div>
+                                </div>
+                                <div class="row mb-2">
+                                    <div class="col-md-10">
+                                        <label>Expression Preview:</label>
+                                        <div class="form-control bg-light">{{ $calcExpressionPreview ?: 'Build your expression...' }}</div>
+                                        <small class="text-muted">You can chain multiple operations (e.g., A + B - C * D). Use "Undo" to remove the last operation.</small>
+                                    </div>
+                                    <div class="col-md-2 d-flex align-items-end">
+                                        <button type="button" wire:click="useCalcBuilder" class="btn btn-success w-100">Use Expression</button>
+                                    </div>
+                                </div>
+                                <!-- Calculated Field Name and Expression -->
                                 <div class="row g-3 align-items-end">
                                     <div class="col-md-3">
                                         <label class="form-label">Field Name</label>
@@ -205,7 +254,7 @@
                                         <label class="form-label">Expression</label>
                                         <input type="text" wire:model="calcFieldExpression" class="form-control" 
                                                placeholder="e.g., {customer_finances.total_contract_value} - {customer_finances.adder_total}">
-                                        <small class="text-muted">Use {field.name} format for field references</small>
+                                        <small class="text-muted">Use the builder above or type manually (use {field.name} format for field references)</small>
                                     </div>
                                     <div class="col-md-2">
                                         <button type="button" wire:click="addCalculatedField" class="btn btn-success w-100">
