@@ -35,39 +35,14 @@ class DynamicReportExport implements FromCollection, WithHeadings, WithMapping, 
 
     public function map($row): array
     {
-        $mappedRow = [];
-        
-        foreach ($this->columns as $column) {
-            $value = $this->getNestedProperty($row, $column['field']);
-            $mappedRow[] = $value ?? '';
-        }
-        
-        return $mappedRow;
-    }
-
-    private function getNestedProperty($object, $property)
-    {
-        $parts = explode('.', $property);
-        $value = $object;
-        
-        foreach ($parts as $part) {
-            if (is_object($value) && isset($value->{$part})) {
-                $value = $value->{$part};
-            } elseif (is_array($value) && isset($value[$part])) {
-                $value = $value[$part];
-            } else {
-                return null;
-            }
-        }
-        
-        return $value;
+        return $row;
     }
 
     public function styles(Worksheet $sheet)
     {
         $headerRow = 1;
         $lastColumn = chr(64 + count($this->columns));
-        
+
         // Header styling
         $sheet->getStyle("A{$headerRow}:{$lastColumn}{$headerRow}")->applyFromArray([
             'font' => [
@@ -102,8 +77,14 @@ class DynamicReportExport implements FromCollection, WithHeadings, WithMapping, 
                 ],
                 'alignment' => [
                     'vertical' => Alignment::VERTICAL_CENTER,
+                    'wrapText' => true,
                 ],
             ]);
+
+            // Set row height for better readability of long content
+            for ($row = 2; $row <= $lastRow; $row++) {
+                $sheet->getRowDimension($row)->setRowHeight(18);
+            }
         }
 
         return [];

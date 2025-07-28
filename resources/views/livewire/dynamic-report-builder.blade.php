@@ -87,7 +87,7 @@
                                                         @foreach($fields as $field => $name)
                                                             <div class="form-check form-check-sm mb-1">
                                                                 <input class="form-check-input" type="checkbox" 
-                                                                       wire:change="addField('{{ $field }}')"
+                                                                       wire:change="toggleField('{{ $field }}')"
                                                                        @if(in_array($field, $selectedFields)) checked @endif
                                                                        id="field_{{ str_replace('.', '_', $field) }}">
                                                                 <label class="form-check-label small" for="field_{{ str_replace('.', '_', $field) }}">
@@ -115,6 +115,20 @@
                                                 </span>
                                             @endforeach
                                         </div>
+                                    </div>
+                                @endif
+                                
+                                <!-- Debug Information (remove in production) -->
+                                @if(config('app.debug'))
+                                    <div class="mt-3">
+                                        <details class="border p-2 rounded">
+                                            <summary class="fw-bold text-muted">Debug Info</summary>
+                                            <small class="text-muted">
+                                                <strong>Selected Fields Count:</strong> {{ $this->selectedFieldsCount }}<br>
+                                                <strong>Report Type:</strong> {{ $reportType }}<br>
+                                                <strong>Selected Fields:</strong> {{ implode(', ', $selectedFields) }}
+                                            </small>
+                                        </details>
                                     </div>
                                 @endif
                             </div>
@@ -335,12 +349,12 @@
                                                                 if ($column['type'] === 'calculated') {
                                                                     $value = $row->{$column['field']} ?? 'N/A';
                                                                 }
-                                                                // Format numbers
-                                                                if (is_numeric($value)) {
+                                                                // Format numbers only if they're not already formatted strings
+                                                                if (is_numeric($value) && !is_string($value)) {
                                                                     $value = number_format($value, (is_float($value + 0) && floor($value + 0) != ($value + 0)) ? 2 : 0);
                                                                 }
                                                             @endphp
-                                                            {{ $value ?? '-' }}
+                                                            <div style="max-width: 300px; word-wrap: break-word; white-space: pre-wrap;">{{ $value ?? '-' }}</div>
                                                         </td>
                                                     @endforeach
                                                 </tr>

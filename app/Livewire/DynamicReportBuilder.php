@@ -8,6 +8,7 @@ use App\Models\User;
 use App\Models\SalesPartner;
 use App\Models\OfficeCost;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Livewire\Component;
 use Livewire\Attributes\Title;
 use Maatwebsite\Excel\Facades\Excel;
@@ -17,7 +18,7 @@ use Illuminate\Support\Str;
 class DynamicReportBuilder extends Component
 {
     #[Title('Dynamic Report Builder')]
-    
+
     public $reportType = '';
     public $selectedFields = [];
     public $filters = [];
@@ -25,16 +26,16 @@ class DynamicReportBuilder extends Component
     public $reportData = [];
     public $reportColumns = [];
     public $showResults = false;
-    
+
     // Filter form fields
     public $filterField = '';
     public $filterOperator = '=';
     public $filterValue = '';
-    
+
     // Calculated field form
     public $calcFieldName = '';
     public $calcFieldExpression = '';
-    
+
     // Calculated field builder UI
     public $calcInitialField = '';
     public $builderOperator = '+';
@@ -42,14 +43,14 @@ class DynamicReportBuilder extends Component
     public $builderValue2 = '';
     public $calcExpressionPreview = '';
     public $calcExpressionBuilder = [];
-    
+
     // Available report types
     public $reportTypes = [
         'profitability' => 'Profitability Report',
-        'forecast' => 'Forecast Report', 
+        'forecast' => 'Forecast Report',
         'override' => 'Override Report'
     ];
-    
+
     // Available operators
     public $operators = [
         '=' => 'Equals',
@@ -66,7 +67,7 @@ class DynamicReportBuilder extends Component
         'IS NULL' => 'Is Empty',
         'IS NOT NULL' => 'Is Not Empty'
     ];
-    
+
     public function mount()
     {
         $this->reportType = 'profitability';
@@ -74,14 +75,14 @@ class DynamicReportBuilder extends Component
         // Set default fields based on report type
         $this->setDefaultFields();
     }
-    
+
     public function getAvailableFieldsProperty()
     {
         $baseFields = [
             // Customer fields
             'customers.id' => 'Customer ID',
             'customers.first_name' => 'Customer First Name',
-            'customers.last_name' => 'Customer Last Name', 
+            'customers.last_name' => 'Customer Last Name',
             'customers.email' => 'Customer Email',
             'customers.phone' => 'Customer Phone',
             'customers.city' => 'Customer City',
@@ -171,18 +172,32 @@ class DynamicReportBuilder extends Component
 
         // Add finance fields for profitability report
         if ($this->reportType === 'profitability') {
-            $baseFields = array_merge($baseFields, [
-                'customer_finances.total_contract_value' => 'Total Contract Value',
-                'customer_finances.adder_total' => 'Adder Total',
-                'customer_finances.gross_profit' => 'Gross Profit',
-                'customer_finances.net_profit' => 'Net Profit',
-                'customer_finances.cost_per_watt' => 'Cost Per Watt',
-            ]);
+            // $baseFields = array_merge($baseFields, [
+            //     'customer_finances.total_contract_value' => 'Total Contract Value',
+            //     'customer_finances.adder_total' => 'Adder Total',
+            //     'customer_finances.gross_profit' => 'Gross Profit',
+            //     'customer_finances.net_profit' => 'Net Profit',
+            //     'customer_finances.cost_per_watt' => 'Cost Per Watt',
+            // ]);
         }
 
         return $baseFields;
     }
-    
+
+    public function getSelectedFieldsCountProperty()
+    {
+        return count($this->selectedFields);
+    }
+
+    public function getSelectedFieldsDebugProperty()
+    {
+        return [
+            'count' => count($this->selectedFields),
+            'fields' => $this->selectedFields,
+            'reportType' => $this->reportType
+        ];
+    }
+
     public function updatedReportType()
     {
         $this->selectedFields = [];
@@ -190,22 +205,30 @@ class DynamicReportBuilder extends Component
         $this->calculatedFields = [];
         $this->reportData = [];
         $this->showResults = false;
-        
+
         // Set default fields based on report type
         $this->setDefaultFields();
+
+        // Reset calculated fields builder
+        $this->clearCalcBuilder();
     }
-    
+
     private function setDefaultFields()
     {
         switch ($this->reportType) {
             case 'profitability':
                 $this->selectedFields = [
                     'customers.first_name',
-                    'customers.last_name', 
+                    'customers.last_name',
                     'sales_partners.name',
                     'projects.solar_install_date',
-                    'customer_finances.total_contract_value',
-                    'customer_finances.gross_profit'
+                    'customer_finances.contract_amount',
+                    'customer_finances.dealer_fee',
+                    'customer_finances.commission',
+                    'customer_finances.adders',
+                    'customer_finances.redline_costs',
+                    "projects.actual_material_cost",
+                    "projects.actual_labor_cost",
                 ];
                 break;
             case 'forecast':
@@ -228,20 +251,37 @@ class DynamicReportBuilder extends Component
                 break;
         }
     }
-    
+
     public function addField($field)
     {
         if (!in_array($field, $this->selectedFields)) {
             $this->selectedFields[] = $field;
         }
     }
-    
+
     public function removeField($index)
     {
         unset($this->selectedFields[$index]);
         $this->selectedFields = array_values($this->selectedFields);
     }
-    
+
+    public function toggleField($field)
+    {
+        if (in_array($field, $this->selectedFields)) {
+            // Remove field
+            $this->selectedFields = array_values(array_filter($this->selectedFields, function ($f) use ($field) {
+                return $f !== $field;
+            }));
+        } else {
+            // Add field
+            $this->selectedFields[] = $field;
+        }
+
+        // Reset report data when fields change
+        $this->reportData = [];
+        $this->showResults = false;
+    }
+
     public function addFilter()
     {
         $this->validate([
@@ -249,23 +289,23 @@ class DynamicReportBuilder extends Component
             'filterOperator' => 'required',
             'filterValue' => 'required_unless:filterOperator,IS NULL,IS NOT NULL'
         ]);
-        
+
         $this->filters[] = [
             'field' => $this->filterField,
             'operator' => $this->filterOperator,
             'value' => $this->filterValue,
             'field_name' => $this->availableFields[$this->filterField] ?? $this->filterField
         ];
-        
+
         $this->reset(['filterField', 'filterOperator', 'filterValue']);
     }
-    
+
     public function removeFilter($index)
     {
         unset($this->filters[$index]);
         $this->filters = array_values($this->filters);
     }
-    
+
     public function addToCalcBuilder()
     {
         // First operation: require initial field, operator, and right side
@@ -323,113 +363,171 @@ class DynamicReportBuilder extends Component
     {
         $this->calcFieldExpression = $this->calcExpressionPreview;
     }
-    
+
     public function addCalculatedField()
     {
         $this->validate([
             'calcFieldName' => 'required|string|max:255',
             'calcFieldExpression' => 'required|string'
         ]);
-        
+
         $this->calculatedFields[] = [
             'name' => $this->calcFieldName,
             'expression' => $this->calcFieldExpression
         ];
-        
+
         $this->reset(['calcFieldName', 'calcFieldExpression']);
         $this->clearCalcBuilder();
     }
-    
+
     public function removeCalculatedField($index)
     {
         unset($this->calculatedFields[$index]);
         $this->calculatedFields = array_values($this->calculatedFields);
     }
-    
+
     public function generateReport()
     {
         $this->validate([
             'selectedFields' => 'required|array|min:1'
         ]);
-        
+
         $query = $this->buildQuery();
         $this->reportData = $query->get();
         $this->reportColumns = $this->buildColumns();
-        // \Log::info($this->reportData);
+
+
         $this->showResults = true;
-        
+
         // Process calculated fields
         $this->processCalculatedFields();
     }
-    
+
     private function buildQuery()
     {
         $query = Customer::query();
-        
+
         // Add joins based on report type and selected fields
         $this->addJoins($query);
-        
+
         // Add filters
         foreach ($this->filters as $filter) {
             $this->applyFilter($query, $filter);
         }
-        
+
         // Add date filters based on report type
         $this->addDateFilters($query);
-        
-        // Select fields
-        $selectFields = $this->selectedFields;
-        
-        // Add customer ID for calculated fields processing
-        if (!in_array('customers.id', $selectFields)) {
-            $selectFields[] = 'customers.id';
+
+        // Select fields with proper aliasing
+        $selectFields = [];
+        foreach ($this->selectedFields as $field) {
+            // Create alias to match the column field names (without table prefix)
+            $fieldName = str_contains($field, '.') ? substr($field, strrpos($field, '.') + 1) : $field;
+            // Special case for customer_finances.adders
+            if ($field === 'customer_finances.adders') {
+                $selectFields[] = DB::raw('customer_finances.adders as adders_amount');
+            } else {
+                $selectFields[] = DB::raw("{$field} as {$fieldName}");
+            }
         }
-        
+
+        // Add customer ID for calculated fields processing
+        if (!in_array('customers.id', $this->selectedFields)) {
+            $selectFields[] = DB::raw('customers.id as id');
+        }
+
+        // Debug: Log the query details
+        Log::info('Build Query Details', [
+            'selectedFields' => $this->selectedFields,
+            'selectFields' => $selectFields,
+            'sql' => $query->toSql(),
+            'bindings' => $query->getBindings()
+        ]);
+
         $query->select($selectFields);
-        // \Log::info($query->toSql());
+
+        // Load necessary relations for the selected fields
+        $relationsToLoad = [];
+        $fieldsString = implode(',', $this->selectedFields);
+
+        if (str_contains($fieldsString, 'sales_partners.')) {
+            $relationsToLoad[] = 'salespartner';
+        }
+        if (str_contains($fieldsString, 'projects.')) {
+            $relationsToLoad[] = 'project';
+        }
+        if (str_contains($fieldsString, 'customer_finances.')) {
+            $relationsToLoad[] = 'finances';
+        }
+        if (str_contains($fieldsString, 'departments.')) {
+            $relationsToLoad[] = 'project.department';
+        }
+        if (str_contains($fieldsString, 'sub_departments.')) {
+            $relationsToLoad[] = 'project.subdepartment';
+        }
+        if (str_contains($fieldsString, 'module_types.')) {
+            $relationsToLoad[] = 'module';
+        }
+        if (str_contains($fieldsString, 'inverter_types.')) {
+            $relationsToLoad[] = 'inverter';
+        }
+
+        if (!empty($relationsToLoad)) {
+            $query->with($relationsToLoad);
+        }
+
         return $query;
     }
-    
+
     private function addJoins($query)
     {
         $fieldsString = implode(',', $this->selectedFields);
-        
+
         // Always join projects if project fields are selected
         if (str_contains($fieldsString, 'projects.')) {
             $query->leftJoin('projects', 'customers.id', '=', 'projects.customer_id');
         }
-        
+
         // Join sales partners
         if (str_contains($fieldsString, 'sales_partners.')) {
             $query->leftJoin('sales_partners', 'customers.sales_partner_id', '=', 'sales_partners.id');
         }
-        
+
         // Join departments
         if (str_contains($fieldsString, 'departments.')) {
             $query->leftJoin('projects', 'customers.id', '=', 'projects.customer_id')
-                  ->leftJoin('departments', 'projects.department_id', '=', 'departments.id');
+                ->leftJoin('departments', 'projects.department_id', '=', 'departments.id');
         }
-        
+
         if (str_contains($fieldsString, 'sub_departments.')) {
             $query->leftJoin('projects', 'customers.id', '=', 'projects.customer_id')
-                  ->leftJoin('sub_departments', 'projects.sub_department_id', '=', 'sub_departments.id');
+                ->leftJoin('sub_departments', 'projects.sub_department_id', '=', 'sub_departments.id');
         }
-        
+
         // Join module and inverter types
         if (str_contains($fieldsString, 'module_types.')) {
             $query->leftJoin('module_types', 'customers.module_type_id', '=', 'module_types.id');
         }
-        
+
         if (str_contains($fieldsString, 'inverter_types.')) {
             $query->leftJoin('inverter_types', 'customers.inverter_type_id', '=', 'inverter_types.id');
         }
-        
+
         // Join customer finances for profitability report
         if ($this->reportType === 'profitability' || str_contains($fieldsString, 'customer_finances.')) {
             $query->leftJoin('customer_finances', 'customers.id', '=', 'customer_finances.customer_id');
         }
+
+        // Debug: Log the joins being applied
+        Log::info('Applied Joins:', [
+            'fieldsString' => $fieldsString,
+            'hasProjects' => str_contains($fieldsString, 'projects.'),
+            'hasSalesPartners' => str_contains($fieldsString, 'sales_partners.'),
+            'hasCustomerFinances' => str_contains($fieldsString, 'customer_finances.'),
+            'reportType' => $this->reportType
+        ]);
     }
-    
+
     private function applyFilter($query, $filter)
     {
         switch ($filter['operator']) {
@@ -463,27 +561,33 @@ class DynamicReportBuilder extends Component
                 $query->where($filter['field'], $filter['operator'], $filter['value']);
         }
     }
-    
+
     private function addDateFilters($query)
     {
         // You can add default date filters based on report type here
         // For now, leaving this flexible for user-defined filters
     }
-    
+
     private function buildColumns()
     {
         $columns = [];
-        
+
         foreach ($this->selectedFields as $field) {
             if ($field !== 'customers.id') { // Skip ID column used for calculations
+                // Extract the field name without table prefix for better data mapping
+                $fieldName = str_contains($field, '.') ? substr($field, strrpos($field, '.') + 1) : $field;
+                // Special case for customer_finances.adders
+                if ($field === 'customer_finances.adders') {
+                    $fieldName = 'adders_amount';
+                }
                 $columns[] = [
-                    'field' => $field,
+                    'field' => $fieldName, // Use field name without table prefix
                     'name' => $this->availableFields[$field] ?? $field,
                     'type' => 'data'
                 ];
             }
         }
-        
+
         // Add calculated field columns
         foreach ($this->calculatedFields as $calcField) {
             $columns[] = [
@@ -492,16 +596,16 @@ class DynamicReportBuilder extends Component
                 'type' => 'calculated'
             ];
         }
-        
+
         return $columns;
     }
-    
+
     private function processCalculatedFields()
     {
         if (empty($this->calculatedFields)) {
             return;
         }
-        
+
         foreach ($this->reportData as $row) {
             foreach ($this->calculatedFields as $calcField) {
                 $fieldKey = 'calc_' . Str::slug($calcField['name'], '_');
@@ -509,13 +613,13 @@ class DynamicReportBuilder extends Component
             }
         }
     }
-    
+
     private function evaluateExpression($expression, $row)
     {
         // Simple expression evaluator
         // Replace field names with actual values
         $processedExpression = $expression;
-        
+
         foreach ($this->availableFields as $field => $name) {
             $fieldValue = $this->getNestedProperty($row, $field);
             $processedExpression = str_replace(
@@ -524,7 +628,7 @@ class DynamicReportBuilder extends Component
                 $processedExpression
             );
         }
-        
+
         // Basic safety check - only allow basic math operations
         if (preg_match('/^[0-9+\-*\/.() ]+$/', $processedExpression)) {
             try {
@@ -533,30 +637,61 @@ class DynamicReportBuilder extends Component
                 return 'Error';
             }
         }
-        
+
         return 'Invalid Expression';
     }
-    
+
     private function getNestedProperty($object, $property)
     {
         // Try direct match (array or object)
         if (is_array($object) && isset($object[$property])) {
-            return $object[$property];
+            return $this->formatValue($object[$property]);
         }
         if (is_object($object) && isset($object->{$property})) {
-            return $object->{$property};
+            return $this->formatValue($object->{$property});
         }
+        // Special case for adders_amount alias
+        if ($property === 'adders_amount' && isset($object->adders_amount)) {
+            return $this->formatValue($object->adders_amount);
+        }
+        // Handle relations for specific field types
+        if ($property === 'name' && isset($object->salespartner)) {
+            return $this->formatValue($object->salespartner->name ?? null);
+        }
+        if (str_starts_with($property, 'solar_install_date') && isset($object->project)) {
+            return $this->formatValue($object->project->solar_install_date ?? null);
+        }
+        if (str_starts_with($property, 'contract_amount') && isset($object->finances)) {
+            return $this->formatValue($object->finances->contract_amount ?? null);
+        }
+        if (str_starts_with($property, 'dealer_fee') && isset($object->finances)) {
+            return $this->formatValue($object->finances->dealer_fee ?? null);
+        }
+        if (str_starts_with($property, 'commission') && isset($object->finances)) {
+            return $this->formatValue($object->finances->commission ?? null);
+        }
+        if (str_starts_with($property, 'redline_costs') && isset($object->finances)) {
+            return $this->formatValue($object->finances->redline_costs ?? null);
+        }
+        if (str_starts_with($property, 'actual_material_cost') && isset($object->project)) {
+            return $this->formatValue($object->project->actual_material_cost ?? null);
+        }
+        if (str_starts_with($property, 'actual_labor_cost') && isset($object->project)) {
+            return $this->formatValue($object->project->actual_labor_cost ?? null);
+        }
+
         // Try last segment if property contains dot
         if (strpos($property, '.') !== false) {
             $parts = explode('.', $property);
             $last = end($parts);
             if (is_array($object) && isset($object[$last])) {
-                return $object[$last];
+                return $this->formatValue($object[$last]);
             }
             if (is_object($object) && isset($object->{$last})) {
-                return $object->{$last};
+                return $this->formatValue($object->{$last});
             }
         }
+
         // Fallback to original nested logic
         $parts = explode('.', $property);
         $value = $object;
@@ -569,40 +704,183 @@ class DynamicReportBuilder extends Component
                 return null;
             }
         }
-        return $value;
+        return $this->formatValue($value);
     }
-    
+
+    private function formatValue($value)
+    {
+        if (is_null($value)) {
+            return '';
+        }
+
+        if (is_string($value)) {
+            // Check if it's JSON
+            if ($this->isJson($value)) {
+                return $this->formatJsonValue($value);
+            }
+            return $value;
+        }
+
+        if (is_array($value) || is_object($value)) {
+            return $this->formatComplexValue($value);
+        }
+
+        return (string) $value;
+    }
+
+    private function isJson($string)
+    {
+        if (!is_string($string)) {
+            return false;
+        }
+
+        json_decode($string);
+        return (json_last_error() == JSON_ERROR_NONE);
+    }
+
+    private function formatJsonValue($jsonString)
+    {
+        $data = json_decode($jsonString, true);
+        if (json_last_error() !== JSON_ERROR_NONE) {
+            return $jsonString; // Return original if not valid JSON
+        }
+
+        return $this->formatComplexValue($data);
+    }
+
+    private function formatComplexValue($value)
+    {
+        if (is_array($value)) {
+            if (empty($value)) {
+                return '';
+            }
+
+            // If it's a sequential array, format as list
+            if (array_keys($value) === range(0, count($value) - 1)) {
+                $formatted = [];
+                foreach ($value as $item) {
+                    if (is_array($item) || is_object($item)) {
+                        $formatted[] = $this->formatComplexValue($item);
+                    } else {
+                        $formatted[] = (string) $item;
+                    }
+                }
+                return implode(', ', $formatted);
+            }
+
+            // If it's an associative array, format as key-value pairs
+            $formatted = [];
+            foreach ($value as $key => $item) {
+                if (is_array($item) || is_object($item)) {
+                    $formatted[] = $key . ': ' . $this->formatComplexValue($item);
+                } else {
+                    $formatted[] = $key . ': ' . (string) $item;
+                }
+            }
+            return implode('; ', $formatted);
+        }
+
+        if (is_object($value)) {
+            // Handle Eloquent models and other objects
+            if (method_exists($value, 'toArray')) {
+                return $this->formatComplexValue($value->toArray());
+            }
+
+            // Convert object to array
+            $array = (array) $value;
+            return $this->formatComplexValue($array);
+        }
+
+        return (string) $value;
+    }
+
     public function exportExcel()
     {
         if (empty($this->reportData)) {
             session()->flash('error', 'No data to export. Please generate a report first.');
             return;
         }
-        
+
+        $results = [];
+        foreach ($this->reportData as $row) {
+            $rowData = [];
+            foreach ($this->reportColumns as $column) {
+                $value = $this->getNestedProperty($row, $column['field']);
+                if ($column['field'] === 'adders_amount') {
+                    // Always flatten adders_amount from finances
+                    if (is_array($row) && isset($row['finances']['adders'])) {
+                        $value = $row['finances']['adders'];
+                    } elseif (is_object($row) && isset($row->finances) && isset($row->finances->adders)) {
+                        $value = $row->finances->adders;
+                    }
+                }
+                if ($column['type'] === 'calculated') {
+                    $value = is_object($row) ? ($row->{$column['field']} ?? 'N/A') : (isset($row[$column['field']]) ? $row[$column['field']] : 'N/A');
+                }
+                if (is_numeric($value) && !is_string($value)) {
+                    $value = number_format($value, (is_float($value + 0) && floor($value + 0) != ($value + 0)) ? 2 : 0);
+                }
+                // If value is null, empty string, or only whitespace, show '-'
+                if ($value === null || (is_string($value) && trim($value) === '')) {
+                    $value = '-';
+                }
+                $rowData[] = $value;
+            }
+            $results[] = $rowData;
+        }
+
         $filename = $this->reportTypes[$this->reportType] . '_' . date('Y-m-d_H-i-s') . '.xlsx';
-        
+
         return Excel::download(
-            new DynamicReportExport($this->reportData, $this->reportColumns),
+            new DynamicReportExport($results, $this->reportColumns),
             $filename
         );
     }
-    
+
     public function exportPdf()
     {
         if (empty($this->reportData)) {
             session()->flash('error', 'No data to export. Please generate a report first.');
             return;
         }
-        
+
+        $results = [];
+        foreach ($this->reportData as $row) {
+            $rowData = [];
+            foreach ($this->reportColumns as $column) {
+                $value = $this->getNestedProperty($row, $column['field']);
+                if ($column['field'] === 'adders_amount') {
+                    // Always flatten adders_amount from finances
+                    if (is_array($row) && isset($row['finances']['adders'])) {
+                        $value = $row['finances']['adders'];
+                    } elseif (is_object($row) && isset($row->finances) && isset($row->finances->adders)) {
+                        $value = $row->finances->adders;
+                    }
+                }
+                if ($column['type'] === 'calculated') {
+                    $value = is_object($row) ? ($row->{$column['field']} ?? 'N/A') : (isset($row[$column['field']]) ? $row[$column['field']] : 'N/A');
+                }
+                if (is_numeric($value) && !is_string($value)) {
+                    $value = number_format($value, (is_float($value + 0) && floor($value + 0) != ($value + 0)) ? 2 : 0);
+                }
+                // If value is null, empty string, or only whitespace, show '-'
+                if ($value === null || (is_string($value) && trim($value) === '')) {
+                    $value = '-';
+                }
+                $rowData[] = $value;
+            }
+            $results[] = $rowData;
+        }
+
         $filename = $this->reportTypes[$this->reportType] . '_' . date('Y-m-d_H-i-s') . '.pdf';
-        
+
         return Excel::download(
-            new DynamicReportExport($this->reportData, $this->reportColumns),
+            new DynamicReportExport($results, $this->reportColumns),
             $filename,
             \Maatwebsite\Excel\Excel::DOMPDF
         );
     }
-    
+
     public function clearAll()
     {
         $this->selectedFields = [];
@@ -610,9 +888,10 @@ class DynamicReportBuilder extends Component
         $this->calculatedFields = [];
         $this->reportData = [];
         $this->showResults = false;
+        $this->clearCalcBuilder();
         $this->setDefaultFields();
     }
-    
+
     public function render()
     {
         return view('livewire.dynamic-report-builder');
