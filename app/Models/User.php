@@ -6,12 +6,13 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Lab404\Impersonate\Models\Impersonate;
 use Laravel\Sanctum\HasApiTokens;
 use Spatie\Permission\Traits\HasRoles;
 
 class User extends Authenticatable
 {
-    use HasApiTokens, HasFactory, Notifiable, HasRoles;
+    use HasApiTokens, HasFactory, Notifiable, HasRoles, Impersonate;
 
     /**
      * The attributes that are mass assignable.
@@ -56,19 +57,28 @@ class User extends Authenticatable
 
     public function type()
     {
-        return $this->belongsTo(UserType::class,"user_type_id","id");
+        return $this->belongsTo(UserType::class, "user_type_id", "id");
     }
 
     public function employee()
     {
-        return $this->belongsTo(Employee::class,"id","user_id");
+        return $this->belongsTo(Employee::class, "id", "user_id");
     }
 
-    public function scopeFilterByRole($query,$rolename) 
+    public function scopeFilterByRole($query, $rolename)
     {
         return $query->whereHas("roles", function ($query) use ($rolename) {
-                    $query->where("name", $rolename);
-                });
+            $query->where("name", $rolename);
+        });
+    }
+
+    public function canImpersonate(): bool
+    {
+        return $this->hasRole('Super Admin');
+    }
+    public function canBeImpersonated(): bool
+    {
+        return !$this->hasRole('Super Admin');
     }
 
     // public function notifications()

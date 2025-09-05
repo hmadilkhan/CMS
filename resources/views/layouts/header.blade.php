@@ -1,6 +1,6 @@
 <!-- Body: Header -->
 <div class="header">
-   <nav class="navbar py-4">
+    <nav class="navbar py-4">
         <div class="container-xxl">
 
             <!-- header rightbar icon -->
@@ -10,26 +10,32 @@
                         <i class="icofont-alarm fs-5"></i>
                         <span class="pulse-ring"></span>
                     </a>
-                    <div id="NotificationsDiv" class="dropdown-menu rounded-lg shadow border-0 dropdown-animation dropdown-menu-sm-end p-0 m-0">
+                    <div id="NotificationsDiv"
+                        class="dropdown-menu rounded-lg shadow border-0 dropdown-animation dropdown-menu-sm-end p-0 m-0">
                         @livewire('notifications')
                     </div>
                 </div>
                 <div class="dropdown user-profile ml-2 ml-sm-3 d-flex align-items-center zindex-popover">
                     <div class="u-info me-2">
-                        <p class="mb-0 text-end line-height-sm "><span class="font-weight-bold">{{auth()->user()->name}}</span></p>
-                        <small>{{auth()->user()->getRoleNames()[0]}}</small>
+                        <p class="mb-0 text-end line-height-sm "><span
+                                class="font-weight-bold">{{ auth()->user()->name }}</span></p>
+                        <small>{{ auth()->user()->getRoleNames()[0] }}</small>
                     </div>
-                    <a class="nav-link dropdown-toggle pulse p-0" href="#" role="button" data-bs-toggle="dropdown" data-bs-display="static">
-                        <img class="avatar lg rounded-circle img-thumbnail" src="{{asset('assets/images/profile_av.png')}}" alt="profile">
+                    <a class="nav-link dropdown-toggle pulse p-0" href="#" role="button"
+                        data-bs-toggle="dropdown" data-bs-display="static">
+                        <img class="avatar lg rounded-circle img-thumbnail"
+                            src="{{ asset('assets/images/profile_av.png') }}" alt="profile">
                     </a>
                     <div class="dropdown-menu rounded-lg shadow border-0 dropdown-animation dropdown-menu-end p-0 m-0">
                         <div class="card border-0 w280">
                             <div class="card-body pb-0">
                                 <div class="d-flex py-1">
-                                    <img class="avatar rounded-circle" src="{{asset('assets/images/profile_av.png')}}" alt="profile">
+                                    <img class="avatar rounded-circle" src="{{ asset('assets/images/profile_av.png') }}"
+                                        alt="profile">
                                     <div class="flex-fill ms-3">
-                                        <p class="mb-0"><span class="font-weight-bold">{{auth()->user()->name}}</span></p>
-                                        <small class="">{{auth()->user()->email}}</small>
+                                        <p class="mb-0"><span
+                                                class="font-weight-bold">{{ auth()->user()->name }}</span></p>
+                                        <small class="">{{ auth()->user()->email }}</small>
                                     </div>
                                 </div>
 
@@ -38,9 +44,23 @@
                                 </div>
                             </div>
                             <div class="list-group m-2 ">
-                                <a href="{{route('profile.edit')}}" class="list-group-item list-group-item-action border-0 "><i class="icofont-tasks fs-5 me-3"></i>Profile</a>
+                                <a href="{{ route('profile.edit') }}"
+                                    class="list-group-item list-group-item-action border-0 "><i
+                                        class="icofont-tasks fs-5 me-3"></i>Profile</a>
                                 {{-- <a href="members.html" class="list-group-item list-group-item-action border-0 "><i class="icofont-ui-user-group fs-6 me-3"></i>members</a> --}}
-                                <a href="{{route('profile.logout')}}" class="list-group-item list-group-item-action border-0 "><i class="icofont-logout fs-6 me-3"></i>Signout</a>
+                                @if (app('impersonate')->isImpersonating())
+                                    <a href="{{ route('impersonate.leave', [
+                                        'id' => auth()->user()->id,
+                                        'guardName' => 'admin',
+                                        'redirect_to' => 'admin.dashboard',
+                                    ]) }}"
+                                        class="btn btn-warning">Return to my
+                                        account</a>
+                                @else
+                                    <a href="{{ route('profile.logout') }}"
+                                        class="list-group-item list-group-item-action border-0 "><i
+                                            class="icofont-logout fs-6 me-3"></i>Signout</a>
+                                @endif
                                 {{-- <div>
                                     <hr class="dropdown-divider border-dark">
                                 </div> 
@@ -52,7 +72,8 @@
             </div>
 
             <!-- menu toggler -->
-            <button class="navbar-toggler p-0 border-0 menu-toggle order-3" type="button" data-bs-toggle="collapse" data-bs-target="#mainHeader">
+            <button class="navbar-toggler p-0 border-0 menu-toggle order-3" type="button" data-bs-toggle="collapse"
+                data-bs-target="#mainHeader">
                 <span class="fa fa-bars"></span>
             </button>
 

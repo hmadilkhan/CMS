@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 
 use App\Http\Controllers\AuroraController;
 use App\Http\Controllers\CustomerController;
@@ -19,6 +19,7 @@ use App\Livewire\DynamicReportBuilder;
 use App\Livewire\DynamicReport\DynamicReportForm;
 use App\Models\InverterType;
 use Illuminate\Support\Facades\Route;
+use Lab404\Impersonate\Controllers\ImpersonateController;
 
 /*
 |--------------------------------------------------------------------------
@@ -268,6 +269,16 @@ Route::middleware('auth')->group(function () {
     Route::get('fetch-emails', [App\Http\Controllers\ImapController::class, 'fetchEmails']);
     Route::post('show-emails', [App\Http\Controllers\ImapController::class, 'showEmails'])->name("show.emails");
     Route::post('fetch-emails', [App\Http\Controllers\ImapController::class, 'fetchDepartmentMails'])->name("fetch.emails");
+});
+
+// Start impersonation — only Super Admins
+Route::middleware(['web','auth','role:Super Admin'])
+    ->get('/impersonate/take/{id}', [ImpersonateController::class, 'take'])
+    ->name('impersonate');
+
+// Stop impersonation — available only when impersonating
+Route::middleware(['web','auth'])->group(function () {
+    Route::impersonate(); // creates 'impersonate' & 'impersonate.leave'
 });
 
 require __DIR__ . '/auth.php';
