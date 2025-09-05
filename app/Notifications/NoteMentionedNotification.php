@@ -65,7 +65,7 @@ class NoteMentionedNotification extends Notification implements ShouldQueue
             'message' => $this->mentionedBy->name . ' mentioned you in a note on project: ' . $this->project->project_name,
             'url' => url('/projects/' . $this->project->id),
         ];
-        Log::info('NoteMentionedNotification toArray', $data);
+        // Log::info('NoteMentionedNotification toArray', $data);
         return $data;
     }
 }

@@ -270,7 +270,7 @@
         .main-container {
             width: 650px;
             /* margin-left: auto;
-                                                                                                                                                                            margin-right: auto; */
+                                                                                                                                                                                    margin-right: auto; */
         }
 
         .tags-input {
@@ -349,11 +349,17 @@
         <div class="card-body">
             <div class="row clearfix">
                 <div class="col-md-12">
+                    @if ($alertStatus)
+                        <div class="alert alert-{{$alertClass}} alert-dismissible fade show" role="alert">
+                            {{ $message }} 
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        </div>
+                    @endif
                     <div class="card border-0 mb-4 no-bg">
                         <div
                             class="card-header py-3 px-0 d-sm-flex align-items-center me-1 mt-1 w-sm-100  justify-content-between border-bottom">
                             <div class="d-flex">
-                                <h6 class="mb-0 fs-6  font-monospace fw-bold mb-0 mt-sm-0 px-3 py-3 text-center">
+                                <h6 class="mb-0 fs-6  font-monospace fw-bold mt-sm-0 px-3 py-3 text-center">
                                     @if (empty($project->pto_approval_date))
                                         {{ now()->diffInDays(Carbon\Carbon::parse($project->customer->sold_date)) }}
                                     @else
@@ -371,7 +377,7 @@
                                 @endif
                             </div>
                             <h3 class=" fw-bold flex-fill mb-0 mt-sm-0 text-center fs-10 text-uppercase">
-                                {{ $project->project_name }} 
+                                {{ $project->project_name }}
                             </h3>
                             @if (auth()->user()->hasAnyRole(['Super Admin', 'Admin', 'Manager']))
                                 <a class="me-1 mt-1 w-sm-100"><select class="form-select "
@@ -390,7 +396,7 @@
                                 id="openemployee"><i class="icofont-arrow-left me-2 fs-6"></i>Back to List</a>
                         </div>
                     </div>
-                    
+
                     <div class="d-flex justify-content-center align-items-center">
                         <nav class="navbar navbar-expand-lg ">
                             <div class="container-fluid">
@@ -493,7 +499,8 @@
                         <li class="nav-item"><a class="nav-link {{ $project->viewed_emails_count > 0 ? 'blink-dot' : '' }}"
                                 data-bs-toggle="tab" href="#communication" role="tab">Communication</a></li>
                         @can('Project History')
-                            <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#history" role="tab">Project
+                            <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#history"
+                                    role="tab">Project
                                     History</a></li>
                         @endcan
                     </ul>
@@ -801,16 +808,18 @@
                         <input disabled value="{{ $project->customer->inverter_qty }}" type="text"
                             class="form-control" id="inverter_qty" name="inverter_qty" placeholder="Inverter Qty">
                     </div>
-                    @if($project->customer->loan_id)
+                    @if ($project->customer->loan_id)
                         <div class="col-sm-3">
                             <label for="inverter_qty" class="form-label">Loan Id</label>
-                            <input disabled value="{{ $project->customer->loan_id }}" type="text" class="form-control" placeholder="Loan Id">
+                            <input disabled value="{{ $project->customer->loan_id }}" type="text"
+                                class="form-control" placeholder="Loan Id">
                         </div>
                     @endif
-                    @if($project->customer->sold_production_value)
+                    @if ($project->customer->sold_production_value)
                         <div class="col-sm-3">
                             <label for="inverter_qty" class="form-label">Sold Production Value</label>
-                            <input disabled value="{{ $project->customer->sold_production_value }}" type="text" class="form-control" placeholder="Sold Production Value">
+                            <input disabled value="{{ $project->customer->sold_production_value }}" type="text"
+                                class="form-control" placeholder="Sold Production Value">
                         </div>
                     @endif
                 </div>
@@ -955,11 +964,18 @@
                                     id="dealer_fee_amount" name="dealer_fee_amount">
                             </div>
                         @endif
+                        @can('Holdback Amount')
+                        <div class="col-sm-3 ">
+                            <label for="commission" class="form-label">Holdback Amount</label>
+                            <input type="text" class="form-control"
+                                value="$ {{ number_format($project->customer->finances->holdback_amount, 2) }}">
+                        </div>
+                        @endcan
                     </div>
-                    <div class="col-sm-12 mb-3">
+                    {{-- <div class="col-sm-12 mb-3">
                         <button type="submit" class="btn btn-dark me-1 mt-1 w-sm-100"><i
                                 class="icofont-arrow-left me-2 fs-6"></i>Submit</button>
-                    </div>
+                    </div> --}}
                     {{-- @endif --}}
                 @endcan
             </div>

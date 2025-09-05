@@ -116,6 +116,9 @@ class ProjectController extends Controller
      */
     public function show(Project $project, Request $request)
     {
+        $alertClass = "";
+        $alertStatus = false;
+        $message = "";
         if ($request->ghost == "ghost") {
             $project = Project::findOrFail($request->id);
         }
@@ -143,12 +146,26 @@ class ProjectController extends Controller
         })->sortBy('department_id')->values();
 
 
-        $project = Project::with("task", "customer", "department", "logs", "logs.call","logs.user", "subdepartment", "assignedPerson", "assignedPerson.employee", "departmentnotes", "departmentnotes.user", "salesPartnerUser")
+        $project = Project::with("task", "customer", "customer.finances", "customer.finances.finance", "department", "logs", "logs.call", "logs.user", "subdepartment", "assignedPerson", "assignedPerson.employee", "departmentnotes", "departmentnotes.user", "salesPartnerUser")
             ->withCount(['emails as viewed_emails_count' => function ($query) {
                 $query->where('is_view', 1);
             }])
             ->where("id", $project->id)
             ->first();
+        $days = $project->customer->finances->finance->no_of_days;
+        $alertStatus = $project->customer->finances->finance->pto_restriction;
+        $ntpApprovalDate = $project->ntp_approval_date;
+        if ($ntpApprovalDate != "" && $days > 0) {
+            $finalDate = Carbon::parse($ntpApprovalDate)->addDays($days)->format('Y-m-d');
+          
+            if (date("Y-m-d") >= $finalDate) {
+                $message = "PTO Greenlight approved";
+                $alertClass = "success";
+            } else {
+                $message = "PTO Greenlight not approved. Expected date is " . $finalDate;
+                $alertClass = "warning";
+            }
+        }
         $task = Task::whereIn("status", ["In-Progress", "Hold", "Cancelled"])->where("project_id", $project->id)->first();
         $departments = Department::whereIn("id", Task::where("project_id", $project->id)->whereNotIn("department_id", Department::where("id", ">", $task->department_id)->take(1)->pluck("id"))->where("id", "!=", 9)->groupBy("department_id")->orderBy("department_id")->pluck("department_id"))->get();
         $fwdDepartments =  array_merge($departments->toArray(), Department::where("id", ">", $task->department_id)->take(1)->get()->toArray());
@@ -173,6 +190,9 @@ class ProjectController extends Controller
             "totalDaysOfDepartments" => $results,
             "interactions" => Activity::where("log_name", "project")->where("subject_id", $project->id)->orderBy("id", "desc")->get(),
             "ghost" => $request->ghost,
+            "message" => $message, 
+            "alertStatus" => $alertStatus,
+            "alertClass" => $alertClass,
         ]);
     }
 
@@ -650,7 +670,7 @@ class ProjectController extends Controller
         if ($request->search != "") {
             $query->whereHas('customer', function ($q) use ($request) {
                 $q->where('first_name', 'like', '%' . $request->search . '%')->orWhere('last_name', 'like', '%' . $request->search . '%')
-                  ->orWhere('street', 'like', '%' . $request->search . '%');
+                    ->orWhere('street', 'like', '%' . $request->search . '%');
             });
         }
         if ($request->id == "all") {

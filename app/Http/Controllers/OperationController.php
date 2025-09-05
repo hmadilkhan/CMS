@@ -252,6 +252,10 @@ class OperationController extends Controller
                     "positive_variance" => $request->positive_variance,
                     "negative_variance" => $request->negative_variance,
                     "dealer_fee" => $request->dealer_fee,
+                    "pto_restriction" => $request->pto_restriction,
+                    "no_of_days" => $request->no_of_days,
+                    "holdback" => $request->holdback,
+                    "dollar_watt_value" => $request->dollar_watt_value,
                 ]);
                 LoanTerm::create([
                     "finance_option_id" => $finance->id,
@@ -280,9 +284,13 @@ class OperationController extends Controller
             $adder->name = $request->name;
             $adder->loan_id = $request->loan_id;
             $adder->production_requirements = $request->production_requirements;
-            $adder->positive_variance = $request->positive_variance;
-            $adder->negative_variance = $request->negative_variance;
+            $adder->positive_variance = ($request->production_requirements == 0 ? 0 : $request->positive_variance);
+            $adder->negative_variance = ($request->production_requirements == 0 ? 0 : $request->negative_variance);
             $adder->dealer_fee = $request->dealer_fee;
+            $adder->pto_restriction = $request->pto_restriction;
+            $adder->no_of_days = ($request->pto_restriction == 0 ? 0 : $request->no_of_days);
+            $adder->holdback = $request->holdback;
+            $adder->dollar_watt_value = ($request->holdback == 0 ? 0 : $request->dollar_watt_value);
             $adder->save();
             return redirect()->route("finance.option.types");
         } catch (\Throwable $th) {

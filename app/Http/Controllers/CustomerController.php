@@ -109,13 +109,17 @@ class CustomerController extends Controller
                 "module_type_id" => $request->module_type_id,
                 "inverter_qty" => $request->inverter_qty,
                 "module_value" => $request->module_qty,
-                "module_value" => $request->module_qty,
                 "notes" => $request->notes,
                 "is_adu" => $request->adu,
-                "loan_id" => $request->loadId,
+                "loan_id" => $request->loanId,
                 "sold_production_value" => $request->sold_production_value,
             ]);
-
+            // CODE FOR CALCULATING HOLD BACK AMOUNT
+            $holdBackAmount = 0;
+            $financeOption = FinanceOption::where("id", $request->finance_option_id)->first();
+            if($financeOption->holdback == 1){
+                $holdBackAmount = ($request->module_qty * $financeOption->dollar_watt_value);
+            }
             CustomerFinance::create([
                 "customer_id" => $customer->id,
                 "finance_option_id" => $request->finance_option_id,
@@ -131,6 +135,7 @@ class CustomerController extends Controller
                 "total_overwrite_panel_price" => ($request->overwrite_panel_price * $request->panel_qty),
                 "module_type_cost" => $moduleCost->amount,
                 "inverter_base_cost" => $inverterBaseCost->base_cost,
+                "holdback_amount" => $holdBackAmount,
             ]);
             if (!empty($request->uom)) {
                 $count = count($request->uom);
@@ -282,6 +287,12 @@ class CustomerController extends Controller
                     }
                 }
             }
+            // CODE FOR CALCULATING HOLD BACK AMOUNT
+            $holdBackAmount = 0;
+            $financeOption = FinanceOption::where("id", $request->finance_option_id)->first();
+            if($financeOption->holdback == 1){
+                $holdBackAmount = ($request->module_qty * $financeOption->dollar_watt_value);
+            }
             $customer->finances()->update([
                 "customer_id" => $customer->id,
                 "finance_option_id" => $request->finance_option_id,
@@ -295,6 +306,7 @@ class CustomerController extends Controller
                 "dealer_fee_amount" => $request->dealer_fee_amount,
                 "module_type_cost" => $moduleCost->amount,
                 "inverter_base_cost" => $inverterBaseCost->base_cost,
+                "holdback_amount" => $holdBackAmount,
             ]);
             if ($request->sales_partner_user_id != "") {
                 $customer->project()->update([

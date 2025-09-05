@@ -47,7 +47,7 @@ class ProjectCost extends Component
     {
         $laborCost = LaborCost::whereNull('deleted_at')->first();
         $this->projectId = $this->project->id;
-        $this->internalContractAmount = $this->project->customer->finances->redline_costs + $this->project->customer->finances->adders;
+        $this->internalContractAmount = $this->project->customer->finances->redline_costs + $this->project->customer->finances->adders + $this->project->customer->finances->holdback_amount;
         # PRE FIELDS
         // $this->preEstimateMaterialCost = $this->project->pre_estimated_material_costs;
         $this->preEstimateMaterialCost =  (($this->project->customer->panel_qty * $this->project->customer->module->internal_module_cost) + $this->project->customer->inverter->invertertyperates->internal_base_cost );

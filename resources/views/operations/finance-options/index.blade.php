@@ -79,6 +79,44 @@
                     <div class="text-danger message mt-2">{{$message}}</div>
                     @enderror
                 </div>
+                <div class="col-md-3 col-sm-3">
+                    <label class="form-label">PTO Restriction</label>
+                    <select class="form-select select2" aria-label="Default select PTO Restriction" id="pto_restriction" name="pto_restriction">
+                        <option  @if(!empty($finance) && $finance->pto_restriction == 1) selected @endif value="1">Yes</option>
+                        <option  @if(!empty($finance) && $finance->pto_restriction == 0) selected @endif  {{ empty($finance) ? 'selected' : '' }} value="0">No</option>
+                    </select>
+                    @error("pto_restriction")
+                    <div class="text-danger message mt-2">{{$message}}</div>
+                    @enderror
+                </div>
+                <div class="col-md-3 col-sm-3" id="no_of_days_div" style="display: none">
+                    <label>No of Days</label>
+                    <input type="text" class="form-control @error('no_of_days') is-invalid @enderror" id="no_of_days" name="no_of_days" placeholder="Enter No of Days" value="{{ !empty($finance) ? $finance->no_of_days : old('no_of_days') }}">
+                    @error('no_of_days')
+                    <span class="invalid-feedback" role="alert">
+                        <strong>{{ $message }}</strong>
+                    </span>
+                    @enderror
+                </div>
+                <div class="col-md-3 col-sm-3">
+                    <label class="form-label">Holdback</label>
+                    <select class="form-select select2" aria-label="Default select holdback" id="holdback" name="holdback">
+                        <option  @if(!empty($finance) && $finance->holdback == 1) selected @endif value="1">Yes</option>
+                        <option  @if(!empty($finance) && $finance->holdback == 0) selected @endif  {{ empty($finance) ? 'selected' : '' }} value="0">No</option>
+                    </select>
+                    @error("holdback")
+                    <div class="text-danger message mt-2">{{$message}}</div>
+                    @enderror
+                </div>
+                <div class="col-md-2 col-sm-2" id="dollar_watt_value_div" style="display: none">
+                    <label>$ / watt</label>
+                    <input type="text" class="form-control @error('dollar_watt_value') is-invalid @enderror" id="dollar_watt_value" name="dollar_watt_value" placeholder="Enter No of Days" value="{{ !empty($finance) ? $finance->dollar_watt_value : old('dollar_watt_value') }}">
+                    @error('dollar_watt_value')
+                    <span class="invalid-feedback" role="alert">
+                        <strong>{{ $message }}</strong>
+                    </span>
+                    @enderror
+                </div>
                 <div class="col-4 mt-3">
                     <label></label>
                     <div class="form-group float-left ">
@@ -109,6 +147,10 @@
                     <th>Positive Variance</th> 
                     <th>Negative Variance</th>
                     <th>Dealer Fee</th>
+                    <th>PTO Restriction</th>
+                    <th>No of Days</th>
+                    <th>Holdback</th>
+                    <th>Dollar Watt Value</th>
                     <th>Actions</th>
                 </tr>
             </thead>
@@ -122,6 +164,10 @@
                     <td>{{ $financeOption->positive_variance }}</td>
                     <td>{{ $financeOption->negative_variance }}</td>
                     <td>{{ $financeOption->dealer_fee == 1 ? 'Yes' : 'No' }}</td>
+                    <td>{{ $financeOption->pto_restriction == 1 ? 'Yes' : 'No' }}</td>
+                    <td>{{ $financeOption->no_of_days }}</td>
+                    <td>{{ $financeOption->holdback == 1 ? 'Yes' : 'No' }}</td>
+                    <td>{{ $financeOption->dollar_watt_value  }}</td>
                     <td class="text-center">
                         <a style="cursor: pointer;" data-toggle="tooltip" title="Edit" href="{{ route('finance.option.types',$financeOption->id)}}">
                             <i class="icofont-pencil text-warning"></i></a>
@@ -188,8 +234,26 @@
             }
         });
 
+        $("#pto_restriction").change(function() {
+            if ($(this).val() == 1) {
+                $("#no_of_days_div").show();
+            } else {
+                $("#no_of_days_div").hide();
+            }
+        });
+        
+        $("#holdback").change(function() {
+            if ($(this).val() == 1) {
+                $("#dollar_watt_value_div").show();
+            } else {
+                $("#dollar_watt_value_div").hide();
+            }
+        });
+
         // Trigger change event on page load to set initial visibility
         $("#production_requirements").trigger("change");
+        $("#pto_restriction").trigger("change");
+        $("#holdback").trigger("change");
     });
 </script>
 @endsection

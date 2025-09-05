@@ -15,7 +15,7 @@ class WidgetsCards extends Component
         $endDate = Carbon::today();
 
         // Rolling 12 Month Revenue
-        $totalContractAmount = Project::whereBetween('created_at', [$startDate, $endDate])
+        $totalContractAmount = Project::whereBetween('created_at', [$startJanDate, $endDate])
             ->whereHas('customer.finances') // optional safety
             ->with('customer.finances')
             ->get()
@@ -39,6 +39,6 @@ class WidgetsCards extends Component
                 return $project->customer->finances->commission ?? 0;
             });
 
-        return view('livewire.dashboard.widgets-cards', compact('totalContractAmount','totalYtdrevenue','totalCommission'));
+        return view('livewire.dashboard.widgets-cards', compact('totalContractAmount', 'totalYtdrevenue', 'totalCommission'));
     }
 }
