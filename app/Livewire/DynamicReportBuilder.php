@@ -13,6 +13,7 @@ use Livewire\Component;
 use Livewire\Attributes\Title;
 use Maatwebsite\Excel\Facades\Excel;
 use App\Exports\DynamicReportExport;
+use App\Models\SavedReport;
 use Illuminate\Support\Str;
 
 class DynamicReportBuilder extends Component
@@ -26,6 +27,8 @@ class DynamicReportBuilder extends Component
     public $reportData = [];
     public $reportColumns = [];
     public $showResults = false;
+
+    public $reportName = '';
 
     // Filter form fields
     public $filterField = '';
@@ -384,6 +387,41 @@ class DynamicReportBuilder extends Component
     {
         unset($this->calculatedFields[$index]);
         $this->calculatedFields = array_values($this->calculatedFields);
+    }
+
+    public function saveReport()
+    {
+        $this->validate([
+            'reportName' => 'required|string|max:255',
+            'selectedFields' => 'required|array|min:1'
+        ]);
+
+        // Build query to save the SQL for later execution
+        $query = $this->buildQuery();
+        $sql = $query->toSql();
+        $bindings = $query->getBindings();
+        
+        // Combine SQL and bindings for storage
+        $queryWithBindings = [
+            'sql' => $sql,
+            'bindings' => $bindings
+        ];
+
+        // Save the report
+        SavedReport::create([
+            'name' => $this->reportName,
+            'report_type' => $this->reportName,
+            'selected_fields' => $this->selectedFields,
+            'filters' => $this->filters,
+            'calculated_fields' => $this->calculatedFields,
+            'query' => json_encode($queryWithBindings),
+            'user_id' => auth()->id()
+        ]);
+
+        session()->flash('success', 'Report saved successfully!');
+        
+        // Reset form
+        $this->reset(['reportName']);
     }
 
     public function generateReport()

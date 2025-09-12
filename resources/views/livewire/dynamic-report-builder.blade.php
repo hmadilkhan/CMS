@@ -34,14 +34,18 @@
                         <!-- Report Type Selection -->
                         <div class="row mb-4">
                             <div class="col-md-6">
+                                <label for="reportName" class="form-label fw-bold">Report Name</label>
+                                <input type="text" wire:model.live="reportName" class="form-control" id="reportName"/>
+                            </div>
+                            {{-- <div class="col-md-6">
                                 <label for="reportType" class="form-label fw-bold">Report Type</label>
                                 <select wire:model.live="reportType" class="form-select" id="reportType">
                                     @foreach($reportTypes as $key => $name)
                                         <option value="{{ $key }}">{{ $name }}</option>
                                     @endforeach
                                 </select>
-                            </div>
-                            <div class="col-md-6">
+                            </div> --}}
+                            {{-- <div class="col-md-6">
                                 <div class="alert alert-info mb-0 mt-4">
                                     <i class="icofont-info-circle me-2"></i>
                                     <strong>{{ $reportTypes[$reportType] }}</strong> - 
@@ -53,7 +57,7 @@
                                         Review override costs and adjustments
                                     @endif
                                 </div>
-                            </div>
+                            </div> --}}
                         </div>
 
                         <!-- Field Selection Section -->
@@ -305,6 +309,19 @@
                                 </div>
                             </div>
                         </div>
+                        <div class="row">
+                            <div class="col-12  mt-2">
+                                <div class="d-flex justify-content-center">
+                                    <button type="button" wire:click="saveReport"
+                                        class="btn btn-lg btn-primary me-3">
+                                        <i class="icofont-save me-2"></i>Save Report
+                                    </button>
+                                    <a href="{{ route('report-runner') }}" class="btn btn-lg btn-outline-success">
+                                        <i class="icofont-play me-2"></i>Run Saved Reports
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -400,21 +417,21 @@
     @endif
 </div>
 
-@script
 <script>
-    // Initialize tooltips
-    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
-    var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
-        return new bootstrap.Tooltip(tooltipTriggerEl);
-    });
-
-    // Auto-hide success/error messages
-    setTimeout(function() {
-        var toasts = document.querySelectorAll('.toast');
-        toasts.forEach(function(toast) {
-            var bsToast = new bootstrap.Toast(toast);
-            bsToast.hide();
+    document.addEventListener('DOMContentLoaded', function() {
+        // Initialize tooltips
+        var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+        var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+            return new bootstrap.Tooltip(tooltipTriggerEl);
         });
-    }, 5000);
+
+        // Auto-hide success/error messages
+        setTimeout(function() {
+            var toasts = document.querySelectorAll('.toast');
+            toasts.forEach(function(toast) {
+                var bsToast = new bootstrap.Toast(toast);
+                bsToast.hide();
+            });
+        }, 5000);
+    });
 </script>
-@endscript

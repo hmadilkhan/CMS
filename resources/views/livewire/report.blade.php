@@ -333,22 +333,22 @@
     @endif
 </div>
 
-@script
 <script>
-    // Initialize tooltips
-    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
-    var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
-        return new bootstrap.Tooltip(tooltipTriggerEl);
-    });
-
-    // Auto-hide success/error messages
-    setTimeout(function() {
-        var toasts = document.querySelectorAll('.toast');
-        toasts.forEach(function(toast) {
-            var bsToast = new bootstrap.Toast(toast);
-            bsToast.hide();
+    document.addEventListener('DOMContentLoaded', function() {
+        // Initialize tooltips
+        var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+        var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+            return new bootstrap.Tooltip(tooltipTriggerEl);
         });
-    }, 5000);
+
+        // Auto-hide success/error messages
+        setTimeout(function() {
+            var toasts = document.querySelectorAll('.toast');
+            toasts.forEach(function(toast) {
+                var bsToast = new bootstrap.Toast(toast);
+                bsToast.hide();
+            });
+        }, 5000);
+    });
 </script>
-@endscript
 

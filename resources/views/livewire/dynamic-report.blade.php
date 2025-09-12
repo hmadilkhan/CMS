@@ -34,7 +34,7 @@
 
                         <div class="d-grid gap-2 d-md-block mt-2 mb-2">
                             @foreach ($this->selectedColumns as $colKey => $column)
-                                <button type="button" wire:click="deleteColumn('{{ $colKey }}')"
+                                <button type="button" wire:click="deleteColumn({{ $colKey }})"
                                     style="cursor: pointer" class="badge bg-primary">{{ $column['text'] }} <i
                                         class="icofont-ui-delete text-white"></i></button>
                             @endforeach
@@ -104,7 +104,7 @@
                     @if (count($selectedFilters) > 0)
                         <div class="d-grid gap-2 d-md-block mt-2 mb-2">
                             @foreach ($selectedFilters as $colKey => $filter)
-                                <button type="button" wire:click="deleteFilter('{{ $colKey }}')"
+                                <button type="button" wire:click="deleteFilter({{ $colKey }})"
                                     style="cursor: pointer"
                                     class="badge bg-primary">{{ $filter['text'] . ' ' . $filter['operator'] . ' ' . $filter['value'] }}
                                     <i class="icofont-ui-delete text-white"></i></button>

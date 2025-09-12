@@ -146,7 +146,6 @@
             },
 
             checkForMention(event) {
-                console.log("checkForMention");
                 
                 const cursorPos = this.$refs.noteInput.selectionStart;
                 const value = this.note;
@@ -203,7 +202,6 @@
             },
 
             syncRawNote() {
-                console.log("syncRawNote");
                 
                 let temp = this.note;
                 
@@ -216,7 +214,6 @@
                 this.rawNote = temp;
                 this.$refs.rawNoteInput.value = temp;
                 this.$refs.rawNoteInput.dispatchEvent(new Event('input'));
-                console.log("RawNote for backend:", temp);
             },
 
             async handleEnter() {
@@ -353,7 +350,6 @@
                 this.rawNote = temp;
                 this.$refs.rawNoteInput.value = temp;
                 this.$refs.rawNoteInput.dispatchEvent(new Event('input'));
-                console.log("RawNote for backend:", temp);
             },
 
             async handleEnter() {

@@ -10,7 +10,7 @@
                     </div>
                 </div>
                 <div class="card-body">
-                    <table id="myProjectTable" class="table table-hover align-middle mb-0" style="width:100%">
+                    <table id="emailsTable" class="table table-hover align-middle mb-0" style="width:100%">
                         <thead>
                             <tr>
                                 <th>No.</th>

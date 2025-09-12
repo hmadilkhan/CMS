@@ -66,6 +66,15 @@
         $(".sidebar").addClass("sidebar-mini")
     </script>
     @livewireScripts
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            if (typeof Livewire !== 'undefined') {
+                console.log('Livewire loaded successfully');
+            } else {
+                console.error('Livewire failed to load');
+            }
+        });
+    </script>
     @yield('scripts')
 </body>
 
