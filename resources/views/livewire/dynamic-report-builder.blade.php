@@ -36,6 +36,7 @@
                             <div class="col-md-6">
                                 <label for="reportName" class="form-label fw-bold">Report Name</label>
                                 <input type="text" wire:model.live="reportName" class="form-control" id="reportName"/>
+                                @error('reportName') <small class="text-danger">{{ $message }}</small> @enderror
                             </div>
                             {{-- <div class="col-md-6">
                                 <label for="reportType" class="form-label fw-bold">Report Type</label>
@@ -411,6 +412,21 @@
                 </div>
                 <div class="toast-body">
                     {{ session('error') }}
+                </div>
+            </div>
+        </div>
+    @endif
+    <!-- Success Messages -->
+    @if (session()->has('success'))
+        <div class="toast-container position-fixed bottom-0 end-0 p-3">
+            <div class="toast show" role="alert">
+                <div class="toast-header bg-success text-white">
+                    <i class="icofont-exclamation-triangle me-2"></i>
+                    <strong class="me-auto">Success</strong>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast"></button>
+                </div>
+                <div class="toast-body">
+                    {{ session('success') }}
                 </div>
             </div>
         </div>

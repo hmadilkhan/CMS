@@ -391,34 +391,48 @@ class DynamicReportBuilder extends Component
 
     public function saveReport()
     {
-        $this->validate([
-            'reportName' => 'required|string|max:255',
-            'selectedFields' => 'required|array|min:1'
-        ]);
+        try {
+            $this->validate([
+                'reportName' => 'required|string|max:255',
+                'selectedFields' => 'required|array|min:1'
+            ], [
+                'reportName.required' => 'Report Name field is required.',
+                'selectedFields.required' => 'Please select at least one field.'
+            ]);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            session()->flash('error', 'Please fix the validation errors.');
+            throw $e;
+        }
 
-        // Build query to save the SQL for later execution
-        $query = $this->buildQuery();
-        $sql = $query->toSql();
-        $bindings = $query->getBindings();
-        
-        // Combine SQL and bindings for storage
-        $queryWithBindings = [
-            'sql' => $sql,
-            'bindings' => $bindings
-        ];
-
-        // Save the report
-        SavedReport::create([
-            'name' => $this->reportName,
-            'report_type' => $this->reportName,
-            'selected_fields' => $this->selectedFields,
-            'filters' => $this->filters,
-            'calculated_fields' => $this->calculatedFields,
-            'query' => json_encode($queryWithBindings),
-            'user_id' => auth()->id()
-        ]);
-
-        session()->flash('success', 'Report saved successfully!');
+        try {
+            // Build query to save the SQL for later execution
+            $query = $this->buildQuery();
+            $sql = $query->toSql();
+            $bindings = $query->getBindings();
+            
+            // Combine SQL and bindings for storage
+            $queryWithBindings = [
+                'sql' => $sql,
+                'bindings' => $bindings
+            ];
+            
+            
+            // Save the report
+            SavedReport::create([
+                'name' => $this->reportName,
+                'report_type' => $this->reportName,
+                'selected_fields' => $this->selectedFields,
+                'filters' => $this->filters,
+                'calculated_fields' => $this->calculatedFields,
+                'query' => json_encode($queryWithBindings),
+                'user_id' => auth()->user()->id
+            ]);
+    
+            session()->flash('success', 'Report saved successfully!');
+        } catch (\Throwable $th) {
+            Log::error('Error saving report: ' . $th->getMessage());
+            session()->flash('error', 'Failed to save report. Please try again.');
+        }
         
         // Reset form
         $this->reset(['reportName']);
@@ -426,9 +440,14 @@ class DynamicReportBuilder extends Component
 
     public function generateReport()
     {
-        $this->validate([
-            'selectedFields' => 'required|array|min:1'
-        ]);
+        try {
+            $this->validate([
+                'selectedFields' => 'required|array|min:1'
+            ]);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            session()->flash('error', 'Please select at least one field.');
+            throw $e;
+        }
 
         $query = $this->buildQuery();
         $this->reportData = $query->get();

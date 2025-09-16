@@ -93,14 +93,35 @@
                                                     @if(in_array($filter['operator'], ['IS NULL', 'IS NOT NULL']))
                                                         <input type="text" class="form-control" value="No value required" disabled>
                                                     @else
-                                                        <input type="text" wire:model="filterValues.{{ $index }}" 
-                                                               class="form-control" 
-                                                               placeholder="Enter value for {{ $filter['field_name'] ?? $filter['field'] }}">
+                                                        @php $fieldType = $this->getFieldType($filter['field']) @endphp
+                                                        @if($fieldType === 'dropdown')
+                                                            <select wire:model="filterValues.{{ $index }}" class="form-select">
+                                                                <option value="">Select value...</option>
+                                                                @foreach($this->getDropdownOptions($filter['field']) as $value => $label)
+                                                                    <option value="{{ $value }}">{{ $label }}</option>
+                                                                @endforeach
+                                                            </select>
+                                                        @elseif($fieldType === 'date' && $filter['operator'] === 'EQUALS')
+                                                            <input type="date" wire:model="filterValues.{{ $index }}" class="form-control">
+                                                        @elseif($fieldType === 'date' && in_array($filter['operator'], ['BETWEEN', 'NOT BETWEEN']))
+                                                            <div class="d-flex gap-2">
+                                                                <input type="date" wire:model="filterStartDate.{{ $index }}" class="form-control" placeholder="Start Date">
+                                                                <span class="align-self-center">to</span>
+                                                                <input type="date" wire:model="filterEndDate.{{ $index }}" class="form-control" placeholder="End Date">
+                                                            </div>
+                                                        @elseif($fieldType === 'number')
+                                                            <input type="number" wire:model="filterValues.{{ $index }}" class="form-control" step="any" 
+                                                                   placeholder="Enter value for {{ $filter['field_name'] ?? $filter['field'] }}">
+                                                        @else
+                                                            <input type="text" wire:model="filterValues.{{ $index }}" 
+                                                                   class="form-control" 
+                                                                   placeholder="Enter value for {{ $filter['field_name'] ?? $filter['field'] }}">
+                                                        @endif
                                                         <small class="text-muted">
                                                             @if($filter['operator'] === 'IN' || $filter['operator'] === 'NOT IN')
                                                                 Use comma-separated values
                                                             @elseif($filter['operator'] === 'BETWEEN')
-                                                                Use format: start,end
+                                                                Use format: start,end (or use comma-separated values)
                                                             @elseif($filter['operator'] === 'LIKE' || $filter['operator'] === 'NOT LIKE')
                                                                 Text search
                                                             @endif
@@ -232,17 +253,16 @@
             </div>
         </div>
     @endif
+    <script>
+        // Auto-hide success/error messages
+        setTimeout(function() {
+            var toasts = document.querySelectorAll('.toast');
+            toasts.forEach(function(toast) {
+                var bsToast = new bootstrap.Toast(toast);
+                bsToast.hide();
+            });
+        }, 5000);
+    </script>
 </div>
 
-@script
-<script>
-    // Auto-hide success/error messages
-    setTimeout(function() {
-        var toasts = document.querySelectorAll('.toast');
-        toasts.forEach(function(toast) {
-            var bsToast = new bootstrap.Toast(toast);
-            bsToast.hide();
-        });
-    }, 5000);
-</script>
-@endscript
+
