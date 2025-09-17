@@ -100,7 +100,8 @@ class NotesSection extends Component
             $this->dispatch('refresh');
         } catch (\Throwable $th) {
             //throw $th;
-            dd($th->getMessage());
+            // dd($th->getMessage());
+            Log::error('Error saving note: ' . $th->getMessage());
         }
     }
 
