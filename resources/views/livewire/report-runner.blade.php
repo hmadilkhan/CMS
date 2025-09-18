@@ -38,7 +38,7 @@
                                     @endforeach
                                 </select>
                                 @if($this->userReports->isEmpty())
-                                    <small class="text-muted">No saved reports found. <a href="{{ route('dynamic-report-builder') }}">Create a report</a> to get started.</small>
+                                    <small class="text-muted">No saved reports found. <a href="{{ route('report-builder') }}">Create a report</a> to get started.</small>
                                 @endif
                             </div>
                             <div class="col-md-4 d-flex align-items-end">
