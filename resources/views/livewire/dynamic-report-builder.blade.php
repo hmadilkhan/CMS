@@ -301,7 +301,7 @@
                         </div>
 
                         <!-- Generate Report Button -->
-                        <div class="row">
+                        {{-- <div class="row">
                             <div class="col-12">
                                 <div class="d-flex justify-content-center">
                                     <button type="button" wire:click="generateReport" class="btn btn-lg btn-primary me-3">
@@ -309,7 +309,7 @@
                                     </button>
                                 </div>
                             </div>
-                        </div>
+                        </div> --}}
                         <div class="row">
                             <div class="col-12  mt-2">
                                 <div class="d-flex justify-content-center">
