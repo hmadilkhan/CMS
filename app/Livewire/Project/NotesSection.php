@@ -58,14 +58,13 @@ class NotesSection extends Component
                 ]);
                 $message = "You have been mentioned in an updated note in the department (" . $project->department->name . ") added by (" . auth()->user()->name . ")";
                 // Send notification (below mail code)
-                $data = [
-                    "user" => $employee->user->id,
-                    "class" => get_class($employee->user)
-                ];
-                Log::info('BeforeNoteMentionedNotification toArray', $data);
-                $user = User::find($employee->user->id); // or whatever field holds the user id
+                $user = User::find($employee->user->id);
                 if ($user) {
-                    Notification::send($user, new NoteMentionedNotification($project, $cleanNote, auth()->user()));
+                    try {
+                        Notification::send($user, new NoteMentionedNotification($project, $cleanNote, auth()->user()));
+                    } catch (\Exception $e) {
+                        Log::error('Notification send failed: ' . $e->getMessage());
+                    }
                 }
                 // $employee->user->notify(new NoteMentionedNotification($project, $cleanNote, auth()->user()));
                 // Notification::send($employee->user, new NoteMentionedNotification($project, $cleanNote, auth()->user()));
@@ -144,7 +143,11 @@ class NotesSection extends Component
                 ]);
                 $message = "You have been mentioned in an updated note in the department (" . $project->department->name . ") added by (" . auth()->user()->name . ")";
                 // Send notification (below mail code)
-                Notification::send($employee->user, new NoteMentionedNotification($project, $cleanNote, auth()->user()));
+                try {
+                    Notification::send($employee->user, new NoteMentionedNotification($project, $cleanNote, auth()->user()));
+                } catch (\Exception $e) {
+                    Log::error('Notification send failed in updateNote: ' . $e->getMessage());
+                }
                 if ($employee->user && $employee->user->email_preference == 1) {
                     Mail::raw($message, function ($message) use ($employee, $project) {
                         $message->to($employee->email)
