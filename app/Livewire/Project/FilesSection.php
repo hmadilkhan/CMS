@@ -25,8 +25,23 @@ class FilesSection extends Component
     protected $listeners = ['deleteConfirmation', 'refreshComponent' => '$refresh'];
 
     protected $rules = [
-        'image' => 'required'
+        'files.*' => 'max:51200' // 50MB max per file
     ];
+
+    public function getListeners()
+    {
+        return [
+            'deleteConfirmation',
+            'refreshComponent' => '$refresh'
+        ];
+    }
+
+    public function mount()
+    {
+        // Configure temporary file uploads for large files
+        config(['livewire.temporary_file_upload.disk' => 'local']);
+        config(['livewire.temporary_file_upload.directory' => 'livewire-tmp']);
+    }
 
     public function updatedFiles()
     {
@@ -65,7 +80,7 @@ class FilesSection extends Component
 
     public function save()
     {
-        // $this->validate();
+        $this->validate();
         if (count($this->files) > 0) {
             foreach ($this->files as $file) {
                 // Get the original filename and sanitize it to avoid issues with spaces

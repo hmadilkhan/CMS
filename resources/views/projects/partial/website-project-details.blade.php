@@ -447,10 +447,10 @@
                                             @foreach ($files as $file)
                                                 <!-- <label class="badge bg-light"> <a target="_blank" href="{{ asset('storage/projects/' . $file->filename) }}" class="ml-3">{{ $file->filename }}</a></label> -->
                                                 <li class="list-group-item light-primary-bg">
-                                                    @can('File Delete')
+                                                    {{-- @can('File Delete')
                                                         <i class="icofont-trash text-danger fs-6" style="cursor:pointer;"
                                                             onclick="deleteFile('{{ $file->id }}')">&nbsp;</i>
-                                                    @endcan
+                                                    @endcan --}}
                                                     <a target="_blank"
                                                         href="{{ asset('storage/projects/' . $file->filename) }}"
                                                         class="ml-3">{{ $file->filename }}</a>

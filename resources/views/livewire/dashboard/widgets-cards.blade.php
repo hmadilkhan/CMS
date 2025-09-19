@@ -31,5 +31,14 @@
                 </div>
             </div>
         </div>
+        <div class="card p-3">
+            <div class="card-body text-dark d-flex align-items-center">
+                <i class="icofont-price fs-3 me-3"></i>
+                <div class="d-flex justify-content-between align-items-center w-100">
+                    <h6 class="mb-0 fw-bold fs-5">Total AVG Commission</h6>
+                    <span class="text-dark fw-bold fs-5"> {{number_format($avgCommission)}}</span>
+                </div>
+            </div>
+        </div>
     </div>
 </div>
