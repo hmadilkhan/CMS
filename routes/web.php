@@ -252,7 +252,7 @@ Route::middleware('auth')->group(function () {
         Route::get("dynamic-report", DynamicReport::class);
         Route::get("report-builder", DynamicReportBuilder::class)->name("report-builder");
         Route::get("report-runner",ReportRunner::class)->name("report-runner");
-        Route::get("dynamic-report-builder", "DynamicReportBuilder")->name("dynamic.report.builder");
+        Route::get("dynamic-report-builder", DynamicReportBuilder::class)->name("dynamic-report-builder");
     });
 
     Route::controller(AuroraController::class)->group(function () {

@@ -30,6 +30,10 @@ class DynamicReportBuilder extends Component
 
     public $reportName = '';
 
+    // Edit functionality
+    public $editingReportId = null;
+    public $isEditing = false;
+
     // Filter form fields
     public $filterField = '';
     public $filterOperator = '=';
@@ -73,10 +77,14 @@ class DynamicReportBuilder extends Component
 
     public function mount()
     {
-        $this->reportType = 'profitability';
-
-        // Set default fields based on report type
-        $this->setDefaultFields();
+        // Check if editing a report
+        $editId = request()->query('edit');
+        if ($editId) {
+            $this->loadReportForEdit($editId);
+        } else {
+            $this->reportType = 'profitability';
+            $this->setDefaultFields();
+        }
     }
 
     public function getAvailableFieldsProperty()
@@ -362,6 +370,26 @@ class DynamicReportBuilder extends Component
         $this->builderValue2 = '';
     }
 
+    public function loadReportForEdit($reportId)
+    {
+        $report = SavedReport::where('id', $reportId)
+            ->where('user_id', auth()->id())
+            ->first();
+
+        if (!$report) {
+            session()->flash('error', 'Report not found or access denied.');
+            return redirect()->route('dynamic-report-builder');
+        }
+
+        $this->editingReportId = $report->id;
+        $this->isEditing = true;
+        $this->reportName = $report->name;
+        $this->reportType = $report->report_type;
+        $this->selectedFields = $report->selected_fields ?? [];
+        $this->filters = $report->filters ?? [];
+        $this->calculatedFields = $report->calculated_fields ?? [];
+    }
+
     public function useCalcBuilder()
     {
         $this->calcFieldExpression = $this->calcExpressionPreview;
@@ -391,6 +419,11 @@ class DynamicReportBuilder extends Component
 
     public function saveReport()
     {
+        if ($this->isEditing) {
+            $this->updateReport();
+            return;
+        }
+
         try {
             $this->validate([
                 'reportName' => 'required|string|max:255',
@@ -436,6 +469,65 @@ class DynamicReportBuilder extends Component
         
         // Reset form
         $this->reset(['reportName']);
+    }
+
+    public function updateReport()
+    {
+        try {
+            $this->validate([
+                'reportName' => 'required|string|max:255',
+                'selectedFields' => 'required|array|min:1'
+            ], [
+                'reportName.required' => 'Report Name field is required.',
+                'selectedFields.required' => 'Please select at least one field.'
+            ]);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            session()->flash('error', 'Please fix the validation errors.');
+            throw $e;
+        }
+
+        try {
+            $report = SavedReport::where('id', $this->editingReportId)
+                ->where('user_id', auth()->id())
+                ->first();
+
+            if (!$report) {
+                session()->flash('error', 'Report not found or access denied.');
+                return;
+            }
+
+            // Build query to save the SQL for later execution
+            $query = $this->buildQuery();
+            $sql = $query->toSql();
+            $bindings = $query->getBindings();
+            
+            // Combine SQL and bindings for storage
+            $queryWithBindings = [
+                'sql' => $sql,
+                'bindings' => $bindings
+            ];
+
+            // Update the report
+            $report->update([
+                'name' => $this->reportName,
+                'report_type' => $this->reportName,
+                'selected_fields' => $this->selectedFields,
+                'filters' => $this->filters,
+                'calculated_fields' => $this->calculatedFields,
+                'query' => json_encode($queryWithBindings)
+            ]);
+
+            session()->flash('success', 'Report updated successfully!');
+            return redirect()->route('report-runner');
+        } catch (\Throwable $th) {
+            Log::error('Error updating report: ' . $th->getMessage());
+            session()->flash('error', 'Failed to update report. Please try again.');
+        }
+    }
+
+    public function cancelEdit()
+    {
+        return redirect()->route('report-runner');
     }
 
     public function generateReport()

@@ -27,7 +27,7 @@ return $item->department_id == $department->id;
                         <li class="clearfix">
                             @if(!empty($email->user))
                             <div class="message-data">
-                                <span class="message-data-time float-right">Sent By {{$email->user->name}}</span>
+                                <span class="message-data-time float-right">Sent By {{$email->user->name}} - {{date("d M Y H:i a", strtotime($email->received_date))}}</span>
                             </div>
                             </br>
                             @endif
@@ -54,6 +54,7 @@ return $item->department_id == $department->id;
                                 @endforeach
                                 @endif
                             </div>
+                            <button class="btn btn-warning float-right mt-2" onclick="ReplyEmail('{{$email->subject}}')">Reply</button>
                         </li>
                         @endif
                     </ul>
@@ -65,3 +66,9 @@ return $item->department_id == $department->id;
 </div>
 @endif
 @endforeach
+<script>
+    function ReplyEmail(subject) {
+        $('#subject').val('RE: ' + subject);
+        $('#subject').focus();
+    }
+</script>

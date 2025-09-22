@@ -269,10 +269,13 @@ class ReportRunner extends Component
         }
 
         $availableFields = $this->getAvailableFields();
-
+       
         foreach ($this->reportData as $row) {
+            
             foreach ($this->selectedReport->calculated_fields as $calcField) {
+               
                 $fieldKey = 'calc_' . Str::slug($calcField['name'], '_');
+                
                 $row->{$fieldKey} = $this->evaluateExpression($calcField['expression'], $row, $availableFields);
             }
         }
@@ -280,15 +283,18 @@ class ReportRunner extends Component
 
     private function evaluateExpression($expression, $row, $availableFields)
     {
+      
         $processedExpression = $expression;
-
+      
         foreach ($availableFields as $field => $name) {
             $fieldValue = $this->getNestedProperty($row, $field);
+            
             $processedExpression = str_replace(
                 '{' . $field . '}',
                 is_numeric($fieldValue) ? $fieldValue : 0,
                 $processedExpression
             );
+            
         }
 
         if (preg_match('/^[0-9+\-*\/.() ]+$/', $processedExpression)) {
@@ -311,10 +317,10 @@ class ReportRunner extends Component
         if (is_object($object) && isset($object->{$property})) {
             return $this->formatValue($object->{$property});
         }
-
-        // Special case for adders_amount alias
-        if ($property === 'adders_amount' && isset($object->adders_amount)) {
-            return $this->formatValue($object->adders_amount);
+       
+        // Special case for adders fields
+        if ($property === 'adders_amount' || $property === 'customer_finances.adders') {
+            return $this->formatValue($object->adders_amount ?? null);
         }
 
         // Try last segment if property contains dot
@@ -588,6 +594,11 @@ class ReportRunner extends Component
             $filename,
             \Maatwebsite\Excel\Excel::DOMPDF
         );
+    }
+
+    public function editReport($reportId)
+    {
+        return redirect()->route('dynamic-report-builder', ['edit' => $reportId]);
     }
 
     public function deleteReport($reportId)
