@@ -2324,7 +2324,7 @@
                     salespartner +
                     "</b>");
                 window.editor.setData(sales_partner_text1);
-                let projectcode = window.editor.getData();
+                // let projectcode = window.editor.getData();
                 let projectcode = projectcode.replace("code", "<b>" +
                     code +
                     "</b>");
