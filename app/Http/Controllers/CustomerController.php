@@ -20,6 +20,7 @@ use App\Models\ModuleType;
 use App\Models\OfficeCost;
 use App\Models\Project;
 use App\Models\SalesPartner;
+use App\Models\SubContractor;
 use App\Models\SubDepartment;
 use App\Models\Task;
 use App\Models\User;
@@ -57,6 +58,7 @@ class CustomerController extends Controller
             "modules" => ModuleType::all(),
             "adders" => AdderType::all(),
             "uoms" => AdderUnit::all(),
+            "contractors" => SubContractor::all(),
         ]);
     }
 
@@ -103,6 +105,7 @@ class CustomerController extends Controller
                 "phone" => $request->phone,
                 "email" => $request->email,
                 "sales_partner_id" => $request->sales_partner_id,
+                "sub_contractor_id" => $request->sub_contractor_id,
                 "sold_date" => $request->sold_date,
                 "panel_qty" => $request->panel_qty,
                 "inverter_type_id" => $request->inverter_type_id,
@@ -173,6 +176,7 @@ class CustomerController extends Controller
                 "description" =>  $request->notes,
                 "office_cost" => (!empty($officeCost) ? $officeCost->cost : ""),
                 "sales_partner_user_id" => $request->sales_partner_user_id,
+                "sub_contractor_user_id" => $request->sub_contractor_user_id,
                 "code" => $this->generateProjectCode(),
                 "overwrite_base_price" =>  $request->overwrite_base_price,
                 "overwrite_panel_price" =>  $request->overwrite_panel_price,
@@ -234,6 +238,7 @@ class CustomerController extends Controller
             "adders" => AdderType::all(),
             "uoms" => AdderUnit::all(),
             "users" => User::where("sales_partner_id", $customer->sales_partner_id)->get(),
+            "contractors" => SubContractor::all(),
         ]);
     }
 
@@ -256,6 +261,7 @@ class CustomerController extends Controller
                 "phone" => $request->phone,
                 "email" => $request->email,
                 "sales_partner_id" => $request->sales_partner_id,
+                "sub_contractor_id" => $request->sub_contractor_id,
                 "sold_date" => $request->sold_date,
                 "panel_qty" => $request->panel_qty,
                 "inverter_type_id" => $request->inverter_type_id,
@@ -311,6 +317,7 @@ class CustomerController extends Controller
             if ($request->sales_partner_user_id != "") {
                 $customer->project()->update([
                     "sales_partner_user_id" => $request->sales_partner_user_id,
+                    "sub_contractor_user_id" => $request->sub_contractor_user_id,
                 ]);
             }
             DB::commit();
@@ -425,7 +432,17 @@ class CustomerController extends Controller
     public function getSalesPartnerUsers(Request $request)
     {
         try {
-            $users = User::where("sales_partner_id", $request->id)->get();
+            $users = User::where("sales_partner_id", $request->id)->where("user_type_id",3)->get();
+            return response()->json(["status" => 200, "users" => $users]);
+        } catch (\Throwable $th) {
+            return response()->json(["status" => 200, "message" => $th->getMessage()]);
+        }
+    }
+
+    public function getSubContractorUsers(Request $request)
+    {
+        try {
+            $users = User::where("sales_partner_id", $request->id)->where("user_type_id",4)->get();
             return response()->json(["status" => 200, "users" => $users]);
         } catch (\Throwable $th) {
             return response()->json(["status" => 200, "message" => $th->getMessage()]);

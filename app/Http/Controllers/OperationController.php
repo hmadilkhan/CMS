@@ -18,6 +18,7 @@ use App\Models\LoanApr;
 use App\Models\LoanTerm;
 use App\Models\ModuleType;
 use App\Models\SalesPartner;
+use App\Models\SubContractor;
 use App\Models\User;
 use App\Models\UtilityCompany;
 use App\Traits\MediaTrait;
@@ -680,6 +681,64 @@ class OperationController extends Controller
             return response()->json(["status" => 200]);
         } catch (\Throwable $th) {
             return response()->json(["status" => 500]);
+        }
+    }
+
+    public function subContractorView(Request $request)
+    {
+        if ($request->id != "") {
+            $contractor = SubContractor::where("id", $request->id)->first();
+        }
+        return view("operations/sub-contractor/index", [
+            "contractors" => SubContractor::all(),
+            "contractor" => ($request->id != "" ? $contractor : []),
+        ]);
+    }
+
+    public function subContractorStore(Request $request)
+    {
+        try {
+            $count = SubContractor::where("name", $request->name)->count();
+            if ($count == 0) {
+                $result = $this->uploads($request->file, 'subcontractors/', "");
+                SubContractor::create([
+                    "name" => $request->name,
+                    'image' => (!empty($result) ? $result["fileName"] : ""),
+                    "email" => $request->email,
+                    "phone" => $request->phone,
+                ]);
+                return redirect()->route("sub.contractor")->with("success", "Data Saved Successfully");
+            } else {
+                return redirect()->route("sub.contractor")->with("error", "Data already exists");
+            }
+        } catch (\Throwable $th) {
+            return redirect()->route("sub.contractor")->with("error", $th->getMessage());
+        }
+    }
+
+    public function subContractorUpdate(Request $request)
+    {
+        try {
+            $result = $this->uploads($request->file, 'subcontractors/', $request->previous_logo);
+            $subContractor = SubContractor::find($request->id);
+            $subContractor->name = $request->name;
+            $subContractor->email = $request->email;
+            $subContractor->phone = $request->phone;
+            $subContractor->image = (!empty($result) ? $result["fileName"] : $request->previous_logo);
+            $subContractor->save();
+            return redirect()->route("sub.contractor");
+        } catch (\Throwable $th) {
+            return redirect()->route("sub.contractor")->with('error', $th->getMessage());
+        }
+    }
+
+    public function subContractorDelete(Request $request)
+    {
+        try {
+            SubContractor::where("id", $request->id)->delete();
+            return response()->json(["status" => 200,"message"=>"Sub Contractor deleted successfully"]);
+        } catch (\Throwable $th) {
+            return response()->json(["status" => 500,"message"=>$th->getMessage()]);
         }
     }
 }

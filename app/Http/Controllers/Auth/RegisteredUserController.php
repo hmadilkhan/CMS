@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Models\SalesPartner;
+use App\Models\SubContractor;
 use App\Models\User;
 use App\Models\UserType;
 use Illuminate\Auth\Events\Registered;
@@ -22,13 +23,14 @@ class RegisteredUserController extends Controller
      */
     public function create(Request $request)
     {
-        return view('auth.register',[
+        return view('auth.register', [
             "user" => ($request->id != "" ? User::find($request->id) : []),
             "roles" => Role::all(),
-            "rolenames" =>  ($request->id != "" ? $this->getRoleNames($request->id) : []),
-            "users" => User::with("type")->get(),
+            "rolenames" => ($request->id != "" ? $this->getRoleNames($request->id) : []),
+            "users" => User::with("type")->orderBy("id","DESC")->get(),
             "types" => UserType::all(),
             "partners" => SalesPartner::all(),
+            "contractors" => SubContractor::all(),
         ]);
     }
 
@@ -37,7 +39,7 @@ class RegisteredUserController extends Controller
         if ($id) {
             $user = User::find($id);
             return $user->getRoleNames();
-        }else{
+        } else {
             return [];
         }
     }
@@ -51,17 +53,17 @@ class RegisteredUserController extends Controller
     {
         $request->validate([
             'name' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'string', 'email', 'max:255', 'unique:'.User::class],
+            'email' => ['required', 'string', 'email', 'max:255', 'unique:' . User::class],
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
         ]);
-        $result = $this->uploads($request->file, 'users/',"");
+        $result = $this->uploads($request->file, 'users/', "");
         $user = User::create([
             'name' => $request->name,
             'email' => $request->email,
             'password' => Hash::make($request->password),
             'username' => $request->username,
             'user_type_id' => $request->user_type_id,
-            'sales_partner_id' => $request->sales_partner_id,
+            'sales_partner_id' => ($request->user_type_id == 3 ? $request->sales_partner_id : ($request->user_type_id == 4 ? $request->sub_contractor_id : null)),
             'phone' => $request->phone,
             'image' => (!empty($result) ? $result["fileName"] : ""),
         ]);
@@ -77,7 +79,7 @@ class RegisteredUserController extends Controller
             'name' => $request->name,
             'email' => $request->email,
             'user_type_id' => $request->user_type_id,
-            'sales_partner_id' => $request->sales_partner_id,
+            'sales_partner_id' => ($request->user_type_id == 3 ? $request->sales_partner_id : ($request->user_type_id == 4 ? $request->sub_contractor_id : null)), //$request->sales_partner_id,
             'phone' => $request->phone,
             "image" => (!empty($result) ? $result["fileName"] : $request->previous_logo),
         ]);

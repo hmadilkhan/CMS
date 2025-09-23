@@ -128,6 +128,33 @@
                     </div>
 
                     <div class="col-sm-4">
+                        <label class="form-label">Sub-Contractors</label>
+                        <select class="form-select select2" aria-label="Default select Sub-Contractors"
+                            id="sub_contractor_id" name="sub_contractor_id">
+                            <option value="">Select Sub-Contractors</option>
+                            @foreach ($contractors as $contractor)
+                                <option @selected($customer->sub_contractor_id == $contractor->id) value="{{ $contractor->id }}">
+                                    {{ $contractor->name }}
+                                </option>
+                            @endforeach
+                        </select>
+                        @error('sub_contractor_id')
+                            <div class="text-danger message mt-2">{{ $message }}</div>
+                        @enderror
+                    </div>
+
+                    <div class="col-sm-4">
+                        <label class="form-label">Sub-Contractor User</label>
+                        <select class="form-select select2" aria-label="Default select Sub-Contractor"
+                            id="sub_contractor_user_id" name="sub_contractor_user_id">
+                            <option value="">Select Sub-Contractor User</option>
+                        </select>
+                        @error('sub_contractor_user_id')
+                            <div class="text-danger message mt-2">{{ $message }}</div>
+                        @enderror
+                    </div>
+
+                    <div class="col-sm-4">
                         <label class="form-label">Module Type</label>
                         <select class="form-select select2" aria-label="Default select Module Type" id="module_type_id"
                             name="module_type_id" onchange="calculateSystemSize()">
@@ -467,34 +494,6 @@
         }
         $("#finance_option_id").change(function() {
             getFinanceOptionById($(this).val());
-            // if ($(this).val() != 1 && $(this).val() != 5) {
-            //     // $(".loandiv").css("display", "block");
-            //     $.ajax({
-            //         method: "POST",
-            //         url: "{{ route('get.loan.terms') }}",
-            //         data: {
-            //             _token: "{{ csrf_token() }}",
-            //             id: $(this).val(),
-            //         },
-            //         dataType: 'json',
-            //         success: function(response) {
-            //             $('#loan_term_id').empty();
-            //             $('#loan_term_id').append($('<option value="">Select Loan Term</soption>'));
-            //             $.each(response.terms, function(i, term) {
-            //                 $('#loan_term_id').append($('<option  value="' + term.id + '">' +
-            //                     term.year + '</option>'));
-            //             });
-            //         },
-            //         error: function(error) {
-            //             console.log(error.responseJSON.message);
-            //         }
-            //     })
-            // } else {
-            //     // $(".loandiv").css("display", "none");
-            //     $("#dealer_fee").val(0);
-            //     $("#dealer_fee_amount").val(0);
-            //     calculateCommission()
-            // }
         });
         function getLoanTerms(id) {
             $.ajax({
@@ -588,13 +587,6 @@
                 dataType: 'json',
                 success: function(response) {
                     $('#redline_costs').val('');
-                    // if (response.modules.length > 0) {
-                    //     $("#module_type_id").empty();
-                    //     $('#module_type_id').append($('<option  value="">Select Module Type</option>'));
-                    //     $.each(response.modules, function(i, user) {
-                    //         $('#module_type_id').append($('<option  value="' + user.id + '">' + user.name + '</option>'));
-                    //     });
-                    // }
                     baseCost = response.redlinecost;
                     let redlinecost = response.redlinecost  + overwriteBaseCost;
                     $('#redline_costs').val(redlinecost);
@@ -818,5 +810,79 @@
                 // $("#inverter_type_id").prop("disabled", true)
             }
         }
+        getSubContractorUsers($("#sub_contractor_id").val());
+
+        $("#sub_contractor_id").change(function() {
+            $('#sub_contractor_user_id').empty();
+            getSubContractorUsers($(this).val());
+        })
+
+        function getSubContractorUsers(id) {
+            let sub_contractor_user_id = "{{ $customer->project->sub_contractor_user_id }}";
+            $.ajax({
+                method: "POST",
+                url: "{{ route('get.subcontractors.users') }}",
+                data: {
+                    _token: "{{ csrf_token() }}",
+                    id: id,
+                },
+                dataType: 'json',
+                success: function(response) {
+                    $.each(response.users, function(i, user) {
+                        $('#sub_contractor_user_id').append($('<option '+(sub_contractor_user_id == user.id ? 'selected' : '')+' value="' + user.id +
+                            '">' + user.name + '</option>'));
+                    });
+                },
+                error: function(error) {
+                    console.log(error.responseJSON.message);
+                }
+            })
+        }
+        $("#sales_partner_id").change(function() {
+            $('#sales_partner_user_id').empty();
+            $.ajax({
+                method: "POST",
+                url: "{{ route('get.salespartnets.users') }}",
+                data: {
+                    _token: "{{ csrf_token() }}",
+                    id: $(this).val(),
+                },
+                dataType: 'json',
+                success: function(response) {
+                    $('#sales_partner_user_id').append(
+                        "<option value=''>Select Sales Person User</option> ");
+                    $.each(response.users, function(i, user) {
+                        $('#sales_partner_user_id').append($('<option  value="' + user.id +
+                            '">' + user.name + '</option>'));
+                    });
+                },
+                error: function(error) {
+                    console.log(error.responseJSON.message);
+                }
+            })
+        })
+
+        $("#sales_partner_user_id").change(function() {
+            $.ajax({
+                method: "POST",
+                url: "{{ route('sales.partner.overwrite.prices') }}",
+                data: {
+                    _token: "{{ csrf_token() }}",
+                    id: $(this).val(),
+                },
+                dataType: 'json',
+                success: function(response) {
+                    $("#overwrite_base_price").val(response.overwrites.overwrite_base_price)
+                    $("#overwrite_panel_price").val(response.overwrites.overwrite_panel_price)
+                    getRedlineCost();
+                    calculateSystemSize();
+                    calculateSystemSizeAmount();
+
+                },
+                error: function(error) {
+                    console.log(error.responseJSON.message);
+                }
+            })
+        });
     </script>
 @endsection

@@ -53,6 +53,7 @@
             .addClass('nowrap')
             .dataTable({
                 responsive: true,
+                ordering: false,
                 columnDefs: [{
                     targets: [-1, -3],
                     className: 'dt-body-right'

@@ -2305,6 +2305,7 @@
                 let customer_name =
                     "{{ $project->customer->first_name . ' ' . $project->customer->last_name }}";
                 let salespartner = "{{ $project->customer->salespartner->name }}";
+                let code = "{{ $project->code }}";
                 let customerreplace = window.editor.getData();
                 let customer_replaced_text = customerreplace.replace("customer_name", "<b>" +
                     customer_name + "</b>");
@@ -2323,6 +2324,11 @@
                     salespartner +
                     "</b>");
                 window.editor.setData(sales_partner_text1);
+                let projectcode = window.editor.getData();
+                let projectcode = projectcode.replace("code", "<b>" +
+                    code +
+                    "</b>");
+                window.editor.setData(projectcode);
             },
             error: function(error) {
                 Swal.fire(

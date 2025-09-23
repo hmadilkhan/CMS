@@ -13,42 +13,48 @@
 @endif
 <div class="card card-info">
     <div class="card-header">
-        <h4 class="card-title">Add Sales Partner</h4>
+        <h4 class="card-title">Add Sub-Contractor</h4>
     </div>
     <div class="card-body">
         <!-- ADD NEW PRODUCT PART START -->
-        <form method="POST" action="{{ !empty($partner) ? route('sales.partner.update',$partner->id) :  route('sales.partner.store') }}" enctype="multipart/form-data">
+        <form method="POST" action="{{ !empty($contractor) ? route('sub.contractor.update',$contractor->id) :  route('sub.contractor.store') }}" enctype="multipart/form-data">
             @csrf
-            <input type="hidden" name="id" value="{{ !empty($partner) ? $partner->id : '' }}" />
-            <input type="hidden" name="previous_logo" value="{{ !empty($partner) ? $partner->image : '' }}" />
+            <input type="hidden" name="id" value="{{ !empty($contractor) ? $contractor->id : '' }}" />
+            <input type="hidden" name="previous_logo" value="{{ !empty($contractor) ? $contractor->image : '' }}" />
             <div class="row g-3  mb-3 align-items-center">
                
                 <div class="col-sm-4 ">
-                    <label>Sales Partner Name</label>
-                    <input type="text" class="form-control @error('name') is-invalid @enderror" id="name" name="name" placeholder="Enter Name" value="{{ !empty($partner) ? $partner->name : old('name') }}">
+                    <!-- <div class="form-group"> -->
+                    <label>Sub-Contractor Name</label>
+                    <input type="text" class="form-control @error('name') is-invalid @enderror" id="name" name="name" placeholder="Enter Name" value="{{ !empty($contractor) ? $contractor->name : old('name') }}">
                     @error('name')
                     <span class="invalid-feedback" role="alert">
                         <strong>{{ $message }}</strong>
                     </span>
                     @enderror
+                    <!-- </div> -->
                 </div>
                 <div class="col-sm-4 ">
+                    <!-- <div class="form-group"> -->
                     <label>Email</label>
-                    <input type="email" class="form-control @error('email') is-invalid @enderror" id="email" name="email" placeholder="Enter Email" value="{{ !empty($partner) ? $partner->email : old('email') }}">
+                    <input type="email" class="form-control @error('email') is-invalid @enderror" id="email" name="email" placeholder="Enter Email" value="{{ !empty($contractor) ? $contractor->email : old('email') }}">
                     @error('email')
                     <span class="invalid-feedback" role="alert">
                         <strong>{{ $message }}</strong>
                     </span>
                     @enderror
+                    <!-- </div> -->
                 </div>
                 <div class="col-sm-4 ">
+                    <!-- <div class="form-group"> -->
                     <label>Phone</label>
-                    <input type="text" class="form-control @error('phone') is-invalid @enderror" id="phone" name="phone" placeholder="Enter Phone" value="{{ !empty($partner) ? $partner->phone : old('phone') }}">
+                    <input type="text" class="form-control @error('phone') is-invalid @enderror" id="phone" name="phone" placeholder="Enter Phone" value="{{ !empty($contractor) ? $contractor->phone : old('phone') }}">
                     @error('phone')
                     <span class="invalid-feedback" role="alert">
                         <strong>{{ $message }}</strong>
                     </span>
                     @enderror
+                    <!-- </div> -->
                 </div>
                 <div class="col-sm-4 mb-2">
                     <div class="form-group">
@@ -88,17 +94,17 @@
                 </tr>
             </thead>
             <tbody>
-                @foreach ($partners as $key => $partnerList)
+                @foreach ($contractors as $key => $contractorList)
                 <tr>
                     <td>{{ ++$key }}</td>
-                    <td><img width="50" height="50" class="rounded" src="{{($partnerList->image != '' ? asset('storage/salespartners/'.$partnerList->image) : (asset('assets/images/profile_av.png')))}}"/></td>
-                    <td>{{ $partnerList->name }}</td>
-                    <td>{{ $partnerList->email }}</td>
-                    <td>{{ $partnerList->phone }}</td>
+                    <td><img width="50" height="50" class="rounded" src="{{($contractorList->image != '' ? asset('storage/subcontractors/'.$contractorList->image) : (asset('assets/images/profile_av.png')))}}"/></td>
+                    <td>{{ $contractorList->name }}</td>
+                    <td>{{ $contractorList->email }}</td>
+                    <td>{{ $contractorList->phone }}</td>
                     <td class="text-center">
-                        <a style="cursor: pointer;" data-toggle="tooltip" title="Edit" href="{{ route('sales.partner.types',$partnerList->id)}}">
+                        <a style="cursor: pointer;" data-toggle="tooltip" title="Edit" href="{{ route('sub.contractor',$contractorList->id)}}">
                             <i class="icofont-pencil text-warning"></i></a>
-                        <a style="cursor: pointer;" data-toggle="tooltip" title="Delete" class="ml-2" onclick="deleteDealerModal('{{ $partnerList->id }}')">
+                        <a style="cursor: pointer;" data-toggle="tooltip" title="Delete" class="ml-2" onclick="deleteDealerModal('{{ $contractorList->id }}')">
                             <i class="icofont-trash text-danger"></i></a>
                     </td>
                 </tr>

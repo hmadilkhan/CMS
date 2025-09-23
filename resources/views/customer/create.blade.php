@@ -112,6 +112,33 @@
                     </div>
 
                     <div class="col-sm-4">
+                        <label class="form-label">Sub-Contractors</label>
+                        <select class="form-select select2" aria-label="Default select Sub-Contractors"
+                            id="sub_contractor_id" name="sub_contractor_id">
+                            <option value="">Select Sub-Contractors</option>
+                            @foreach ($contractors as $contractor)
+                                <option value="{{ $contractor->id }}">
+                                    {{ $contractor->name }}
+                                </option>
+                            @endforeach
+                        </select>
+                        @error('sub_contractor_id')
+                            <div class="text-danger message mt-2">{{ $message }}</div>
+                        @enderror
+                    </div>
+
+                    <div class="col-sm-4">
+                        <label class="form-label">Sub-Contractor User</label>
+                        <select class="form-select select2" aria-label="Default select Sub-Contractor"
+                            id="sub_contractor_user_id" name="sub_contractor_user_id">
+                            <option value="">Select Sub-Contractor User</option>
+                        </select>
+                        @error('sub_contractor_user_id')
+                            <div class="text-danger message mt-2">{{ $message }}</div>
+                        @enderror
+                    </div>
+
+                    <div class="col-sm-4">
                         <label class="form-label">Inverter Type</label>
                         <select class="form-select select2" aria-label="Default select Inverter Type"
                             id="inverter_type_id" name="inverter_type_id" onchange="getRedlineCost()">
@@ -154,15 +181,15 @@
                     </div>
                     <!-- <div class="col-sm-4"> -->
                     <!-- <label class="form-label">Battery Type</label>
-                                                        <select class="form-select select2" aria-label="Default select Battery Type" id="battery_type_id" name="battery_type_id">
-                                                            <option value="">Select Battery Type</option>
-                                                            @foreach ($battery_types as $battery)
+                                                            <select class="form-select select2" aria-label="Default select Battery Type" id="battery_type_id" name="battery_type_id">
+                                                                <option value="">Select Battery Type</option>
+                                                                @foreach ($battery_types as $battery)
     <option value="{{ $battery->id }}">
-                                                                {{ $battery->name }}
-                                                            </option>
+                                                                    {{ $battery->name }}
+                                                                </option>
     @endforeach
-                                                        </select>
-                                                        @error('battery_type_id')
+                                                            </select>
+                                                            @error('battery_type_id')
         <div class="text-danger message mt-2">{{ $message }}</div>
     @enderror -->
                     <!-- </div> -->
@@ -215,8 +242,8 @@
 
                     <div class="col-sm-4 mb-3">
                         <!-- <label for="exampleFormControlInput877" class="form-label">Battery Qty</label>
-                                                        <input type="text" class="form-control" id="battery_qty" name="battery_qty" placeholder="Battery Qty">
-                                                        @error('battery_qty')
+                                                            <input type="text" class="form-control" id="battery_qty" name="battery_qty" placeholder="Battery Qty">
+                                                            @error('battery_qty')
         <div class="text-danger message mt-2">{{ $message }}</div>
     @enderror -->
                     </div>
@@ -246,11 +273,11 @@
                         </select>
                     </div>
                     <!-- <div class="col-sm-3 mb-3">
-                                                        <label for="sub_type" class="form-label">Sub Type</label>
-                                                        <select class="form-select select2" aria-label="Default select Sub Type" id="sub_type" name="sub_type">
-                                                            <option value="">Select Sub Type</option>
-                                                        </select>
-                                                    </div> -->
+                                                            <label for="sub_type" class="form-label">Sub Type</label>
+                                                            <select class="form-select select2" aria-label="Default select Sub Type" id="sub_type" name="sub_type">
+                                                                <option value="">Select Sub Type</option>
+                                                            </select>
+                                                        </div> -->
                     <div class="col-sm-3 mb-3">
                         <label for="uom" class="form-label">UOM</label>
                         <select class="form-select select2" aria-label="Default select UOM" id="uom">
@@ -806,9 +833,29 @@
             $("#amount").val('');
         }
 
-
-
-
+        $("#sub_contractor_id").change(function() {
+            $('#sub_contractor_user_id').empty();
+            $.ajax({
+                method: "POST",
+                url: "{{ route('get.subcontractors.users') }}",
+                data: {
+                    _token: "{{ csrf_token() }}",
+                    id: $(this).val(),
+                },
+                dataType: 'json',
+                success: function(response) {
+                    $('#sub_contractor_user_id').append(
+                        "<option value=''>Select Sub Contractor User</option> ");
+                    $.each(response.users, function(i, user) {
+                        $('#sub_contractor_user_id').append($('<option  value="' + user.id +
+                            '">' + user.name + '</option>'));
+                    });
+                },
+                error: function(error) {
+                    console.log(error.responseJSON.message);
+                }
+            })
+        })
         $("#sales_partner_id").change(function() {
             $('#sales_partner_user_id').empty();
             $.ajax({

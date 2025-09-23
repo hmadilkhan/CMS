@@ -44,7 +44,7 @@
                         <div class="form-group">
                             <label>Phone</label>
                             <input type="text" class="form-control @error('phone') is-invalid @enderror" id="phone"
-                                name="phone" placeholder="Enter Phone">
+                                name="phone" placeholder="Enter Phone" value="{{ !empty($user) ? $user->phone : old('phone') }}">
                             @error('phone')
                                 <span class="invalid-feedback" role="alert">
                                     <strong>{{ $message }}</strong>
@@ -138,6 +138,29 @@
                             @enderror
                         </div>
                     </div>
+                    <div class="col-sm-3" id="subContractorDiv"
+                        style="{{ !empty($user) && $user->user_type_id == 4 ? 'display:block' : 'display:none' }}">
+                        <div class="form-group">
+                            <label>Sub-Contractors</label>
+                            <select id="sub_contractor_id" name="sub_contractor_id"
+                                class="form-control select2 @error('sub_contractor_id') is-invalid @enderror"
+                                style="width: 100%;">
+                                <option value="">Sub-Contractors</option>
+                                @foreach ($contractors as $contractor)
+                                    <option
+                                        {{ !empty($user) && $contractor->id == $user->sales_partner_id ? 'selected' : '' }}
+                                        value="{{ $contractor->id }}">
+                                        {{ $contractor->name }}
+                                    </option>
+                                @endforeach
+                            </select>
+                            @error('sub_contractor_id')
+                                <span class="invalid-feedback" role="alert">
+                                    <strong>{{ $message }}</strong>
+                                </span>
+                            @enderror
+                        </div>
+                    </div>
 
                     <div class="col-sm-4">
                         <div class="form-group">
@@ -170,10 +193,10 @@
                     <div class="col-sm-4 mb-3">
                         <label></label>
                         <div class="form-group float-left mt-3">
-                            <button type="button" class="btn btn-danger float-right ml-2 text-white"><i
+                            <a href="{{route("get.register")}}" class="btn btn-danger float-right ml-2 text-white"><i
                                     class="icofont-ban"></i>
                                 Cancel
-                            </button>
+                            </a>
                             <button type="submit" name="buttonstatus" class="btn btn-primary float-right "
                                 value="save"><i class="icofont-save"></i> Save
                             </button>
@@ -259,6 +282,11 @@
                 $("#salesPartnerDiv").css("display", "block")
             } else {
                 $("#salesPartnerDiv").css("display", "none")
+            }
+            if ($(this).val() == 4) {
+                $("#subContractorDiv").css("display", "block")
+            } else {
+                $("#subContractorDiv").css("display", "none")
             }
         })
 

@@ -128,6 +128,7 @@ Route::middleware('auth')->group(function () {
     Route::post('get-module-types', [App\Http\Controllers\CustomerController::class, 'getModulTypevalue'])->name('get.module.types');
     Route::post('delete-customer', [App\Http\Controllers\CustomerController::class, 'destroy'])->name('delete.customer');
     Route::post('get-sales-partner-users', [App\Http\Controllers\CustomerController::class, 'getSalesPartnerUsers'])->name('get.salespartnets.users');
+    Route::post('get-sub-contractor-users', [App\Http\Controllers\CustomerController::class, 'getSubContractorUsers'])->name('get.subcontractors.users');
 
     Route::post('send-email', [App\Http\Controllers\CustomerController::class, 'sendEmail'])->name("send.email");
 
@@ -203,6 +204,12 @@ Route::middleware('auth')->group(function () {
         Route::post('/sales-partner-update', 'salesPartnerUpdate')->name("sales.partner.update");
         Route::post('/sales-partner-delete', 'salesPartnerDelete')->name("sales.partner.delete");
         Route::post('/sales-partner-overwrite-prices', 'salesPartnerOverwriteCost')->name("sales.partner.overwrite.prices");
+
+        // SUB-CONTRACTORS VIEW
+        Route::get('/sub-contractor-type/{id?}', 'subContractorView')->name("sub.contractor");
+        Route::post('/sub-contractor-store', 'subContractorStore')->name("sub.contractor.store");
+        Route::post('/sub-contractor-update', 'subContractorUpdate')->name("sub.contractor.update");
+        Route::post('/sub-contractor-delete', 'subContractorDelete')->name("sub.contractor.delete");
 
         // CALL SCRIPTS
         Route::get('/view-call-scripts/{id?}', 'callScriptList')->name("call.scripts.list");
