@@ -17,6 +17,11 @@ class AccountTransaction extends Model
         'transaction_details',
     ];
 
+    public function getRemittedAmountAttribute()
+    {
+        return $this->amount - $this->deduction_amount;
+    }
+
     public function project()
     {
         return $this->belongsTo(Project::class);

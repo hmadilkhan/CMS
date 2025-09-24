@@ -9,9 +9,11 @@ use App\Models\Project;
 class AccountTransactions extends Component
 {
     public $project_id;
+    public $payee;
     public $transactions;
     public $milestone;
     public $amount;
+    public $deduction_amount = 0;
     public $transaction_date;
     public $transaction_details;
     public $transactionIdBeingEdited = null;
@@ -19,8 +21,10 @@ class AccountTransactions extends Component
     public $confirmingDeleteId = null;
 
     protected $rules = [
+        'payee' => 'required|string|max:255',
         'milestone' => 'required|string|max:255',
         'amount' => 'required|numeric',
+        'deduction_amount' => 'required|numeric',
         'transaction_date' => 'required|date',
         'transaction_details' => 'required|string',
     ];
@@ -38,8 +42,10 @@ class AccountTransactions extends Component
 
     public function resetForm()
     {
+        $this->payee = '';
         $this->milestone = '';
         $this->amount = '';
+        $this->deduction_amount = '';
         $this->transaction_date = '';
         $this->transaction_details = '';
         $this->transactionIdBeingEdited = null;
@@ -51,8 +57,10 @@ class AccountTransactions extends Component
         $this->validate();
         $items = [
             'project_id' => $this->project_id,
+            'payee' => $this->payee,
             'milestone' => $this->milestone,
             'amount' => $this->amount,
+            'deduction_amount' => $this->deduction_amount,
             'transaction_date' => $this->transaction_date,
             'transaction_details' => $this->transaction_details,
         ];
@@ -77,8 +85,10 @@ class AccountTransactions extends Component
     {
         $transaction = AccountTransaction::findOrFail($id);
         $this->transactionIdBeingEdited = $id;
+        $this->payee = $transaction->payee;
         $this->milestone = $transaction->milestone;
         $this->amount = $transaction->amount;
+        $this->deduction_amount = $transaction->deduction_amount;
         $this->transaction_date = $transaction->transaction_date;
         $this->transaction_details = $transaction->transaction_details;
         $this->isEditMode = true;
@@ -89,8 +99,10 @@ class AccountTransactions extends Component
         $this->validate();
         $transaction = AccountTransaction::findOrFail($this->transactionIdBeingEdited);
         $items = [
+            'payee' => $this->payee,
             'milestone' => $this->milestone,
             'amount' => $this->amount,
+            'deduction_amount' => $this->deduction_amount,
             'transaction_date' => $this->transaction_date,
             'transaction_details' => $this->transaction_details,
         ];

@@ -11,6 +11,19 @@
             <form wire:submit.prevent="{{ $isEditMode ? 'update' : 'save' }}" class="mb-4">
                 <div class="row g-3 align-items-end">
                     <div class="col-md-3">
+                        <label class="form-label">Payee</label>
+                        <select class="form-select select2" aria-label="Default select Payee"
+                            wire:model.defer="payee">
+                            <option value="">Select Payee</option>
+                            <option value="sales_partner">Sales Partner</option>
+                            <option value="sub_contractor">Sub-Contractor</option>
+                            <option value="others">Others</option>
+                        </select>
+                        @error('payee')
+                            <span class="text-danger">{{ $message }}</span>
+                        @enderror
+                    </div>
+                    <div class="col-md-3">
                         <label class="form-label">Milestone</label>
                         <input type="text" class="form-control" wire:model.defer="milestone">
                         @error('milestone')
@@ -25,7 +38,14 @@
                         @enderror
                     </div>
                     <div class="col-md-2">
-                        <label class="form-label">Date</label>
+                        <label class="form-label">Deduction Amount</label>
+                        <input type="number" step="0.01" class="form-control" wire:model.defer="deduction_amount">
+                        @error('deduction_amount')
+                            <span class="text-danger">{{ $message }}</span>
+                        @enderror
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">Transaction Date</label>
                         <input type="date" class="form-control" wire:model.defer="transaction_date">
                         @error('transaction_date')
                             <span class="text-danger">{{ $message }}</span>
