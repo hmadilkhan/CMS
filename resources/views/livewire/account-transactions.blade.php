@@ -12,7 +12,7 @@
                 <div class="row g-3 align-items-end">
                     <div class="col-md-3">
                         <label class="form-label">Payee</label>
-                        <select class="form-select select2" aria-label="Default select Payee"
+                        <select class="form-select form-control" aria-label="Default select Payee"
                             wire:model.defer="payee">
                             <option value="">Select Payee</option>
                             <option value="sales_partner">Sales Partner</option>
@@ -75,8 +75,11 @@
                 <thead class="table-light">
                     <tr>
                         <th>#</th>
+                        <th>Payee</th>
                         <th>Milestone</th>
                         <th>Amount</th>
+                        <th>Deduction Amount</th>
+                        <th>Remitted Amount</th>
                         <th>Date</th>
                         <th>Details</th>
                         @can('Account Transactions Edit')
@@ -88,9 +91,12 @@
                     @forelse($transactions as $i => $transaction)
                         <tr>
                             <td>{{ $i + 1 }}</td>
+                            <td>{{ $transaction->payee_label  }}</td>
                             <td>{{ $transaction->milestone }}</td>
                             <td>${{ number_format($transaction->amount, 2) }}</td>
-                            <td>{{ $transaction->transaction_date }}</td>
+                            <td>${{ number_format($transaction->deduction_amount, 2) }}</td>
+                            <td>${{ number_format($transaction->remitted_amount , 2) }}</td>
+                            <td>{{ date('d M Y',strtotime($transaction->transaction_date)) }}</td>
                             <td>{{ $transaction->transaction_details }}</td>
                             @can('Account Transactions Edit')
                                 <td>

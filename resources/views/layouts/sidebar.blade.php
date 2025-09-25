@@ -85,10 +85,10 @@
 
             @can('Reports')
             <li class="collapsed">
-                <a class="m-link {{ (Route::currentRouteName() == 'reports.profit' or Route::currentRouteName() == 'forecast.report' or Route::currentRouteName() == 'report-builder' or Route::currentRouteName() == 'report-runner'  ) ? 'show' : '' }}" data-bs-toggle="collapse" data-bs-target="#reports" href="#">
+                <a class="m-link {{ (Route::currentRouteName() == 'reports.profit' or Route::currentRouteName() == 'forecast.report' or Route::currentRouteName() == 'report-builder' or Route::currentRouteName() == 'report-runner'  or Route::currentRouteName() == 'get.transaction.report'  ) ? 'show' : '' }}" data-bs-toggle="collapse" data-bs-target="#reports" href="#">
                     <i class="icofont-briefcase"></i><span>Reports</span> <span class="arrow icofont-dotted-down ms-auto text-end fs-5"></span></a>
                 <!-- Menu: Sub menu ul -->
-                <ul class="sub-menu collapse {{ (Route::currentRouteName() == 'reports.profit' or Route::currentRouteName() == 'forecast.report'  ) ? 'show' : '' }}" id="reports">
+                <ul class="sub-menu collapse {{ (Route::currentRouteName() == 'reports.profit' or Route::currentRouteName() == 'forecast.report' or Route::currentRouteName() == 'get.transaction.report'  ) ? 'show' : '' }}" id="reports">
                     @can('Report Builder')
                         <li><a class="ms-link {{ Route::currentRouteName() == 'report-builder' ? 'active' : '' }}" href="{{route('report-builder')}}"><span>Report Builder</span></a></li>
                         <li><a class="ms-link {{ Route::currentRouteName() == 'report-runner' ? 'active' : '' }}" href="{{route('report-runner')}}"><span>Report Runner</span></a></li>
@@ -101,6 +101,9 @@
                     @endcan
                     @can('Override Report')
                         <li><a class="ms-link {{ Route::currentRouteName() == 'override.report' ? 'active' : '' }}" href="{{route('override.report')}}"><span>Override Report</span></a></li>
+                    @endcan
+                    @can('Transaction Report')
+                        <li><a class="ms-link {{ Route::currentRouteName() == 'get.transaction.report' ? 'active' : '' }}" href="{{route('get.transaction.report')}}"><span>Transaction Report</span></a></li>
                     @endcan
                 </ul>
             </li>

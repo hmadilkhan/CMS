@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::table('account_transactions', function (Blueprint $table) {
             $table->string('payee')->nullable()->after('project_id');
-            $table->decimal('deduction_amount', 18, 2)->after('amount')->default(0)->change();
+            $table->decimal('deduction_amount', 18, 2)->default(0)->after('amount');
         });
     }
 

@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Exports\ForecastReportExport;
 use App\Exports\OverrideCostExport;
 use App\Exports\ProfitReportExport;
+use App\Models\AccountTransaction;
 use App\Models\Customer;
 use App\Models\OfficeCost;
 use App\Models\SalesPartner;
@@ -187,5 +188,32 @@ class ReportController extends Controller
     public function DynamicReportBuilder()
     {
         return view('reports.dynamic-report-builder');
+    }
+
+    public function transactionReport()
+    {
+        return view('reports.transaction.transaction-report');
+    }
+
+    public function postTransactionReport(Request $request)
+    {
+        $startDate = $request->input('start_date');
+        $endDate = $request->input('end_date');
+
+        $query = AccountTransaction::query()
+            ->filterByRole(auth()->user());
+
+        if ($startDate && $endDate) {
+            $query->whereBetween('transaction_date', [
+                $startDate,
+                $endDate,
+            ]);
+        }
+
+        $transactions = $query->latest()->get();
+        
+        return view('reports.transaction.transaction_table', [
+            'transactions' => $transactions,
+        ]);
     }
 }

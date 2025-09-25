@@ -13,7 +13,7 @@ class AccountTransactions extends Component
     public $transactions;
     public $milestone;
     public $amount;
-    public $deduction_amount = 0;
+    public $deduction_amount;
     public $transaction_date;
     public $transaction_details;
     public $transactionIdBeingEdited = null;
@@ -64,6 +64,7 @@ class AccountTransactions extends Component
             'transaction_date' => $this->transaction_date,
             'transaction_details' => $this->transaction_details,
         ];
+
         $account = AccountTransaction::create($items);
 
         $username = auth()->user()->name;
