@@ -51,8 +51,7 @@
 @section('scripts')
     <script>
         function generateReport() {
-            console.log("here");
-
+        
             if ($("#from_date").val() == "") {
                 $("#from_message").html("Please select from date")
             } else if ($("#to_date").val() == "") {
@@ -64,7 +63,8 @@
                 getReport($("#from_date").val(), $("#to_date").val());
             }
         }
-        getReport('','');
+        getReport('', '');
+
         function getReport(startDate, endDate) {
             $.ajax({
                 url: "{{ route('transaction.report') }}",
@@ -83,12 +83,12 @@
         }
 
         function excelExport() {
-            window.open("{{ url('profitable-report-excel-export') }}" + "/" + $("#from_date").val() + "/" + $("#to_date")
+            window.open("{{ url('transaction-report-excel-export') }}" + "/" + $("#from_date").val() + "/" + $("#to_date")
                 .val());
         }
 
         function pdfExport() {
-            window.open("{{ url('profitable-report-pdf-export') }}" + "/" + $("#from_date").val() + "/" + $("#to_date")
+            window.open("{{ url('transaction-report-pdf-export') }}" + "/" + $("#from_date").val() + "/" + $("#to_date")
                 .val());
         }
     </script>

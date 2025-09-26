@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Exports\ForecastReportExport;
 use App\Exports\OverrideCostExport;
 use App\Exports\ProfitReportExport;
+use App\Exports\TransactionReportExport;
 use App\Models\AccountTransaction;
 use App\Models\Customer;
 use App\Models\OfficeCost;
@@ -195,25 +196,42 @@ class ReportController extends Controller
         return view('reports.transaction.transaction-report');
     }
 
+    private function buildTransactionQuery($startDate = null, $endDate = null)
+    {
+        return AccountTransaction::query()
+            ->with('project', 'project.customer')
+            ->filterByRole(auth()->user())
+            ->when($startDate && $endDate, fn($query) => $query->whereBetween('transaction_date', [$startDate, $endDate]))
+            ->latest();
+    }
+
     public function postTransactionReport(Request $request)
     {
-        $startDate = $request->input('start_date');
-        $endDate = $request->input('end_date');
+        $transactions = $this->buildTransactionQuery(
+            $request->input('start_date'),
+            $request->input('end_date')
+        )->get();
 
-        $query = AccountTransaction::query()
-            ->filterByRole(auth()->user());
+        return view('reports.transaction.transaction_table', compact('transactions'));
+    }
 
-        if ($startDate && $endDate) {
-            $query->whereBetween('transaction_date', [
-                $startDate,
-                $endDate,
-            ]);
-        }
+    public function exportTransactionReportExcel(Request $request)
+    {
+        $transactions = $this->buildTransactionQuery(
+            $request->start_date,
+            $request->end_date
+        )->get();
 
-        $transactions = $query->latest()->get();
-        
-        return view('reports.transaction.transaction_table', [
-            'transactions' => $transactions,
-        ]);
+        return Excel::download(new TransactionReportExport($transactions), 'Transaction Report.xlsx');
+    }
+
+    public function exportTransactionReportPdf(Request $request)
+    {
+        $transactions = $this->buildTransactionQuery(
+            $request->start_date,
+            $request->end_date
+        )->get();
+
+        return Excel::download(new TransactionReportExport($transactions), 'Transaction Report.pdf', \Maatwebsite\Excel\Excel::DOMPDF);
     }
 }

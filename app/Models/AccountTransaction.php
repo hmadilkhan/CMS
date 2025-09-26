@@ -28,28 +28,52 @@ class AccountTransaction extends Model
         ][$this->payee] ?? $this->payee;
     }
 
-    public function getRemittedAmountAttribute()
+    public function getFormattedAmountAttribute()
     {
-        return $this->amount - $this->deduction_amount;
+        return '$ ' . number_format($this->attributes['amount'], 2);
     }
 
-    // App\Models\Transaction.php
-    public function scopeFilterByRole($query, $user)
+    public function getFormattedDeductionAmountAttribute()
     {
-        if ($user->hasRole('sales_person')) {
-            return $query->where('payee', 'sales_partner');
-        }
+        return '$ ' . number_format($this->attributes['deduction_amount'], 2);
+    }
 
-        if ($user->hasRole('sub_contractor_manager')) {
-            return $query->where('payee', 'sub_contractor');
-        }
+    public function getRemittedAmountAttribute()
+    {
+        return $this->attributes['amount'] - $this->attributes['deduction_amount'];
+    }
 
-        // admin or others → no restriction
-        return $query;
+    public function getFormattedRemittedAmountAttribute()
+    {
+        return '$ ' . number_format($this->remitted_amount, 2);
+    }
+    
+    public function getFormattedTransactionDateAttribute()
+    {
+        return date("d M Y",strtotime($this->attributes['transaction_date']));
     }
 
     public function project()
     {
         return $this->belongsTo(Project::class);
+    }
+
+    // App\Models\Transaction.php
+    public function scopeFilterByRole($query, $user)
+    {
+        if ($user->hasRole('Sales Person')) {
+            return $query->whereHas('project.customer', function ($q) {
+                $q->where('sales_partner_id', auth()->user()->sales_partner_id);
+            })->where('payee', 'sales_partner');
+        }
+
+        if ($user->hasRole('Sub-Contractor Manager')) {
+            return $query->whereHas('project.customer', function ($q) {
+                $q->where('sub_contractor_id', auth()->user()->sales_partner_id);
+            })->where('payee', 'sub_contractor');
+        }
+
+        // admin or others → no restriction
+        return $query;
     }
 }

@@ -255,8 +255,11 @@ Route::middleware('auth')->group(function () {
         Route::get('/override-report-excel-export/{salespartner}/{from}/{to}', 'getOverrideReportExport')->name("override.report.excel.export");
         Route::get('/override-report-pdf-export/{salespartner}/{from}/{to}', 'getOverrideReportPdfExport')->name("override.report.pdf.export");
 
+         // TRANSACTION REPORT
         Route::get('/transaction-report', 'transactionReport')->name("get.transaction.report");
         Route::post('/transaction-report', 'postTransactionReport')->name("transaction.report");
+        Route::get('/transaction-report-excel-export/{start_date?}/{end_date?}', 'exportTransactionReportExcel')->name("transaction.report.excel.export");
+        Route::get('/transaction-report-pdf-export/{start_date?}/{end_date?}', 'exportTransactionReportPdf')->name("transaction.report.pdf.export");
 
         //  Route::get("dynamic-report","DynamicReport");
         Route::get("dynamic-report", DynamicReport::class);
