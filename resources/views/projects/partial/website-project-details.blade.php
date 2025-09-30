@@ -270,7 +270,7 @@
         .main-container {
             width: 650px;
             /* margin-left: auto;
-                margin-right: auto; */
+                        margin-right: auto; */
         }
     </style>
     <div id="mytask-layout" class="theme-indigo">
@@ -523,27 +523,27 @@
                 </div>
             </div>
         </div>
-    @endsection
-    @section('scripts')
-        <script>
-            showEmails("{{ $project->id }}");
+@endsection
+@section('scripts')
+    <script>
+        showEmails("{{ $project->id }}");
 
-            function showEmails(projectId) {
-                $.ajax({
-                    method: "POST",
-                    url: "{{ route('show.website.emails') }}",
-                    data: {
-                        _token: "{{ csrf_token() }}",
-                        project_id: projectId,
-                    },
-                    success: function(response) {
-                        $("#emailDiv").empty();
-                        $("#emailDiv").html(response);
-                    },
-                    error: function(error) {
-                        console.log(error);
-                    }
-                })
-            }
-        </script>
-    @endsection
+        function showEmails(projectId) {
+            $.ajax({
+                method: "POST",
+                url: "{{ route('show.website.emails') }}",
+                data: {
+                    _token: "{{ csrf_token() }}",
+                    project_id: projectId,
+                },
+                success: function(response) {
+                    $("#emailDiv").empty();
+                    $("#emailDiv").html(response);
+                },
+                error: function(error) {
+                    console.log(error);
+                }
+            })
+        }
+    </script>
+@endsection
