@@ -22,14 +22,46 @@
                         @endif
                     </div>
                 </div>
-                <div class="row align-items-center  justify-content-end py-2 border-bottom px-0 flex-wrap">
+                <div class="row align-items-center justify-content-end py-3 px-0 flex-wrap">
                     <div class="col-auto">
-                        <div class="d-flex align-items-center">
-                            <input type="text" class="form-control me-2" id="search" style="width: 250px;" placeholder="Type to search / Enter to refresh" />
-                            {{-- <button type="button" class="btn btn-primary" id="btnSearch">Search</button> --}}
+                        <div class="search-box-wrapper">
+                            <i class="icofont-search search-icon"></i>
+                            <input type="text" class="form-control search-input" id="search" placeholder="Type to search / Enter to refresh" />
                         </div>
                     </div>
                 </div>
+                <style>
+                    .search-box-wrapper {
+                        position: relative;
+                        width: 500px;
+                    }
+                    .search-icon {
+                        position: absolute;
+                        left: 18px;
+                        top: 50%;
+                        transform: translateY(-50%);
+                        color: #6c757d;
+                        font-size: 1.2rem;
+                        z-index: 10;
+                    }
+                    .search-input {
+                        padding: 12px 20px 12px 50px;
+                        height: 50px;
+                        border-radius: 8px;
+                        border: 2px solid #e9ecef;
+                        transition: all 0.3s ease;
+                        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+                    }
+                    .search-input:focus {
+                        border-color: #2c3e50;
+                        box-shadow: 0 4px 12px rgba(44,62,80,0.15);
+                        outline: none;
+                    }
+                    .search-input::placeholder {
+                        color: #adb5bd;
+                        font-size: 0.9rem;
+                    }
+                </style>
             </div>
         </div> <!-- Row end  -->
         <div class="row align-items-center">
