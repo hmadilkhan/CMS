@@ -82,7 +82,7 @@ class EmployeeController extends Controller
                     $request->except(["file", "id", "previous_logo", "roles", "username", "password", "password_confirmation", "user_id", "departments","overwrite_base_price","overwrite_panel_price"]),
                     [
                         "user_id" => $user->id,
-                        "image" => (!empty($result) ? $result["fileName"] : ""),
+                        "image" => ($result && isset($result["fileName"]) ? $result["fileName"] : ""),
                     ]
                 )
             );
