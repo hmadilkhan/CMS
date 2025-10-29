@@ -8,6 +8,7 @@
                     class="card-header p-0 no-bg bg-transparent d-flex align-items-center px-0 justify-content-between border-bottom flex-wrap">
                     <h3 class="fw-bold py-3 mb-0">Projects</h3>
                     <div class="d-flex py-2 project-tab flex-wrap w-sm-100">
+                        @if(count($departments) > 1)
                         <ul class="nav nav-tabs tab-body-header rounded ms-3 prtab-set w-sm-100" role="tablist"
                             style="cursor: pointer;">
                             <li class="nav-item"><a class="nav-link active" data-bs-toggle="tab" onclick="projectList('all')"
@@ -18,6 +19,7 @@
                                         role="tab">{{ $department->name }}</a></li>
                             @endforeach
                         </ul>
+                        @endif
                     </div>
                 </div>
                 <div class="row align-items-center  justify-content-end py-2 border-bottom px-0 flex-wrap">
