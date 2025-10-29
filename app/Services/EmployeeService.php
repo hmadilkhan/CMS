@@ -62,7 +62,7 @@ class EmployeeService
                 $user->assignRole($role);
             }
 
-            $employee = Employee::create(array_merge($data->except(["file", "id", "previous_logo", "roles", "username", "password", "password_confirmation", "user_id", "departments", "overwrite_base_price", "overwrite_panel_price","type"]), ['user_id' => $user->id, 'image' => $result["fileName"]]));
+            $employee = Employee::create(array_merge($data->except(["file", "id", "previous_logo", "roles", "username", "password", "password_confirmation", "user_id", "departments", "overwrite_base_price", "overwrite_panel_price","type"]), ['user_id' => $user->id, 'image' => ($result && isset($result["fileName"]) ? $result["fileName"] : "")]));
 
             $this->attachDepartments($employee->id, $data['departments']);
 
@@ -94,7 +94,7 @@ class EmployeeService
                     $data->except(["file", "id", "previous_logo", "roles", "username", "password", "password_confirmation", "user_id", "departments", "overwrite_base_price", "overwrite_panel_price","type"]),
                     [
                         "user_id" => $data["user_id"],
-                        "image" => (!empty($result) ? $result["fileName"] : $data["previous_logo"]),
+                        "image" => ($result && isset($result["fileName"]) ? $result["fileName"] : $data["previous_logo"]),
                     ]
                 )
             );

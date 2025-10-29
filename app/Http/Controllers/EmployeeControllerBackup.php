@@ -96,7 +96,13 @@ class EmployeeController extends Controller
             return response()->json(["status" => 200, "messsage" => "Employee created successfully"]);
         } catch (\Throwable $th) {
             DB::rollBack();
-            return response()->json(["status" => 500, "messsage" => $th->getMessage()]);
+            return response()->json([
+                "status" => 500, 
+                "message" => $th->getMessage(),
+                "file" => $th->getFile(),
+                "line" => $th->getLine(),
+                "trace" => $th->getTraceAsString()
+            ]);
         }
     }
 
