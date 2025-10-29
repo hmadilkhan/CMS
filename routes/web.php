@@ -277,6 +277,12 @@ Route::middleware('auth')->group(function () {
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
     Route::get('/logout', [ProfileController::class, 'logout'])->name('profile.logout');
 
+    // NOTIFICATIONS
+    Route::get('/notifications', [App\Http\Controllers\NotificationController::class, 'index'])->name('notifications.index');
+    Route::post('/notifications/mark-all-read', [App\Http\Controllers\NotificationController::class, 'markAllAsRead'])->name('notifications.mark-all-read');
+    Route::post('/notifications/{id}/mark-read', [App\Http\Controllers\NotificationController::class, 'markAsRead'])->name('notifications.mark-read');
+    Route::get('/notifications/{id}/mark-read', [App\Http\Controllers\NotificationController::class, 'markAsRead'])->name('notifications.mark-read');
+
     Route::get('tickets', [App\Http\Controllers\NewTicketController::class, 'index'])->name("tickets");
     Route::post('change-ticket-status', [App\Http\Controllers\NewTicketController::class, 'changeStatus'])->name("change.ticket.status");
 

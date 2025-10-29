@@ -26,7 +26,17 @@ class NotesSection extends Component
 
     public function mount()
     {
-        $this->employees = Employee::select('id', 'name', 'email')->get();
+        $loggedInEmployee = auth()->user();
+        $this->employees = Employee::select('id', 'name', 'email')
+            ->where(function($query) use ($loggedInEmployee) {
+                $query->whereHas('user.roles', function($q) {
+                    $q->whereIn('name', ['Manager', 'Sub-Contractor Manager', 'Employee', 'Super Admin']);
+                })
+                ->when($loggedInEmployee && $loggedInEmployee->sales_partner_id, function($q) use ($loggedInEmployee) {
+                    $q->orWhere('sales_partner_id', $loggedInEmployee->sales_partner_id);
+                });
+            })
+            ->get();
     }
 
     protected $rules = [

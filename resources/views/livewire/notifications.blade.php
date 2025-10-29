@@ -22,5 +22,5 @@
             </ul>
         </div>
     </div>
-    <a class="card-footer text-center border-top-0" href="#"> View all notifications</a>
+    <a class="card-footer text-center border-top-0" href="{{ route('notifications.index') }}"> View all notifications</a>
 </div>
