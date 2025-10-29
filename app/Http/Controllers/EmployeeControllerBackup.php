@@ -66,7 +66,7 @@ class EmployeeController extends Controller
 
         try {
             DB::beginTransaction();
-            $result = $this->uploads($request->file, 'employees/');
+            $result = $request->hasFile('file') ? $this->uploads($request->file, 'employees/') : null;
             $user = User::create([
                 'name' => $request->name,
                 'email' => $request->email,
