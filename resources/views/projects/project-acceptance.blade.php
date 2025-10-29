@@ -56,7 +56,8 @@
         @php
             // $basePrice = $project->customer->inverter->invertertyperates->base_cost + $project->overwrite_base_price;
             $basePrice = $project->customer->finances->inverter_base_cost + $project->overwrite_base_price;
-            $moduleQtyPrice = $project->customer->module->amount + $project->overwrite_panel_price;
+            $moduleQtyPrice = $project->customer->finances->module_type_cost + $project->overwrite_panel_price;
+            // $moduleQtyPrice = $project->customer->module->amount + $project->overwrite_panel_price;
             // $modulesAmount = $project->customer->panel_qty * $project->customer->module->amount + $project->overwrite_panel_price;
             $modulesAmount = $project->customer->panel_qty * $moduleQtyPrice;
         @endphp
