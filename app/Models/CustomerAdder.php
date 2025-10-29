@@ -16,7 +16,7 @@ class CustomerAdder extends Model
 
     public function type()
     {
-        return $this->belongsTo(AdderType::class,"adder_type_id","id");
+        return $this->belongsTo(AdderType::class,"adder_type_id","id")->withTrashed();
     }
 
     public function subtype()
@@ -26,6 +26,6 @@ class CustomerAdder extends Model
 
     public function unit()
     {
-        return $this->belongsTo(AdderUnit::class,"adder_unit_id","id");
+        return $this->belongsTo(AdderUnit::class,"adder_unit_id","id")->withTrashed();
     }
 }

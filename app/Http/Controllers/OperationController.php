@@ -356,10 +356,14 @@ class OperationController extends Controller
     public function addersTypeDelete(Request $request)
     {
         try {
+            DB::beginTransaction();
             AdderType::where("id", $request->id)->delete();
-            return response()->json(["status" => 200]);
+            Adder::where("adder_type_id", $request->id)->delete();
+            DB::commit();
+            return response()->json(["status" => 200, "message" => "Adder Type deleted successfully"]);
         } catch (\Throwable $th) {
-            return response()->json(["status" => 500]);
+            DB::rollBack();
+            return response()->json(["status" => 500, "message" => $th->getMessage()]);
         }
     }
 
@@ -736,9 +740,9 @@ class OperationController extends Controller
     {
         try {
             SubContractor::where("id", $request->id)->delete();
-            return response()->json(["status" => 200,"message"=>"Sub Contractor deleted successfully"]);
+            return response()->json(["status" => 200, "message" => "Sub Contractor deleted successfully"]);
         } catch (\Throwable $th) {
-            return response()->json(["status" => 500,"message"=>$th->getMessage()]);
+            return response()->json(["status" => 500, "message" => $th->getMessage()]);
         }
     }
 }

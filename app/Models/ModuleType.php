@@ -14,6 +14,6 @@ class ModuleType extends Model
 
     public function inverter()
     {
-        return $this->belongsTo(InverterType::class,"inverter_type_id","id");
+        return $this->belongsTo(InverterType::class,"inverter_type_id","id")->withTrashed();
     }
 }

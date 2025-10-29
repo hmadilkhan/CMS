@@ -5,14 +5,15 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class LoanTerm extends Model
 {
-    use HasFactory;
+    use HasFactory,SoftDeletes;
 
     protected $guarded = [];
 
     public function finance() : BelongsTo {
-        return $this->belongsTo(FinanceOption::class,"finance_option_id","id");
+        return $this->belongsTo(FinanceOption::class,"finance_option_id","id")->withTrashed();
     }
 }

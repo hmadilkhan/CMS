@@ -21,12 +21,12 @@ class Customer extends Model
 
     public function module()
     {
-        return $this->belongsTo(ModuleType::class,"module_type_id","id");
+        return $this->belongsTo(ModuleType::class,"module_type_id","id")->withTrashed();
     }
 
     public function inverter()
     {
-        return $this->belongsTo(InverterType::class,"inverter_type_id","id");
+        return $this->belongsTo(InverterType::class,"inverter_type_id","id")->withTrashed();
     }
 
     // public function salespartner()
@@ -36,7 +36,7 @@ class Customer extends Model
 
     public function salespartner()
     {
-        return $this->belongsTo(SalesPartner::class,"sales_partner_id","id");
+        return $this->belongsTo(SalesPartner::class,"sales_partner_id","id")->withTrashed();
     }
 
     public function project()

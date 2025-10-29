@@ -32,7 +32,7 @@ class Employee extends Model
 
    public function user()
    {
-      return $this->belongsTo(User::class);
+      return $this->belongsTo(User::class)->withTrashed();
    }
 
    // public function department()
@@ -42,7 +42,7 @@ class Employee extends Model
 
    public function department(): BelongsToMany
    {
-      return $this->belongsToMany(Department::class, 'employee_departments');
+      return $this->belongsToMany(Department::class, 'employee_departments')->withTrashed();
    }
 
    public function scopeGetUser($query, $departmentId, $roles)
