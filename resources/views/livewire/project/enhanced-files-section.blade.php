@@ -182,8 +182,6 @@
                 $filePath = asset('storage/projects/' . $file->filename);
                 $isImage = in_array($extension, ['jpg', 'jpeg', 'png', 'heic']);
                 $isPdf = $extension === 'pdf';
-                $isWord = $extension === 'docx';
-                $fullUrl = url('storage/projects/' . $file->filename);
             @endphp
             <div class="file-card">
                 <div class="file-preview">
@@ -192,8 +190,12 @@
                     @elseif($isPdf)
                         <iframe src="{{ $filePath }}#toolbar=0&navpanes=0&scrollbar=0" 
                                 title="{{ $file->header_text }}"></iframe>
-                    @elseif($isWord)
+                    @elseif($extension === 'docx')
                         <i class="icofont-file-word file-icon"></i>
+                    @elseif($extension === 'dxf')
+                        <i class="icofont-file-alt file-icon"></i>
+                    @elseif($extension === 'dwg')
+                        <i class="icofont-file-image file-icon"></i>
                     @else
                         <i class="icofont-file-document file-icon"></i>
                     @endif
