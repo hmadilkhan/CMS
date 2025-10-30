@@ -1,8 +1,9 @@
 @section("scripts")
 <script type="text/javascript">
     $('.select2').select2();
-
-    projectList("all");
+    console.log("Selected Deparrtment","{{selectedDepartment}}");
+    
+    projectList("{{selectedDepartment}}");
     function projectList(value) {
         let search = $("#search").val();
         $.ajax({

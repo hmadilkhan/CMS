@@ -45,18 +45,28 @@ class ProjectController extends Controller
      */
     public function index()
     {
+        $departments = $this->departmentQuery();
+        $selectedDepartment = $departments->count() === 1 ? $departments->first()->id : 'all';
+        
         return view("projects.index", [
             "customers" => Customer::all(),
-            "departments" => $this->departmentQuery(),
+            "departments" => $departments,
+            "selectedDepartment" => $selectedDepartment,
         ]);
     }
 
     public function departmentQuery()
     {
         $query = Department::query();
-        $roles = auth()->user()->getRoleNames();
+        
 
-        if (!$roles->contains('Manager') && $roles->intersect(['Employee'])->isNotEmpty()) {
+        // Alternative if you want to prioritize roles (e.g., Admin overrides Manager):
+        // $roles = auth()->user()->getRoleNames();
+        // if (!$roles->contains('Manager') && $roles->intersect(['Employee'])->isNotEmpty()) {
+        //     $query->whereIn("id", EmployeeDepartment::whereIn("employee_id", Employee::where("user_id", auth()->user()->id)->pluck("id"))->pluck("department_id"));
+        // }
+
+        if (auth()->user()->hasAnyRole(['Manager', 'Employee'])) {
             $query->whereIn("id", EmployeeDepartment::whereIn("employee_id", Employee::where("user_id", auth()->user()->id)->pluck("id"))->pluck("department_id"));
         }
 
