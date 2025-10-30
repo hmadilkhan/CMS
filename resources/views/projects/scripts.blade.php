@@ -2,7 +2,7 @@
 <script type="text/javascript">
     $('.select2').select2();
 
-    projectList("all");
+    projectList("{{$selectedDepartment}}");
     function projectList(value) {
         let search = $("#search").val();
         $.ajax({
