@@ -680,7 +680,7 @@
                                     <div class="col-sm-6 mb-3">
                                         @php
                                             // Use enhanced file section for projects created after Jan 1, 2025
-                                            $useEnhancedFiles = $project->created_at >= '2025-01-01';
+                                            // $useEnhancedFiles = $project->created_at >= '2025-01-01';
                                         @endphp
                                         
                                         @livewire('project.enhanced-files-section', ['projectId' => $project->id, 'taskId' => $task->id, 'departmentId' => $department->id, 'projectDepartmentId' => $project->department_id, 'ghost' => $ghost], key('enhanced-'.$department->id))

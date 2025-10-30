@@ -44,43 +44,6 @@
             color: #667eea;
         }
 
-        .file-type-badge {
-            position: absolute;
-            top: 15px;
-            left: 15px;
-            background: rgba(0, 0, 0, 0.7);
-            color: white;
-            padding: 5px 12px;
-            border-radius: 20px;
-            font-size: 0.75rem;
-            font-weight: 600;
-            text-transform: uppercase;
-            z-index: 5;
-        }
-
-        .file-type-icon {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .file-type-icon i {
-            font-size: 80px;
-        }
-
-        .file-type-icon span {
-            font-size: 1.2rem;
-            font-weight: 600;
-            color: #495057;
-        }
-
-        .icon-heic { color: #FF6B6B; }
-        .icon-dxf { color: #4ECDC4; }
-        .icon-docx { color: #2B5797; }
-        .icon-pdf { color: #E74C3C; }
-        .icon-default { color: #667eea; }
-
         .file-info {
             padding: 15px;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -217,41 +180,22 @@
             @php
                 $extension = strtolower(pathinfo($file->filename, PATHINFO_EXTENSION));
                 $filePath = asset('storage/projects/' . $file->filename);
-                $isImage = in_array($extension, ['jpg', 'jpeg', 'png', 'gif', 'webp']);
+                $isImage = in_array($extension, ['jpg', 'jpeg', 'png', 'heic']);
                 $isPdf = $extension === 'pdf';
-                $isHeic = $extension === 'heic';
-                $isDxf = $extension === 'dxf';
-                $isDocx = $extension === 'docx';
+                $isWord = $extension === 'docx';
+                $fullUrl = url('storage/projects/' . $file->filename);
             @endphp
             <div class="file-card">
                 <div class="file-preview">
                     @if($isImage)
                         <img src="{{ $filePath }}" alt="{{ $file->header_text }}">
-                        <div class="file-type-badge">{{ strtoupper($extension) }}</div>
                     @elseif($isPdf)
                         <iframe src="{{ $filePath }}#toolbar=0&navpanes=0&scrollbar=0" 
                                 title="{{ $file->header_text }}"></iframe>
-                        <div class="file-type-badge">PDF</div>
-                    @elseif($isHeic)
-                        <div class="file-type-icon">
-                            <i class="icofont-image icon-heic"></i>
-                            <span>HEIC Image</span>
-                        </div>
-                    @elseif($isDxf)
-                        <div class="file-type-icon">
-                            <i class="icofont-vector-path icon-dxf"></i>
-                            <span>DXF Drawing</span>
-                        </div>
-                    @elseif($isDocx)
-                        <div class="file-type-icon">
-                            <i class="icofont-file-word icon-docx"></i>
-                            <span>Word Document</span>
-                        </div>
+                    @elseif($isWord)
+                        <i class="icofont-file-word file-icon"></i>
                     @else
-                        <div class="file-type-icon">
-                            <i class="icofont-file-document icon-default"></i>
-                            <span>{{ strtoupper($extension) }} File</span>
-                        </div>
+                        <i class="icofont-file-document file-icon"></i>
                     @endif
                     @can('File Delete')
                         <div class="delete-icon" wire:click="$dispatch('deleteConfirmation', {id: {{ $file->id }}})">
@@ -301,9 +245,9 @@
                             </div>
                             <div class="mb-4">
                                 <label for="file" class="form-label fw-bold">Select File</label>
-                                <input type="file" class="form-control" id="file" wire:model="file">
+                                <input type="file" class="form-control" id="file" wire:model="file" accept=".pdf,.jpg,.jpeg,.png,.heic,.dxf,.docx">
                                 @error('file') 
-                                    <span class="text-danger small">{{ $message }}</span> 
+                                    <span class="text-danger small d-block">{{ $message }}</span> 
                                 @enderror
                                 <div wire:loading wire:target="file" class="text-primary small mt-2">
                                     <i class="icofont-spinner icofont-spin"></i> Uploading...
