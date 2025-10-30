@@ -54,9 +54,15 @@ class ProjectController extends Controller
     public function departmentQuery()
     {
         $query = Department::query();
-        if (auth()->user()->getRoleNames()[0] == "Manager" || auth()->user()->getRoleNames()[0] == "Employee") {
+        $roles = auth()->user()->getRoleNames();
+
+        if (!$roles->contains('Manager') && $roles->intersect(['Employee'])->isNotEmpty()) {
             $query->whereIn("id", EmployeeDepartment::whereIn("employee_id", Employee::where("user_id", auth()->user()->id)->pluck("id"))->pluck("department_id"));
         }
+
+        // if (auth()->user()->getRoleNames()[0] == "Manager" || auth()->user()->getRoleNames()[0] == "Employee") {
+        //     $query->whereIn("id", EmployeeDepartment::whereIn("employee_id", Employee::where("user_id", auth()->user()->id)->pluck("id"))->pluck("department_id"));
+        // }
         $query->where("id", "!=", 9);
         return $query->get();
     }
@@ -146,7 +152,7 @@ class ProjectController extends Controller
         })->sortBy('department_id')->values();
 
 
-        $project = Project::with("task", "customer", "customer.finances", "customer.finances.finance", "department", "logs", "logs.call", "logs.user", "subdepartment", "assignedPerson", "assignedPerson.employee", "departmentnotes", "departmentnotes.user", "salesPartnerUser","projectAcceptance")
+        $project = Project::with("task", "customer", "customer.finances", "customer.finances.finance", "department", "logs", "logs.call", "logs.user", "subdepartment", "assignedPerson", "assignedPerson.employee", "departmentnotes", "departmentnotes.user", "salesPartnerUser", "projectAcceptance")
             ->withCount(['emails as viewed_emails_count' => function ($query) {
                 $query->where('is_view', 1);
             }])
@@ -157,7 +163,7 @@ class ProjectController extends Controller
         $ntpApprovalDate = $project->ntp_approval_date;
         if ($ntpApprovalDate != "" && $days > 0) {
             $finalDate = Carbon::parse($ntpApprovalDate)->addDays($days)->format('Y-m-d');
-          
+
             if (date("Y-m-d") >= $finalDate) {
                 $message = "PTO Greenlight approved";
                 $alertClass = "success";
@@ -190,7 +196,7 @@ class ProjectController extends Controller
             "totalDaysOfDepartments" => $results,
             "interactions" => Activity::where("log_name", "project")->where("subject_id", $project->id)->orderBy("id", "desc")->get(),
             "ghost" => $request->ghost,
-            "message" => $message, 
+            "message" => $message,
             "alertStatus" => $alertStatus,
             "alertClass" => $alertClass,
         ]);
