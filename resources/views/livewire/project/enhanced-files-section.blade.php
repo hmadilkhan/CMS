@@ -44,6 +44,20 @@
             color: #667eea;
         }
 
+        .file-type-icon {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .file-type-icon span {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: #667eea;
+            text-transform: uppercase;
+        }
+
         .file-info {
             padding: 15px;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -191,13 +205,25 @@
                         <iframe src="{{ $filePath }}#toolbar=0&navpanes=0&scrollbar=0" 
                                 title="{{ $file->header_text }}"></iframe>
                     @elseif($extension === 'docx')
-                        <i class="icofont-file-word file-icon"></i>
+                        <div class="file-type-icon">
+                            <i class="icofont-file-word file-icon"></i>
+                            <span>DOCX File</span>
+                        </div>
                     @elseif($extension === 'dxf')
-                        <i class="icofont-file-alt file-icon"></i>
+                        <div class="file-type-icon">
+                            <i class="icofont-file-alt file-icon"></i>
+                            <span>DXF File</span>
+                        </div>
                     @elseif($extension === 'dwg')
-                        <i class="icofont-file-image file-icon"></i>
+                        <div class="file-type-icon">
+                            <i class="icofont-file-image file-icon"></i>
+                            <span>DWG File</span>
+                        </div>
                     @else
-                        <i class="icofont-file-document file-icon"></i>
+                        <div class="file-type-icon">
+                            <i class="icofont-file-document file-icon"></i>
+                            <span>{{ strtoupper($extension) }} File</span>
+                        </div>
                     @endif
                     @can('File Delete')
                         <div class="delete-icon" wire:click="$dispatch('deleteConfirmation', {id: {{ $file->id }}})">
