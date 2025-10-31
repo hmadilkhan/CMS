@@ -213,7 +213,7 @@
             <div class="department-header">
                 <h3 class="fw-bold"><i class="icofont-tasks me-2"></i>{{ $subdepartment->name }}</h3>
             </div>
-            <div class="d-flex flex-row flex-nowrap overflow-auto">
+            <div class="d-flex flex-row flex-nowrap overflow-auto" style="padding: 0.5rem 0; margin-top: -0.5rem;">
                 @if ($subdepartment->id != 21)
                     @php
                         $collections = $projects
@@ -224,102 +224,85 @@
                     @endphp
                     @if (count($collections) > 0)
                         @foreach ($collections as $project)
-                            <div class="col-xxxl-3 col-xxl-2 col-xl-3 col-lg-3 col-md-3 col-sm-3 border border-dark border-rounded border-2 "
-                                style="margin-right: 5px;cursor:pointer;" onclick="showProject('{{ $project->id }}')">
-                                <div class="card">
-                                    <div class="card-body">
-                                        <div
-                                            class="d-flex align-items-center justify-content-between profile-av pe-xl-4 pe-md-4 pe-sm-4 pe-4">
-                                            <div class="d-flex align-items-center">
+                        @php
+                        $acceptanceStatus = "Not Initiated";
+                        $acceptanceClass = "";
+                        if (!empty($project->projectAcceptance)) {
+                            if ($project->projectAcceptance->status == 0) {
+                                $acceptanceStatus = "Pending";
+                                $acceptanceClass = "text-warning";
+                            }else if ($project->projectAcceptance->status == 1) {
+                                $acceptanceStatus = "Approved";
+                                $acceptanceClass = "text-success";
+                            }else if ($project->projectAcceptance->status == 2) {
+                                $acceptanceStatus = "Rejected";
+                                $acceptanceClass = "text-danger";
+                            } 
+                        }    
+                        @endphp
+                            <div class="col-xxxl-3 col-xxl-3 col-xl-4 col-lg-4 col-md-6 col-sm-12"
+                                style="cursor:pointer; min-width: 320px; padding: 0.5rem;" onclick="showProject('{{ $project->id }}')">
+                                <div class="card project-card border-0">
+                                    <div class="project-header">
+                                        <div class="d-flex align-items-center justify-content-between">
+                                            <div class="d-flex align-items-center flex-grow-1 min-w-0">
                                                 <img src="{{ $project->customer->salespartner->image != '' ? asset('storage/salespartners/' . $project->customer->salespartner->image) : asset('assets/images/profile_av.png') }}"
-                                                    alt=""
-                                                    class="avatar lg rounded-circle img-thumbnail shadow-sm">
-                                                <h3 class="mb-0 fw-bold fs-6 mx-3 text-start">
-                                                    {{ $project->project_name }}</h3>
-                                                    
+                                                    alt="" class="rounded-circle flex-shrink-0" style="width: 45px; height: 45px; object-fit: cover; border: 3px solid rgba(255,255,255,0.3);">
+                                                <h5 class="mb-0 fw-bold ms-3 text-white text-truncate" style="max-width: 150px;">{{ $project->project_name }}</h5>
                                             </div>
-                                            <div class="d-flex align-items-center justify-content-between text-end ms-auto">
-                                                <div class="d-flex align-items-center mb-0  px-2">
+                                            <div class="d-flex align-items-center ms-2 flex-shrink-0">
+                                                <span class="days-badge">
                                                     @if (empty($project->pto_approval_date))
-                                                        <h6 class="fs-6 font-monospace fw-bold m">{{ now()->diffInDays(Carbon\Carbon::parse($project->customer->sold_date)) }}</h6>
+                                                        {{ now()->diffInDays(Carbon\Carbon::parse($project->customer->sold_date)) }}
                                                     @else
-                                                        <h6 class="fs-6 font-monospace fw-bold"> {{ Carbon\Carbon::parse($project->pto_approval_date)->diffInDays(Carbon\Carbon::parse($project->customer->sold_date)) }} </h6>
+                                                        {{ Carbon\Carbon::parse($project->pto_approval_date)->diffInDays(Carbon\Carbon::parse($project->customer->sold_date)) }}
                                                     @endif
-                                                    @if($project->viewed_emails_count)
-                                                        <i class="icofont-email text-danger blink fs-4 m-r-2"></i>
-                                                    @endif
-                                                </div>
+                                                    <small>d</small>
+                                                </span>
+                                                @if($project->viewed_emails_count)
+                                                    <i class="icofont-email text-white blink fs-5 ms-2"></i>
+                                                @endif
                                             </div>
                                         </div>
-                                        <div class="row g-2 pt-4">
-                                            <div class="col-6">
-                                                <div class="d-flex align-items-center">
-                                                    <i class="icofont-code-alt"></i>
-                                                    <span class="ms-2">Project Code</span>
-                                                </div>
+                                    </div>
+                                    <div class="card-body" style="overflow-wrap: break-word; word-wrap: break-word;">
+                                        <div class="info-row d-flex justify-content-between align-items-center">
+                                            <span class="info-label"><i class="icofont-code-alt me-2"></i>Project Code</span>
+                                            <span class="info-value text-success text-truncate ms-2">{{ $project->code }}</span>
+                                        </div>
+                                        <div class="info-row d-flex justify-content-between align-items-center">
+                                            <span class="info-label"><i class="icofont-ui-user me-2"></i>Sales Partner</span>
+                                            <span class="info-value text-success text-truncate ms-2">{{ $project->customer->salespartner->name }}</span>
+                                        </div>
+                                        <div class="info-row d-flex justify-content-between align-items-center">
+                                            <span class="info-label"><i class="icofont-sand-clock me-2"></i>Status</span>
+                                            <span class="badge bg-danger text-truncate ms-2">{{ $project->assignedPerson[0]->status }}</span>
+                                        </div>
+                                        <div class="info-row d-flex justify-content-between align-items-center">
+                                            <span class="info-label"><i class="icofont-group-students me-2"></i>Assigned To</span>
+                                            <span class="info-value text-truncate ms-2">{{ $project->assignedPerson[0]->employee->name }}</span>
+                                        </div>
+                                        <div class="info-row d-flex justify-content-between align-items-center">
+                                            <span class="info-label"><i class="icofont-check-circled me-2"></i>Acceptance</span>
+                                            <span class="badge bg-{{ $acceptanceClass == 'text-success' ? 'success' : ($acceptanceClass == 'text-warning' ? 'warning' : 'secondary') }} text-truncate ms-2">{{ $acceptanceStatus }}</span>
+                                        </div>
+                                        <div class="mt-3">
+                                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                                <span class="info-label">Progress</span>
+                                                <span class="fw-bold" style="color: #2c3e50;">{{ ($project->department_id / 8) * 100 }}%</span>
                                             </div>
-                                            <div class="col-6">
-                                                <div class="d-flex align-items-center">
-                                                    <span class="ms-2 text-success">{{ $project->code }}</span>
-                                                </div>
-                                            </div>
-                                            <div class="col-6">
-                                                <div class="d-flex align-items-center">
-                                                    <i class="icofont-ui-user"></i>
-                                                    <span class="ms-2">Sales Partner</span>
-                                                </div>
-                                            </div>
-                                            <div class="col-6">
-                                                <div class="d-flex align-items-center">
-                                                    <span
-                                                        class="ms-2 text-success">{{ $project->customer->salespartner->name }}</span>
-                                                </div>
-                                            </div>
-                                            <div class="col-6">
-                                                <div class="d-flex align-items-center">
-                                                    <i class="icofont-ui-calendar"></i>
-                                                    <span class="ms-2">Status</span>
-                                                </div>
-                                            </div>
-                                            <div class="col-6">
-                                                <div class="d-flex align-items-center">
-                                                    <i class="icofont-sand-clock"></i>
-                                                    <span
-                                                        class="ms-2 text-danger">{{ $project->assignedPerson[0]->status }}</span>
-                                                </div>
-                                            </div>
-                                            <div class="col-6">
-                                                <div class="d-flex align-items-center">
-                                                    <i class="icofont-group-students "></i>
-                                                    <span class="ms-2">Assigned To</span>
-                                                </div>
-                                            </div>
-                                            <div class="col-6">
-                                                <div class="d-flex align-items-center">
-                                                    <i class="icofont-ui-text-chat"></i>
-                                                    <span
-                                                        class="ms-2">{{ $project->assignedPerson[0]->employee->name }}</span>
-                                                </div>
-                                            </div>
-                                            <div class="col-12">
-                                                <h4 class="small fw-bold mb-2 mt-2">Progress</h4>
-                                                <div class="progress">
-                                                    <div class="progress-bar p-2" role="progressbar"
-                                                        style="width: {{ ($project->department_id / 8) * 100 }}%;"
-                                                        aria-valuenow="{{ ($project->department_id / 8) * 100 }}"
-                                                        aria-valuemin="0" aria-valuemax="100">
-                                                        {{ ($project->department_id / 8) * 100 }}%</div>
-                                                </div>
+                                            <div class="progress progress-modern">
+                                                <div class="progress-bar" role="progressbar"
+                                                    style="width: {{ ($project->department_id / 8) * 100 }}%;"
+                                                    aria-valuenow="{{ ($project->department_id / 8) * 100 }}"
+                                                    aria-valuemin="0" aria-valuemax="100"></div>
                                             </div>
                                         </div>
 
-                                        @if (!empty($project->notes))
-                                            <ul class="list-group list-group-flush fs-6">
-                                                @if ($project->notes->assign_to_notes != '')
-                                                    <li class="list-group-item">{{ $project->notes->assign_to_notes }}
-                                                    </li>
-                                                @endif
-                                            </ul>
+                                        @if (!empty($project->notes) && $project->notes->assign_to_notes != '')
+                                            <div class="notes-section">
+                                                <i class="icofont-ui-note me-2"></i>{{ $project->notes->assign_to_notes }}
+                                            </div>
                                         @endif
 
                                     </div>
