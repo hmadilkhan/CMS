@@ -26,7 +26,7 @@ class EnhancedFilesSection extends Component
     
     protected $rules = [
         'headerText' => 'required|string|max:255',
-        'file' => 'required|file|max:51200|mimes:pdf,jpg,jpeg,png,heic,dxf,docx'
+        'file' => 'required|file|max:51200|mimes:pdf,jpg,jpeg,png,heic,dxf,docx,dwg'
     ];
 
     #[On('deleteConfirmation')]
