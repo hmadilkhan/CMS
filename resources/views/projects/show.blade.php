@@ -270,7 +270,7 @@
         .main-container {
             width: 650px;
             /* margin-left: auto;
-                                                                                                                                                                                    margin-right: auto; */
+                                                                                                                                                                                        margin-right: auto; */
         }
 
         .tags-input {
@@ -350,8 +350,8 @@
             <div class="row clearfix">
                 <div class="col-md-12">
                     @if ($alertStatus)
-                        <div class="alert alert-{{$alertClass}} alert-dismissible fade show" role="alert">
-                            {{ $message }} 
+                        <div class="alert alert-{{ $alertClass }} alert-dismissible fade show" role="alert">
+                            {{ $message }}
                             <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
                         </div>
                     @endif
@@ -682,9 +682,9 @@
                                             // Use enhanced file section for projects created after Jan 1, 2025
                                             // $useEnhancedFiles = $project->created_at >= '2025-01-01';
                                         @endphp
-                                        
-                                        @livewire('project.enhanced-files-section', ['projectId' => $project->id, 'taskId' => $task->id, 'departmentId' => $department->id, 'projectDepartmentId' => $project->department_id, 'ghost' => $ghost], key('enhanced-'.$department->id))
-                                        {{-- @if($useEnhancedFiles)
+
+                                        @livewire('project.enhanced-files-section', ['projectId' => $project->id, 'taskId' => $task->id, 'departmentId' => $department->id, 'projectDepartmentId' => $project->department_id, 'ghost' => $ghost], key('enhanced-' . $department->id))
+                                        {{-- @if ($useEnhancedFiles)
                                             @livewire('project.enhanced-files-section', ['projectId' => $project->id, 'taskId' => $task->id, 'departmentId' => $department->id, 'projectDepartmentId' => $project->department_id, 'ghost' => $ghost], key('enhanced-'.$department->id))
                                         @else
                                             @livewire('project.files-section', ['projectId' => $project->id, 'taskId' => $task->id, 'departmentId' => $department->id, 'projectDepartmentId' => $project->department_id, 'ghost' => $ghost], key($department->id))
@@ -975,11 +975,11 @@
                             </div>
                         @endif
                         @can('Holdback Amount')
-                        <div class="col-sm-3 ">
-                            <label for="commission" class="form-label">Holdback Amount</label>
-                            <input type="text" class="form-control"
-                                value="$ {{ number_format($project->customer->finances->holdback_amount, 2) }}">
-                        </div>
+                            <div class="col-sm-3 ">
+                                <label for="commission" class="form-label">Holdback Amount</label>
+                                <input type="text" class="form-control"
+                                    value="$ {{ number_format($project->customer->finances->holdback_amount, 2) }}">
+                            </div>
                         @endcan
                     </div>
                     {{-- <div class="col-sm-12 mb-3">
@@ -1005,15 +1005,21 @@
                         <input type="hidden" name="customer_id" value="{{ $project->customer->id }}">
                         <input type="hidden" name="finance_option_id"
                             value="{{ $project->customer->finances->finance->id }}">
-                        @if (in_array('Manager', auth()->user()->getRoleNames()->toArray()) or
-                                in_array('Admin', auth()->user()->getRoleNames()->toArray()) or
-                                in_array('Super Admin', auth()->user()->getRoleNames()->toArray()))
-                            <div class="row g-4 mb-3">
+                        @if (auth()->user()->hasAnyRole(['Manager', 'Admin', 'Super Admin']))
+                            @if($isAddersLocked)
+                                <div class="alert alert-warning mb-3">
+                                    <i class="icofont-lock"></i> Adders section is locked. 
+                                    @if(auth()->user()->hasAnyRole(['Manager', 'Admin', 'Super Admin']))
+                                        <button type="button" class="btn btn-sm btn-warning" onclick="toggleAddersLock('unlocked')">Unlock</button>
+                                    @endif
+                                </div>
+                            @endif
+                            <div class="row g-4 mb-3" id="addersForm" style="{{ $isAddersLocked ? 'pointer-events: none; opacity: 0.6;' : '' }}">
                                 <div class="col-sm-3 mt-5">
                                     <div class="col-sm-12 mb-1">
                                         <label for="adders" class="form-label">Adders</label><br />
                                         <select style="width: 100%;" class="form-select select2"
-                                            aria-label="Default select Adders" id="adders" name="adders">
+                                            aria-label="Default select Adders" id="adders" name="adders" {{ $isAddersLocked ? 'disabled' : '' }}>
                                             <option value="">Select Adders</option>
                                             @foreach ($adders as $adder)
                                                 <option value="{{ $adder->id }}">
@@ -1026,7 +1032,7 @@
                                 <div class="col-sm-3 mt-5">
                                     <label for="uom" class="form-label">UOM</label><br />
                                     <select style="width: 100%;" class="form-control select2"
-                                        aria-label="Default select UOM" id="uom">
+                                        aria-label="Default select UOM" id="uom" {{ $isAddersLocked ? 'disabled' : '' }}>
                                         <option value="">Select UOM</option>
                                         @foreach ($uoms as $uom)
                                             <option value="{{ $uom->id }}">
@@ -1041,13 +1047,13 @@
                                 <div class="col-sm-2 mt-5">
                                     <label for="amount" class="form-label">Amount</label>
                                     <input type="text" class="form-control" id="amount" name="amount"
-                                        placeholder="Adders Amount">
+                                        placeholder="Adders Amount" {{ $isAddersLocked ? 'disabled' : '' }}>
                                     @error('amount')
                                         <div class="text-danger message mt-2">{{ $message }}</div>
                                     @enderror
                                 </div>
                                 <div class="col-sm-2 mt-5">
-                                    <button type="button" id="btnAdder" class="btn btn-primary mt-4"><i
+                                    <button type="button" id="btnAdder" class="btn btn-primary mt-4" {{ $isAddersLocked ? 'disabled' : '' }}><i
                                             class="icofont-save me-2 fs-6"></i>Add</button>
                                 </div>
                             </div>
@@ -1775,6 +1781,8 @@
                 subDepartmentId: $('#subDepartmentId').val(),
             },
             success: function(response) {
+            console.log(response);
+            
                 if (response.status == 200) {
                     Swal.fire(
                         'Sent!',
@@ -2566,6 +2574,28 @@
                 }
             });
         }
+    }
+
+    function toggleAddersLock(status) {
+        $.ajax({
+            url: "{{ route('toggle.adders.lock') }}",
+            type: 'POST',
+            data: {
+                "_token": "{{ csrf_token() }}",
+                project_id: {{ $project->id }},
+                status: status
+            },
+            success: function(response) {
+                if (response.status == 200) {
+                    location.reload();
+                } else {
+                    alert(response.message);
+                }
+            },
+            error: function(xhr) {
+                console.error('Error: ' + xhr.responseText);
+            }
+        });
     }
 </script>
 @endsection

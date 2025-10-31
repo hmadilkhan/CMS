@@ -135,7 +135,7 @@
             color: white;
         }
 
-        .btn-secondary {
+        .btn-secondary,.btn-danger {
             border-radius: 20px;
             padding: 10px 25px;
             font-weight: 600;
@@ -237,7 +237,7 @@
                         <i class="icofont-file-document"></i>
                         <a target="_blank" href="{{ $filePath }}" 
                            class="text-white text-decoration-none">
-                            {{ Str::limit($file->filename, 30) }}
+                            {{ Str::limit(preg_replace('/^\d+_/', '', $file->filename), 30) }}
                         </a>
                     </div>
                 </div>

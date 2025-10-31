@@ -92,4 +92,9 @@ class Project extends Model
         // return $this->belongsTo(ProjectAcceptance::class, "id", "project_id")->latest();
         return $this->hasOne(ProjectAcceptance::class, 'project_id', 'id')->latest();
     }
+
+    public function addersLocks()
+    {
+        return $this->hasMany(ProjectAddersLock::class, 'project_id', 'id');
+    }
 }

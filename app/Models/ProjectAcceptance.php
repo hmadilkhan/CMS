@@ -16,4 +16,9 @@ class ProjectAcceptance extends Model
     {
         return $this->belongsTo(User::class, "action_by", "id");
     }
+
+    public function project(): BelongsTo
+    {
+        return $this->belongsTo(Project::class);
+    }
 }

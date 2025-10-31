@@ -302,7 +302,6 @@ class EditFields extends Component
                 "mpu_required" => $this->mpu_required,
                 "meter_spot_request_date" => $this->meter_spot_request_date,
                 "meter_spot_request_number" => $this->meter_spot_request_number,
-                "meter_spot_result" => $this->meter_spot_result,
             ], $this->production_requirement == 1 ? [
                 "production_value_achieved" => $this->production_value_achieved,
             ] : []);
@@ -325,10 +324,11 @@ class EditFields extends Component
                 "solar_install_date" => $this->solar_install_date,
                 // "actual_labor_cost" => $this->actual_labor_cost,
                 // "actual_material_cost" => $this->actual_material_cost,
-                "placards_ordered" => $this->placards_ordered,
-                "placards_note" => $this->placards_note,
+                // "placards_ordered" => $this->placards_ordered,
+                // "placards_note" => $this->placards_note,
                 "battery_install_date" => $this->battery_install_date,
                 "mpu_install_date" => $this->mpu_install_date,
+                "meter_spot_result" => $this->meter_spot_result,
             ]);
         }
 

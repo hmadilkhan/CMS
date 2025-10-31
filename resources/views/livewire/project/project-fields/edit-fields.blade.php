@@ -126,7 +126,7 @@
                         @enderror
                     </div>
                 @endif
-                <div class="col-sm-4 mb-3">
+                {{-- <div class="col-sm-4 mb-3">
                     <label for="meter_spot_result" class="form-label">Meter Spot Result</label>
                     <select class="form-select" aria-label="Default select Meter Spot Result" id="meter_spot_result"
                         name="meter_spot_result" wire:model="meter_spot_result">
@@ -141,7 +141,7 @@
                     @error('meter_spot_result')
                         <div class="text-danger message mt-2">{{ $message }}</div>
                     @enderror
-                </div>
+                </div> --}}
                 @if ($production_requirement == 1)
                     <div class=" col-sm-5 mb-3 mt-1 ">
                         <label for="production_value_achieved" class="form-label">Production Value Achieved</label>
@@ -149,8 +149,8 @@
                             name="production_value_achieved" wire:model="production_value_achieved">
                     </div>
                     @error('production_value_achieved')
-                    <div class="text-danger message mt-2">{{ $message }}</div>
-                @enderror
+                        <div class="text-danger message mt-2">{{ $message }}</div>
+                    @enderror
                 @endif
             @endif
 
@@ -183,8 +183,8 @@
                 </div>
                 <div class="col-sm-4 ">
                     <label for="placards_ordered" class="form-label">Fire Review Required</label>
-                    <select class="form-select" aria-label="Default select Fire Review Required" id="fire_review_required"
-                        name="fire_review_required" wire:model.live="fire_review_required">
+                    <select class="form-select" aria-label="Default select Fire Review Required"
+                        id="fire_review_required" name="fire_review_required" wire:model.live="fire_review_required">
                         <option value="">Fire Review Required</option>
                         <option @selected($project->fire_review_required) value="1">Yes</option>
                         <option @selected($project->fire_review_required) value="0">No</option>
@@ -232,7 +232,7 @@
                         <div id="battery_install_date_message" class="text-danger message mt-2">{{ $message }}</div>
                     @enderror
                 </div>
-                <div class="col-sm-4 ">
+                {{-- <div class="col-sm-4 ">
                     <label for="placards_ordered" class="form-label">Placards Required</label>
                     <select class="form-select" aria-label="Default select MPU Required" id="placards_ordered"
                         name="placards_ordered" wire:model.live="placards_ordered">
@@ -255,7 +255,7 @@
                     @error('placards_note')
                         <div id="placards_note_message" class="text-danger message mt-2">{{ $message }}</div>
                     @enderror
-                </div>
+                </div> --}}
                 {{-- <div class="col-sm-4 mb-3 ">
                     <label for="actual_labor_cost" class="form-label">Actual Labor Cost</label>
                     <input class="form-control" type="text" id="actual_labor_cost" name="actual_labor_cost"
@@ -279,6 +279,22 @@
                             wire:model="mpu_install_date">
                         @error('mpu_install_date')
                             <div id="mpu_install_date_message" class="text-danger message mt-2">{{ $message }}</div>
+                        @enderror
+                    </div>
+                    <div class="col-sm-4 mb-3">
+                        <label for="meter_spot_result" class="form-label">Meter Spot Result</label>
+                        <select class="form-select" aria-label="Default select Meter Spot Result"
+                            id="meter_spot_result" name="meter_spot_result" wire:model="meter_spot_result">
+                            <option value="">Select Meter Spot Result</option>
+                            <option
+                                {{ $project->meter_spot_result != '' && $project->meter_spot_result == 'same' ? 'selected' : '' }}
+                                value="same">Same Location</option>
+                            <option
+                                {{ $project->meter_spot_result != '' && $project->meter_spot_result == 'relocation' ? 'selected' : '' }}
+                                value="relocation">Relocation</option>
+                        </select>
+                        @error('meter_spot_result')
+                            <div class="text-danger message mt-2">{{ $message }}</div>
                         @enderror
                     </div>
                 @endif

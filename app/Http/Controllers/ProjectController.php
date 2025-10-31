@@ -19,6 +19,7 @@ use App\Models\Employee;
 use App\Models\EmployeeDepartment;
 use App\Models\Project;
 use App\Models\ProjectAcceptance;
+use App\Models\ProjectAddersLock;
 use App\Models\ProjectCallLog;
 use App\Models\ProjectFile;
 use App\Models\SubDepartment;
@@ -187,6 +188,9 @@ class ProjectController extends Controller
         $fwdDepartments =  array_merge($departments->toArray(), Department::where("id", ">", $task->department_id)->take(1)->get()->toArray());
         $fwdIds = collect($fwdDepartments)->pluck("id");
         $nextSubDepartments =  SubDepartment::whereIn("department_id", $fwdIds)->get();
+        $addersLock = ProjectAddersLock::where('project_id', $project->id)->latest()->first();
+        $isAddersLocked = $addersLock && $addersLock->status === 'locked' && $project->projectAcceptance && $project->projectAcceptance->status == 1;
+        
         Email::where("project_id", $project->id)->update(["is_view" => 0]); //->where("department_id", $project->department_id)
         return view("projects.show", [
             "project" => $project,
@@ -209,6 +213,8 @@ class ProjectController extends Controller
             "message" => $message,
             "alertStatus" => $alertStatus,
             "alertClass" => $alertClass,
+            "isAddersLocked" => $isAddersLocked,
+            "addersLock" => $addersLock,
         ]);
     }
 
@@ -293,7 +299,7 @@ class ProjectController extends Controller
                 'mpu_required' => 'required_if:forward,4',
                 'meter_spot_request_date' => 'required_if:mpu_required,yes',
                 'meter_spot_request_number' => 'required_if:mpu_required,yes',
-                'meter_spot_result' => 'required_if:forward,4',
+                // 'meter_spot_result' => 'required_if:forward,4',
                 'permitting_submittion_date' => 'required_if:forward,5',
                 'permitting_approval_date' => 'required_if:forward,5',
                 'hoa_approval_request_date' => 'required_if:projecthoa,yes',
@@ -301,6 +307,9 @@ class ProjectController extends Controller
                 'solar_install_date' => 'required_if:forward,6',
                 'battery_install_date' => 'required_if:forward,6',
                 'mpu_install_date' =>   Rule::requiredIf(function () use ($request) {
+                    return $request->forward == 6 && !$request->projectmpu == "yes";
+                }),
+                'meter_spot_result' =>   Rule::requiredIf(function () use ($request) {
                     return $request->forward == 6 && !$request->projectmpu == "yes";
                 }),
                 'rough_inspection_date' => 'required_if:forward,7',
@@ -433,6 +442,7 @@ class ProjectController extends Controller
 
         // THIS WILL CHECK THE PROJECT EITHER PROJECT IS FORWARD OR BACKWARD
         $checkProject = Task::where("project_id", $request->projectId)->where("department_id", $request->departmentId)->count();
+   
         $currentDepartmentId = $project->department_id;
 
         // IF COUNT IS 0 THEN IT THE CASE IS FORWARD
@@ -446,7 +456,7 @@ class ProjectController extends Controller
 
             // Check for missing required fields
             $missingFields = [];
-
+            
             foreach ($requiredFields as $field) {
 
                 // Check if 'hoa_phone_number' depends on 'hoa'
@@ -470,7 +480,7 @@ class ProjectController extends Controller
                 // Department 3: Check if MPU-related fields are required
                 elseif (
                     $currentDepartmentId == 3 && $project->mpu_required === 'yes'
-                    && in_array($field, ['meter_spot_request_date', 'meter_spot_request_number', 'meter_spot_result'])
+                    && in_array($field, ['meter_spot_request_date', 'meter_spot_request_number'])
                     && (empty($project->meter_spot_request_date) || empty($project->meter_spot_request_number) || empty($project->meter_spot_result))
                 ) {
                     $missingFields[] = $field;
@@ -486,9 +496,10 @@ class ProjectController extends Controller
                 }
 
                 // Department 5: Check if MPU install date is required
-                elseif ($currentDepartmentId == 5 && $field === 'mpu_install_date' && $project->mpu_required === 'yes' && empty($project->mpu_install_date)) {
+                elseif ($currentDepartmentId == 5 && in_array($field, ['mpu_install_date','meter_spot_result']) && $project->mpu_required === 'yes' && (empty($project->mpu_install_date) || empty($project->meter_spot_result))) {
                     $missingFields[] = $field;
                 }
+
 
                 // Standard required field check for other fields
                 elseif (
@@ -498,6 +509,7 @@ class ProjectController extends Controller
                     $missingFields[] = $field;
                 }
             }
+           
 
             if (!empty($missingFields)) {
                 return response()->json([
@@ -962,9 +974,17 @@ class ProjectController extends Controller
         } else {
             $projectAcceptance = ProjectAcceptance::with("user")->where("project_id", $request->project_id)->latest()->first();
             if (!empty($projectAcceptance)) {
+                $rejectedAcceptances = ProjectAcceptance::where('project_id', $request->project_id)
+                    ->where('status', '!=', 1)
+                    ->where('id', '!=', $projectAcceptance->id)
+                    ->with('user')
+                    ->orderBy('created_at', 'desc')
+                    ->get();
+                    
                 return view("projects.project-acceptance", [
                     "projectAcceptance" => $projectAcceptance,
                     "project" => Project::with("task", "customer", "customer.salespartner", "customer.adders")->where("id", $request->project_id)->first(),
+                    "rejectedAcceptances" => $rejectedAcceptances,
                     "mode" => "view",
                 ]);
             }
@@ -1100,6 +1120,15 @@ class ProjectController extends Controller
                 "approved_date" => date("Y-m-d H:i:s"),
                 "reason" => $request->reason,
             ]);
+            
+            if ($request->mode == 1) {
+                ProjectAddersLock::create([
+                    'project_id' => $project->id,
+                    'user_id' => auth()->id(),
+                    'status' => 'locked'
+                ]);
+            }
+            
             $emailText = "<p>Hi " . $project->assignedPerson[0]->employee->name . "</p><p>The Project Acceptance Review for " . $project->customer->first_name . " " . $project->customer->last_name . " has been " . ($request->mode == 1 ? 'approved' : 'rejected') . "</p><p>Please take the necessary steps to continue moving the job forward.</p><p>Thank you!.</p>";
             $this->sendEmailForProjectAcceptance($project, "Project Acceptance Review Status - " . $project->customer->first_name . " " . $project->customer->last_name, $emailText, "engineering@solenenergyco.com");
             // Log the custom message
@@ -1128,5 +1157,31 @@ class ProjectController extends Controller
             "customer_email" => $emailTo,
         ];
         dispatch(new AcceptanceEmailJob($details, $attachments, $ccEmails));
+    }
+
+    public function toggleAddersLock(Request $request)
+    {
+        try {
+            $project = Project::findOrFail($request->project_id);
+            
+            ProjectAddersLock::create([
+                'project_id' => $request->project_id,
+                'user_id' => auth()->id(),
+                'status' => $request->status
+            ]);
+            
+            $username = auth()->user()->name;
+
+            activity('project')
+                ->performedOn($project)
+                ->causedBy(auth()->user())
+                ->withProperties(['status' => $request->status])
+                ->setEvent('adders_lock')
+                ->log("{$username} {$request->status} the adders section.");
+            
+            return response()->json(['status' => 200, 'message' => 'Adders ' . $request->status . ' successfully']);
+        } catch (\Throwable $th) {
+            return response()->json(['status' => 500, 'message' => $th->getMessage()]);
+        }
     }
 }
