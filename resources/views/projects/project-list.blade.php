@@ -126,7 +126,7 @@
                     }    
                     @endphp
                         <div class="col-xxxl-3 col-xxl-3 col-xl-4 col-lg-4 col-md-6 col-sm-12"
-                            style="cursor:pointer; min-width: 320px; padding: 0.5rem;" onclick="showProject('{{ $project->id }}')">
+                            style="cursor:pointer; min-width: 320px; max-width: 380px; padding: 0.5rem;" onclick="showProject('{{ $project->id }}')">
                             <div class="card project-card border-0">
                                 <div class="project-header">
                                     <div class="d-flex align-items-center justify-content-between">
@@ -241,7 +241,7 @@
                         }    
                         @endphp
                             <div class="col-xxxl-3 col-xxl-3 col-xl-4 col-lg-4 col-md-6 col-sm-12"
-                                style="cursor:pointer; min-width: 320px; padding: 0.5rem;" onclick="showProject('{{ $project->id }}')">
+                                style="cursor:pointer; min-width: 320px; max-width: 380px; padding: 0.5rem;" onclick="showProject('{{ $project->id }}')">
                                 <div class="card project-card border-0">
                                     <div class="project-header">
                                         <div class="d-flex align-items-center justify-content-between">
