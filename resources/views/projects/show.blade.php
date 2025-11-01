@@ -1717,6 +1717,89 @@
 @endsection
 @section('scripts')
 <script>
+    $(document).ready(function() {
+        const activeTab = localStorage.getItem('activeTab');
+        if (activeTab) {
+            $('.nav-link[href="' + activeTab + '"]').tab('show');
+            localStorage.removeItem('activeTab');
+        }
+
+        const tagsInput = document.getElementById('ccEmails');
+        if (tagsInput) {
+            const hiddenInput = document.getElementById('ccEmailsHidden');
+            const emailError = document.getElementById('emailError');
+            const input = document.createElement('input');
+            input.type = 'text';
+            tagsInput.appendChild(input);
+
+            function createTag(email) {
+                const tag = document.createElement('span');
+                tag.className = 'tag';
+                tag.innerHTML = email + ' <i class="bi bi-x"></i>';
+                tag.querySelector('i').onclick = function() {
+                    tagsInput.removeChild(tag);
+                    updateHiddenInput();
+                };
+                tagsInput.insertBefore(tag, input);
+                updateHiddenInput();
+            }
+
+            function updateHiddenInput() {
+                const tags = tagsInput.querySelectorAll('.tag');
+                const emails = Array.from(tags).map(tag => tag.textContent.trim());
+                hiddenInput.value = emails.join(',');
+            }
+
+            input.addEventListener('keydown', function(e) {
+                if (e.key === ',' || e.key === 'Enter') {
+                    e.preventDefault();
+                    const email = input.value.trim().replace(/,$/g, '');
+                    if (email && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+                        createTag(email);
+                        input.value = '';
+                        emailError.style.display = 'none';
+                    } else if (email) {
+                        emailError.style.display = 'block';
+                    }
+                }
+            });
+
+            tagsInput.addEventListener('click', () => input.focus());
+        }
+    });
+    
+    $('#accept-form').on('submit', function(e) {
+        e.preventDefault();
+
+        // Create a FormData object
+        var formData = new FormData(this); // Automatically collects all form inputs, including files
+
+        // Send the form data using jQuery AJAX
+        $.ajax({
+            url: "{{ route('project.accept.file') }}", // The URL where the request is sent
+            type: 'POST',
+            data: formData,
+            contentType: false, // Tell jQuery not to set contentType
+            processData: false, // Tell jQuery not to process the data (i.e., don't try to convert it into a string)
+            headers: {
+                'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr(
+                    'content') // Include the CSRF token from meta tag
+            },
+            success: function(response) {
+                $("#project-acceptance-view").empty();
+                $("#project-acceptance-view").html(response);
+                // if (response.success) {
+                //     console.log('File uploaded successfully.');
+                // } else {
+                //     console.error('Error: ' + response.message);
+                // }
+            },
+            error: function(xhr) {
+                console.error('Error uploading file: ' + xhr.responseText);
+            }
+        });
+    });
+    
     $(".additionalFields").css("display", "none");
     $("#back").prop("disabled", true)
     $("#forward").prop("disabled", true)
@@ -2401,94 +2484,7 @@
             }
         });
     }
-    document.addEventListener('DOMContentLoaded', function() {
-        const tagsInput = document.querySelector('.tags-input');
-        const input = document.createElement('input');
-        const hiddenInput = document.getElementById('ccEmailsHidden');
-        const form = document.getElementById('emailForm');
-        const emailError = document.getElementById('emailError');
-
-        tagsInput.appendChild(input);
-
-        function createTag(email) {
-            const tag = document.createElement('span');
-            tag.classList.add('tag');
-            tag.textContent = email;
-
-            const closeIcon = document.createElement('i');
-            closeIcon.classList.add('bi', 'bi-x');
-            closeIcon.addEventListener('click', () => {
-                tagsInput.removeChild(tag);
-                updateHiddenInput();
-            });
-
-            tag.appendChild(closeIcon);
-            tagsInput.insertBefore(tag, input);
-
-            updateHiddenInput();
-        }
-
-        function updateHiddenInput() {
-            const tags = document.querySelectorAll('.tag');
-            const emails = Array.from(tags).map(tag => tag.textContent.trim());
-            hiddenInput.value = emails.join(',');
-        }
-
-        function validateEmails(emails) {
-            const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-            return emails.every(email => emailPattern.test(email));
-        }
-
-        input.addEventListener('keydown', function(e) {
-            if (e.key === 'Enter' || e.key === ',') {
-                e.preventDefault();
-                const email = input.value.trim();
-                if (email && validateEmails([email])) {
-                    createTag(email);
-                    input.value = '';
-                    emailError.style.display = 'none';
-                } else {
-                    emailError.style.display = 'block';
-                }
-            }
-        });
-
-        tagsInput.addEventListener('click', () => {
-            input.focus();
-        });
-
-    });
-    $('#accept-form').on('submit', function(e) {
-        e.preventDefault();
-
-        // Create a FormData object
-        var formData = new FormData(this); // Automatically collects all form inputs, including files
-
-        // Send the form data using jQuery AJAX
-        $.ajax({
-            url: "{{ route('project.accept.file') }}", // The URL where the request is sent
-            type: 'POST',
-            data: formData,
-            contentType: false, // Tell jQuery not to set contentType
-            processData: false, // Tell jQuery not to process the data (i.e., don't try to convert it into a string)
-            headers: {
-                'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr(
-                    'content') // Include the CSRF token from meta tag
-            },
-            success: function(response) {
-                $("#project-acceptance-view").empty();
-                $("#project-acceptance-view").html(response);
-                // if (response.success) {
-                //     console.log('File uploaded successfully.');
-                // } else {
-                //     console.error('Error: ' + response.message);
-                // }
-            },
-            error: function(xhr) {
-                console.error('Error uploading file: ' + xhr.responseText);
-            }
-        });
-    });
+    
     getAcceptanceForm();
 
     function getAcceptanceForm() {
