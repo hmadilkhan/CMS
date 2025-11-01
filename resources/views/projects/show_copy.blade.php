@@ -3,24 +3,19 @@
 @section('content')
     <style>
         body {
-            /* background: linear-gradient(135deg, #d7d9da 0%, #e1dede 100%); */
+            background-color: #f4f7f6;
             margin-top: 20px;
         }
 
         .card {
             background: #fff;
-            transition: all 0.3s ease;
+            transition: .5s;
             border: 0;
             margin-bottom: 30px;
-            border-radius: 16px;
+            border-radius: .55rem;
             position: relative;
             width: 100%;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
-        }
-        
-        .card:hover {
-            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.12);
-            transform: translateY(-2px);
+            box-shadow: 0 1px 2px 0 rgb(0 0 0 / 10%);
         }
 
         .chat-app .people-list {
@@ -335,93 +330,6 @@
             50% {
                 opacity: 0;
             }
-        }
-        
-        .card-header {
-            background: linear-gradient(135deg, #2c3e50 0%, #000000 100%);
-            color: white;
-            border-radius: 16px 16px 0 0 !important;
-            padding: 1.5rem;
-            border: none;
-        }
-        
-        .nav-tabs {
-            border: none;
-            background: white;
-            padding: 1rem;
-            border-radius: 12px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
-        }
-        
-        .nav-tabs .nav-link {
-            border: none;
-            color: #6c757d;
-            font-weight: 600;
-            padding: 0.75rem 1.5rem;
-            border-radius: 8px;
-            transition: all 0.3s;
-        }
-        
-        .nav-tabs .nav-link:hover {
-            background: #f8f9fa;
-            color: #2c3e50;
-        }
-        
-        .nav-tabs .nav-link.active {
-            background: linear-gradient(135deg, #2c3e50 0%, #000000 100%);
-            color: white;
-        }
-        
-        .btn-dark {
-            background: linear-gradient(135deg, #2c3e50 0%, #000000 100%);
-            border: none;
-            padding: 0.75rem 1.5rem;
-            border-radius: 10px;
-            font-weight: 600;
-            transition: all 0.3s;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
-        }
-        
-        .btn-dark:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(0,0,0,0.3);
-        }
-        
-        .badge {
-            padding: 0.5rem 1rem;
-            border-radius: 8px;
-            font-weight: 600;
-        }
-        
-        .form-control, .form-select {
-            border-radius: 10px;
-            border: 2px solid #e9ecef;
-            padding: 0.75rem 1rem;
-            transition: all 0.3s;
-        }
-        
-        .form-control:focus, .form-select:focus {
-            border-color: #2c3e50;
-            box-shadow: 0 0 0 0.2rem rgba(44, 62, 80, 0.25);
-        }
-        
-        .table {
-            border-radius: 12px;
-            overflow: hidden;
-        }
-        
-        .table thead {
-            background: linear-gradient(135deg, #2c3e50 0%, #000000 100%);
-            color: white;
-        }
-        
-        .table tbody tr {
-            transition: all 0.3s;
-        }
-        
-        .table tbody tr:hover {
-            background: #f8f9fa;
-            transform: scale(1.01);
         }
 
         .nav-item.dropdown:hover .dropdown-menu {

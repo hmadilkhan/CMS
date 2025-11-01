@@ -660,13 +660,25 @@ class ProjectController extends Controller
             'status' => 'required',
             // 'reason' => 'required_if:status,Cancelled',
         ]);
+        DB::beginTransaction();
         try {
-            Task::where("project_id", $request->project_id)
-                // ->where("status", "In-Progress")
-                ->update(["status" => $request->status, "notes" => $request->reason]);
+            Task::where("project_id", $request->project_id)->update(["status" => $request->status, "notes" => $request->reason]);
+            if ($request->status == "Cancelled") {
+                $project = Project::findOrFail($request->project_id);
+                $username = auth()->user()->name;
+                $project->update(["department_id" => 9, "sub_department_id" => 20]);
+                // Project::where("id", $request->project_id)->update(["department_id" => 9, "sub_department_id" => 20]);
+                activity('project')
+                    ->performedOn($project)
+                    ->causedBy(auth()->user()) // Log who did the action
+                    ->setEvent("move")
+                    ->log("{$username} change the status to cancel and project is archived. ");
+            }
+            DB::commit();
             return response()->json(["status" => 200, "message" => "Status changed successfully"]);
             // return redirect()->route("projects.show", $request->project_id);
         } catch (\Throwable $th) {
+            DB::rollBack();
             return response()->json(["status" => 500, "message" => "Error: " . $th->getMessage()]);
         }
     }
