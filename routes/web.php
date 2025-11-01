@@ -153,6 +153,15 @@ Route::middleware('auth')->group(function () {
     Route::post('toggle-adders-lock', [App\Http\Controllers\ProjectController::class, 'toggleAddersLock'])->name('toggle.adders.lock');
     Route::get('/projects/{id}/{ghost?}', [App\Http\Controllers\ProjectController::class, 'show'])->name('projects.show');
 
+    // SERVICE TICKETS
+    Route::post('service-tickets', [App\Http\Controllers\ServiceTicketController::class, 'store'])->name('service-tickets.store');
+    Route::put('service-tickets/{ticket}', [App\Http\Controllers\ServiceTicketController::class, 'update'])->name('service-tickets.update');
+    Route::post('service-tickets/{ticket}/comment', [App\Http\Controllers\ServiceTicketController::class, 'addComment'])->name('service-tickets.comment');
+    Route::get('service-tickets/{ticket}/details', [App\Http\Controllers\ServiceTicketController::class, 'showDetails'])->name('service-tickets.details');
+    Route::get('service-tickets/{ticket}/admin-details', [App\Http\Controllers\ServiceTicketController::class, 'showAdminDetails'])->name('service-tickets.admin-details');
+    Route::get('service-dashboard', [App\Http\Controllers\ServiceTicketController::class, 'dashboard'])->name('service.dashboard');
+    Route::get('service-admin-dashboard', [App\Http\Controllers\ServiceTicketController::class, 'adminDashboard'])->name('service.admin.dashboard');
+
     // ADDERS CONTROLLER
     Route::post('adders-store', [App\Http\Controllers\AdderController::class, 'store'])->name('adders.store');
     Route::post('adders-update', [App\Http\Controllers\AdderController::class, 'update'])->name('adders.update');

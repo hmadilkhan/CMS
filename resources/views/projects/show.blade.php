@@ -588,6 +588,10 @@
                             <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#financial"
                                     role="tab">Financial</a></li>
                         @endcan
+                        @can('View Tickets')
+                        <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#tickets"
+                                role="tab">Tickets</a></li>
+                        @endcan
                         <li class="nav-item"><a class="nav-link {{ $project->viewed_emails_count > 0 ? 'blink-dot' : '' }}"
                                 data-bs-toggle="tab" href="#communication" role="tab">Communication</a></li>
                         @can('Project History')
@@ -615,118 +619,6 @@
             </ul>
             <div class="tab-content">
                 <div class="tab-pane fade show active" id="actionmenu" role="tabpanel">
-                    {{-- @can('Project Move')
-                        <div class="card card-info mt-2">
-                            <div class="card-body">
-                                <div class="row clearfix">
-                                    <form id="form" method="post" action="{{ route('projects.move') }}"
-                                        enctype="multipart/form-data">
-                                        <input type="hidden" name="id" value="{{ $project->id }}">
-                                        <input type="hidden" name="taskid" value="{{ $task->id }}">
-                                        @csrf
-                                        <div class="col-md-12">
-                                            <div class="card border-0 mb-4 no-bg">
-                                                <div
-                                                    class="card-header py-3 px-0 d-sm-flex align-items-center  justify-content-between border-bottom">
-                                                    <h3 class=" fw-bold flex-fill mb-0 mt-sm-0">Project </h3>
-                                                    @if ($errors->any())
-                                                        <div class="alert alert-danger">
-                                                            <ul>
-                                                                @foreach ($errors->all() as $error)
-                                                                    <li>{{ $error }}</li>
-                                                                @endforeach
-                                                            </ul>
-                                                        </div>
-                                                    @endif
-                                                </div>
-                                            </div>
-                                        </div>
-
-                                        <div class="row  mb-3">
-                                            <div class="col-md-12">
-                                                <div class="form-group">
-                                                    <label class="form-label">Select Where to sent this project</label>
-                                                    <br />
-                                                    <label class="fancy-radio">
-                                                        <input type="radio" id="stage" name="stage" value="back">
-                                                        <span><i></i>Back</span>
-                                                    </label>
-                                                    <label class="fancy-radio">
-                                                        <input type="radio" id="stage" name="stage" value="forward">
-                                                        <span><i></i>Forward</span>
-                                                    </label>
-                                                    <p id="error-radio"></p>
-                                                </div>
-                                                @error('stage')
-                                                    <div class="text-danger message mt-2">{{ $message }}</div>
-                                                @enderror
-                                            </div>
-                                            <div class="col-sm-3 ">
-                                                <label for="finance_option_id" class="form-label">Move Back
-                                                    {{ count($filesCount) }}</label>
-                                                <select class="form-select select2" aria-label="Default select Move Back"
-                                                    id="back" name="back">
-                                                    <option value="">Select Move Back</option>
-                                                    @if (!empty($backdepartments))
-                                                        @foreach ($backdepartments as $mdepartment)
-                                                            <option
-                                                                {{ old('back') != '' && old('back') == $mdepartment->id ? 'selected' : '' }}
-                                                                value="{{ $mdepartment->id }}">{{ $mdepartment->name }}
-                                                            </option>
-                                                        @endforeach
-                                                    @endif
-                                                </select>
-                                                @error('back')
-                                                    <div class="text-danger message mt-2">{{ $message }}</div>
-                                                @enderror
-                                            </div>
-                                            @if (!empty($forwarddepartments))
-                                                @foreach ($forwarddepartments as $bdepartment)
-                                                    <input type="hidden" id="{{ $bdepartment['id'] }}_length"
-                                                        value="{{ $bdepartment['document_length'] }}" />
-                                                @endforeach
-                                            @endif
-                                            <div class="col-sm-3 ">
-                                                <label for="finance_option_id" class="form-label">Move Forward</label>
-                                                <select class="form-select select2" aria-label="Default select Move Forward"
-                                                    id="forward" name="forward">
-                                                    <option value="">Select Move Forward</option>
-                                                    @if (!empty($forwarddepartments))
-                                                        @foreach ($forwarddepartments as $bdepartment)
-                                                            <option
-                                                                {{ old('forward') != '' && old('forward') == $bdepartment['id'] ? 'selected' : '' }}
-                                                                value="{{ $bdepartment['id'] }}">{{ $bdepartment['name'] }}
-                                                            </option>
-                                                        @endforeach
-                                                    @endif
-                                                </select>
-                                                @error('forward')
-                                                    <div class="text-danger message mt-2">{{ $message }}</div>
-                                                @enderror
-                                            </div>
-                                            <div class="col-sm-3 ">
-                                                <label for="finance_option_id" class="form-label">Sub Department</label>
-                                                <select class="form-select select2" aria-label="Default select Sub Department"
-                                                    id="sub_department" name="sub_department">
-                                                    <option value="">Select Sub Department</option>
-                                                </select>
-                                                @error('sub_department')
-                                                    <div class="text-danger message mt-2">{{ $message }}</div>
-                                                @enderror
-                                            </div>
-                                            <div id="fieldDiv" class="mt-2"></div>
-                                            <div class="col-sm-12 mb-3 mt-3">
-                                                <button type="button" class="btn btn-dark me-1 mt-1 w-sm-100"
-                                                    id="saveProject"><i
-                                                        class="icofont-arrow-left me-2 fs-6"></i>Submit</button>
-                                            </div>
-                                        </div>
-                                    </form>
-                                </div>
-                            </div>
-                        </div>
-                    @endcan --}}
-
                     <div class="card card-info mt-2">
                         <div class="card-body">
                             <div class="row clearfix">
@@ -765,22 +657,11 @@
 
                                     <div class="col-sm-6 mb-3">
                                         @livewire('project.notes-section', ['projectId' => $project->id, 'taskId' => $task->id, 'departmentId' => $department->id, 'projectDepartmentId' => $project->department_id, 'ghost' => $ghost], key($project->id))
-                                        {{-- @include('projects.partial.show-department-fields') --}}
                                         @livewire('project.project-fields', ['project' => $project, 'taskId' => $task->id, 'departmentId' => $department->id, 'projectDepartmentId' => $project->department_id, 'ghost' => $ghost], key($project->id))
                                     </div>
 
                                     <div class="col-sm-6 mb-3">
-                                        @php
-                                            // Use enhanced file section for projects created after Jan 1, 2025
-                                            // $useEnhancedFiles = $project->created_at >= '2025-01-01';
-                                        @endphp
-
                                         @livewire('project.enhanced-files-section', ['projectId' => $project->id, 'taskId' => $task->id, 'departmentId' => $department->id, 'projectDepartmentId' => $project->department_id, 'ghost' => $ghost], key('enhanced-' . $department->id))
-                                        {{-- @if ($useEnhancedFiles)
-                                            @livewire('project.enhanced-files-section', ['projectId' => $project->id, 'taskId' => $task->id, 'departmentId' => $department->id, 'projectDepartmentId' => $project->department_id, 'ghost' => $ghost], key('enhanced-'.$department->id))
-                                        @else
-                                            @livewire('project.files-section', ['projectId' => $project->id, 'taskId' => $task->id, 'departmentId' => $department->id, 'projectDepartmentId' => $project->department_id, 'ghost' => $ghost], key($department->id))
-                                        @endif --}}
                                     </div>
                                 @endforeach
                             </div>
@@ -994,7 +875,7 @@
             <div class="card-body">
                 @can('View Financial Details')
                     <div class="card-header py-3 px-0 d-sm-flex align-items-center  justify-content-between border-bottom">
-                        <h3 class=" fw-bold flex-fill mb-0 mt-sm-0" data-bs-toggle="collapse" data-bs-target="#finance"
+                        <h3 class=" fw-bold flex-fill mb-0 mt-sm-0 px-3" data-bs-toggle="collapse" data-bs-target="#finance"
                             aria-expanded="false" aria-controls="finance">Financial Details
                         </h3>
                     </div>
@@ -1086,7 +967,7 @@
             <div class="card mt-1">
                 <div class="card-body">
                     <div class="card-header py-3 px-0 d-sm-flex align-items-center  border-bottom">
-                        <h3 class=" fw-bold flex-fill mb-0 mt-sm-0" data-bs-toggle="collapse"
+                        <h3 class=" fw-bold flex-fill mb-0 mt-sm-0 px-3" data-bs-toggle="collapse"
                             data-bs-target="#adderTable" aria-expanded="false" aria-controls="adderTable">Adders
                             Details
                         </h3>
@@ -1151,14 +1032,14 @@
                             </div>
                             </hr>
                         @endif
-                        <table id="adderTable" class="table table-bordered table-striped">
+                        <table id="adderTable" class="table table-bordered table-striped text-white">
                             <thead>
                                 <tr>
-                                    <th>No.</th>
-                                    <th>Adder</th>
-                                    <th>Unit</th>
-                                    <th>Amount</th>
-                                    <th>Actions</th>
+                                    <th class="text-white">No.</th>
+                                    <th class="text-white">Adder</th>
+                                    <th class="text-white">Unit</th>
+                                    <th class="text-white">Amount</th>
+                                    <th class="text-white">Actions</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -1194,6 +1075,8 @@
             @livewire('account-transactions', ['project_id' => $project->id], key($project->id))
         @endcan
     </div>
+
+    @include('projects.tickets-tab')
 
     <div class="tab-pane fade" id="communication" role="tabpanel">
         <div class="card mt-1">

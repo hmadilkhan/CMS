@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Email;
+use App\Models\ServiceTicket;
 use App\Models\Task;
 use App\Services\ProjectService;
 use Illuminate\Contracts\View\View;
@@ -24,6 +25,13 @@ class HomeController extends Controller
         }
         if (auth()->user()->hasRole("Super Admin")) {
             return view('executive-dashboard');
+        }
+        
+        if (auth()->user()->hasRole("Service Manager")) {
+            $tickets = ServiceTicket::where("assigned_to", auth()->user()->id)->get();
+            return view('service-tickets.dashboard', [
+                "tickets" => $tickets
+            ]);
         }
         return view('dashboard', [
             "projects" => $this->projectService->projectQuery($request),

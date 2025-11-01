@@ -192,6 +192,10 @@ class ProjectController extends Controller
         $isAddersLocked = $addersLock && $addersLock->status === 'locked' && $project->projectAcceptance && $project->projectAcceptance->status == 1;
         
         Email::where("project_id", $project->id)->update(["is_view" => 0]); //->where("department_id", $project->department_id)
+        
+        $serviceManagers = \App\Models\User::role('Service Manager')->get();
+        $serviceTickets = \App\Models\ServiceTicket::with(['assignedUser'])->where('project_id', $project->id)->orderBy('created_at', 'desc')->get();
+        
         return view("projects.show", [
             "project" => $project,
             "task" => $task,
@@ -215,6 +219,8 @@ class ProjectController extends Controller
             "alertClass" => $alertClass,
             "isAddersLocked" => $isAddersLocked,
             "addersLock" => $addersLock,
+            "serviceManagers" => $serviceManagers,
+            "serviceTickets" => $serviceTickets,
         ]);
     }
 
