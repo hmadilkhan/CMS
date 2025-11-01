@@ -1717,55 +1717,57 @@
 @endsection
 @section('scripts')
 <script>
-    $(document).ready(function() {
-        const activeTab = localStorage.getItem('activeTab');
-        if (activeTab) {
-            $('.nav-link[href="' + activeTab + '"]').tab('show');
-            localStorage.removeItem('activeTab');
-        }
+    // Restore active tab on page load
+    // $(document).ready(function() {
+    //     const activeTab = localStorage.getItem('activeTab');
+    //     if (activeTab) {
+    //         $('.nav-link[href="' + activeTab + '"]').tab('show');
+    //         localStorage.removeItem('activeTab');
+    //     }
+    // });
 
+    document.addEventListener('DOMContentLoaded', function() {
+        
         const tagsInput = document.getElementById('ccEmails');
-        if (tagsInput) {
-            const hiddenInput = document.getElementById('ccEmailsHidden');
-            const emailError = document.getElementById('emailError');
-            const input = document.createElement('input');
-            input.type = 'text';
-            tagsInput.appendChild(input);
+        const hiddenInput = document.getElementById('ccEmailsHidden');
+        const emailError = document.getElementById('emailError');
+        const input = document.createElement('input');
+        input.type = 'text';
+        tagsInput.appendChild(input);
 
-            function createTag(email) {
-                const tag = document.createElement('span');
-                tag.className = 'tag';
-                tag.innerHTML = email + ' <i class="bi bi-x"></i>';
-                tag.querySelector('i').onclick = function() {
-                    tagsInput.removeChild(tag);
-                    updateHiddenInput();
-                };
-                tagsInput.insertBefore(tag, input);
+        function createTag(email) {
+            const tag = document.createElement('span');
+            tag.className = 'tag';
+            tag.innerHTML = email + ' <i class="bi bi-x"></i>';
+            tag.querySelector('i').onclick = function() {
+                tagsInput.removeChild(tag);
                 updateHiddenInput();
-            }
-
-            function updateHiddenInput() {
-                const tags = tagsInput.querySelectorAll('.tag');
-                const emails = Array.from(tags).map(tag => tag.textContent.trim());
-                hiddenInput.value = emails.join(',');
-            }
-
-            input.addEventListener('keydown', function(e) {
-                if (e.key === ',' || e.key === 'Enter') {
-                    e.preventDefault();
-                    const email = input.value.trim().replace(/,$/g, '');
-                    if (email && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-                        createTag(email);
-                        input.value = '';
-                        emailError.style.display = 'none';
-                    } else if (email) {
-                        emailError.style.display = 'block';
-                    }
-                }
-            });
-
-            tagsInput.addEventListener('click', () => input.focus());
+            };
+            tagsInput.insertBefore(tag, input);
+            updateHiddenInput();
         }
+
+        function updateHiddenInput() {
+            const tags = tagsInput.querySelectorAll('.tag');
+            const emails = Array.from(tags).map(tag => tag.textContent.trim());
+            hiddenInput.value = emails.join(',');
+        }
+
+        input.addEventListener('keydown', function(e) {
+            if (e.key === ',' || e.key === 'Enter') {
+                e.preventDefault();
+                const email = input.value.trim().replace(/,$/g, '');
+                if (email && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+                    createTag(email);
+                    input.value = '';
+                    emailError.style.display = 'none';
+                } else if (email) {
+                    emailError.style.display = 'block';
+                }
+            }
+        });
+
+        tagsInput.addEventListener('click', () => input.focus());
     });
     
     $('#accept-form').on('submit', function(e) {
