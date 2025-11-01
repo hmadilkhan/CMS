@@ -1717,91 +1717,6 @@
 @endsection
 @section('scripts')
 <script>
-    // Restore active tab on page load
-    // $(document).ready(function() {
-    //     const activeTab = localStorage.getItem('activeTab');
-    //     if (activeTab) {
-    //         $('.nav-link[href="' + activeTab + '"]').tab('show');
-    //         localStorage.removeItem('activeTab');
-    //     }
-    // });
-
-    document.addEventListener('DOMContentLoaded', function() {
-        
-        const tagsInput = document.getElementById('ccEmails');
-        const hiddenInput = document.getElementById('ccEmailsHidden');
-        const emailError = document.getElementById('emailError');
-        const input = document.createElement('input');
-        input.type = 'text';
-        tagsInput.appendChild(input);
-
-        function createTag(email) {
-            const tag = document.createElement('span');
-            tag.className = 'tag';
-            tag.innerHTML = email + ' <i class="bi bi-x"></i>';
-            tag.querySelector('i').onclick = function() {
-                tagsInput.removeChild(tag);
-                updateHiddenInput();
-            };
-            tagsInput.insertBefore(tag, input);
-            updateHiddenInput();
-        }
-
-        function updateHiddenInput() {
-            const tags = tagsInput.querySelectorAll('.tag');
-            const emails = Array.from(tags).map(tag => tag.textContent.trim());
-            hiddenInput.value = emails.join(',');
-        }
-
-        input.addEventListener('keydown', function(e) {
-            if (e.key === ',' || e.key === 'Enter') {
-                e.preventDefault();
-                const email = input.value.trim().replace(/,$/g, '');
-                if (email && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-                    createTag(email);
-                    input.value = '';
-                    emailError.style.display = 'none';
-                } else if (email) {
-                    emailError.style.display = 'block';
-                }
-            }
-        });
-
-        tagsInput.addEventListener('click', () => input.focus());
-    });
-    
-    $('#accept-form').on('submit', function(e) {
-        e.preventDefault();
-
-        // Create a FormData object
-        var formData = new FormData(this); // Automatically collects all form inputs, including files
-
-        // Send the form data using jQuery AJAX
-        $.ajax({
-            url: "{{ route('project.accept.file') }}", // The URL where the request is sent
-            type: 'POST',
-            data: formData,
-            contentType: false, // Tell jQuery not to set contentType
-            processData: false, // Tell jQuery not to process the data (i.e., don't try to convert it into a string)
-            headers: {
-                'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr(
-                    'content') // Include the CSRF token from meta tag
-            },
-            success: function(response) {
-                $("#project-acceptance-view").empty();
-                $("#project-acceptance-view").html(response);
-                // if (response.success) {
-                //     console.log('File uploaded successfully.');
-                // } else {
-                //     console.error('Error: ' + response.message);
-                // }
-            },
-            error: function(xhr) {
-                console.error('Error uploading file: ' + xhr.responseText);
-            }
-        });
-    });
-    
     $(".additionalFields").css("display", "none");
     $("#back").prop("disabled", true)
     $("#forward").prop("disabled", true)
@@ -2402,8 +2317,8 @@
                     salespartner +
                     "</b>");
                 window.editor.setData(sales_partner_text1);
-                // let projectcode = window.editor.getData();
-                let projectcode = projectcode.replace("code", "<b>" +
+                let projectcode = window.editor.getData();
+                projectcode = projectcode.replace("code", "<b>" +
                     code +
                     "</b>");
                 window.editor.setData(projectcode);
@@ -2486,7 +2401,94 @@
             }
         });
     }
-    
+    document.addEventListener('DOMContentLoaded', function() {
+        const tagsInput = document.querySelector('.tags-input');
+        const input = document.createElement('input');
+        const hiddenInput = document.getElementById('ccEmailsHidden');
+        const form = document.getElementById('emailForm');
+        const emailError = document.getElementById('emailError');
+
+        tagsInput.appendChild(input);
+
+        function createTag(email) {
+            const tag = document.createElement('span');
+            tag.classList.add('tag');
+            tag.textContent = email;
+
+            const closeIcon = document.createElement('i');
+            closeIcon.classList.add('bi', 'bi-x');
+            closeIcon.addEventListener('click', () => {
+                tagsInput.removeChild(tag);
+                updateHiddenInput();
+            });
+
+            tag.appendChild(closeIcon);
+            tagsInput.insertBefore(tag, input);
+
+            updateHiddenInput();
+        }
+
+        function updateHiddenInput() {
+            const tags = document.querySelectorAll('.tag');
+            const emails = Array.from(tags).map(tag => tag.textContent.trim());
+            hiddenInput.value = emails.join(',');
+        }
+
+        function validateEmails(emails) {
+            const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            return emails.every(email => emailPattern.test(email));
+        }
+
+        input.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter' || e.key === ',') {
+                e.preventDefault();
+                const email = input.value.trim();
+                if (email && validateEmails([email])) {
+                    createTag(email);
+                    input.value = '';
+                    emailError.style.display = 'none';
+                } else {
+                    emailError.style.display = 'block';
+                }
+            }
+        });
+
+        tagsInput.addEventListener('click', () => {
+            input.focus();
+        });
+
+    });
+    $('#accept-form').on('submit', function(e) {
+        e.preventDefault();
+
+        // Create a FormData object
+        var formData = new FormData(this); // Automatically collects all form inputs, including files
+
+        // Send the form data using jQuery AJAX
+        $.ajax({
+            url: "{{ route('project.accept.file') }}", // The URL where the request is sent
+            type: 'POST',
+            data: formData,
+            contentType: false, // Tell jQuery not to set contentType
+            processData: false, // Tell jQuery not to process the data (i.e., don't try to convert it into a string)
+            headers: {
+                'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr(
+                    'content') // Include the CSRF token from meta tag
+            },
+            success: function(response) {
+                $("#project-acceptance-view").empty();
+                $("#project-acceptance-view").html(response);
+                // if (response.success) {
+                //     console.log('File uploaded successfully.');
+                // } else {
+                //     console.error('Error: ' + response.message);
+                // }
+            },
+            error: function(xhr) {
+                console.error('Error uploading file: ' + xhr.responseText);
+            }
+        });
+    });
     getAcceptanceForm();
 
     function getAcceptanceForm() {
@@ -2570,5 +2572,113 @@
             }
         });
     }
+
+    (function() {
+    'use strict';
+    
+    $(document).ready(function() {
+        // Restore active tab on page load
+        const activeTab = localStorage.getItem('activeTab');
+        if (activeTab) {
+            $('.nav-link[href="' + activeTab + '"]').tab('show');
+            localStorage.removeItem('activeTab');
+        }
+        
+        // Ticket form submission
+        $('#ticketForm').off('submit').on('submit', function(e) {
+            e.preventDefault();
+            e.stopImmediatePropagation();
+            
+            const form = this;
+            const assignedTo = $('#assigned_to').val();
+            const notes = $('#notes').val().trim();
+            
+            $(form).find('.is-invalid').removeClass('is-invalid');
+            
+            let isValid = true;
+            
+            if (!assignedTo) {
+                $('#assigned_to').addClass('is-invalid');
+                isValid = false;
+            }
+            
+            if (!notes) {
+                $('#notes').addClass('is-invalid');
+                isValid = false;
+            }
+            
+            if (!isValid) {
+                return false;
+            }
+            
+            // Save active tab before reload
+            localStorage.setItem('activeTab', '#tickets');
+            
+            $('#premiumLoader').css('display', 'flex');
+            
+            $.ajax({
+                url: $(form).attr('action'),
+                method: 'POST',
+                data: $(form).serialize(),
+                success: function(response) {
+                    $(form)[0].reset();
+                    setTimeout(function() {
+                        $('#premiumLoader').hide();
+                        location.reload();
+                    }, 500);
+                },
+                error: function(error) {
+                    $('#premiumLoader').hide();
+                    localStorage.removeItem('activeTab');
+                    alert('Error creating ticket. Please try again.');
+                }
+            });
+            
+            return false;
+        });
+
+        $('#assigned_to, #notes').on('change input', function() {
+            $(this).removeClass('is-invalid');
+        });
+
+        $('#updateTicketForm').off('submit').on('submit', function(e) {
+            e.preventDefault();
+            e.stopImmediatePropagation();
+            
+            // Save active tab before reload
+            localStorage.setItem('activeTab', '#tickets');
+            
+            $('#premiumLoader').css('display', 'flex');
+            $('.premium-loader-text').text('Updating Ticket...');
+            
+            $.ajax({
+                url: $(this).attr('action'),
+                method: 'POST',
+                data: $(this).serialize(),
+                success: function(response) {
+                    setTimeout(function() {
+                        $('#updateTicketModal').modal('hide');
+                        $('#premiumLoader').hide();
+                        $('.premium-loader-text').text('Creating Ticket...');
+                        location.reload();
+                    }, 500);
+                },
+                error: function(error) {
+                    $('#premiumLoader').hide();
+                    $('.premium-loader-text').text('Creating Ticket...');
+                    localStorage.removeItem('activeTab');
+                    alert('Error updating ticket. Please try again.');
+                }
+            });
+            
+            return false;
+        });
+    });
+    
+    window.updateTicket = function(ticketId) {
+        $('#updateTicketModal').modal('show');
+        $('#updateTicketForm').attr('action', '/service-tickets/' + ticketId);
+    };
+})();
 </script>
 @endsection
