@@ -3,6 +3,7 @@
 use App\Http\Controllers\AuroraController;
 use App\Http\Controllers\CustomerController;
 use App\Http\Controllers\EmployeeController;
+use App\Http\Controllers\IntakeFormController;
 use App\Http\Controllers\InverterTypeController;
 use App\Http\Controllers\LaborCostController;
 use App\Http\Controllers\ModuleTypeController;
@@ -106,6 +107,7 @@ Route::middleware('auth')->group(function () {
 
     Route::resource('employees', EmployeeController::class);
     Route::resource('customers', CustomerController::class);
+    Route::resource('intake-form', IntakeFormController::class);
     Route::resource('projects', ProjectController::class);
     Route::resource('module-types', ModuleTypeController::class);
     Route::resource('office-costs', OfficeCostController::class);
@@ -127,6 +129,7 @@ Route::middleware('auth')->group(function () {
     Route::post('get-adders', [App\Http\Controllers\CustomerController::class, 'getAdderDetails'])->name('get.adders');
     Route::post('get-module-types', [App\Http\Controllers\CustomerController::class, 'getModulTypevalue'])->name('get.module.types');
     Route::post('delete-customer', [App\Http\Controllers\CustomerController::class, 'destroy'])->name('delete.customer');
+    Route::post('delete-intake-form', [App\Http\Controllers\IntakeFormController::class, 'destroy'])->name('delete.intake-form');
     Route::post('get-sales-partner-users', [App\Http\Controllers\CustomerController::class, 'getSalesPartnerUsers'])->name('get.salespartnets.users');
     Route::post('get-sub-contractor-users', [App\Http\Controllers\CustomerController::class, 'getSubContractorUsers'])->name('get.subcontractors.users');
 
