@@ -1,7 +1,7 @@
 @extends('layouts.master')
 @section('title', 'Projects')
 @section('content')
-    <style>
+     <style>
         body {
             /* background: linear-gradient(135deg, #d7d9da 0%, #e1dede 100%); */
             margin-top: 20px;
@@ -18,9 +18,17 @@
             box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
         }
         
-        .card:hover {
+        /* .card:hover:not(.modal-open .card) {
             box-shadow: 0 8px 25px rgba(0, 0, 0, 0.12);
             transform: translateY(-2px);
+        } */
+
+        body.modal-open .card {
+            pointer-events: none;
+        }
+
+        body.modal-open .modal .card {
+            pointer-events: auto;
         }
 
         .chat-app .people-list {
@@ -435,7 +443,7 @@
             z-index: 1000;
             /* Keeps the dropdown menu on top */
         }
-    </style>
+    </style> 
     <link rel="stylesheet" href="https://cdn.ckeditor.com/ckeditor5/42.0.0/ckeditor5.css">
     <div class="card card-info">
         <div class="card-body">

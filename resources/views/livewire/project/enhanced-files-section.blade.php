@@ -16,6 +16,14 @@
             box-shadow: 0 15px 40px rgba(0, 0, 0, 0.25);
         }
 
+        .modal.show {
+            pointer-events: none;
+        }
+
+        .modal-dialog {
+            pointer-events: auto;
+        }
+
         .file-preview {
             width: 100%;
             height: 250px;
@@ -252,9 +260,9 @@
 
     <!-- Upload Modal -->
     @if ($showModal)
-        <div class="modal fade show d-block" tabindex="-1" style="background: rgba(0,0,0,0.5);">
-            <div class="modal-dialog modal-dialog-centered">
-                <div class="modal-content">
+        <div class="modal fade show d-block" tabindex="-1" style="background: rgba(0,0,0,0.5); z-index: 1050;" wire:ignore.self>
+            <div class="modal-dialog modal-dialog-centered" style="pointer-events: auto;">
+                <div class="modal-content" style="pointer-events: auto;">
                     <div class="modal-header">
                         <h5 class="modal-title fw-bold">
                             <i class="icofont-upload-alt me-2"></i>Upload File
