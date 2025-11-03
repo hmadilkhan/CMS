@@ -277,16 +277,30 @@
                                     <h2 class="company-title mb-2">Welcome Back</h2>
                                     <p class="text-muted">Sign in to your account</p>
                                 </div>
+                                @if ($errors->any())
+                                    <div class="col-12">
+                                        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                                            <strong>Error!</strong> {{ $errors->first() }}
+                                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                                        </div>
+                                    </div>
+                                @endif
                                 <div class="col-12">
                                     <label class="form-label fw-semibold text-dark">Username</label>
-                                    <input type="text" name="username" class="form-control form-control-lg" placeholder="Enter your username" required>
+                                    <input type="text" name="username" class="form-control form-control-lg @error('username') is-invalid @enderror" placeholder="Enter your username" value="{{ old('username') }}" required>
+                                    @error('username')
+                                        <div class="invalid-feedback">{{ $message }}</div>
+                                    @enderror
                                 </div>
                                 <div class="col-12">
                                     <div class="d-flex justify-content-between align-items-center mb-2">
                                         <label class="form-label fw-semibold text-dark mb-0">Password</label>
                                         <a href="{{url('forgot-password')}}" style="color: #FFA500; text-decoration: none; font-size: 0.9rem;">Forgot Password?</a>
                                     </div>
-                                    <input type="password" name="password" class="form-control form-control-lg" placeholder="Enter your password" required>
+                                    <input type="password" name="password" class="form-control form-control-lg @error('password') is-invalid @enderror" placeholder="Enter your password" required>
+                                    @error('password')
+                                        <div class="invalid-feedback">{{ $message }}</div>
+                                    @enderror
                                 </div>
                                 <div class="col-12">
                                     <div class="form-check">
