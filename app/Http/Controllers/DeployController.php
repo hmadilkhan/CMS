@@ -23,13 +23,12 @@ class DeployController extends Controller
         $output = '';
         $status = 'success';
         // $WEBROOT="/home/u160855881/domains/solenenergyco.com/public_html/CRM/portal";
+        
         try {
             if ($action === 'deploy') {
                 Artisan::call('deploy:run');
-                // $output = shell_exec('php artisan deploy:run 2>&1');
             } elseif ($action === 'rollback') {
                 Artisan::call('deploy:rollback');
-                // $output = shell_exec('php artisan deploy:rollback 2>&1');
             } else {
                 throw new \Exception('Invalid action');
             }
