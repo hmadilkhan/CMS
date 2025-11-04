@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\ServiceTicket;
 use App\Models\User;
+use App\Notifications\ServiceTicketCreated;
+use Illuminate\Support\Facades\Notification;
 
 class ServiceTicketController extends Controller
 {
@@ -18,7 +20,15 @@ class ServiceTicketController extends Controller
             'notes' => 'nullable|string'
         ]);
 
-        ServiceTicket::create($request->all());
+        $ticket = ServiceTicket::create($request->all());
+        
+        if ($request->assigned_to) {
+            $assignedUser = User::find($request->assigned_to);
+            if ($assignedUser) {
+                Notification::send($assignedUser, (new ServiceTicketCreated($ticket))->delay(now()->addSeconds(5)));
+            }
+        }
+        
         return back()->with('success', 'Ticket created successfully');
     }
 

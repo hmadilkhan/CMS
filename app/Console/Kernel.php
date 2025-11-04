@@ -17,6 +17,7 @@ class Kernel extends ConsoleKernel
      */
     protected function schedule(Schedule $schedule): void
     {
+        $schedule->command('queue:work --timeout=600 --tries=3')->everyMinute()->withoutOverlapping();
         // $schedule->command('inspire')->hourly();
         // $schedule->command('app:fetch-emails')->timezone('Asia/Karachi')->dailyAt('09:00');
         // $schedule->command('app:fetch-emails')->timezone('Asia/Karachi')->dailyAt('18:00');
