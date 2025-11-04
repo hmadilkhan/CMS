@@ -6,6 +6,7 @@ use Illuminate\Console\Command;
 
 class DeployCRM extends Command
 {
+    // Command to RUn Deploy Run
     protected $signature = 'deploy:run';
     protected $description = 'Run CRM deployment script';
 
