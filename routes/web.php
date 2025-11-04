@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\AuroraController;
 use App\Http\Controllers\CustomerController;
+use App\Http\Controllers\DeployController;
 use App\Http\Controllers\EmployeeController;
 use App\Http\Controllers\IntakeFormController;
 use App\Http\Controllers\InverterTypeController;
@@ -61,6 +62,9 @@ Route::get('/about', function () {
 Route::get('/track-your-project', function () {
     return view('track-your-project');
 });
+
+Route::post('/admin/deploy', [DeployController::class, 'deployAction'])->name('admin.deploy')->middleware('auth');
+
 
 Route::post('store-ticket', [App\Http\Controllers\NewTicketController::class, 'store'])->name("store.ticket");
 Route::get('check-website-project/{code}/{email}', [App\Http\Controllers\ProjectController::class, 'checkWebsiteProject'])->name('get.website.project');

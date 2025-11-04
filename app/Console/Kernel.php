@@ -9,6 +9,8 @@ class Kernel extends ConsoleKernel
 {
     protected $commands = [
         Commands\FetchEmails::class,
+        Commands\DeployCRM::class,
+        Commands\RollbackCRM::class,
     ];
     /**
      * Define the application's command schedule.
