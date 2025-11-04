@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\DeployLog;
+use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Auth;
 
 class DeployController extends Controller
@@ -21,12 +22,14 @@ class DeployController extends Controller
         $action = $request->input('action');
         $output = '';
         $status = 'success';
-
+        // $WEBROOT="/home/u160855881/domains/solenenergyco.com/public_html/CRM/portal";
         try {
             if ($action === 'deploy') {
-                $output = shell_exec('php artisan deploy:run 2>&1');
+                Artisan::call('deploy:run');
+                // $output = shell_exec('php artisan deploy:run 2>&1');
             } elseif ($action === 'rollback') {
-                $output = shell_exec('php artisan deploy:rollback 2>&1');
+                Artisan::call('deploy:rollback');
+                // $output = shell_exec('php artisan deploy:rollback 2>&1');
             } else {
                 throw new \Exception('Invalid action');
             }
