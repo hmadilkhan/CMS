@@ -19,7 +19,7 @@
         </tr>
     </thead>
     <tbody>
-        @foreach (\App\Models\DeployLog::latest()->take(20)->get() as $log)
+        @foreach ($deployLogs as $log)
             <tr>
                 <td>{{ $log->id }}</td>
                 <td>{{ ucfirst($log->action) }}</td>

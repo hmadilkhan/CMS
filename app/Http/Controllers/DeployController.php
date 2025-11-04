@@ -8,6 +8,13 @@ use Illuminate\Support\Facades\Auth;
 
 class DeployController extends Controller
 {
+    public function deploy()
+    {
+        $output = '';
+        $deployLogs = DeployLog::latest()->take(20)->get();
+        return view('admin.deploy',compact('deployLogs', 'output'));
+    }
+
     public function deployAction(Request $request)
     {
         $user = Auth::user();
@@ -35,6 +42,8 @@ class DeployController extends Controller
             'status' => $status,
         ]);
 
-        return view('admin.deploy', compact('output'));
+        $deployLogs = DeployLog::latest()->take(20)->get();
+
+        return view('admin.deploy', compact('output', 'deployLogs'));
     }
 }
