@@ -119,6 +119,7 @@
                                 <th><i class="icofont-check-circled me-2"></i>Status</th>
                                 <th><i class="icofont-ui-note me-2"></i>Notes</th>
                                 <th><i class="icofont-clock-time me-2"></i>Created</th>
+                                <th><i class="icofont-history me-2"></i>Pending Time</th>
                                 <th><i class="icofont-eye me-2"></i>Actions</th>
                             </tr>
                         </thead>
@@ -156,6 +157,13 @@
                                     </td>
                                     <td><i class="icofont-ui-calendar me-2"></i>{{ $ticket->created_at->format('M d, Y H:i') }}</td>
                                     <td>
+                                        @if($ticket->status == 'Pending')
+                                            <span class="badge bg-warning text-dark">{{ $ticket->created_at->diffForHumans() }}</span>
+                                        @else
+                                            <span class="text-muted">-</span>
+                                        @endif
+                                    </td>
+                                    <td>
                                         <button class="btn btn-sm btn-dark" onclick="viewAdminTicket({{ $ticket->id }})">
                                             <i class="icofont-eye me-1"></i>View
                                         </button>
@@ -163,7 +171,7 @@
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="8" class="text-center py-5">
+                                    <td colspan="9" class="text-center py-5">
                                         <i class="icofont-ticket" style="font-size: 3rem; opacity: 0.3;"></i>
                                         <p class="text-muted mt-3">No service tickets found</p>
                                     </td>
