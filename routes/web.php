@@ -63,6 +63,7 @@ Route::get('/track-your-project', function () {
     return view('track-your-project');
 });
 
+Route::get('/admin/deploy', [DeployController::class, 'deploy'])->middleware('auth');
 Route::post('/admin/deploy', [DeployController::class, 'deployAction'])->name('admin.deploy')->middleware('auth');
 
 
