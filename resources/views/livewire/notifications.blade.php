@@ -10,11 +10,11 @@
             <ul class="list-unstyled list mb-0">
                 @foreach ($notifications as $notification)
                 <li class="py-2 mb-1 border-bottom">
-                    <a wire:click.prevent="unread('{{ $notification->id }}','{{$notification->data['url']}}')" href="#" class="d-flex" wire:loading.attr="disabled">
+                    <a wire:click.prevent="unread('{{ $notification->id }}','{{ $notification->data['url'] ?? '#' }}')" href="#" class="d-flex" wire:loading.attr="disabled">
                         <img class="avatar rounded-circle" src="assets/images/xs/avatar1.jpg" alt="">
                         <div class="flex-fill ms-2">
-                            <p class="d-flex justify-content-between mb-0 "><span class="font-weight-bold">{{$notification->data['mentioned_by']}}</span> <small>{{ $notification->created_at->diffForHumans() }}</small></p>
-                            <span class="">{{$notification->data['note']}} <span class="badge bg-success">{{$notification->data['project_name']}}</span></span>
+                            <p class="d-flex justify-content-between mb-0 "><span class="font-weight-bold">{{ $notification->data['mentioned_by'] ?? 'System' }}</span> <small>{{ $notification->created_at->diffForHumans() }}</small></p>
+                            <span class="">{{ $notification->data['note'] ?? $notification->data['subject'] ?? 'New notification' }} @if(isset($notification->data['project_name']))<span class="badge bg-success">{{$notification->data['project_name']}}</span>@endif</span>
                         </div>
                     </a>
                 </li>
