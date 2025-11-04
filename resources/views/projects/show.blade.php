@@ -1603,7 +1603,7 @@
                             <label for="formFileMultipleoneone"
                                 class="form-label fw-bold flex-fill mb-2 mt-sm-0">Assign Notes</label>
                             <div class="position-relative">
-                                <textarea class="form-control bg-white border border-dark" id="notes" name="notes" rows="3"></textarea>
+                                <textarea class="form-control bg-white border border-dark" id="assignnotes" name="assignnotes" rows="3"></textarea>
                             </div>
                         </div>
                         <div class="col-sm-12 mb-3">
@@ -1901,6 +1901,7 @@
 
     $("#assignNotes").submit(function(e) {
         e.preventDefault();
+        
         $.ajax({
             method: "POST",
             url: "{{ route('projects.assign') }}",
@@ -1911,7 +1912,7 @@
                 task_id: "{{ $task->id }}",
                 sub_department_id: "{{ $task->sub_department_id }}",
                 department_id: "{{ $project->department_id }}",
-                notes: $("#notes").val(),
+                notes: $("#assignnotes").val(),
             },
             success: function(response) {
                 if (response.status == 200) {
