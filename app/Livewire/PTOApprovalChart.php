@@ -4,7 +4,6 @@ namespace App\Livewire;
 
 use App\Models\Project;
 use Livewire\Component;
-use Illuminate\Support\Facades\Log;
 use Carbon\Carbon;
 
 class PtoApprovalChart extends Component
