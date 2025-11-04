@@ -185,11 +185,15 @@ class IntakeFormController extends Controller
                 "sub_department_id" => $subdepartment->id,
             ]);
             DB::commit();
+            
+            if ($request->has('schedule_survey') && $request->schedule_survey == 1) {
+                return redirect()->route('site-surveys.schedule.form', $project->id);
+            }
+            
             return redirect()->route("intake-form.index");
         } catch (\Throwable $th) {
             DB::rollBack();
-            return $th->getMessage();
-            return redirect()->route("intake-form.create");
+            return redirect()->route("intake-form.create")->with('error', $th->getMessage());
         }
     }
 

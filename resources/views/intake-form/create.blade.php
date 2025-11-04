@@ -419,6 +419,19 @@
                 </div>
             </div>
 
+            <div class="premium-section">
+                <h5 class="fw-bold mb-4" style="color: #2d3748;">
+                    <i class="icofont-calendar me-2"></i>Site Survey Scheduling
+                </h5>
+                <p class="text-muted">After creating the intake form, you can schedule a site survey for this project.</p>
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="schedule_survey" name="schedule_survey" value="1">
+                    <label class="form-check-label" for="schedule_survey">
+                        Schedule Site Survey after submission
+                    </label>
+                </div>
+            </div>
+
             <div class="text-center mt-4">
                 <button type="submit" class="btn premium-btn btn-lg px-5">
                     <i class="icofont-save me-2"></i>Create Intake Form

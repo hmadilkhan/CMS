@@ -102,4 +102,9 @@ class Project extends Model
     {
         return $this->hasMany(ServiceTicket::class, 'project_id', 'id');
     }
+
+    public function siteSurvey()
+    {
+        return $this->hasOne(SiteSurvey::class, 'project_id', 'id');
+    }
 }

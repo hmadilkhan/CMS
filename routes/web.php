@@ -15,6 +15,7 @@ use App\Http\Controllers\ProjectController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\TaskController;
 use App\Http\Controllers\ToolController;
+use App\Http\Controllers\SiteSurveyController;
 use App\Livewire\AdminDashboard;
 use App\Livewire\DynamicReport;
 use App\Livewire\DynamicReportBuilder;
@@ -169,6 +170,16 @@ Route::middleware('auth')->group(function () {
     Route::get('service-tickets/{ticket}/admin-details', [App\Http\Controllers\ServiceTicketController::class, 'showAdminDetails'])->name('service-tickets.admin-details');
     Route::get('service-dashboard', [App\Http\Controllers\ServiceTicketController::class, 'dashboard'])->name('service.dashboard');
     Route::get('service-admin-dashboard', [App\Http\Controllers\ServiceTicketController::class, 'adminDashboard'])->name('service.admin.dashboard');
+
+    // SITE SURVEYS
+    Route::get('site-surveys/schedule/{project}', [App\Http\Controllers\SiteSurveyController::class, 'showScheduleForm'])->name('site-surveys.schedule.form');
+    Route::post('site-surveys/available-slots', [App\Http\Controllers\SiteSurveyController::class, 'getAvailableSlots'])->name('site-surveys.available-slots');
+    Route::post('site-surveys/schedule', [App\Http\Controllers\SiteSurveyController::class, 'scheduleSurvey'])->name('site-surveys.schedule');
+    Route::post('site-surveys/{survey}/start', [App\Http\Controllers\SiteSurveyController::class, 'startSurvey'])->name('site-surveys.start');
+    Route::post('site-surveys/{survey}/complete', [App\Http\Controllers\SiteSurveyController::class, 'completeSurvey'])->name('site-surveys.complete');
+    Route::post('site-surveys/update-location', [App\Http\Controllers\SiteSurveyController::class, 'updateLocation'])->name('site-surveys.update-location');
+    Route::get('api/technician/surveys', [App\Http\Controllers\SiteSurveyController::class, 'getTechnicianSurveys'])->name('api.technician.surveys');
+    Route::get('technician/surveys', function() { return view('site-surveys.technician-app'); })->name('technician.surveys');
 
     // ADDERS CONTROLLER
     Route::post('adders-store', [App\Http\Controllers\AdderController::class, 'store'])->name('adders.store');
