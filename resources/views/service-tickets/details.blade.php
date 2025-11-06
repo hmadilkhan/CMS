@@ -122,7 +122,7 @@ $('#commentForm').on('submit', function(e) {
             _token: '{{ csrf_token() }}',
             _method: 'PUT',
             status: $('#status').val(),
-            notes: '{{ $ticket->notes }}'
+            notes: {!! json_encode($ticket->notes) !!}
         },
         success: function() {
             // Then add comment
