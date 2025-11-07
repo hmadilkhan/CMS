@@ -720,7 +720,7 @@ class ProjectController extends Controller
             });
         }
         if ($request->id == "all") {
-            $subdepartmentsQuery->groupBy("department_id")->orderBy('order', 'asc');
+            $subdepartmentsQuery->groupBy("department_id");
         }
         if (in_array("Super Admin", auth()->user()->getRoleNames()->toArray())) {
             $departments = Department::with("subdepartments")->where("id", "!=", 9)->get();
@@ -729,7 +729,7 @@ class ProjectController extends Controller
         }
         return [
             "projects" => $query->get(),
-            "subdepartments" => $subdepartmentsQuery->get(),
+            "subdepartments" => $subdepartmentsQuery->orderBy('order', 'asc')->get(),
             "departments" =>  $departments,
             "ghostProjects" => $this->ghostProjects(),
         ];
