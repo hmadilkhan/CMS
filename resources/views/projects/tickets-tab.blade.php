@@ -93,6 +93,9 @@
                                 <td>{{ Str::limit($ticket->notes, 50) }}</td>
                                 <td>{{ $ticket->created_at->format('M d, Y') }}</td>
                                 <td>
+                                    <button class="btn btn-sm btn-primary text-white" onclick="viewTicketDetails({{ $ticket->id }})">
+                                        <i class="icofont-eye"></i> View
+                                    </button>
                                     @if(auth()->user()->hasRole('Service Manager') && $ticket->assigned_to == auth()->id())
                                         <button class="btn btn-sm btn-primary" onclick="updateTicket({{ $ticket->id }})">
                                             Update
@@ -107,6 +110,24 @@
                         @endforelse
                     </tbody>
                 </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- View Ticket Details Modal -->
+<div class="modal fade" id="ticketModal" tabindex="-1">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content premium-modal">
+            <div class="modal-header premium-modal-header">
+                <h5 class="modal-title text-white"><i class="icofont-ticket me-2"></i>Ticket Details</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body premium-modal-body" id="ticketDetailsContent">
+                <div class="text-center py-5">
+                    <div class="premium-spinner-large"></div>
+                    <p class="mt-3 text-muted">Loading ticket details...</p>
+                </div>
             </div>
         </div>
     </div>
@@ -203,6 +224,84 @@
     font-weight: 600;
     color: #2c3e50;
     white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.file-item .file-size {
+    font-size: 11px;
+    color: #6c757d;
+}
+.file-item .remove-file {
+    cursor: pointer;
+    color: #dc3545;
+    font-size: 18px;
+    transition: transform 0.2s;
+}
+.file-item .remove-file:hover {
+    transform: scale(1.2);
+}
+.premium-modal .modal-content {
+    border: none;
+    border-radius: 16px;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+}
+.premium-modal-header {
+    background: linear-gradient(135deg, #2c3e50 0%, #000000 100%);
+    border-radius: 16px 16px 0 0;
+    padding: 1.5rem;
+    border: none;
+}
+.premium-modal-body {
+    padding: 2rem;
+    max-height: 70vh;
+    overflow-y: auto;
+}
+.premium-modal-body::-webkit-scrollbar {
+    width: 8px;
+}
+.premium-modal-body::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 10px;
+}
+.premium-modal-body::-webkit-scrollbar-thumb {
+    background: linear-gradient(135deg, #2c3e50 0%, #000000 100%);
+    border-radius: 10px;
+}
+.premium-modal-body::-webkit-scrollbar-thumb:hover {
+    background: #000000;
+}
+.premium-spinner-large {
+    width: 60px;
+    height: 60px;
+    border: 5px solid #f3f3f3;
+    border-top: 5px solid #2c3e50;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin: 0 auto;
+}
+.premium-badge {
+    padding: 0.5rem 1rem;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 0.875rem;
+}
+.premium-btn {
+    background: linear-gradient(135deg, #2c3e50 0%, #000000 100%);
+    border: none;
+    padding: 0.75rem 1.5rem;
+    border-radius: 10px;
+    font-weight: 600;
+    transition: all 0.3s;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+}
+.premium-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+}
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
 }

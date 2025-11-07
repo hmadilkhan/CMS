@@ -2693,6 +2693,22 @@
         $('#updateTicketModal').modal('show');
         $('#updateTicketForm').attr('action', '/service-tickets/' + ticketId);
     };
+    
+    window.viewTicketDetails = function(ticketId) {
+        $('#ticketModal').modal('show');
+        $('#ticketDetailsContent').html('<div class="text-center py-5"><div class="spinner-border text-primary" role="status"><span class="visually-hidden">Loading...</span></div></div>');
+        
+        $.ajax({
+            url: '/service-tickets/' + ticketId + '/details',
+            method: 'GET',
+            success: function(response) {
+                $('#ticketDetailsContent').html(response);
+            },
+            error: function(error) {
+                $('#ticketDetailsContent').html('<div class="alert alert-danger">Error loading ticket details</div>');
+            }
+        });
+    };
 })();
 </script>
 @endsection
