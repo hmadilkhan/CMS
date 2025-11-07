@@ -720,7 +720,7 @@ class ProjectController extends Controller
             });
         }
         if ($request->id == "all") {
-            $subdepartmentsQuery->groupBy("department_id");
+            $subdepartmentsQuery->groupBy("department_id")->orderBy('order', 'asc');
         }
         if (in_array("Super Admin", auth()->user()->getRoleNames()->toArray())) {
             $departments = Department::with("subdepartments")->where("id", "!=", 9)->get();
