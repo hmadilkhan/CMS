@@ -25,4 +25,9 @@ class ServiceTicket extends Model
     {
         return $this->hasMany(ServiceTicketComment::class, 'service_ticket_id');
     }
+
+    public function files()
+    {
+        return $this->hasMany(ServiceTicketFile::class, 'service_ticket_id');
+    }
 }

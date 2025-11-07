@@ -2625,12 +2625,17 @@
             
             $('#premiumLoader').css('display', 'flex');
             
+            var formData = new FormData(form);
+            
             $.ajax({
                 url: $(form).attr('action'),
                 method: 'POST',
-                data: $(form).serialize(),
+                data: formData,
+                processData: false,
+                contentType: false,
                 success: function(response) {
                     $(form)[0].reset();
+                    $('#ticketFilesList').html('');
                     setTimeout(function() {
                         $('#premiumLoader').hide();
                         location.reload();

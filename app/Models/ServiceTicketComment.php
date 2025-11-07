@@ -20,4 +20,9 @@ class ServiceTicketComment extends Model
     {
         return $this->belongsTo(User::class);
     }
+
+    public function files()
+    {
+        return $this->hasMany(ServiceTicketFile::class, 'comment_id');
+    }
 }
