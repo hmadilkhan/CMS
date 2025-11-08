@@ -516,7 +516,7 @@
                                                     $filtered_collection = $nextSubDepartments
                                                         ->filter(function ($item) use ($department) {
                                                             return $item->department_id == $department->id &&
-                                                                $item->name == 'ADU';
+                                                                $item->name == 'New Construction';
                                                         })
                                                         ->values();
                                                 }
