@@ -157,7 +157,7 @@ class CustomerController extends Controller
             //$subDepartmentId = $request->adu == 1 ? 22 : 1; // If ADU is Yes Then Select ADU else select 1st Subdepartment of Deal Review
             $subdepartment = SubDepartment::query();
             if ($request->adu == 1) {
-                $subdepartment->where("name", "ADU");
+                $subdepartment->where("name", "New Construction");
             } else {
                 $subdepartment->where("department_id", 1);
             }
