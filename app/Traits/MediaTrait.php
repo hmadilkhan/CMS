@@ -19,7 +19,7 @@ trait MediaTrait {
 			// $file->move(public_path('images/'.$path), $fileName);
             $file_name  = $file->getClientOriginalName();
             $file_type  = $file->getClientOriginalExtension();
-            $filePath   = "https://sabsoft.com.pk/SabifyProject/public/images/".$path.$fileName;
+            $filePath   = $path.$fileName;
 
             return $file = [
                 'fileName' => $fileName,

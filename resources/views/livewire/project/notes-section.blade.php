@@ -238,8 +238,9 @@
                             <div class="note-card">
                                 <div class="d-flex justify-content-between align-items-start">
                                     <div class="flex-grow-1">
-                                        <textarea class="form-control note-textarea" disabled rows="auto"
-                                            style="resize: none; background-color: white; border: none; padding: 0; min-height: 60px;">{{ $value->notes }}</textarea>
+                                        <textarea class="form-control note-textarea" disabled
+                                            style="resize: none; background-color: white; border: none; padding: 0; min-height: 60px; height: auto; overflow: hidden;"
+                                            onload="this.style.height = this.scrollHeight + 'px'">{{ $value->notes }}</textarea>
                                     </div>
                                     @if ($value->user_id == auth()->user()->id)
                                         <div class="note-actions ms-3">
@@ -266,6 +267,14 @@
     @endcan
 </div>
 <script>
+    // Auto-resize textareas to fit content
+    document.addEventListener('DOMContentLoaded', function() {
+        document.querySelectorAll('textarea.note-textarea[disabled]').forEach(function(textarea) {
+            textarea.style.height = 'auto';
+            textarea.style.height = textarea.scrollHeight + 'px';
+        });
+    });
+
     function mentionHandler() {
         return {
             employees: {!! json_encode($employees) !!},

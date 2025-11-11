@@ -166,6 +166,7 @@ Route::middleware('auth')->group(function () {
     Route::post('service-tickets', [App\Http\Controllers\ServiceTicketController::class, 'store'])->name('service-tickets.store');
     Route::put('service-tickets/{ticket}', [App\Http\Controllers\ServiceTicketController::class, 'update'])->name('service-tickets.update');
     Route::post('service-tickets/{ticket}/comment', [App\Http\Controllers\ServiceTicketController::class, 'addComment'])->name('service-tickets.comment');
+    Route::delete('service-tickets/files/{file}', [App\Http\Controllers\ServiceTicketController::class, 'deleteFile'])->name('service-tickets.files.delete');
     Route::get('service-tickets/{ticket}/details', [App\Http\Controllers\ServiceTicketController::class, 'showDetails'])->name('service-tickets.details');
     Route::get('service-tickets/{ticket}/admin-details', [App\Http\Controllers\ServiceTicketController::class, 'showAdminDetails'])->name('service-tickets.admin-details');
     Route::get('service-dashboard', [App\Http\Controllers\ServiceTicketController::class, 'dashboard'])->name('service.dashboard');

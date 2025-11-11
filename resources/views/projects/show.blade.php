@@ -516,7 +516,7 @@
                                                     $filtered_collection = $nextSubDepartments
                                                         ->filter(function ($item) use ($department) {
                                                             return $item->department_id == $department->id &&
-                                                                $item->name == 'ADU';
+                                                                $item->name == 'New Construction';
                                                         })
                                                         ->values();
                                                 }
@@ -1603,7 +1603,7 @@
                             <label for="formFileMultipleoneone"
                                 class="form-label fw-bold flex-fill mb-2 mt-sm-0">Assign Notes</label>
                             <div class="position-relative">
-                                <textarea class="form-control bg-white border border-dark" id="notes" name="notes" rows="3"></textarea>
+                                <textarea class="form-control bg-white border border-dark" id="assignnotes" name="assignnotes" rows="3"></textarea>
                             </div>
                         </div>
                         <div class="col-sm-12 mb-3">
@@ -1901,6 +1901,7 @@
 
     $("#assignNotes").submit(function(e) {
         e.preventDefault();
+        
         $.ajax({
             method: "POST",
             url: "{{ route('projects.assign') }}",
@@ -1911,7 +1912,7 @@
                 task_id: "{{ $task->id }}",
                 sub_department_id: "{{ $task->sub_department_id }}",
                 department_id: "{{ $project->department_id }}",
-                notes: $("#notes").val(),
+                notes: $("#assignnotes").val(),
             },
             success: function(response) {
                 if (response.status == 200) {
@@ -2624,12 +2625,17 @@
             
             $('#premiumLoader').css('display', 'flex');
             
+            var formData = new FormData(form);
+            
             $.ajax({
                 url: $(form).attr('action'),
                 method: 'POST',
-                data: $(form).serialize(),
+                data: formData,
+                processData: false,
+                contentType: false,
                 success: function(response) {
                     $(form)[0].reset();
+                    $('#ticketFilesList').html('');
                     setTimeout(function() {
                         $('#premiumLoader').hide();
                         location.reload();
@@ -2686,6 +2692,22 @@
     window.updateTicket = function(ticketId) {
         $('#updateTicketModal').modal('show');
         $('#updateTicketForm').attr('action', '/service-tickets/' + ticketId);
+    };
+    
+    window.viewTicketDetails = function(ticketId) {
+        $('#ticketModal').modal('show');
+        $('#ticketDetailsContent').html('<div class="text-center py-5"><div class="spinner-border text-primary" role="status"><span class="visually-hidden">Loading...</span></div></div>');
+        
+        $.ajax({
+            url: '/service-tickets/' + ticketId + '/details',
+            method: 'GET',
+            success: function(response) {
+                $('#ticketDetailsContent').html(response);
+            },
+            error: function(error) {
+                $('#ticketDetailsContent').html('<div class="alert alert-danger">Error loading ticket details</div>');
+            }
+        });
     };
 })();
 </script>

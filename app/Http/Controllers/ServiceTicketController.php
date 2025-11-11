@@ -4,10 +4,17 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\ServiceTicket;
+use App\Models\ServiceTicketFile;
 use App\Models\User;
+use App\Notifications\ServiceTicketCreated;
+use App\Traits\MediaTrait;
+use Illuminate\Support\Facades\Notification;
+use Illuminate\Support\Facades\Storage;
 
 class ServiceTicketController extends Controller
 {
+    use MediaTrait;
+
     public function store(Request $request)
     {
         $request->validate([
@@ -15,10 +22,37 @@ class ServiceTicketController extends Controller
             'subject' => 'required|string|max:255',
             'assigned_to' => 'nullable|exists:users,id',
             'priority' => 'required|in:High,Medium,Low',
-            'notes' => 'nullable|string'
+            'notes' => 'nullable|string',
+            'files.*' => 'nullable|file|max:10240|mimes:jpg,jpeg,png,pdf,doc,docx,xls,xlsx,txt'
         ]);
 
-        ServiceTicket::create($request->all());
+        $ticket = ServiceTicket::create($request->all());
+        
+        if ($request->hasFile('files')) {
+            foreach ($request->file('files') as $file) {
+                // $fileName = time() . '_' . $file->getClientOriginalName();
+                // $filePath = $file->storeAs('service_tickets', $fileName, 'public');
+                $result = $this->uploads($file, "tickets/", "");
+                $filePath = $result['filePath'];
+                
+                ServiceTicketFile::create([
+                    'service_ticket_id' => $ticket->id,
+                    'file_name' => $file->getClientOriginalName(),
+                    'file_path' => $filePath,
+                    'file_type' => $file->getClientMimeType(),
+                    'file_size' => $file->getSize(),
+                    'uploaded_by' => auth()->id()
+                ]);
+            }
+        }
+        
+        if ($request->assigned_to) {
+            $assignedUser = User::find($request->assigned_to);
+            if ($assignedUser) {
+                Notification::send($assignedUser, (new ServiceTicketCreated($ticket))->delay(now()->addSeconds(5)));
+            }
+        }
+        
         return back()->with('success', 'Ticket created successfully');
     }
 
@@ -57,27 +91,56 @@ class ServiceTicketController extends Controller
     public function addComment(Request $request, ServiceTicket $ticket)
     {
         $request->validate([
-            'comment' => 'required|string'
+            'comment' => 'required|string',
+            'files.*' => 'nullable|file|max:10240|mimes:jpg,jpeg,png,pdf,doc,docx,xls,xlsx,txt'
         ]);
 
-        \App\Models\ServiceTicketComment::create([
+        $comment = \App\Models\ServiceTicketComment::create([
             'service_ticket_id' => $ticket->id,
             'user_id' => auth()->id(),
             'comment' => $request->comment
         ]);
+
+        if ($request->hasFile('files')) {
+            foreach ($request->file('files') as $file) {
+                $fileName = time() . '_' . $file->getClientOriginalName();
+                $filePath = $file->storeAs('service_tickets', $fileName, 'public');
+                
+                ServiceTicketFile::create([
+                    'service_ticket_id' => $ticket->id,
+                    'comment_id' => $comment->id,
+                    'file_name' => $file->getClientOriginalName(),
+                    'file_path' => $filePath,
+                    'file_type' => $file->getClientMimeType(),
+                    'file_size' => $file->getSize(),
+                    'uploaded_by' => auth()->id()
+                ]);
+            }
+        }
 
         return back()->with('success', 'Comment added successfully');
     }
 
     public function showDetails(ServiceTicket $ticket)
     {
-        $ticket->load(['comments.user', 'project']);
+        $ticket->load(['comments.user', 'comments.files', 'project', 'files' => function($q) {
+            $q->whereNull('comment_id');
+        }, 'files.uploader']);
         return view('service-tickets.details', compact('ticket'));
     }
 
     public function showAdminDetails(ServiceTicket $ticket)
     {
-        $ticket->load(['comments.user', 'project', 'assignedUser']);
+        $ticket->load(['comments.user', 'comments.files', 'project', 'assignedUser', 'files' => function($q) {
+            $q->whereNull('comment_id');
+        }, 'files.uploader']);
         return view('service-tickets.admin-details', compact('ticket'));
+    }
+
+    public function deleteFile(ServiceTicketFile $file)
+    {
+        Storage::disk('public')->delete($file->file_path);
+        $file->delete();
+        return back()->with('success', 'File deleted successfully');
     }
 }

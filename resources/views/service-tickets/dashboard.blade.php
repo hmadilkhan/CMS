@@ -209,16 +209,16 @@
                                         </td>
                                         <td><strong>{{ $ticket->subject }}</strong></td>
                                         <td>
-                                            <span class="premium-badge 
-                                                @if($ticket->priority == 'High') bg-danger
-                                                @elseif($ticket->priority == 'Medium') bg-warning text-dark
-                                                @else bg-info
-                                                @endif">
-                                                {{ $ticket->priority }}
-                                            </span>
-                                        </td>
+                                        <span class="premium-badge text-white
+                                            @if($ticket->priority == 'High') bg-danger
+                                            @elseif($ticket->priority == 'Medium') bg-warning text-dark
+                                            @else bg-info
+                                            @endif">
+                                            {{ $ticket->priority }}
+                                        </span>
+                                    </td>
                                         <td>
-                                            <span class="premium-badge {{ $ticket->status == 'Resolved' ? 'bg-success' : 'bg-secondary' }}">
+                                            <span class="premium-badge {{ $ticket->status == 'Resolved' ? 'bg-success' : 'bg-warning' }}">
                                                 <i class="icofont-{{ $ticket->status == 'Resolved' ? 'check' : 'clock-time' }} me-1"></i>{{ $ticket->status }}
                                             </span>
                                         </td>

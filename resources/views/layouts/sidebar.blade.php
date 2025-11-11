@@ -10,7 +10,7 @@
             </span>
             <span class="logo-text">{{auth()->user()->name}}</span>
         </a>
-        <small >{{auth()->user()->name}}</small>
+        {{-- <small >{{auth()->user()->name}}</small> --}}
         <!-- Menu: main ul -->
 
         <ul class="menu-list flex-grow-1 mt-3">
