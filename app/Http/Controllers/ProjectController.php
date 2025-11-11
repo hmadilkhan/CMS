@@ -67,7 +67,7 @@ class ProjectController extends Controller
         //     $query->whereIn("id", EmployeeDepartment::whereIn("employee_id", Employee::where("user_id", auth()->user()->id)->pluck("id"))->pluck("department_id"));
         // }
 
-        if (auth()->user()->hasAnyRole(['Manager', 'Employee']) && !auth()->user()->hasRole('Super Admin')) {
+        if (auth()->user()->hasAnyRole(['Manager', 'Employee','Sub-Contractor Manager','Service Manager']) && !auth()->user()->hasRole('Super Admin')) {
             $query->whereIn("id", EmployeeDepartment::whereIn("employee_id", Employee::where("user_id", auth()->user()->id)->pluck("id"))->pluck("department_id"));
         }
 
