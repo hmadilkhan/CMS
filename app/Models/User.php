@@ -32,6 +32,7 @@ class User extends Authenticatable
         'overwrite_base_price',
         'overwrite_panel_price',
         'email_preference',
+        'address',
     ];
 
     protected $with = ['roles'];

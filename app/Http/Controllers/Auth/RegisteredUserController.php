@@ -54,6 +54,7 @@ class RegisteredUserController extends Controller
         $request->validate([
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'email', 'max:255', 'unique:' . User::class],
+            'username' => ['required', 'string', 'max:255', 'unique:' . User::class],
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
         ]);
         $result = $this->uploads($request->file, 'users/', "");
@@ -65,6 +66,7 @@ class RegisteredUserController extends Controller
             'user_type_id' => $request->user_type_id,
             'sales_partner_id' => ($request->user_type_id == 3 ? $request->sales_partner_id : ($request->user_type_id == 4 ? $request->sub_contractor_id : null)),
             'phone' => $request->phone,
+            'address' => $request->address,
             'image' => (!empty($result) ? $result["fileName"] : ""),
         ]);
         $user->assignRole($request->role);
@@ -81,6 +83,7 @@ class RegisteredUserController extends Controller
             'user_type_id' => $request->user_type_id,
             'sales_partner_id' => ($request->user_type_id == 3 ? $request->sales_partner_id : ($request->user_type_id == 4 ? $request->sub_contractor_id : null)), //$request->sales_partner_id,
             'phone' => $request->phone,
+            'address' => $request->address,
             "image" => (!empty($result) ? $result["fileName"] : $request->previous_logo),
         ]);
         $user = User::findOrFail($request->id);
