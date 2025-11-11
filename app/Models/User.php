@@ -33,6 +33,8 @@ class User extends Authenticatable
         'overwrite_panel_price',
         'email_preference',
         'address',
+        'latitude',
+        'longitude',
     ];
 
     protected $with = ['roles'];
