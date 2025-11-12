@@ -508,7 +508,7 @@ function displaySlots(technicians, location) {
                             <i class="icofont-car-alt me-1"></i>${slot.travel_time} min
                         </span>
                         <span class="distance-badge">
-                            <i class="icofont-map-pins me-1"></i>${slot.distance} km
+                            <i class="icofont-map-pins me-1"></i>${slot.distance} miles
                         </span>
                     </div>
                 </div>

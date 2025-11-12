@@ -270,7 +270,7 @@ class SiteSurveyController extends Controller
                 if ($element['status'] === 'OK') {
                     return [
                         'duration' => round($element['duration_in_traffic']['value'] / 60),
-                        'distance' => round($element['distance']['value'] / 1000, 2)
+                        'distance' => round($element['distance']['value'] / 1609.34, 2)
                     ];
                 }
             }
