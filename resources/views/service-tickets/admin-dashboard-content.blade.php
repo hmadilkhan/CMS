@@ -64,39 +64,83 @@
         ->get();
 @endphp
 
+<style>
+    .premium-widget {
+        background: linear-gradient(135deg, #2c3e50 0%, #000000 100%);
+        border-radius: 16px;
+        padding: 2rem;
+        position: relative;
+        overflow: hidden;
+        transition: all 0.3s ease;
+        box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+    }
+    .premium-widget:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 12px 35px rgba(0,0,0,0.25);
+    }
+    .premium-widget::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        right: 0;
+        width: 100px;
+        height: 100px;
+        background: rgba(255,255,255,0.05);
+        border-radius: 50%;
+        transform: translate(30%, -30%);
+    }
+    .widget-icon {
+        width: 56px;
+        height: 56px;
+        background: rgba(255,255,255,0.1);
+        backdrop-filter: blur(10px);
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 24px;
+        color: #fff;
+        margin-bottom: 1rem;
+    }
+    .widget-value {
+        font-size: 2.5rem;
+        font-weight: 800;
+        color: #fff;
+        margin: 0;
+        line-height: 1;
+    }
+    .widget-label {
+        color: rgba(255,255,255,0.8);
+        font-size: 0.9rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        margin-top: 0.5rem;
+    }
+    .widget-pending { background: linear-gradient(135deg, #f39c12 0%, #e67e22 100%); }
+    .widget-high { background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%); }
+</style>
+
 <div class="row mb-4">
-    <div class="col-md-3">
-        <div class="card border-0 shadow-sm">
-            <div class="card-body text-center">
-                <h2 class="fw-bold mb-0" style="background: linear-gradient(135deg, #2c3e50 0%, #000000 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
-                    {{ $tickets->count() }}
-                </h2>
-                <p class="text-muted mb-0">Total Tickets</p>
-            </div>
+    <div class="col-md-4">
+        <div class="premium-widget">
+            <div class="widget-icon"><i class="icofont-ticket"></i></div>
+            <h2 class="widget-value">{{ $tickets->count() }}</h2>
+            <p class="widget-label mb-0">Total Tickets</p>
         </div>
     </div>
-    <div class="col-md-3">
-        <div class="card border-0 shadow-sm">
-            <div class="card-body text-center">
-                <h2 class="fw-bold mb-0 text-warning">{{ $tickets->where('status', 'Pending')->count() }}</h2>
-                <p class="text-muted mb-0">Pending</p>
-            </div>
+    <div class="col-md-4">
+        <div class="premium-widget widget-pending">
+            <div class="widget-icon"><i class="icofont-clock-time"></i></div>
+            <h2 class="widget-value">{{ $tickets->where('status', 'Pending')->count() }}</h2>
+            <p class="widget-label mb-0">Pending</p>
         </div>
     </div>
-    <div class="col-md-3">
-        <div class="card border-0 shadow-sm">
-            <div class="card-body text-center">
-                <h2 class="fw-bold mb-0 text-success">{{ $tickets->where('status', 'Resolved')->count() }}</h2>
-                <p class="text-muted mb-0">Resolved</p>
-            </div>
-        </div>
-    </div>
-    <div class="col-md-3">
-        <div class="card border-0 shadow-sm">
-            <div class="card-body text-center">
-                <h2 class="fw-bold mb-0 text-danger">{{ $tickets->where('priority', 'High')->count() }}</h2>
-                <p class="text-muted mb-0">High Priority</p>
-            </div>
+    <div class="col-md-4">
+        <div class="premium-widget widget-high">
+            <div class="widget-icon"><i class="icofont-warning"></i></div>
+            <h2 class="widget-value">{{ $tickets->where('priority', 'High')->count() }}</h2>
+            <p class="widget-label mb-0">High Priority</p>
         </div>
     </div>
 </div>
