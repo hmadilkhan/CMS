@@ -41,7 +41,9 @@ class LoginRequest extends FormRequest
     {
         $this->ensureIsNotRateLimited();
 
-        if (! Auth::attempt($this->only('username', 'password'), $this->boolean('remember'))) {
+        $remember = $this->boolean('remember');
+        
+        if (! Auth::attempt($this->only('username', 'password'), $remember)) {
             RateLimiter::hit($this->throttleKey());
 
             throw ValidationException::withMessages([
@@ -50,6 +52,11 @@ class LoginRequest extends FormRequest
         }
 
         RateLimiter::clear($this->throttleKey());
+        
+        // Set remember me cookie duration if remember is checked
+        if ($remember) {
+            Auth::guard('web')->setRememberDuration(config('auth.remember', 43200));
+        }
     }
 
     /**

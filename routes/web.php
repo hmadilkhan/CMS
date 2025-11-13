@@ -48,8 +48,7 @@ Route::get('/storage-link', function () {
 });
 
 Route::get('/', function () {
-    // return view('welcome');
-    return view('auth.login');
+    return auth()->check() ? redirect('/dashboard') : redirect('/login');
 });
 
 Route::get('/contact', function () {
