@@ -91,22 +91,87 @@
         margin: 0;
         letter-spacing: 0.5px;
     }
+
+    .premium-filter {
+        background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+        border: 2px solid #e9ecef;
+        border-radius: 8px;
+        padding: 0.5rem 1rem;
+        font-weight: 600;
+        color: #2c3e50;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        transition: all 0.3s ease;
+        cursor: pointer;
+    }
+
+    .premium-filter:hover {
+        border-color: #2c3e50;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        transform: translateY(-1px);
+    }
+
+    .premium-filter:focus {
+        border-color: #2c3e50;
+        box-shadow: 0 0 0 0.2rem rgba(44,62,80,0.15);
+        outline: none;
+    }
+
+    .count-badge {
+        background: linear-gradient(135deg, #2c3e50 0%, #000000 100%);
+        color: white;
+        padding: 0.4rem 0.9rem;
+        border-radius: 20px;
+        font-size: 0.9rem;
+        font-weight: 700;
+        margin-left: 0.75rem;
+        box-shadow: 0 2px 8px rgba(44,62,80,0.3);
+        transition: all 0.3s ease;
+    }
+
+    .no-results-message {
+        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+        border: 2px dashed #dee2e6;
+        border-radius: 12px;
+        padding: 3rem 2rem;
+        text-align: center;
+        margin: 1rem;
+        display: none;
+    }
+
+    .no-results-message i {
+        font-size: 3rem;
+        color: #6c757d;
+        margin-bottom: 1rem;
+    }
+
+    .no-results-message h5 {
+        color: #2c3e50;
+        font-weight: 600;
+        margin-bottom: 0.5rem;
+    }
+
+    .no-results-message p {
+        color: #6c757d;
+        margin: 0;
+    }
 </style>
 @if ($value == 'all')
     @foreach ($departments as $department)
+        @php
+            $collections = $projects
+                ->filter(function ($item) use ($department) {
+                    return $item->department_id == $department->id;
+                })
+                ->values();
+        @endphp
         <div class="container-fluid py-2">
             <div class="department-header">
-                <h3 class="fw-bold"><i class="icofont-tasks me-2"></i>{{ $department->name }}</h3>
+                <h3 class="fw-bold">
+                    <i class="icofont-tasks me-2"></i>{{ $department->name }}
+                    <span class="count-badge">{{ count($collections) }}</span>
+                </h3>
             </div>
             <div class="d-flex flex-row flex-nowrap overflow-auto" style="padding: 0.5rem 0; margin-top: -0.5rem;">
-                @php
-                    $collections = $projects
-                        ->filter(function ($item) use ($department) {
-                            return $item->department_id == $department->id;
-                        })
-                        ->values();
-
-                @endphp
                 @if (count($collections) > 0)
                     @foreach ($collections as $project)
                         @php
@@ -222,19 +287,34 @@
     @endforeach
 @else
     @foreach ($subdepartments as $subdepartment)
+        @php
+            $collections = $projects
+                ->filter(function ($item) use ($subdepartment) {
+                    return $item->sub_department_id == $subdepartment->id;
+                })
+                ->values();
+        @endphp
         <div class="container-fluid py-2">
-            <div class="department-header">
-                <h3 class="fw-bold"><i class="icofont-tasks me-2"></i>{{ $subdepartment->name }}</h3>
+            <div class="department-header d-flex justify-content-between align-items-center">
+                <h3 class="fw-bold mb-0">
+                    <i class="icofont-tasks me-2"></i>{{ $subdepartment->name }}
+                    <span class="count-badge" id="count-{{ $subdepartment->id }}">{{ count($collections) }}</span>
+                </h3>
+                @if (in_array($subdepartment->name, ['Permitting New', 'Permitting Rework']))
+                    <select class="premium-filter" style="width: 220px;" onchange="filterPermitting(this.value, {{ $subdepartment->id }})">
+                        <option value="all">🔍 All Projects</option>
+                        <option value="submitted">✅ Submitted</option>
+                        <option value="not_submitted">⏳ Not Submitted</option>
+                    </select>
+                @endif
             </div>
-            <div class="d-flex flex-row flex-nowrap overflow-auto" style="padding: 0.5rem 0; margin-top: -0.5rem;">
+            <div class="d-flex flex-row flex-nowrap overflow-auto subdept-{{ $subdepartment->id }}" style="padding: 0.5rem 0; margin-top: -0.5rem;">
+                <div class="no-results-message" id="no-results-{{ $subdepartment->id }}">
+                    <i class="icofont-search-document"></i>
+                    <h5>No Projects Found</h5>
+                    <p>No projects match the selected filter criteria</p>
+                </div>
                 @if ($subdepartment->id != 21)
-                    @php
-                        $collections = $projects
-                            ->filter(function ($item) use ($subdepartment) {
-                                return $item->sub_department_id == $subdepartment->id;
-                            })
-                            ->values();
-                    @endphp
                     @if (count($collections) > 0)
                         @foreach ($collections as $project)
                             @php
@@ -253,8 +333,9 @@
                                     }
                                 }
                             @endphp
-                            <div class="col-xxxl-3 col-xxl-3 col-xl-4 col-lg-4 col-md-6 col-sm-12"
+                            <div class="col-xxxl-3 col-xxl-3 col-xl-4 col-lg-4 col-md-6 col-sm-12 project-item"
                                 style="cursor:pointer; min-width: 320px; max-width: 380px; padding: 0.5rem;"
+                                data-submitted="{{ $project->permitting_submittion_date ? 'yes' : 'no' }}"
                                 onclick="showProject('{{ $project->id }}')">
                                 <div class="card project-card border-0">
                                     <div class="project-header">
@@ -603,5 +684,36 @@
 
     function showGhostProject(id, ghost) {
         window.location.href = "{{ url('projects') }}" + "/" + id + "/ghost";
+    }
+
+    function filterPermitting(filter, subdeptId) {
+        const container = document.querySelector('.subdept-' + subdeptId);
+        const projects = container.querySelectorAll('.project-item');
+        const noResultsMsg = document.getElementById('no-results-' + subdeptId);
+        let visibleCount = 0;
+        
+        projects.forEach(project => {
+            if (filter === 'all') {
+                project.style.display = '';
+                visibleCount++;
+            } else if (filter === 'submitted') {
+                if (project.dataset.submitted === 'yes') {
+                    project.style.display = '';
+                    visibleCount++;
+                } else {
+                    project.style.display = 'none';
+                }
+            } else if (filter === 'not_submitted') {
+                if (project.dataset.submitted === 'no') {
+                    project.style.display = '';
+                    visibleCount++;
+                } else {
+                    project.style.display = 'none';
+                }
+            }
+        });
+        
+        document.getElementById('count-' + subdeptId).textContent = visibleCount;
+        noResultsMsg.style.display = visibleCount === 0 ? 'block' : 'none';
     }
 </script>

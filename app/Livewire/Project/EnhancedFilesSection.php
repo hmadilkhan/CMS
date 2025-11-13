@@ -21,12 +21,11 @@ class EnhancedFilesSection extends Component
     public $deleteId;
     
     public $showModal = false;
-    public $headerText = "";
-    public $file;
+    public $files = [];
+    public $uploadedFiles = [];
     
     protected $rules = [
-        'headerText' => 'required|string|max:255',
-        'file' => 'required|file|max:51200|mimes:pdf,jpg,jpeg,png,heic,dxf,docx,dwg'
+        'files.*' => 'required|file|max:51200|mimes:pdf,jpg,jpeg,png,heic,dxf,docx,dwg'
     ];
 
     #[On('deleteConfirmation')]
@@ -58,53 +57,81 @@ class EnhancedFilesSection extends Component
     public function closeModal()
     {
         $this->showModal = false;
-        $this->reset(['headerText', 'file']);
+        $this->reset(['files', 'uploadedFiles']);
         $this->resetValidation();
     }
 
-    public function save($addMore = false)
+    public function updatedFiles()
     {
         $this->validate();
+        foreach ($this->files as $file) {
+            $ext = strtolower($file->getClientOriginalExtension());
+            $isImage = in_array($ext, ['jpg', 'jpeg', 'png', 'heic']);
+            
+            $this->uploadedFiles[] = [
+                'file' => $file,
+                'name' => $file->getClientOriginalName(),
+                'size' => $file->getSize(),
+                'extension' => $ext,
+                'isImage' => $isImage,
+                'preview' => $isImage ? $file->temporaryUrl() : null
+            ];
+        }
+        $this->reset('files');
+    }
 
-        $originalName = str_replace(' ', '_', $this->file->getClientOriginalName());
-        $timestampedName = time() . '_' . $originalName;
-        $imageName = $this->file->storeAs('projects', $timestampedName, 'public');
-        $imageName = basename($imageName);
+    public function removePreview($index)
+    {
+        unset($this->uploadedFiles[$index]);
+        $this->uploadedFiles = array_values($this->uploadedFiles);
+    }
 
-        ProjectFile::create([
-            "project_id" => $this->projectId,
-            "task_id" => $this->taskId,
-            "department_id" => $this->departmentId,
-            "filename" => $imageName,
-            "header_text" => $this->headerText,
-        ]);
+    public function save()
+    {
+        if (empty($this->uploadedFiles)) {
+            $this->addError('files', 'Please upload at least one file.');
+            return;
+        }
 
         $username = auth()->user()->name;
         $project = Project::findOrFail($this->projectId);
-        activity('project')
-            ->performedOn($project)
-            ->causedBy(auth()->user())
-            ->setEvent("updated")
-            ->withProperties(['files' => $imageName, 'header' => $this->headerText])
-            ->log("{$username} added the file to the project: {$imageName}.");
 
-        if ($addMore) {
-            $this->reset(['headerText', 'file']);
-            $this->resetValidation();
-        } else {
-            $this->closeModal();
+        foreach ($this->uploadedFiles as $uploadedFile) {
+            $originalName = str_replace(' ', '_', $uploadedFile['file']->getClientOriginalName());
+            $timestampedName = time() . '_' . $originalName;
+            $imageName = $uploadedFile['file']->storeAs('projects', $timestampedName, 'public');
+            $imageName = basename($imageName);
+
+            ProjectFile::create([
+                "project_id" => $this->projectId,
+                "task_id" => $this->taskId,
+                "department_id" => $this->departmentId,
+                "filename" => $imageName,
+                "header_text" => 'Untitled',
+            ]);
+
+            activity('project')
+                ->performedOn($project)
+                ->causedBy(auth()->user())
+                ->setEvent("updated")
+                ->withProperties(['files' => $imageName])
+                ->log("{$username} added the file to the project: {$imageName}.");
         }
+
+        $this->closeModal();
     }
 
-    public function saveAndAddMore()
+    public function updateTitle($fileId, $newTitle)
     {
-        $this->save(true);
+        $file = ProjectFile::findOrFail($fileId);
+        $file->update(['header_text' => $newTitle]);
     }
 
     public function render()
     {
         $departmentFiles = ProjectFile::where("project_id", $this->projectId)
             ->where("department_id", $this->departmentId)
+            ->orderBy('created_at', 'desc')
             ->get();
         $departmentId = $this->departmentId;
         $projectDepartmentId = $this->projectDepartmentId;

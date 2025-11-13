@@ -180,6 +180,106 @@
             color: #999;
             font-size: 1.1rem;
         }
+
+        .premium-dropzone {
+            border: 3px dashed #667eea;
+            border-radius: 15px;
+            padding: 50px 30px;
+            text-align: center;
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.05) 0%, rgba(118, 75, 162, 0.05) 100%);
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .premium-dropzone:hover {
+            border-color: #764ba2;
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
+            transform: translateY(-2px);
+        }
+
+        .premium-dropzone.drag-over {
+            border-color: #764ba2;
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.15) 0%, rgba(118, 75, 162, 0.15) 100%);
+        }
+
+        .preview-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 15px;
+        }
+
+        .preview-card {
+            position: relative;
+            border: 2px solid #e9ecef;
+            border-radius: 10px;
+            padding: 10px;
+            text-align: center;
+            background: #f8f9fa;
+        }
+
+        .preview-card img {
+            width: 100%;
+            height: 120px;
+            object-fit: cover;
+            border-radius: 8px;
+            background: #f8f9fa;
+        }
+
+        .preview-icon {
+            height: 120px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: #667eea;
+        }
+
+        .preview-name {
+            margin-top: 8px;
+            font-size: 0.85rem;
+            color: #495057;
+            font-weight: 500;
+        }
+
+        .preview-remove {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            background: rgba(220, 53, 69, 0.9);
+            border: none;
+            color: white;
+            width: 25px;
+            height: 25px;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+        }
+
+        .preview-remove:hover {
+            background: rgba(220, 53, 69, 1);
+            transform: scale(1.1);
+        }
+
+        .editable-title {
+            cursor: text;
+            transition: all 0.3s ease;
+        }
+
+        .editable-title:hover {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 5px;
+            border-radius: 5px;
+        }
+
+        .editable-title:focus {
+            outline: 2px solid #667eea;
+            background: rgba(255, 255, 255, 0.15);
+            padding: 5px;
+            border-radius: 5px;
+        }
     </style>
 
     @can('Files Section')
@@ -240,7 +340,11 @@
                     @endcan
                 </div>
                 <div class="file-info">
-                    <div class="file-header">{{ $file->header_text ?? 'Untitled' }}</div>
+                    <div class="file-header editable-title" 
+                         contenteditable="true" 
+                         data-file-id="{{ $file->id }}"
+                         x-data="{ originalText: '{{ $file->header_text ?? 'Untitled' }}' }"
+                         x-on:blur="if($el.textContent.trim() !== originalText) { $wire.updateTitle({{ $file->id }}, $el.textContent.trim()); originalText = $el.textContent.trim(); }">{{ $file->header_text ?? 'Untitled' }}</div>
                     <div class="file-name">
                         <i class="icofont-file-document"></i>
                         <a target="_blank" href="{{ $filePath }}" 
@@ -261,42 +365,75 @@
     <!-- Upload Modal -->
     @if ($showModal)
         <div class="modal fade show d-block" tabindex="-1" style="background: rgba(0,0,0,0.5); z-index: 1050;" wire:ignore.self>
-            <div class="modal-dialog modal-dialog-centered" style="pointer-events: auto;">
+            <div class="modal-dialog modal-dialog-centered modal-lg" style="pointer-events: auto;">
                 <div class="modal-content" style="pointer-events: auto;">
                     <div class="modal-header">
                         <h5 class="modal-title fw-bold">
-                            <i class="icofont-upload-alt me-2"></i>Upload File
+                            <i class="icofont-upload-alt me-2"></i>Upload Files
                         </h5>
                         <button type="button" class="btn-close btn-close-white" wire:click="closeModal"></button>
                     </div>
                     <div class="modal-body">
-                        <form wire:submit.prevent="save">
-                            <div class="mb-4">
-                                <label for="headerText" class="form-label fw-bold">Header Text</label>
-                                <input type="text" class="form-control" id="headerText" wire:model="headerText" 
-                                       placeholder="Enter header text">
-                                @error('headerText') 
-                                    <span class="text-danger small">{{ $message }}</span> 
-                                @enderror
+                        <div class="premium-dropzone" 
+                             ondrop="handleDrop(event)" 
+                             ondragover="handleDragOver(event)" 
+                             ondragleave="handleDragLeave(event)"
+                             onclick="document.getElementById('fileInput').click()">
+                            <i class="icofont-cloud-upload display-3 text-primary mb-3"></i>
+                            <h5 class="fw-bold mb-2">Drop files here or click to browse</h5>
+                            <p class="text-muted mb-0">Supports: PDF, JPG, PNG, HEIC, DXF, DOCX, DWG (Max 50MB)</p>
+                            <input type="file" 
+                                   id="fileInput" 
+                                   wire:model="files" 
+                                   multiple 
+                                   accept=".pdf,.jpg,.jpeg,.png,.heic,.dxf,.docx,.dwg"
+                                   style="display: none;">
+                        </div>
+                        
+                        @error('files.*') 
+                            <div class="alert alert-danger mt-3">{{ $message }}</div>
+                        @enderror
+                        
+                        <div wire:loading wire:target="files" class="text-center mt-3">
+                            <i class="icofont-spinner icofont-spin fs-3 text-primary"></i>
+                            <p class="text-primary mt-2">Processing files...</p>
+                        </div>
+
+                        @if(count($uploadedFiles) > 0)
+                            <div class="preview-grid mt-4">
+                                @foreach($uploadedFiles as $index => $file)
+                                    <div class="preview-card" wire:key="preview-{{ $index }}">
+                                        <button type="button" class="preview-remove" wire:click="removePreview({{ $index }})">
+                                            <i class="icofont-close"></i>
+                                        </button>
+                                        @if($file['isImage'])
+                                            @if($file['preview'])
+                                                <img src="{{ $file['preview'] }}" alt="Preview" 
+                                                     onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';"
+                                                     loading="lazy">
+                                            @endif
+                                            <div class="preview-icon" @if($file['preview']) style="display: none;" @endif>
+                                                <i class="icofont-image fs-1 text-success"></i>
+                                                <span class="d-block mt-2">{{ strtoupper($file['extension']) }}</span>
+                                            </div>
+                                        @else
+                                            <div class="preview-icon">
+                                                <i class="icofont-file-{{ $file['extension'] === 'pdf' ? 'pdf' : 'document' }} fs-1"></i>
+                                                <span class="d-block mt-2">{{ strtoupper($file['extension']) }}</span>
+                                            </div>
+                                        @endif
+                                        <div class="preview-name">{{ Str::limit($file['name'], 25) }}</div>
+                                    </div>
+                                @endforeach
                             </div>
-                            <div class="mb-4">
-                                <label for="file" class="form-label fw-bold">Select File</label>
-                                <input type="file" class="form-control" id="file" wire:model="file" accept=".pdf,.jpg,.jpeg,.png,.heic,.dxf,.docx">
-                                @error('file') 
-                                    <span class="text-danger small d-block">{{ $message }}</span> 
-                                @enderror
-                                <div wire:loading wire:target="file" class="text-primary small mt-2">
-                                    <i class="icofont-spinner icofont-spin"></i> Uploading...
-                                </div>
-                            </div>
-                        </form>
+                        @endif
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" wire:click="closeModal">Cancel</button>
-                        <button type="button" class="btn btn-save" wire:click="saveAndAddMore">
-                            Save & Add More
+                        <button type="button" class="btn btn-save" wire:click="save" 
+                                @if(count($uploadedFiles) === 0) disabled @endif>
+                            <i class="icofont-save me-2"></i>Save Files
                         </button>
-                        <button type="button" class="btn btn-save" wire:click="save">Save</button>
                     </div>
                 </div>
             </div>
@@ -333,5 +470,30 @@
     window.addEventListener('hide-delete-modal', () => {
         $('#deletefile').modal('hide');
     });
+
+    function handleDragOver(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        e.currentTarget.classList.add('drag-over');
+    }
+
+    function handleDragLeave(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        e.currentTarget.classList.remove('drag-over');
+    }
+
+    function handleDrop(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        e.currentTarget.classList.remove('drag-over');
+        
+        const files = e.dataTransfer.files;
+        const input = document.getElementById('fileInput');
+        input.files = files;
+        input.dispatchEvent(new Event('change', { bubbles: true }));
+    }
+
+
 </script>
 @endscript
