@@ -86,6 +86,10 @@ class Project extends Model
     {
         return $this->belongsTo(User::class, "sales_partner_user_id", "id")->withTrashed();
     }
+    public function subContractorUser()
+    {
+        return $this->belongsTo(User::class, "sub_contractor_user_id", "id")->withTrashed();
+    }
 
     public function projectAcceptance()
     {

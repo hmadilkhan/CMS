@@ -127,7 +127,7 @@
                         @enderror
                     </div>
 
-                    <div class="col-sm-4">
+                    {{-- <div class="col-sm-4">
                         <label class="form-label">Sub-Contractors</label>
                         <select class="form-select select2" aria-label="Default select Sub-Contractors"
                             id="sub_contractor_id" name="sub_contractor_id">
@@ -152,7 +152,7 @@
                         @error('sub_contractor_user_id')
                             <div class="text-danger message mt-2">{{ $message }}</div>
                         @enderror
-                    </div>
+                    </div> --}}
 
                     <div class="col-sm-4">
                         <label class="form-label">Module Type</label>
@@ -810,34 +810,36 @@
                 // $("#inverter_type_id").prop("disabled", true)
             }
         }
-        getSubContractorUsers($("#sub_contractor_id").val());
 
-        $("#sub_contractor_id").change(function() {
-            $('#sub_contractor_user_id').empty();
-            getSubContractorUsers($(this).val());
-        })
+        // getSubContractorUsers($("#sub_contractor_id").val());
 
-        function getSubContractorUsers(id) {
-            let sub_contractor_user_id = "{{ $customer->project->sub_contractor_user_id }}";
-            $.ajax({
-                method: "POST",
-                url: "{{ route('get.subcontractors.users') }}",
-                data: {
-                    _token: "{{ csrf_token() }}",
-                    id: id,
-                },
-                dataType: 'json',
-                success: function(response) {
-                    $.each(response.users, function(i, user) {
-                        $('#sub_contractor_user_id').append($('<option '+(sub_contractor_user_id == user.id ? 'selected' : '')+' value="' + user.id +
-                            '">' + user.name + '</option>'));
-                    });
-                },
-                error: function(error) {
-                    console.log(error.responseJSON.message);
-                }
-            })
-        }
+        // $("#sub_contractor_id").change(function() {
+        //     $('#sub_contractor_user_id').empty();
+        //     getSubContractorUsers($(this).val());
+        // })
+
+        // function getSubContractorUsers(id) {
+        //     let sub_contractor_user_id = "{{ $customer->project->sub_contractor_user_id }}";
+        //     $.ajax({
+        //         method: "POST",
+        //         url: "{{ route('get.subcontractors.users') }}",
+        //         data: {
+        //             _token: "{{ csrf_token() }}",
+        //             id: id,
+        //         },
+        //         dataType: 'json',
+        //         success: function(response) {
+        //             $.each(response.users, function(i, user) {
+        //                 $('#sub_contractor_user_id').append($('<option '+(sub_contractor_user_id == user.id ? 'selected' : '')+' value="' + user.id +
+        //                     '">' + user.name + '</option>'));
+        //             });
+        //         },
+        //         error: function(error) {
+        //             console.log(error.responseJSON.message);
+        //         }
+        //     })
+        // }
+        
         $("#sales_partner_id").change(function() {
             $('#sales_partner_user_id').empty();
             $.ajax({

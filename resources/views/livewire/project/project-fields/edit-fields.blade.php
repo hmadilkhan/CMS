@@ -232,6 +232,34 @@
                         <div id="battery_install_date_message" class="text-danger message mt-2">{{ $message }}</div>
                     @enderror
                 </div>
+                <div class="col-sm-4">
+                    <label class="form-label">Sub-Contractors</label>
+                    <select class="form-select" aria-label="Default select Sub-Contractors" id="sub_contractor_id"
+                        name="sub_contractor_id" wire:model="sub_contractor_id"
+                        onchange="loadSubContractorUsers(this.value)">
+                        <option value="">Select Sub-Contractors</option>
+                        @foreach ($contractors as $contractor)
+                            <option value="{{ $contractor->id }}">
+                                {{ $contractor->name }}
+                            </option>
+                        @endforeach
+                    </select>
+                    @error('sub_contractor_id')
+                        <div class="text-danger message mt-2">{{ $message }}</div>
+                    @enderror
+                </div>
+
+                <div class="col-sm-4">
+                    <label class="form-label">Sub-Contractor User</label>
+                    <select class="form-select" aria-label="Default select Sub-Contractor"
+                        id="sub_contractor_user_id" name="sub_contractor_user_id"
+                        wire:model="sub_contractor_user_id">
+                        <option value="">Select Sub-Contractor User</option>
+                    </select>
+                    @error('sub_contractor_user_id')
+                        <div class="text-danger message mt-2">{{ $message }}</div>
+                    @enderror
+                </div>
                 {{-- <div class="col-sm-4 ">
                     <label for="placards_ordered" class="form-label">Placards Required</label>
                     <select class="form-select" aria-label="Default select MPU Required" id="placards_ordered"
@@ -371,26 +399,40 @@
 </div>
 {{-- @script --}}
 <script>
-    // $('.select2').select2();
-    // $("#hoa").change(function() {
-    //     if ($(this).val() == "yes") {
-    //         $("#hoa_select").css("display", "block")
-    //     } else {
-    //         $("#hoa_select").css("display", "none")
-    //     }
-    // })
-    // $("#mpu_required").change(function() {
-    //     if ($(this).val() == "yes") {
-    //         $(".mpuselect").css("display", "block")
-    //     } else {
-    //         $(".mpuselect").css("display", "none")
-    //     }
-    // })
-    // function submitForm() {
-    //     const form = document.getElementById('mainForm');
-    //     const formData = new FormData(form);
-    //     const data = Object.fromEntries(formData.entries());
-    //     @this.updateProjectFields(data); // Pass form data to the Livewire method
-    // }
+    document.addEventListener('DOMContentLoaded', function() {
+        let contractorId = '{{ $sub_contractor_id }}';
+        let userId = '{{ $sub_contractor_user_id }}';
+        console.log(userId,contractorId);
+        
+        if (contractorId) {
+            $('#sub_contractor_id').val(contractorId);
+            loadSubContractorUsers(contractorId, userId);
+        }
+    });
+
+    function loadSubContractorUsers(contractorId, selectedUserId = null) {
+        if (!contractorId) {
+            $('#sub_contractor_user_id').html('<option value="">Select Sub-Contractor User</option>');
+            return;
+        }
+
+        $.ajax({
+            url: "{{ route('get.subcontractors.users') }}",
+            method: "POST",
+            data: {
+                "_token": "{{ csrf_token() }}",
+                id: contractorId
+            },
+            success: function(response) {
+                $('#sub_contractor_user_id').html('<option value="">Select Sub-Contractor User</option>');
+                $.each(response.users, function(i, user) {
+                    $('#sub_contractor_user_id').append('<option value="' + user.id + '">' + user.name + '</option>');
+                });
+                if (selectedUserId) {
+                    $('#sub_contractor_user_id').val(selectedUserId);
+                }
+            }
+        });
+    }
 </script>
 {{-- @endscript --}}

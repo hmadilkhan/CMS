@@ -306,6 +306,12 @@
                         <option value="submitted">✅ Submitted</option>
                         <option value="not_submitted">⏳ Not Submitted</option>
                     </select>
+                @elseif (in_array($subdepartment->name, ['PTO']))
+                    <select class="premium-filter" style="width: 220px;" onchange="filterPTO(this.value, {{ $subdepartment->id }})">
+                        <option value="all">🔍 All Projects</option>
+                        <option value="submitted">✅ Submitted</option>
+                        <option value="not_submitted">⏳ Not Submitted</option>
+                    </select>
                 @endif
             </div>
             <div class="d-flex flex-row flex-nowrap overflow-auto subdept-{{ $subdepartment->id }}" style="padding: 0.5rem 0; margin-top: -0.5rem;">
@@ -336,6 +342,7 @@
                             <div class="col-xxxl-3 col-xxl-3 col-xl-4 col-lg-4 col-md-6 col-sm-12 project-item"
                                 style="cursor:pointer; min-width: 320px; max-width: 380px; padding: 0.5rem;"
                                 data-submitted="{{ $project->permitting_submittion_date ? 'yes' : 'no' }}"
+                                data-pto-submitted="{{ $project->pto_submission_date ? 'yes' : 'no' }}"
                                 onclick="showProject('{{ $project->id }}')">
                                 <div class="card project-card border-0">
                                     <div class="project-header">
@@ -705,6 +712,37 @@
                 }
             } else if (filter === 'not_submitted') {
                 if (project.dataset.submitted === 'no') {
+                    project.style.display = '';
+                    visibleCount++;
+                } else {
+                    project.style.display = 'none';
+                }
+            }
+        });
+        
+        document.getElementById('count-' + subdeptId).textContent = visibleCount;
+        noResultsMsg.style.display = visibleCount === 0 ? 'block' : 'none';
+    }
+
+    function filterPTO(filter, subdeptId) {
+        const container = document.querySelector('.subdept-' + subdeptId);
+        const projects = container.querySelectorAll('.project-item');
+        const noResultsMsg = document.getElementById('no-results-' + subdeptId);
+        let visibleCount = 0;
+        
+        projects.forEach(project => {
+            if (filter === 'all') {
+                project.style.display = '';
+                visibleCount++;
+            } else if (filter === 'submitted') {
+                if (project.dataset.ptoSubmitted === 'yes') {
+                    project.style.display = '';
+                    visibleCount++;
+                } else {
+                    project.style.display = 'none';
+                }
+            } else if (filter === 'not_submitted') {
+                if (project.dataset.ptoSubmitted === 'no') {
                     project.style.display = '';
                     visibleCount++;
                 } else {

@@ -23,56 +23,56 @@
                     <div class="col-sm-6 mb-3">
                         <label for="exampleFormControlInput877" class="form-label">First Name</label>
                         <input type="text" class="form-control" id="first_name" name="first_name"
-                            placeholder="First Name">
+                            placeholder="First Name" value="{{ old('first_name') }}">
                         @error('first_name')
                             <div class="text-danger message mt-2">{{ $message }}</div>
                         @enderror
                     </div>
                     <div class="col-sm-6 mb-3">
                         <label for="exampleFormControlInput877" class="form-label">Last Name</label>
-                        <input type="text" class="form-control" id="last_name" name="last_name" placeholder="Last Name">
+                        <input type="text" class="form-control" id="last_name" name="last_name" placeholder="Last Name" value="{{ old('last_name') }}">
                         @error('last_name')
                             <div class="text-danger message mt-2">{{ $message }}</div>
                         @enderror
                     </div>
                     <div class="col-sm-4 mb-3">
                         <label for="exampleFormControlInput877" class="form-label">Street</label>
-                        <input type="text" class="form-control" id="street" name="street" placeholder="Street">
+                        <input type="text" class="form-control" id="street" name="street" placeholder="Street" value="{{ old('street') }}">
                         @error('street')
                             <div class="text-danger message mt-2">{{ $message }}</div>
                         @enderror
                     </div>
                     <div class="col-sm-4 mb-3">
                         <label for="exampleFormControlInput877" class="form-label">City</label>
-                        <input type="text" class="form-control" id="city" name="city" placeholder="City">
+                        <input type="text" class="form-control" id="city" name="city" placeholder="City" value="{{ old('city') }}">
                         @error('city')
                             <div class="text-danger message mt-2">{{ $message }}</div>
                         @enderror
                     </div>
                     <div class="col-sm-4 mb-3">
                         <label for="exampleFormControlInput877" class="form-label">State</label>
-                        <input type="text" class="form-control" id="state" name="state" placeholder="State">
+                        <input type="text" class="form-control" id="state" name="state" placeholder="State" value="{{ old('state') }}">
                         @error('state')
                             <div class="text-danger message mt-2">{{ $message }}</div>
                         @enderror
                     </div>
                     <div class="col-sm-4 mb-3">
                         <label for="exampleFormControlInput877" class="form-label">Zip Code</label>
-                        <input type="text" class="form-control" id="zipcode" name="zipcode" placeholder="Zip Code">
+                        <input type="text" class="form-control" id="zipcode" name="zipcode" placeholder="Zip Code" value="{{ old('zipcode') }}">
                         @error('zipcode')
                             <div class="text-danger message mt-2">{{ $message }}</div>
                         @enderror
                     </div>
                     <div class="col-sm-4 mb-3">
                         <label for="exampleFormControlInput877" class="form-label">Phone</label>
-                        <input type="text" class="form-control" id="phone" name="phone" placeholder="phone">
+                        <input type="text" class="form-control" id="phone" name="phone" placeholder="phone" value="{{ old('phone') }}">
                         @error('phone')
                             <div class="text-danger message mt-2">{{ $message }}</div>
                         @enderror
                     </div>
                     <div class="col-sm-4 mb-3">
                         <label for="exampleFormControlInput877" class="form-label">Email</label>
-                        <input type="text" class="form-control" id="email" name="email" placeholder="Email">
+                        <input type="text" class="form-control" id="email" name="email" placeholder="Email" value="{{ old('email') }}">
                         @error('email')
                             <div class="text-danger message mt-2">{{ $message }}</div>
                         @enderror
@@ -80,7 +80,7 @@
                     <div class="col-sm-4">
                         <label for="sold_date" class="form-label">Sold Date</label>
                         <input type="date" class="form-control" id="sold_date" name="sold_date"
-                            placeholder="Sold Date">
+                            placeholder="Sold Date" value="{{ old('sold_date') }}">
                         @error('sold_date')
                             <div class="text-danger message mt-2">{{ $message }}</div>
                         @enderror
@@ -91,7 +91,7 @@
                             id="sales_partner_id" name="sales_partner_id">
                             <option value="">Select Sales Partner</option>
                             @foreach ($partners as $partner)
-                                <option value="{{ $partner->id }}">
+                                <option value="{{ $partner->id }}" {{ old('sales_partner_id') == $partner->id ? 'selected' : '' }}>
                                     {{ $partner->name }}
                                 </option>
                             @endforeach
@@ -111,13 +111,13 @@
                         @enderror
                     </div>
 
-                    <div class="col-sm-4">
+                    {{-- <div class="col-sm-4">
                         <label class="form-label">Sub-Contractors</label>
                         <select class="form-select select2" aria-label="Default select Sub-Contractors"
                             id="sub_contractor_id" name="sub_contractor_id">
                             <option value="">Select Sub-Contractors</option>
                             @foreach ($contractors as $contractor)
-                                <option value="{{ $contractor->id }}">
+                                <option value="{{ $contractor->id }}" {{ old('sub_contractor_id') == $contractor->id ? 'selected' : '' }}>
                                     {{ $contractor->name }}
                                 </option>
                             @endforeach
@@ -136,7 +136,7 @@
                         @error('sub_contractor_user_id')
                             <div class="text-danger message mt-2">{{ $message }}</div>
                         @enderror
-                    </div>
+                    </div> --}}
 
                     <div class="col-sm-4">
                         <label class="form-label">Inverter Type</label>
@@ -144,7 +144,7 @@
                             id="inverter_type_id" name="inverter_type_id" onchange="getRedlineCost()">
                             <option value="">Select Inverter Type</option>
                             @foreach ($inverter_types as $inverter)
-                                <option value="{{ $inverter->id }}">
+                                <option value="{{ $inverter->id }}" {{ old('inverter_type_id') == $inverter->id ? 'selected' : '' }}>
                                     {{ $inverter->name }}
                                 </option>
                             @endforeach
@@ -833,29 +833,29 @@
             $("#amount").val('');
         }
 
-        $("#sub_contractor_id").change(function() {
-            $('#sub_contractor_user_id').empty();
-            $.ajax({
-                method: "POST",
-                url: "{{ route('get.subcontractors.users') }}",
-                data: {
-                    _token: "{{ csrf_token() }}",
-                    id: $(this).val(),
-                },
-                dataType: 'json',
-                success: function(response) {
-                    $('#sub_contractor_user_id').append(
-                        "<option value=''>Select Sub Contractor User</option> ");
-                    $.each(response.users, function(i, user) {
-                        $('#sub_contractor_user_id').append($('<option  value="' + user.id +
-                            '">' + user.name + '</option>'));
-                    });
-                },
-                error: function(error) {
-                    console.log(error.responseJSON.message);
-                }
-            })
-        })
+        // $("#sub_contractor_id").change(function() {
+        //     $('#sub_contractor_user_id').empty();
+        //     $.ajax({
+        //         method: "POST",
+        //         url: "{{ route('get.subcontractors.users') }}",
+        //         data: {
+        //             _token: "{{ csrf_token() }}",
+        //             id: $(this).val(),
+        //         },
+        //         dataType: 'json',
+        //         success: function(response) {
+        //             $('#sub_contractor_user_id').append(
+        //                 "<option value=''>Select Sub Contractor User</option> ");
+        //             $.each(response.users, function(i, user) {
+        //                 $('#sub_contractor_user_id').append($('<option  value="' + user.id +
+        //                     '">' + user.name + '</option>'));
+        //             });
+        //         },
+        //         error: function(error) {
+        //             console.log(error.responseJSON.message);
+        //         }
+        //     })
+        // })
         $("#sales_partner_id").change(function() {
             $('#sales_partner_user_id').empty();
             $.ajax({

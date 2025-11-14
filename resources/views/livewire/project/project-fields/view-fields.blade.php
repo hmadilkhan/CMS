@@ -113,6 +113,15 @@
                 <input disabled class="form-control" type="text" value="{{ $project->meter_spot_result }}">
             </div>
         @endif
+        <div class="col-sm-6 mb-3">
+            <label for="sub_contractor" class="form-label">Sub-Contractor</label>
+            <input disabled class="form-control" type="text" value="{{ $project->customer->subContractor->name ?? 'N/A' }}">
+        </div>
+        <div class="col-sm-6 mb-3">
+            <label for="sub_contractor_user" class="form-label">Sub-Contractor User</label>
+            <input disabled class="form-control" type="text" value="{{ $project->subContractorUser->name ?? 'N/A' }}">
+        </div>
+
     @endif
     @if ($departmentId == 6)
         <div class="col-sm-6 mb-3 ">

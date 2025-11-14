@@ -187,7 +187,7 @@ class ProjectController extends Controller
         $departments = Department::whereIn("id", Task::where("project_id", $project->id)->whereNotIn("department_id", Department::where("id", ">", $task->department_id)->take(1)->pluck("id"))->where("id", "!=", 9)->groupBy("department_id")->orderBy("department_id")->pluck("department_id"))->get();
         $fwdDepartments =  array_merge($departments->toArray(), Department::where("id", ">", $task->department_id)->take(1)->get()->toArray());
         $fwdIds = collect($fwdDepartments)->pluck("id");
-        $nextSubDepartments =  SubDepartment::whereIn("department_id", $fwdIds)->get();
+        $nextSubDepartments =  SubDepartment::whereIn("department_id", $fwdIds)->orderby('order','asc')->get();
         $addersLock = ProjectAddersLock::where('project_id', $project->id)->latest()->first();
         $isAddersLocked = $addersLock && $addersLock->status === 'locked' && $project->projectAcceptance && $project->projectAcceptance->status == 1;
         
@@ -507,16 +507,20 @@ class ProjectController extends Controller
                 }
 
 
+                // Department 5: Check sub_contractor_id from customer table
+                elseif ($currentDepartmentId == 5 && $field === 'sub_contractor_id' && empty($project->customer->sub_contractor_id)) {
+                    $missingFields[] = $field;
+                }
+
                 // Standard required field check for other fields
                 elseif (
-                    !in_array($field, ['hoa_phone_number', 'meter_spot_request_date', 'meter_spot_request_number', 'meter_spot_result', 'hoa_approval_request_date', 'hoa_approval_date', 'mpu_install_date'])
+                    !in_array($field, ['hoa_phone_number', 'meter_spot_request_date', 'meter_spot_request_number', 'meter_spot_result', 'hoa_approval_request_date', 'hoa_approval_date', 'mpu_install_date', 'sub_contractor_id'])
                     && empty($project->$field)
                 ) {
                     $missingFields[] = $field;
                 }
             }
            
-
             if (!empty($missingFields)) {
                 return response()->json([
                     "status" => 422,
@@ -525,7 +529,6 @@ class ProjectController extends Controller
                     'requiredFields' => $requiredFields,
                 ], 422);
             }
-        } else {
         }
 
         try {
@@ -702,6 +705,8 @@ class ProjectController extends Controller
             });
         } else if (in_array("Sales Person", auth()->user()->getRoleNames()->toArray())) {
             $query->where("sales_partner_user_id", auth()->user()->id);
+        } else if (in_array("Sub-Contractor User", auth()->user()->getRoleNames()->toArray())) {
+            $query->where("sub_contractor_user_id", auth()->user()->id);
         } else if (auth()->user()->getRoleNames()[0] == "Manager") {
             $query->whereIn("department_id", EmployeeDepartment::whereIn("employee_id", Employee::where("user_id", auth()->user()->id)->pluck("id"))->pluck("department_id"));
             $subdepartmentsQuery->whereIn("department_id", EmployeeDepartment::whereIn("employee_id", Employee::where("user_id", auth()->user()->id)->pluck("id"))->pluck("department_id"));

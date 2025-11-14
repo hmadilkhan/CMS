@@ -39,6 +39,11 @@ class Customer extends Model
         return $this->belongsTo(SalesPartner::class,"sales_partner_id","id")->withTrashed();
     }
 
+    public function subContractor()
+    {
+        return $this->belongsTo(SubContractor::class,"sub_contractor_id","id")->withTrashed();
+    }
+
     public function project()
     {
         return $this->belongsTo(Project::class,"id","customer_id");
@@ -58,6 +63,9 @@ class Customer extends Model
     {
         if ($this->getRoleName() == "Sales Person") {
             return $query->where("sales_partner_id",auth()->user()->sales_partner_id);
+        }
+        if ($this->getRoleName() == "Sub-Contractor User") {
+            return $query->where("sub_contractor_id",auth()->user()->sales_partner_id);
         }
         
     }

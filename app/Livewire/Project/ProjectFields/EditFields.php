@@ -3,6 +3,7 @@
 namespace App\Livewire\Project\ProjectFields;
 
 use App\Models\Project;
+use App\Models\SubContractor;
 use App\Models\UtilityCompany;
 use Illuminate\Validation\Rule;
 use Livewire\Component;
@@ -68,6 +69,9 @@ class EditFields extends Component
     public $messageType;
 
     public $utilityCompanies;
+    public $contractors;
+    public $sub_contractor_id;
+    public $sub_contractor_user_id;
 
     public function mount()
     {
@@ -123,6 +127,9 @@ class EditFields extends Component
         $this->coc_packet_mailed_out_date = $this->project->coc_packet_mailed_out_date;
 
         $this->utilityCompanies = UtilityCompany::all();
+        $this->contractors = SubContractor::all();
+        $this->sub_contractor_id = $this->project->customer->sub_contractor_id;
+        $this->sub_contractor_user_id = $this->project->sub_contractor_user_id;
     }
 
 
@@ -260,6 +267,7 @@ class EditFields extends Component
         // $this->validate($data, $customMessages);
 
         $updateItems = [];
+        $customerUpdateItems = [];
         if ($this->departmentId == 1) {
             $updateItems = array_merge($updateItems, [
                 "utility_company" => $this->utility_company,
@@ -329,6 +337,11 @@ class EditFields extends Component
                 "battery_install_date" => $this->battery_install_date,
                 "mpu_install_date" => $this->mpu_install_date,
                 "meter_spot_result" => $this->meter_spot_result,
+                "sub_contractor_user_id" => $this->sub_contractor_user_id,
+            ]);
+
+            $customerUpdateItems = array_merge($customerUpdateItems, [
+               "sub_contractor_id" => $this->sub_contractor_id,
             ]);
         }
 
@@ -355,6 +368,9 @@ class EditFields extends Component
 
         try {
             Project::where("id", $this->projectId)->update($updateItems);
+            if ($this->departmentId == 5) {
+                $this->project->customer()->update($customerUpdateItems);
+            }
             $username = auth()->user()->name;
             // Get the changed field names
             $changedFields = collect($updateItems)->keys()->implode(', ');
