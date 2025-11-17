@@ -60,6 +60,7 @@
 @php
     $tickets = \App\Models\ServiceTicket::with(['project', 'assignedUser'])
         ->withCount('comments')
+        ->where("status", "!=", "Resolved")
         ->orderBy('created_at', 'desc')
         ->get();
 @endphp
