@@ -1,7 +1,7 @@
 @extends('layouts.master')
 @section('title', 'Projects')
 @section('content')
-     <style>
+    <style>
         body {
             /* background: linear-gradient(135deg, #d7d9da 0%, #e1dede 100%); */
             margin-top: 20px;
@@ -17,11 +17,11 @@
             width: 100%;
             box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
         }
-        
+
         /* .card:hover:not(.modal-open .card) {
-            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.12);
-            transform: translateY(-2px);
-        } */
+                box-shadow: 0 8px 25px rgba(0, 0, 0, 0.12);
+                transform: translateY(-2px);
+            } */
 
         body.modal-open .card {
             pointer-events: none;
@@ -283,7 +283,7 @@
         .main-container {
             width: 650px;
             /* margin-left: auto;
-                                                                                                                                                                                        margin-right: auto; */
+                                                                                                                                                                                            margin-right: auto; */
         }
 
         .tags-input {
@@ -344,7 +344,7 @@
                 opacity: 0;
             }
         }
-        
+
         .card-header {
             background: linear-gradient(135deg, #2c3e50 0%, #000000 100%);
             color: white;
@@ -352,15 +352,15 @@
             padding: 1.5rem;
             border: none;
         }
-        
+
         .nav-tabs {
             border: none;
             background: white;
             padding: 1rem;
             border-radius: 12px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
         }
-        
+
         .nav-tabs .nav-link {
             border: none;
             color: #6c757d;
@@ -369,17 +369,17 @@
             border-radius: 8px;
             transition: all 0.3s;
         }
-        
+
         .nav-tabs .nav-link:hover {
             background: #f8f9fa;
             color: #2c3e50;
         }
-        
+
         .nav-tabs .nav-link.active {
             background: linear-gradient(135deg, #2c3e50 0%, #000000 100%);
             color: white;
         }
-        
+
         .btn-dark {
             background: linear-gradient(135deg, #2c3e50 0%, #000000 100%);
             border: none;
@@ -387,46 +387,48 @@
             border-radius: 10px;
             font-weight: 600;
             transition: all 0.3s;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
         }
-        
+
         .btn-dark:hover {
             transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
         }
-        
+
         .badge {
             padding: 0.5rem 1rem;
             border-radius: 8px;
             font-weight: 600;
         }
-        
-        .form-control, .form-select {
+
+        .form-control,
+        .form-select {
             border-radius: 10px;
             border: 2px solid #e9ecef;
             padding: 0.75rem 1rem;
             transition: all 0.3s;
         }
-        
-        .form-control:focus, .form-select:focus {
+
+        .form-control:focus,
+        .form-select:focus {
             border-color: #2c3e50;
             box-shadow: 0 0 0 0.2rem rgba(44, 62, 80, 0.25);
         }
-        
+
         .table {
             border-radius: 12px;
             overflow: hidden;
         }
-        
+
         .table thead {
             background: linear-gradient(135deg, #2c3e50 0%, #000000 100%);
             color: white;
         }
-        
+
         .table tbody tr {
             transition: all 0.3s;
         }
-        
+
         .table tbody tr:hover {
             background: #f8f9fa;
             transform: scale(1.01);
@@ -443,7 +445,28 @@
             z-index: 1000;
             /* Keeps the dropdown menu on top */
         }
-    </style> 
+
+        /* Premium Modal Styles */
+        #assign-notes .form-control:focus {
+            border-color: #667eea;
+            box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+        }
+
+        #assign-notes .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.5);
+        }
+
+        #assign-notes .form-check-input:checked {
+            background-color: #667eea;
+            border-color: #667eea;
+        }
+
+        #assign-notes .form-check-input:focus {
+            border-color: #667eea;
+            box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+        }
+    </style>
     <link rel="stylesheet" href="https://cdn.ckeditor.com/ckeditor5/42.0.0/ckeditor5.css">
     <div class="card card-info">
         <div class="card-body">
@@ -597,10 +620,11 @@
                                     role="tab">Financial</a></li>
                         @endcan
                         @can('View Tickets')
-                        <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#tickets"
-                                role="tab">Tickets</a></li>
+                            <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#tickets"
+                                    role="tab">Tickets</a></li>
                         @endcan
-                        <li class="nav-item"><a class="nav-link {{ $project->viewed_emails_count > 0 ? 'blink-dot' : '' }}"
+                        <li class="nav-item"><a
+                                class="nav-link {{ $project->viewed_emails_count > 0 ? 'blink-dot' : '' }}"
                                 data-bs-toggle="tab" href="#communication" role="tab">Communication</a></li>
                         @can('Project History')
                             <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#history"
@@ -883,8 +907,8 @@
             <div class="card-body">
                 @can('View Financial Details')
                     <div class="card-header py-3 px-0 d-sm-flex align-items-center  justify-content-between border-bottom">
-                        <h3 class=" fw-bold flex-fill mb-0 mt-sm-0 px-3" data-bs-toggle="collapse" data-bs-target="#finance"
-                            aria-expanded="false" aria-controls="finance">Financial Details
+                        <h3 class=" fw-bold flex-fill mb-0 mt-sm-0 px-3" data-bs-toggle="collapse"
+                            data-bs-target="#finance" aria-expanded="false" aria-controls="finance">Financial Details
                         </h3>
                     </div>
                     <div class="row g-3 mb-3">
@@ -987,20 +1011,23 @@
                         <input type="hidden" name="finance_option_id"
                             value="{{ $project->customer->finances->finance->id }}">
                         @if (auth()->user()->hasAnyRole(['Manager', 'Admin', 'Super Admin']))
-                            @if($isAddersLocked)
+                            @if ($isAddersLocked)
                                 <div class="alert alert-warning mb-3">
-                                    <i class="icofont-lock"></i> Adders section is locked. 
-                                    @if(auth()->user()->hasAnyRole(['Manager', 'Admin', 'Super Admin']))
-                                        <button type="button" class="btn btn-sm btn-warning" onclick="toggleAddersLock('unlocked')">Unlock</button>
+                                    <i class="icofont-lock"></i> Adders section is locked.
+                                    @if (auth()->user()->hasAnyRole(['Manager', 'Admin', 'Super Admin']))
+                                        <button type="button" class="btn btn-sm btn-warning"
+                                            onclick="toggleAddersLock('unlocked')">Unlock</button>
                                     @endif
                                 </div>
                             @endif
-                            <div class="row g-4 mb-3" id="addersForm" style="{{ $isAddersLocked ? 'pointer-events: none; opacity: 0.6;' : '' }}">
+                            <div class="row g-4 mb-3" id="addersForm"
+                                style="{{ $isAddersLocked ? 'pointer-events: none; opacity: 0.6;' : '' }}">
                                 <div class="col-sm-3 mt-5">
                                     <div class="col-sm-12 mb-1">
                                         <label for="adders" class="form-label">Adders</label><br />
                                         <select style="width: 100%;" class="form-select select2"
-                                            aria-label="Default select Adders" id="adders" name="adders" {{ $isAddersLocked ? 'disabled' : '' }}>
+                                            aria-label="Default select Adders" id="adders" name="adders"
+                                            {{ $isAddersLocked ? 'disabled' : '' }}>
                                             <option value="">Select Adders</option>
                                             @foreach ($adders as $adder)
                                                 <option value="{{ $adder->id }}">
@@ -1013,7 +1040,8 @@
                                 <div class="col-sm-3 mt-5">
                                     <label for="uom" class="form-label">UOM</label><br />
                                     <select style="width: 100%;" class="form-control select2"
-                                        aria-label="Default select UOM" id="uom" {{ $isAddersLocked ? 'disabled' : '' }}>
+                                        aria-label="Default select UOM" id="uom"
+                                        {{ $isAddersLocked ? 'disabled' : '' }}>
                                         <option value="">Select UOM</option>
                                         @foreach ($uoms as $uom)
                                             <option value="{{ $uom->id }}">
@@ -1034,7 +1062,8 @@
                                     @enderror
                                 </div>
                                 <div class="col-sm-2 mt-5">
-                                    <button type="button" id="btnAdder" class="btn btn-primary mt-4" {{ $isAddersLocked ? 'disabled' : '' }}><i
+                                    <button type="button" id="btnAdder" class="btn btn-primary mt-4"
+                                        {{ $isAddersLocked ? 'disabled' : '' }}><i
                                             class="icofont-save me-2 fs-6"></i>Add</button>
                                 </div>
                             </div>
@@ -1587,28 +1616,59 @@
 
 <div class="modal fade" id="assign-notes" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered modal-lg modal-dialog-scrollable">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title  fw-bold" id="createprojectlLabel"> Assign Notes</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        <div class="modal-content"
+            style="border-radius: 20px; border: none; box-shadow: 0 10px 40px rgba(0,0,0,0.2);">
+            <div class="modal-header"
+                style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 20px 20px 0 0; padding: 1.5rem; border: none;">
+                <h5 class="modal-title fw-bold text-white" id="createprojectlLabel">
+                    <i class="icofont-ui-note me-2"></i>Assign Notes
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
+                    aria-label="Close"></button>
             </div>
             <form id="assignNotes" method="POST" enctype="multipart/form-data">
                 @csrf
                 <input type="hidden" name="project_id" value="{{ $project->id }}">
                 <input type="hidden" name="customer_id" value="{{ $project->customer_id }}">
                 <input type="hidden" name="department_id" value="{{ $project->department_id }}" />
-                <div class="modal-body">
+                <div class="modal-body" style="padding: 2rem;">
                     <div class="row">
                         <div class="col-sm-12 mb-3">
-                            <label for="formFileMultipleoneone"
-                                class="form-label fw-bold flex-fill mb-2 mt-sm-0">Assign Notes</label>
+                            <label for="assignnotes" class="form-label fw-bold" style="color: #667eea;">
+                                <i class="icofont-pencil-alt-2 me-2"></i>Assign Notes
+                            </label>
                             <div class="position-relative">
-                                <textarea class="form-control bg-white border border-dark" id="assignnotes" name="assignnotes" rows="3"></textarea>
+                                <textarea class="form-control" id="assignnotes" name="assignnotes" rows="4"
+                                    style="border-radius: 12px; border: 2px solid #e9ecef; padding: 1rem; transition: all 0.3s;"
+                                    placeholder="Enter your notes here..."></textarea>
                             </div>
                         </div>
+
                         <div class="col-sm-12 mb-3">
-                            <button type="submit" class="btn btn-primary" style="bottom: 10px; right: 10px;">
-                                <i class="icofont-save"></i> Save
+                            <div class="form-check" style="padding-left: 2rem;">
+                                <input class="form-check-input" type="checkbox" id="followUpCheckbox"
+                                    name="follow_up"
+                                    style="width: 20px; height: 20px; cursor: pointer; border-radius: 6px;">
+                                <label class="form-check-label fw-bold" for="followUpCheckbox"
+                                    style="color: #667eea; margin-left: 0.5rem; cursor: pointer;">
+                                    <i class="icofont-calendar me-2"></i>Set Follow-up Date
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="col-sm-12 mb-3" id="followUpDateContainer" style="display: none;">
+                            <label for="followUpDate" class="form-label fw-bold" style="color: #667eea;">
+                                <i class="icofont-clock-time me-2"></i>Follow-up Date
+                            </label>
+                            <input type="date" class="form-control" id="followUpDate" name="follow_up_date"
+                                style="border-radius: 12px; border: 2px solid #e9ecef; padding: 0.75rem; transition: all 0.3s;">
+                        </div>
+
+
+                        <div class="col-sm-12 mb-3">
+                            <button type="submit" class="btn w-100"
+                                style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; padding: 0.75rem 1.5rem; border-radius: 12px; font-weight: 600; transition: all 0.3s; box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);">
+                                <i class="icofont-save me-2"></i>Save Assignment
                             </button>
                         </div>
                     </div>
@@ -1725,6 +1785,26 @@
 @endsection
 @section('scripts')
 <script>
+    // Toggle follow-up date field visibility
+    $('#followUpCheckbox').change(function() {
+        if ($(this).is(':checked')) {
+            $('#followUpDateContainer').show();
+            $('#followUpDate').attr('required', true);
+        } else {
+            $('#followUpDateContainer').hide();
+            $('#followUpDate').attr('required', false).val('');
+        }
+    });
+
+    // Form validation
+    $('#assignNotes').on('submit', function(e) {
+        if ($('#followUpCheckbox').is(':checked') && !$('#followUpDate').val()) {
+            e.preventDefault();
+            alert('Please select a follow-up date.');
+            return false;
+        }
+    });
+    
     $(".additionalFields").css("display", "none");
     $("#back").prop("disabled", true)
     $("#forward").prop("disabled", true)
@@ -1764,8 +1844,8 @@
                 subDepartmentId: $('#subDepartmentId').val(),
             },
             success: function(response) {
-            console.log(response);
-            
+                console.log(response);
+
                 if (response.status == 200) {
                     Swal.fire(
                         'Sent!',
@@ -1899,31 +1979,67 @@
         }
     });
 
+    // Follow-up checkbox toggle
+    $("#followUpCheckbox").change(function() {
+        if ($(this).is(':checked')) {
+            $("#followUpDateContainer").slideDown(300);
+            $("#followUpDate").attr('required', true);
+        } else {
+            $("#followUpDateContainer").slideUp(300);
+            $("#followUpDate").attr('required', false);
+            $("#followUpDate").val('');
+        }
+    });
+
     $("#assignNotes").submit(function(e) {
         e.preventDefault();
-        
+
+        var formData = {
+            _token: "{{ csrf_token() }}",
+            employee: $("#employee").val(),
+            project_id: "{{ $project->id }}",
+            task_id: "{{ $task->id }}",
+            sub_department_id: "{{ $task->sub_department_id }}",
+            department_id: "{{ $project->department_id }}",
+            notes: $("#assignnotes").val(),
+            follow_up: $("#followUpCheckbox").is(':checked') ? 1 : 0,
+            follow_up_date: $("#followUpDate").val()
+        };
+
         $.ajax({
             method: "POST",
             url: "{{ route('projects.assign') }}",
-            data: {
-                _token: "{{ csrf_token() }}",
-                employee: $("#employee").val(),
-                project_id: "{{ $project->id }}",
-                task_id: "{{ $task->id }}",
-                sub_department_id: "{{ $task->sub_department_id }}",
-                department_id: "{{ $project->department_id }}",
-                notes: $("#assignnotes").val(),
-            },
+            data: formData,
             success: function(response) {
                 if (response.status == 200) {
-                    alert("Employee Assigned");
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Success!',
+                        text: 'Employee assigned successfully',
+                        showConfirmButton: false,
+                        timer: 1500
+                    });
                     $("#assign-notes").modal("hide");
+                    $("#assignnotes").val('');
+                    $("#followUpCheckbox").prop('checked', false);
+                    $("#followUpDate").val('');
+                    $("#followUpDateContainer").hide();
+                    $("#employee").val('').change();
                 } else {
-                    alert("Some error occurred!");
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error!',
+                        text: 'Some error occurred!',
+                    });
                 }
             },
             error: function(error) {
                 console.log(error);
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error!',
+                    text: 'Failed to assign employee',
+                });
             }
         })
     })
@@ -2583,132 +2699,136 @@
     }
 
     (function() {
-    'use strict';
-    
-    $(document).ready(function() {
-        // Restore active tab on page load
-        const activeTab = localStorage.getItem('activeTab');
-        if (activeTab) {
-            $('.nav-link[href="' + activeTab + '"]').tab('show');
-            localStorage.removeItem('activeTab');
-        }
-        
-        // Ticket form submission
-        $('#ticketForm').off('submit').on('submit', function(e) {
-            e.preventDefault();
-            e.stopImmediatePropagation();
-            
-            const form = this;
-            const assignedTo = $('#assigned_to').val();
-            const notes = $('#notes').val().trim();
-            
-            $(form).find('.is-invalid').removeClass('is-invalid');
-            
-            let isValid = true;
-            
-            if (!assignedTo) {
-                $('#assigned_to').addClass('is-invalid');
-                isValid = false;
+        'use strict';
+
+        $(document).ready(function() {
+            // Restore active tab on page load
+            const activeTab = localStorage.getItem('activeTab');
+            if (activeTab) {
+                $('.nav-link[href="' + activeTab + '"]').tab('show');
+                localStorage.removeItem('activeTab');
             }
-            
-            if (!notes) {
-                $('#notes').addClass('is-invalid');
-                isValid = false;
-            }
-            
-            if (!isValid) {
-                return false;
-            }
-            
-            // Save active tab before reload
-            localStorage.setItem('activeTab', '#tickets');
-            
-            $('#premiumLoader').css('display', 'flex');
-            
-            var formData = new FormData(form);
-            
-            $.ajax({
-                url: $(form).attr('action'),
-                method: 'POST',
-                data: formData,
-                processData: false,
-                contentType: false,
-                success: function(response) {
-                    $(form)[0].reset();
-                    $('#ticketFilesList').html('');
-                    setTimeout(function() {
-                        $('#premiumLoader').hide();
-                        location.reload();
-                    }, 500);
-                },
-                error: function(error) {
-                    $('#premiumLoader').hide();
-                    localStorage.removeItem('activeTab');
-                    alert('Error creating ticket. Please try again.');
+
+            // Ticket form submission
+            $('#ticketForm').off('submit').on('submit', function(e) {
+                e.preventDefault();
+                e.stopImmediatePropagation();
+
+                const form = this;
+                const assignedTo = $('#assigned_to').val();
+                const notes = $('#notes').val().trim();
+
+                $(form).find('.is-invalid').removeClass('is-invalid');
+
+                let isValid = true;
+
+                if (!assignedTo) {
+                    $('#assigned_to').addClass('is-invalid');
+                    isValid = false;
                 }
+
+                if (!notes) {
+                    $('#notes').addClass('is-invalid');
+                    isValid = false;
+                }
+
+                if (!isValid) {
+                    return false;
+                }
+
+                // Save active tab before reload
+                localStorage.setItem('activeTab', '#tickets');
+
+                $('#premiumLoader').css('display', 'flex');
+
+                var formData = new FormData(form);
+
+                $.ajax({
+                    url: $(form).attr('action'),
+                    method: 'POST',
+                    data: formData,
+                    processData: false,
+                    contentType: false,
+                    success: function(response) {
+                        $(form)[0].reset();
+                        $('#ticketFilesList').html('');
+                        setTimeout(function() {
+                            $('#premiumLoader').hide();
+                            location.reload();
+                        }, 500);
+                    },
+                    error: function(error) {
+                        $('#premiumLoader').hide();
+                        localStorage.removeItem('activeTab');
+                        alert('Error creating ticket. Please try again.');
+                    }
+                });
+
+                return false;
             });
-            
-            return false;
-        });
 
-        $('#assigned_to, #notes').on('change input', function() {
-            $(this).removeClass('is-invalid');
-        });
+            $('#assigned_to, #notes').on('change input', function() {
+                $(this).removeClass('is-invalid');
+            });
 
-        $('#updateTicketForm').off('submit').on('submit', function(e) {
-            e.preventDefault();
-            e.stopImmediatePropagation();
-            
-            // Save active tab before reload
-            localStorage.setItem('activeTab', '#tickets');
-            
-            $('#premiumLoader').css('display', 'flex');
-            $('.premium-loader-text').text('Updating Ticket...');
-            
-            $.ajax({
-                url: $(this).attr('action'),
-                method: 'POST',
-                data: $(this).serialize(),
-                success: function(response) {
-                    setTimeout(function() {
-                        $('#updateTicketModal').modal('hide');
+            $('#updateTicketForm').off('submit').on('submit', function(e) {
+                e.preventDefault();
+                e.stopImmediatePropagation();
+
+                // Save active tab before reload
+                localStorage.setItem('activeTab', '#tickets');
+
+                $('#premiumLoader').css('display', 'flex');
+                $('.premium-loader-text').text('Updating Ticket...');
+
+                $.ajax({
+                    url: $(this).attr('action'),
+                    method: 'POST',
+                    data: $(this).serialize(),
+                    success: function(response) {
+                        setTimeout(function() {
+                            $('#updateTicketModal').modal('hide');
+                            $('#premiumLoader').hide();
+                            $('.premium-loader-text').text(
+                            'Creating Ticket...');
+                            location.reload();
+                        }, 500);
+                    },
+                    error: function(error) {
                         $('#premiumLoader').hide();
                         $('.premium-loader-text').text('Creating Ticket...');
-                        location.reload();
-                    }, 500);
+                        localStorage.removeItem('activeTab');
+                        alert('Error updating ticket. Please try again.');
+                    }
+                });
+
+                return false;
+            });
+        });
+
+        window.updateTicket = function(ticketId) {
+            $('#updateTicketModal').modal('show');
+            $('#updateTicketForm').attr('action', '/service-tickets/' + ticketId);
+        };
+
+        window.viewTicketDetails = function(ticketId) {
+            $('#ticketModal').modal('show');
+            $('#ticketDetailsContent').html(
+                '<div class="text-center py-5"><div class="spinner-border text-primary" role="status"><span class="visually-hidden">Loading...</span></div></div>'
+                );
+
+            $.ajax({
+                url: '/service-tickets/' + ticketId + '/details',
+                method: 'GET',
+                success: function(response) {
+                    $('#ticketDetailsContent').html(response);
                 },
                 error: function(error) {
-                    $('#premiumLoader').hide();
-                    $('.premium-loader-text').text('Creating Ticket...');
-                    localStorage.removeItem('activeTab');
-                    alert('Error updating ticket. Please try again.');
+                    $('#ticketDetailsContent').html(
+                        '<div class="alert alert-danger">Error loading ticket details</div>');
                 }
             });
-            
-            return false;
-        });
-    });
-    
-    window.updateTicket = function(ticketId) {
-        $('#updateTicketModal').modal('show');
-        $('#updateTicketForm').attr('action', '/service-tickets/' + ticketId);
-    };
-    
-    window.viewTicketDetails = function(ticketId) {
-        $('#ticketModal').modal('show');
-        $('#ticketDetailsContent').html('<div class="text-center py-5"><div class="spinner-border text-primary" role="status"><span class="visually-hidden">Loading...</span></div></div>');
-        
-        $.ajax({
-            url: '/service-tickets/' + ticketId + '/details',
-            method: 'GET',
-            success: function(response) {
-                $('#ticketDetailsContent').html(response);
-            },
-            error: function(error) {
-                $('#ticketDetailsContent').html('<div class="alert alert-danger">Error loading ticket details</div>');
-            }
-        });
-    };
-})();
+        };
+    })();
 </script>
 @endsection

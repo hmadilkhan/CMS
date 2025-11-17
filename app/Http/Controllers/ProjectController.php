@@ -22,6 +22,7 @@ use App\Models\ProjectAcceptance;
 use App\Models\ProjectAddersLock;
 use App\Models\ProjectCallLog;
 use App\Models\ProjectFile;
+use App\Models\ProjectFollowUp;
 use App\Models\SubDepartment;
 use App\Models\Task;
 use App\Models\Tool;
@@ -48,7 +49,7 @@ class ProjectController extends Controller
     {
         $departments = $this->departmentQuery();
         $selectedDepartment = $departments->count() === 1 ? $departments->first()->id : 'all';
-        
+
         return view("projects.index", [
             "customers" => Customer::all(),
             "departments" => $departments,
@@ -59,7 +60,7 @@ class ProjectController extends Controller
     public function departmentQuery()
     {
         $query = Department::query();
-        
+
 
         // Alternative if you want to prioritize roles (e.g., Admin overrides Manager):
         // $roles = auth()->user()->getRoleNames();
@@ -67,7 +68,7 @@ class ProjectController extends Controller
         //     $query->whereIn("id", EmployeeDepartment::whereIn("employee_id", Employee::where("user_id", auth()->user()->id)->pluck("id"))->pluck("department_id"));
         // }
 
-        if (auth()->user()->hasAnyRole(['Manager', 'Employee','Sub-Contractor Manager','Service Manager']) && !auth()->user()->hasRole('Super Admin')) {
+        if (auth()->user()->hasAnyRole(['Manager', 'Employee', 'Sub-Contractor Manager', 'Service Manager']) && !auth()->user()->hasRole('Super Admin')) {
             $query->whereIn("id", EmployeeDepartment::whereIn("employee_id", Employee::where("user_id", auth()->user()->id)->pluck("id"))->pluck("department_id"));
         }
 
@@ -187,15 +188,15 @@ class ProjectController extends Controller
         $departments = Department::whereIn("id", Task::where("project_id", $project->id)->whereNotIn("department_id", Department::where("id", ">", $task->department_id)->take(1)->pluck("id"))->where("id", "!=", 9)->groupBy("department_id")->orderBy("department_id")->pluck("department_id"))->get();
         $fwdDepartments =  array_merge($departments->toArray(), Department::where("id", ">", $task->department_id)->take(1)->get()->toArray());
         $fwdIds = collect($fwdDepartments)->pluck("id");
-        $nextSubDepartments =  SubDepartment::whereIn("department_id", $fwdIds)->orderby('order','asc')->get();
+        $nextSubDepartments =  SubDepartment::whereIn("department_id", $fwdIds)->orderby('order', 'asc')->get();
         $addersLock = ProjectAddersLock::where('project_id', $project->id)->latest()->first();
         $isAddersLocked = $addersLock && $addersLock->status === 'locked' && $project->projectAcceptance && $project->projectAcceptance->status == 1;
-        
+
         Email::where("project_id", $project->id)->update(["is_view" => 0]); //->where("department_id", $project->department_id)
-        
+
         $serviceManagers = \App\Models\User::role('Service Manager')->get();
         $serviceTickets = \App\Models\ServiceTicket::with(['assignedUser'])->where('project_id', $project->id)->orderBy('created_at', 'desc')->get();
-        
+
         return view("projects.show", [
             "project" => $project,
             "task" => $task,
@@ -448,7 +449,7 @@ class ProjectController extends Controller
 
         // THIS WILL CHECK THE PROJECT EITHER PROJECT IS FORWARD OR BACKWARD
         $checkProject = Task::where("project_id", $request->projectId)->where("department_id", $request->departmentId)->count();
-   
+
         $currentDepartmentId = $project->department_id;
 
         // IF COUNT IS 0 THEN IT THE CASE IS FORWARD
@@ -462,7 +463,7 @@ class ProjectController extends Controller
 
             // Check for missing required fields
             $missingFields = [];
-            
+
             foreach ($requiredFields as $field) {
 
                 // Check if 'hoa_phone_number' depends on 'hoa'
@@ -502,7 +503,7 @@ class ProjectController extends Controller
                 }
 
                 // Department 5: Check if MPU install date is required
-                elseif ($currentDepartmentId == 5 && in_array($field, ['mpu_install_date','meter_spot_result']) && $project->mpu_required === 'yes' && (empty($project->mpu_install_date) || empty($project->meter_spot_result))) {
+                elseif ($currentDepartmentId == 5 && in_array($field, ['mpu_install_date', 'meter_spot_result']) && $project->mpu_required === 'yes' && (empty($project->mpu_install_date) || empty($project->meter_spot_result))) {
                     $missingFields[] = $field;
                 }
 
@@ -520,7 +521,7 @@ class ProjectController extends Controller
                     $missingFields[] = $field;
                 }
             }
-           
+
             if (!empty($missingFields)) {
                 return response()->json([
                     "status" => 422,
@@ -537,9 +538,20 @@ class ProjectController extends Controller
                 "department_id" => $request->departmentId,
                 "sub_department_id" => $request->subDepartmentId,
             ]);
-            $emp =  Employee::with("department")->whereHas("department", function ($query) use ($request) {
+            
+            // Assign Project to Manager of that Department
+            $emp = Employee::whereHas("department", function ($query) use ($request) {
                 $query->where("department_id", $request->departmentId);
+            })->whereHas("user.roles", function ($query) {
+                $query->where("roles.name", "Manager");
             })->first();
+
+            // If not manager found, assign to any employee in that department
+            if (!$emp) {
+                $emp = Employee::whereHas("department", function ($query) use ($request) {
+                    $query->where("department_id", $request->departmentId);
+                })->first();
+            }
             Task::where("id", $request->taskId)->update(["status" => "Completed", "notes" => $request->notes]);
             Task::create([
                 "project_id" => $request->projectId,
@@ -652,6 +664,18 @@ class ProjectController extends Controller
                     "user_id" => auth()->user()->id,
                 ]);
             }
+            
+            // Handle follow-up if checkbox is checked
+            if ($request->has('follow_up') && $request->follow_up_date) {
+                ProjectFollowUp::create([
+                    'project_id' => $request->project_id,
+                    'employee_id' => $request->employee ?: Task::findOrFail($request->task_id)->employee_id,
+                    'follow_up_date' => $request->follow_up_date,
+                    'notes' => $request->notes ?? 'Follow-up scheduled',
+                    'status' => 'Pending'
+                ]);
+            }
+            
             DB::commit();
             return response()->json(["status" => 200, "message" => "Employee assigned successfully"]);
             // return redirect()->route("projects.show", $request->project_id);
@@ -1003,7 +1027,7 @@ class ProjectController extends Controller
                     ->with('user')
                     ->orderBy('created_at', 'desc')
                     ->get();
-                    
+
                 return view("projects.project-acceptance", [
                     "projectAcceptance" => $projectAcceptance,
                     "project" => Project::with("task", "customer", "customer.salespartner", "customer.adders")->where("id", $request->project_id)->first(),
@@ -1143,7 +1167,7 @@ class ProjectController extends Controller
                 "approved_date" => date("Y-m-d H:i:s"),
                 "reason" => $request->reason,
             ]);
-            
+
             if ($request->mode == 1) {
                 ProjectAddersLock::create([
                     'project_id' => $project->id,
@@ -1151,7 +1175,7 @@ class ProjectController extends Controller
                     'status' => 'locked'
                 ]);
             }
-            
+
             $emailText = "<p>Hi " . $project->assignedPerson[0]->employee->name . "</p><p>The Project Acceptance Review for " . $project->customer->first_name . " " . $project->customer->last_name . " has been " . ($request->mode == 1 ? 'approved' : 'rejected') . "</p><p>Please take the necessary steps to continue moving the job forward.</p><p>Thank you!.</p>";
             $this->sendEmailForProjectAcceptance($project, "Project Acceptance Review Status - " . $project->customer->first_name . " " . $project->customer->last_name, $emailText, "engineering@solenenergyco.com");
             // Log the custom message
@@ -1186,13 +1210,13 @@ class ProjectController extends Controller
     {
         try {
             $project = Project::findOrFail($request->project_id);
-            
+
             ProjectAddersLock::create([
                 'project_id' => $request->project_id,
                 'user_id' => auth()->id(),
                 'status' => $request->status
             ]);
-            
+
             $username = auth()->user()->name;
 
             activity('project')
@@ -1201,8 +1225,33 @@ class ProjectController extends Controller
                 ->withProperties(['status' => $request->status])
                 ->setEvent('adders_lock')
                 ->log("{$username} {$request->status} the adders section.");
-            
+
             return response()->json(['status' => 200, 'message' => 'Adders ' . $request->status . ' successfully']);
+        } catch (\Throwable $th) {
+            return response()->json(['status' => 500, 'message' => $th->getMessage()]);
+        }
+    }
+
+    public function updateFollowUpStatus(Request $request)
+    {
+        try {
+            $followUp = ProjectFollowUp::findOrFail($request->followup_id);
+            
+            // Prevent changing status if already resolved
+            if ($followUp->status === 'Resolved') {
+                return response()->json(['status' => 400, 'message' => 'Cannot change status of resolved follow-up']);
+            }
+            
+            $updateData = ['status' => $request->status];
+            
+            // Set resolved_date when status changes to Resolved
+            if ($request->status === 'Resolved') {
+                $updateData['resolved_date'] = now();
+            }
+            
+            $followUp->update($updateData);
+            
+            return response()->json(['status' => 200, 'message' => 'Follow-up status updated successfully']);
         } catch (\Throwable $th) {
             return response()->json(['status' => 500, 'message' => $th->getMessage()]);
         }

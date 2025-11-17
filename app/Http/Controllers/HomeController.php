@@ -3,6 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Models\Email;
+use App\Models\Employee;
+use App\Models\ProjectFollowUp;
 use App\Models\ServiceTicket;
 use App\Models\Task;
 use App\Services\ProjectService;
@@ -33,9 +35,19 @@ class HomeController extends Controller
                 "tickets" => $tickets
             ]);
         }
+        // Get follow-ups for logged-in employee
+        $followUps = [];
+        if (!empty(auth()->user()->employee)) {
+            $followUps = ProjectFollowUp::with(['project', 'employee'])
+                ->where('employee_id', auth()->user()->employee->id)
+                ->orderBy('follow_up_date', 'asc')
+                ->get();
+        }
+        
         return view('dashboard', [
             "projects" => $this->projectService->projectQuery($request),
-            "emails" => $emails
+            "emails" => $emails,
+            "followUps" => $followUps
         ]);
     }
 }
