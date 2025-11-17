@@ -36,32 +36,28 @@
         margin: 0.5rem 0 0 0;
         font-size: 1.1rem;
     }
-    .stats-card {
-        background: #fff;
-        border-radius: 12px;
-        padding: 1.5rem;
-        box-shadow: 0 4px 15px rgba(0,0,0,0.08);
-        transition: all 0.3s ease;
+    .bg-gradient-primary {
+        background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+    }
+    .hover-underline:hover {
+        text-decoration: underline !important;
+    }
+    .card {
         border: none;
+        border-radius: 12px;
     }
-    .stats-card:hover {
-        transform: translateY(-5px);
-        box-shadow: 0 8px 25px rgba(0,0,0,0.15);
-    }
-    .stats-number {
-        font-size: 2.5rem;
-        font-weight: 700;
-        background: linear-gradient(135deg, #2c3e50 0%, #000000 100%);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        background-clip: text;
-    }
-    .stats-label {
-        color: #6c757d;
-        font-size: 0.9rem;
-        text-transform: uppercase;
-        letter-spacing: 1px;
+    .table th {
         font-weight: 600;
+        font-size: 0.875rem;
+        letter-spacing: 0.5px;
+    }
+    .form-select-sm {
+        border-radius: 6px;
+        border: 1px solid #e3e6f0;
+    }
+    .form-select-sm:focus {
+        border-color: #2c3e50;
+        box-shadow: 0 0 0 0.2rem rgba(44, 62, 80, 0.25);
     }
     .premium-card {
         background: #fff;
@@ -158,23 +154,26 @@
         <p>Manage and track your assigned service tickets</p>
     </div>
 
-    <div class="row mb-4">
-        <div class="col-md-4 mb-3">
-            <div class="stats-card">
-                <div class="stats-number">{{ $tickets->where('status', 'Pending')->count() }}</div>
-                <div class="stats-label">Pending Tickets</div>
+    <div class="row g-3 mb-3 row-deck">
+        <div class="col-md-4">
+            <div class="card mb-3 shadow-sm">
+                <div class="card-header py-3 d-flex justify-content-between align-items-center bg-gradient-primary">
+                    <div class="info-header">
+                        <h6 class="mb-0 fw-bold text-white"><i class="icofont-clock-time me-2"></i>Pending Tickets</h6>
+                    </div>
+                    <span class="badge bg-light text-primary rounded-pill">{{ $tickets->where('status', 'Pending')->count() }}</span>
+                </div>
             </div>
         </div>
-        <div class="col-md-4 mb-3">
-            <div class="stats-card">
-                <div class="stats-number">{{ $tickets->where('status', 'Resolved')->count() }}</div>
-                <div class="stats-label">Resolved Tickets</div>
-            </div>
-        </div>
-        <div class="col-md-4 mb-3">
-            <div class="stats-card">
-                <div class="stats-number">{{ $tickets->where('priority', 'High')->count() }}</div>
-                <div class="stats-label">High Priority</div>
+
+        <div class="col-md-4">
+            <div class="card mb-3 shadow-sm">
+                <div class="card-header py-3 d-flex justify-content-between align-items-center bg-gradient-primary">
+                    <div class="info-header">
+                        <h6 class="mb-0 fw-bold text-white"><i class="icofont-flag me-2"></i>High Priority</h6>
+                    </div>
+                    <span class="badge bg-light text-primary rounded-pill">{{ $tickets->where('priority', 'High')->count() }}</span>
+                </div>
             </div>
         </div>
     </div>

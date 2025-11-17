@@ -30,7 +30,7 @@ class HomeController extends Controller
         }
         
         if (auth()->user()->hasRole("Service Manager")) {
-            $tickets = ServiceTicket::where("assigned_to", auth()->user()->id)->orderBy("id", "desc")->get();
+            $tickets = ServiceTicket::where("assigned_to", auth()->user()->id)->where('status','!=', 'Resolved')->orderBy("id", "desc")->get();
             return view('service-tickets.dashboard', [
                 "tickets" => $tickets
             ]);
