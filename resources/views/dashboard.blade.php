@@ -80,7 +80,9 @@
                                                 {{ \Carbon\Carbon::parse($followUp->follow_up_date)->format('M d, Y') }}
                                             </span>
                                         </div>
-                                        @if(\Carbon\Carbon::parse($followUp->follow_up_date)->isPast())
+                                        @if(\Carbon\Carbon::parse($followUp->follow_up_date)->isToday())
+                                            <small class="text-warning">Due Today</small>
+                                        @elseif(\Carbon\Carbon::parse($followUp->follow_up_date)->isPast())
                                             <small class="text-danger">Overdue</small>
                                         @endif
                                     </td>

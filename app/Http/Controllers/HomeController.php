@@ -40,6 +40,7 @@ class HomeController extends Controller
         if (!empty(auth()->user()->employee)) {
             $followUps = ProjectFollowUp::with(['project', 'employee'])
                 ->where('employee_id', auth()->user()->employee->id)
+                ->where('status','!=', 'Resolved')
                 ->orderBy('follow_up_date', 'asc')
                 ->get();
         }
