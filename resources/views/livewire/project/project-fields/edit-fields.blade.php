@@ -397,7 +397,7 @@
         </div>
         <form>
 </div>
-@script
+{{-- @script --}}
 <script>
     document.addEventListener('DOMContentLoaded', function() {
         let contractorId = '{{ $sub_contractor_id }}';
@@ -435,4 +435,4 @@
         });
     }
 </script>
-@endscript
+{{-- @endscript --}}
