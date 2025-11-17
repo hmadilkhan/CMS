@@ -705,7 +705,7 @@ class ProjectController extends Controller
             });
         } else if (in_array("Sales Person", auth()->user()->getRoleNames()->toArray())) {
             $query->where("sales_partner_user_id", auth()->user()->id);
-        } else if (in_array("Sub-Contractor User", auth()->user()->getRoleNames()->toArray())) {
+        } else if (in_array("Sub-Contractor User", auth()->user()->getRoleNames()->toArray()) or in_array("Sub-Contractor Manager", auth()->user()->getRoleNames()->toArray())) {
             $query->where("sub_contractor_user_id", auth()->user()->id);
         } else if (auth()->user()->getRoleNames()[0] == "Manager") {
             $query->whereIn("department_id", EmployeeDepartment::whereIn("employee_id", Employee::where("user_id", auth()->user()->id)->pluck("id"))->pluck("department_id"));
