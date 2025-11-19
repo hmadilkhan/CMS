@@ -30,7 +30,7 @@ class HomeController extends Controller
         }
         
         if (auth()->user()->hasRole("Service Manager")) {
-            $tickets = ServiceTicket::where("assigned_to", auth()->user()->id)->orderBy("id", "desc")->get();
+            $tickets = ServiceTicket::where("assigned_to", auth()->user()->id)->where('status','!=', 'Resolved')->orderBy("id", "desc")->get();
             return view('service-tickets.dashboard', [
                 "tickets" => $tickets
             ]);
@@ -40,6 +40,7 @@ class HomeController extends Controller
         if (!empty(auth()->user()->employee)) {
             $followUps = ProjectFollowUp::with(['project', 'employee'])
                 ->where('employee_id', auth()->user()->employee->id)
+                ->where('status','!=', 'Resolved')
                 ->orderBy('follow_up_date', 'asc')
                 ->get();
         }

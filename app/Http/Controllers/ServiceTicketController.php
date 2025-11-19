@@ -73,6 +73,7 @@ class ServiceTicketController extends Controller
         $tickets = ServiceTicket::with(['project', 'assignedUser'])
             ->withCount('comments')
             ->where('assigned_to', $user->id)
+            ->where('status', '!=', 'Resolved')
             ->orderBy('created_at', 'desc')
             ->get();
 
