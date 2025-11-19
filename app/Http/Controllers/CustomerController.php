@@ -466,6 +466,7 @@ class CustomerController extends Controller
                 "department_id" => $request->department_id,
                 "customer_id" => $request->customer_id,
                 "customer_email" => $request->customer_email,
+                "user_id" => auth()->user()->id,
             ];
             $salesPersonEmail = User::whereIn("id", Project::where("id", $request->project_id)->pluck("sales_partner_user_id"))->first();
             if ($request->ccEmails != "") {

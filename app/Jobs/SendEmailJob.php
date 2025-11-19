@@ -49,7 +49,7 @@ class SendEmailJob implements ShouldQueue
             "customer_id" => $this->details['customer_id'],
             "subject" => $this->details['subject'],
             "body" => $this->details['body'],
-            "user_id" => auth()->user()->id,
+            "user_id" => $this->details['user_id'],
         ]);
         foreach ($this->uploadedFiles as $key => $file) {
             EmailAttachment::create([
