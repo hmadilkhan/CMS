@@ -26,7 +26,7 @@ class ServiceTicketController extends Controller
             'files.*' => 'nullable|file|max:10240|mimes:jpg,jpeg,png,pdf,doc,docx,xls,xlsx,txt'
         ]);
 
-        $ticket = ServiceTicket::create($request->all());
+        $ticket = ServiceTicket::create($request->all() + ['user_id' => auth()->id()]);
         
         if ($request->hasFile('files')) {
             foreach ($request->file('files') as $file) {
@@ -70,7 +70,7 @@ class ServiceTicketController extends Controller
     public function dashboard()
     {
         $user = auth()->user();
-        $tickets = ServiceTicket::with(['project', 'assignedUser'])
+        $tickets = ServiceTicket::with(['project', 'assignedUser', 'creator'])
             ->withCount('comments')
             ->where('assigned_to', $user->id)
             ->where('status', '!=', 'Resolved')
@@ -82,7 +82,7 @@ class ServiceTicketController extends Controller
 
     public function adminDashboard()
     {
-        $tickets = ServiceTicket::with(['project', 'assignedUser'])
+        $tickets = ServiceTicket::with(['project', 'assignedUser', 'creator'])
             ->orderBy('created_at', 'desc')
             ->get();
 

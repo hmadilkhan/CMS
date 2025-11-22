@@ -64,6 +64,7 @@
                         <tr>
                             <th class="text-white">Subject</th>
                             <th class="text-white">Assigned To</th>
+                            <th class="text-white">Created by</th>
                             <th class="text-white">Priority</th>
                             <th class="text-white">Status</th>
                             <th class="text-white">Notes</th>
@@ -76,6 +77,7 @@
                             <tr>
                                 <td>{{ $ticket->subject }}</td>
                                 <td>{{ $ticket->assignedUser->name ?? 'Unassigned' }}</td>
+                                <td>{{ $ticket->creator->name ?? "N/A" }}</td>
                                 <td>
                                     <span class="badge 
                                         @if($ticket->priority == 'High') bg-danger
