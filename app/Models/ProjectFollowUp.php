@@ -12,6 +12,9 @@ class ProjectFollowUp extends Model
     protected $fillable = [
         'project_id',
         'employee_id',
+        'created_by',
+        'department_id',
+        'sub_department_id',
         'follow_up_date',
         'notes',
         'status',
@@ -31,5 +34,20 @@ class ProjectFollowUp extends Model
     public function employee()
     {
         return $this->belongsTo(Employee::class);
+    }
+
+    public function creator()
+    {
+        return $this->belongsTo(User::class, 'created_by');
+    }
+
+    public function department()
+    {
+        return $this->belongsTo(Department::class);
+    }
+
+    public function subDepartment()
+    {
+        return $this->belongsTo(SubDepartment::class);
     }
 }

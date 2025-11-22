@@ -7,6 +7,8 @@ use App\Models\ServiceTicket;
 use App\Models\ServiceTicketFile;
 use App\Models\User;
 use App\Notifications\ServiceTicketCreated;
+use App\Notifications\ServiceTicketCommentAdded;
+use App\Notifications\ServiceTicketResolved;
 use App\Traits\MediaTrait;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Storage;
@@ -63,7 +65,16 @@ class ServiceTicketController extends Controller
             'status' => 'required|in:Pending,Resolved'
         ]);
 
+        $oldStatus = $ticket->status;
         $ticket->update($request->only(['notes', 'status']));
+        
+        if ($oldStatus !== 'Resolved' && $request->status === 'Resolved') {
+            $ticket->load(['creator', 'project', 'assignedUser']);
+            if ($ticket->creator) {
+                Notification::send($ticket->creator, new ServiceTicketResolved($ticket));
+            }
+        }
+        
         return back()->with('success', 'Ticket updated successfully');
     }
 
@@ -117,6 +128,11 @@ class ServiceTicketController extends Controller
                     'uploaded_by' => auth()->id()
                 ]);
             }
+        }
+
+        $ticket->load('creator');
+        if ($ticket->creator && $ticket->creator->id !== auth()->id()) {
+            Notification::send($ticket->creator, new ServiceTicketCommentAdded($ticket, $comment));
         }
 
         return back()->with('success', 'Comment added successfully');

@@ -3,11 +3,12 @@
 namespace App\Notifications;
 
 use Illuminate\Bus\Queueable;
+use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 use App\Models\ServiceTicket;
 
-class ServiceTicketCreated extends Notification implements \Illuminate\Contracts\Queue\ShouldQueue
+class ServiceTicketResolved extends Notification implements ShouldQueue
 {
     use Queueable;
 
@@ -26,15 +27,15 @@ class ServiceTicketCreated extends Notification implements \Illuminate\Contracts
     public function toMail($notifiable)
     {
         return (new MailMessage)
-            ->subject('New Service Ticket Assigned - #' . $this->ticket->id)
+            ->subject('Ticket Resolved - #' . $this->ticket->id)
             ->greeting('Hello ' . $notifiable->name . ',')
-            ->line('A new service ticket has been assigned to you.')
-            ->line('**Subject:** ' . $this->ticket->subject)
-            ->line('**Priority:** ' . $this->ticket->priority)
+            ->line('Great news! Your service ticket has been resolved.')
+            ->line('**Ticket Subject:** ' . $this->ticket->subject)
             ->line('**Project:** ' . $this->ticket->project->project_name)
-            ->line('**Notes:** ' . ($this->ticket->notes ?? 'N/A'))
+            ->line('**Priority:** ' . $this->ticket->priority)
+            ->line('**Resolved by:** ' . $this->ticket->assignedUser->name)
             ->action('View Ticket', route('service.dashboard'))
-            ->line('Please review and take necessary action.');
+            ->line('Thank you for using our service!');
     }
 
     public function toArray($notifiable)
@@ -43,7 +44,8 @@ class ServiceTicketCreated extends Notification implements \Illuminate\Contracts
             'ticket_id' => $this->ticket->id,
             'subject' => $this->ticket->subject,
             'priority' => $this->ticket->priority,
-            'project_id' => $this->ticket->project_id,
+            'project_name' => $this->ticket->project->project_name,
+            'resolved_by' => $this->ticket->assignedUser->name,
         ];
     }
 }
