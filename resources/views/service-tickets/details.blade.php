@@ -318,8 +318,8 @@
             <textarea class="form-control" id="comment" name="comment" rows="3" style="border-radius: 10px; border: 2px solid #e9ecef;" placeholder="What are you working on? What's next?" required></textarea>
         </div>
         <div class="col-md-6 mb-3">
-            <label for="status" class="form-label fw-bold"><i class="icofont-check-circled me-2"></i>Update Status</label>
-            <select class="form-select" id="status" name="status" style="border-radius: 10px; border: 2px solid #e9ecef; padding: 0.75rem;">
+            <label for="ticketstatus" class="form-label fw-bold"><i class="icofont-check-circled me-2"></i>Update Status</label>
+            <select class="form-select" id="ticketstatus" name="ticketstatus" style="border-radius: 10px; border: 2px solid #e9ecef; padding: 0.75rem;">
                 <option value="Pending" {{ $ticket->status == 'Pending' ? 'selected' : '' }}>Pending</option>
                 <option value="Resolved" {{ $ticket->status == 'Resolved' ? 'selected' : '' }}>Resolved</option>
             </select>
@@ -394,7 +394,7 @@ $('#commentForm').on('submit', function(e) {
         data: {
             _token: '{{ csrf_token() }}',
             _method: 'PUT',
-            status: $('#status').val(),
+            status: $('#ticketstatus').val(),
             notes: {!! json_encode($ticket->notes) !!}
         },
         success: function() {

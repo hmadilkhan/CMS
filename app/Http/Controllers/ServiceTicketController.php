@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\ServiceTicket;
+use App\Models\ServiceTicketComment;
 use App\Models\ServiceTicketFile;
 use App\Models\User;
 use App\Notifications\ServiceTicketCreated;
@@ -107,7 +108,7 @@ class ServiceTicketController extends Controller
             'files.*' => 'nullable|file|max:10240|mimes:jpg,jpeg,png,pdf,doc,docx,xls,xlsx,txt'
         ]);
 
-        $comment = \App\Models\ServiceTicketComment::create([
+        $comment = ServiceTicketComment::create([
             'service_ticket_id' => $ticket->id,
             'user_id' => auth()->id(),
             'comment' => $request->comment
@@ -130,8 +131,10 @@ class ServiceTicketController extends Controller
             }
         }
 
+        
         $ticket->load('creator');
-        if ($ticket->creator && $ticket->creator->id !== auth()->id()) {
+        // && $ticket->creator->id !== auth()->id()
+        if ($ticket->creator) {
             Notification::send($ticket->creator, new ServiceTicketCommentAdded($ticket, $comment));
         }
 
