@@ -4,9 +4,12 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\ServiceTicket;
+use App\Models\ServiceTicketComment;
 use App\Models\ServiceTicketFile;
 use App\Models\User;
 use App\Notifications\ServiceTicketCreated;
+use App\Notifications\ServiceTicketCommentAdded;
+use App\Notifications\ServiceTicketResolved;
 use App\Traits\MediaTrait;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Storage;
@@ -26,7 +29,7 @@ class ServiceTicketController extends Controller
             'files.*' => 'nullable|file|max:10240|mimes:jpg,jpeg,png,pdf,doc,docx,xls,xlsx,txt'
         ]);
 
-        $ticket = ServiceTicket::create($request->all());
+        $ticket = ServiceTicket::create($request->all() + ['user_id' => auth()->id()]);
         
         if ($request->hasFile('files')) {
             foreach ($request->file('files') as $file) {
@@ -63,14 +66,23 @@ class ServiceTicketController extends Controller
             'status' => 'required|in:Pending,Resolved'
         ]);
 
+        $oldStatus = $ticket->status;
         $ticket->update($request->only(['notes', 'status']));
+        
+        if ($oldStatus !== 'Resolved' && $request->status === 'Resolved') {
+            $ticket->load(['creator', 'project', 'assignedUser']);
+            if ($ticket->creator) {
+                Notification::send($ticket->creator, new ServiceTicketResolved($ticket));
+            }
+        }
+        
         return back()->with('success', 'Ticket updated successfully');
     }
 
     public function dashboard()
     {
         $user = auth()->user();
-        $tickets = ServiceTicket::with(['project', 'assignedUser'])
+        $tickets = ServiceTicket::with(['project', 'assignedUser', 'creator'])
             ->withCount('comments')
             ->where('assigned_to', $user->id)
             ->where('status', '!=', 'Resolved')
@@ -82,7 +94,7 @@ class ServiceTicketController extends Controller
 
     public function adminDashboard()
     {
-        $tickets = ServiceTicket::with(['project', 'assignedUser'])
+        $tickets = ServiceTicket::with(['project', 'assignedUser', 'creator'])
             ->orderBy('created_at', 'desc')
             ->get();
 
@@ -96,7 +108,7 @@ class ServiceTicketController extends Controller
             'files.*' => 'nullable|file|max:10240|mimes:jpg,jpeg,png,pdf,doc,docx,xls,xlsx,txt'
         ]);
 
-        $comment = \App\Models\ServiceTicketComment::create([
+        $comment = ServiceTicketComment::create([
             'service_ticket_id' => $ticket->id,
             'user_id' => auth()->id(),
             'comment' => $request->comment
@@ -117,6 +129,13 @@ class ServiceTicketController extends Controller
                     'uploaded_by' => auth()->id()
                 ]);
             }
+        }
+
+        
+        $ticket->load('creator');
+        // && $ticket->creator->id !== auth()->id()
+        if ($ticket->creator) {
+            Notification::send($ticket->creator, new ServiceTicketCommentAdded($ticket, $comment));
         }
 
         return back()->with('success', 'Comment added successfully');

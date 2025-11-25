@@ -191,6 +191,7 @@
                                 <tr>
                                     <th><i class="icofont-folder me-2"></i>Project</th>
                                     <th><i class="icofont-ui-text-chat me-2"></i>Subject</th>
+                                    <th><i class="icofont-user me-2"></i>Created By</th>
                                     <th><i class="icofont-flag me-2"></i>Priority</th>
                                     <th><i class="icofont-check-circled me-2"></i>Status</th>
                                     <th><i class="icofont-ui-note me-2"></i>Notes</th>
@@ -207,6 +208,7 @@
                                             </a>
                                         </td>
                                         <td><strong>{{ $ticket->subject }}</strong></td>
+                                        <td><i class="icofont-user me-2"></i>{{ $ticket->creator->name ?? 'N/A' }}</td>
                                         <td>
                                         <span class="premium-badge text-white
                                             @if($ticket->priority == 'High') bg-danger
@@ -222,7 +224,7 @@
                                             </span>
                                         </td>
                                         <td>
-                                            {{ Str::limit($ticket->notes, 50) }}
+                                            {{$ticket->notes }}
                                             @if($ticket->comments_count > 0)
                                                 <span class="badge bg-dark ms-2" title="Comments">
                                                     <i class="icofont-comment"></i> {{ $ticket->comments_count }}
@@ -238,7 +240,7 @@
                                     </tr>
                                 @empty
                                     <tr>
-                                        <td colspan="7">
+                                        <td colspan="8">
                                             <div class="empty-state">
                                                 <i class="icofont-ticket"></i>
                                                 <h4>No Tickets Assigned</h4>

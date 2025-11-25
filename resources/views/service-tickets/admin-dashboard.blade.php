@@ -15,6 +15,7 @@
                                 <tr>
                                     <th>Project</th>
                                     <th>Subject</th>
+                                    <th>Created By</th>
                                     <th>Assigned To</th>
                                     <th>Priority</th>
                                     <th>Status</th>
@@ -31,6 +32,7 @@
                                             </a>
                                         </td>
                                         <td>{{ $ticket->subject }}</td>
+                                        <td>{{ $ticket->creator->name ?? 'N/A' }}</td>
                                         <td>{{ $ticket->assignedUser->name ?? 'Unassigned' }}</td>
                                         <td>
                                             <span class="badge 
@@ -46,12 +48,12 @@
                                                 {{ $ticket->status }}
                                             </span>
                                         </td>
-                                        <td>{{ Str::limit($ticket->notes, 50) }}</td>
+                                        <td>{{$ticket->notes}}</td>
                                         <td>{{ $ticket->created_at->format('M d, Y H:i') }}</td>
                                     </tr>
                                 @empty
                                     <tr>
-                                        <td colspan="7" class="text-center">No tickets found</td>
+                                        <td colspan="8" class="text-center">No tickets found</td>
                                     </tr>
                                 @endforelse
                             </tbody>

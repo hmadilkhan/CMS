@@ -534,6 +534,16 @@ class ProjectController extends Controller
 
         try {
             DB::beginTransaction();
+            
+            // Auto-resolve pending follow-ups for the old department
+            ProjectFollowUp::where('project_id', $request->projectId)
+                ->where('department_id', $currentDepartmentId)
+                ->where('status', 'Pending')
+                ->update([
+                    'status' => 'Resolved',
+                    'resolved_date' => now()
+                ]);
+            
             $project->update([
                 "department_id" => $request->departmentId,
                 "sub_department_id" => $request->subDepartmentId,
@@ -667,9 +677,23 @@ class ProjectController extends Controller
             
             // Handle follow-up if checkbox is checked
             if ($request->has('follow_up') && $request->follow_up_date) {
+                // Auto-resolve older follow-ups with same department and sub-department
+                ProjectFollowUp::where('project_id', $request->project_id)
+                    ->where('department_id', $request->department_id)
+                    ->where('sub_department_id', $request->sub_department_id)
+                    ->where('status', 'Pending')
+                    ->update([
+                        'status' => 'Resolved',
+                        'resolved_date' => now()
+                    ]);
+                
+                // Create new follow-up
                 ProjectFollowUp::create([
                     'project_id' => $request->project_id,
                     'employee_id' => $request->employee ?: Task::findOrFail($request->task_id)->employee_id,
+                    'created_by' => auth()->id(),
+                    'department_id' => $request->department_id,
+                    'sub_department_id' => $request->sub_department_id,
                     'follow_up_date' => $request->follow_up_date,
                     'notes' => $request->notes ?? 'Follow-up scheduled',
                     'status' => 'Pending'

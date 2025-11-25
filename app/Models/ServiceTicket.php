@@ -9,7 +9,7 @@ class ServiceTicket extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['project_id', 'subject', 'assigned_to', 'priority', 'notes', 'status'];
+    protected $fillable = ['project_id', 'user_id', 'subject', 'assigned_to', 'priority', 'notes', 'status'];
 
     public function project()
     {
@@ -19,6 +19,11 @@ class ServiceTicket extends Model
     public function assignedUser()
     {
         return $this->belongsTo(User::class, 'assigned_to');
+    }
+
+    public function creator()
+    {
+        return $this->belongsTo(User::class, 'user_id');
     }
 
     public function comments()

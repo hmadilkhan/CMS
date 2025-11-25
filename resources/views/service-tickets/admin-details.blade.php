@@ -180,6 +180,21 @@
     .file-item .remove-file:hover {
         transform: scale(1.2);
     }
+
+    .premium-btn {
+        background: linear-gradient(135deg, #2d3748 0%, #1a202c 100%);
+        border: none;
+        color: white;
+        border-radius: 10px;
+        padding: 12px 30px;
+        font-weight: 600;
+        transition: all 0.3s ease;
+        box-shadow: 0 5px 15px rgba(45, 55, 72, 0.4);
+    }
+    .premium-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(45, 55, 72, 0.6);
+    }
 </style>
 
 <div class="row mb-4">
