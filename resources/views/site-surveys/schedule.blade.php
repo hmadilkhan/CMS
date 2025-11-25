@@ -2,396 +2,378 @@
 @section('title', 'Schedule Site Survey')
 @section('content')
 <style>
+    :root {
+        --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        --dark-gradient: linear-gradient(135deg, #1f2020 0%, #1a202c 100%);
+        --glass-bg: rgba(255, 255, 255, 0.95);
+        --glass-border: 1px solid rgba(255, 255, 255, 0.2);
+        --shadow-lg: 0 20px 60px rgba(0, 0, 0, 0.1);
+        --shadow-md: 0 10px 30px rgba(0, 0, 0, 0.08);
+    }
+
     .survey-container {
-        background: linear-gradient(135deg, #0d0d0e 0%, #2f2c33 100%);
+        background: #f8fafc;
+        min-height: 100vh;
+        padding: 2rem;
+    }
+
+    .page-header {
+        background: var(--dark-gradient);
+        border-radius: 24px;
+        padding: 3rem 2rem;
+        margin-bottom: 3rem;
+        position: relative;
+        overflow: hidden;
+        box-shadow: var(--shadow-lg);
+    }
+
+    .page-header::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: url('data:image/svg+xml,<svg width="20" height="20" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><circle cx="2" cy="2" r="2" fill="rgba(255,255,255,0.05)"/></svg>');
+        mask-image: linear-gradient(to bottom, black, transparent);
+    }
+
+    .header-content {
+        position: relative;
+        z-index: 1;
+        text-align: center;
+        color: white;
+    }
+
+    .header-title {
+        font-size: 2.5rem;
+        font-weight: 800;
+        margin-bottom: 1rem;
+        background: linear-gradient(to right, #fff, #a5b4fc);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+    }
+
+    .main-grid {
+        display: grid;
+        grid-template-columns: 350px 1fr;
+        gap: 2rem;
+        max-width: 1400px;
+        margin: 0 auto;
+    }
+
+    .info-panel {
+        background: white;
         border-radius: 20px;
         padding: 2rem;
-        box-shadow: 0 20px 60px rgba(102, 126, 234, 0.4);
-        margin-bottom: 2rem;
+        box-shadow: var(--shadow-md);
+        height: fit-content;
+        position: sticky;
+        top: 2rem;
     }
-    
-    .survey-card {
-        background: white;
-        border-radius: 16px;
-        padding: 2rem;
-        box-shadow: 0 10px 30px rgba(0,0,0,0.1);
-        transition: transform 0.3s ease;
-    }
-    
-    .survey-card:hover {
-        transform: translateY(-5px);
-    }
-    
-    .info-card {
-        background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
-        border-radius: 12px;
-        padding: 1.5rem;
+
+    .panel-title {
+        font-size: 1.1rem;
+        font-weight: 700;
+        color: #1a202c;
         margin-bottom: 1.5rem;
-        border-left: 4px solid #0d0d0e;
-    }
-    
-    .info-item {
         display: flex;
         align-items: center;
-        margin-bottom: 1rem;
-        font-size: 0.95rem;
+        gap: 0.75rem;
     }
-    
-    .info-item i {
-        font-size: 1.5rem;
-        color: #0d0d0e;
-        margin-right: 1rem;
-        width: 30px;
+
+    .info-row {
+        margin-bottom: 1.25rem;
+        padding-bottom: 1.25rem;
+        border-bottom: 1px solid #edf2f7;
     }
-    
+
+    .info-row:last-child {
+        border-bottom: none;
+        margin-bottom: 0;
+        padding-bottom: 0;
+    }
+
     .info-label {
+        font-size: 0.85rem;
+        color: #718096;
+        margin-bottom: 0.25rem;
+        display: block;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
         font-weight: 600;
-        color: #2d3748;
-        margin-right: 0.5rem;
     }
-    
-    .date-selector {
-        background: white;
-        border-radius: 12px;
-        padding: 1.5rem;
-        box-shadow: 0 5px 15px rgba(0,0,0,0.08);
-    }
-    
-    .date-input {
-        border: 2px solid #e2e8f0;
-        border-radius: 10px;
-        padding: 0.75rem 1rem;
+
+    .info-value {
         font-size: 1rem;
-        transition: all 0.3s;
-        width: 100%;
+        color: #2d3748;
+        font-weight: 500;
     }
-    
-    .date-input:focus {
-        border-color: #0d0d0e;
-        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
-        outline: none;
-    }
-    
-    .search-btn {
-        background: linear-gradient(135deg, #0d0d0e 0%, #282829 100%);
-        border: none;
-        border-radius: 10px;
-        padding: 0.75rem 1.5rem;
+
+    .action-btn {
+        background: var(--primary-gradient);
         color: white;
+        border: none;
+        border-radius: 12px;
+        padding: 1rem 2rem;
         font-weight: 600;
         width: 100%;
-        margin-top: 1rem;
-        transition: all 0.3s;
-        box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.75rem;
+        font-size: 1.1rem;
+        cursor: pointer;
     }
-    
-    .search-btn:hover {
+
+    .action-btn:hover {
         transform: translateY(-2px);
-        box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4);
+        box-shadow: 0 8px 25px rgba(102, 126, 234, 0.5);
     }
-    
-    .slots-container {
+
+    .action-btn:active {
+        transform: translateY(0);
+    }
+
+    .results-area {
+        min-height: 500px;
+    }
+
+    .technician-card {
         background: white;
-        border-radius: 12px;
-        padding: 1.5rem;
-        min-height: 400px;
-        box-shadow: 0 5px 15px rgba(0,0,0,0.08);
-    }
-    
-    .technician-group {
+        border-radius: 20px;
+        padding: 0;
         margin-bottom: 2rem;
-        animation: fadeInUp 0.5s ease;
+        box-shadow: var(--shadow-md);
+        overflow: hidden;
+        animation: slideUp 0.5s ease forwards;
+        opacity: 0;
+        transform: translateY(20px);
     }
-    
-    @keyframes fadeInUp {
-        from {
-            opacity: 0;
-            transform: translateY(20px);
-        }
+
+    .tech-header {
+        background: #f8fafc;
+        padding: 1.5rem 2rem;
+        border-bottom: 1px solid #edf2f7;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+
+    .tech-info {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+    }
+
+    .tech-avatar {
+        width: 50px;
+        height: 50px;
+        background: var(--primary-gradient);
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 1.5rem;
+    }
+
+    .tech-name {
+        font-weight: 700;
+        font-size: 1.1rem;
+        color: #2d3748;
+    }
+
+    .tech-score {
+        background: #ebf8ff;
+        color: #3182ce;
+        padding: 0.4rem 0.8rem;
+        border-radius: 20px;
+        font-size: 0.85rem;
+        font-weight: 600;
+    }
+
+    .dates-grid {
+        padding: 2rem;
+        display: grid;
+        gap: 2rem;
+    }
+
+    .date-group {
+        border: 1px solid #e2e8f0;
+        border-radius: 16px;
+        padding: 1.5rem;
+    }
+
+    .date-header {
+        font-weight: 700;
+        color: #4a5568;
+        margin-bottom: 1rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-size: 1.1rem;
+    }
+
+    .slots-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+        gap: 1rem;
+    }
+
+    .time-slot {
+        background: white;
+        border: 2px solid #edf2f7;
+        border-radius: 12px;
+        padding: 1rem;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        position: relative;
+    }
+
+    .time-slot:hover {
+        border-color: #667eea;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(102, 126, 234, 0.1);
+    }
+
+    .time-slot.selected {
+        background: var(--primary-gradient);
+        border-color: transparent;
+        color: white;
+    }
+
+    .time-slot.selected .slot-meta {
+        color: rgba(255, 255, 255, 0.9);
+    }
+
+    .slot-time {
+        font-weight: 700;
+        font-size: 1.1rem;
+        margin-bottom: 0.5rem;
+        display: block;
+    }
+
+    .slot-meta {
+        font-size: 0.85rem;
+        color: #718096;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    @keyframes slideUp {
         to {
             opacity: 1;
             transform: translateY(0);
         }
     }
-    
-    .tech-header {
-        background: linear-gradient(135deg, #1f2020 0%, #1a202c 100%);
-        color: white;
-        padding: 0.75rem 1.25rem;
-        border-radius: 10px;
-        margin-bottom: 1rem;
-        display: flex;
-        align-items: center;
-        box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+
+    .loading-state {
+        text-align: center;
+        padding: 4rem;
+        color: #718096;
     }
-    
-    .tech-header i {
-        font-size: 1.5rem;
-        margin-right: 0.75rem;
+
+    .spinner {
+        width: 50px;
+        height: 50px;
+        border: 4px solid #e2e8f0;
+        border-top-color: #667eea;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+        margin: 0 auto 1.5rem;
     }
-    
-    .slot-card {
-        background: linear-gradient(135deg, #ffffff 0%, #f7fafc 100%);
-        border: 2px solid #e2e8f0;
-        border-radius: 12px;
-        padding: 1.25rem;
-        margin: 0.75rem 0;
-        cursor: pointer;
-        transition: all 0.3s ease;
-        position: relative;
-        overflow: hidden;
+
+    @keyframes spin {
+        to { transform: rotate(360deg); }
     }
-    
-    .slot-card::before {
-        content: '';
-        position: absolute;
-        top: 0;
-        left: -100%;
-        width: 100%;
-        height: 100%;
-        background: linear-gradient(90deg, transparent, rgba(102, 126, 234, 0.1), transparent);
-        transition: left 0.5s;
-    }
-    
-    .slot-card:hover::before {
-        left: 100%;
-    }
-    
-    .slot-card:hover {
-        border-color: #667eea;
-        transform: translateX(5px);
-        box-shadow: 0 8px 20px rgba(102, 126, 234, 0.2);
-    }
-    
-    .slot-card.selected {
-        border-color: #667eea;
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        color: white;
-        box-shadow: 0 10px 25px rgba(102, 126, 234, 0.4);
-        transform: scale(1.02);
-    }
-    
-    .slot-card.selected .badge {
-        background: rgba(255,255,255,0.3) !important;
-        color: white !important;
-    }
-    
-    .slot-time {
-        font-size: 1.1rem;
-        font-weight: 600;
-        display: flex;
-        align-items: center;
-    }
-    
-    .slot-time i {
-        font-size: 1.3rem;
-        margin-right: 0.5rem;
-    }
-    
-    .travel-badge {
-        background: linear-gradient(135deg, #48bb78 0%, #38a169 100%);
-        color: white;
-        padding: 0.4rem 0.8rem;
-        border-radius: 20px;
-        font-size: 0.85rem;
-        font-weight: 600;
-        box-shadow: 0 2px 8px rgba(72, 187, 120, 0.3);
-    }
-    
-    .distance-badge {
-        background: linear-gradient(135deg, #2d3748 0%, #1a202c 100%);
-        color: white;
-        padding: 0.4rem 0.8rem;
-        border-radius: 20px;
-        font-size: 0.85rem;
-        font-weight: 600;
-        margin-left: 0.5rem;
-        box-shadow: 0 2px 8px rgba(45, 55, 72, 0.3);
-    }
-    
+
     .empty-state {
         text-align: center;
-        padding: 3rem 1rem;
-        color: #a0aec0;
+        padding: 4rem;
+        background: white;
+        border-radius: 20px;
+        box-shadow: var(--shadow-md);
     }
-    
-    .empty-state i {
+
+    .empty-icon {
         font-size: 4rem;
-        margin-bottom: 1rem;
-        opacity: 0.5;
-    }
-    
-    .section-title {
-        font-size: 1.25rem;
-        font-weight: 700;
-        color: #2d3748;
+        color: #cbd5e0;
         margin-bottom: 1.5rem;
-        display: flex;
-        align-items: center;
     }
-    
-    .section-title i {
-        font-size: 1.5rem;
-        margin-right: 0.75rem;
-        color: #667eea;
-    }
-    
-    .loading-container {
-        position: relative;
-        width: 80px;
-        height: 80px;
-        margin: 0 auto;
-    }
-    
-    .loading-circle {
-        position: absolute;
-        width: 100%;
-        height: 100%;
-        border: 3px solid rgba(102, 126, 234, 0.2);
-        border-radius: 50%;
-    }
-    
-    .loading-icon {
-        position: absolute;
-        width: 24px;
-        height: 24px;
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        color: white;
-        font-size: 14px;
-        box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
-        animation: orbit 2s linear infinite;
-        top: 50%;
-        left: 50%;
-        margin-left: -12px;
-        margin-top: -12px;
-    }
-    
-    @keyframes orbit {
-        0% {
-            transform: rotate(0deg) translateX(28px) rotate(0deg);
+
+    /* Responsive */
+    @media (max-width: 992px) {
+        .main-grid {
+            grid-template-columns: 1fr;
         }
-        100% {
-            transform: rotate(360deg) translateX(28px) rotate(-360deg);
+        .info-panel {
+            position: static;
         }
-    }
-    
-    .suitability-score {
-        position: absolute;
-        top: 10px;
-        right: 10px;
-        background: linear-gradient(135deg, #f6ad55 0%, #ed8936 100%);
-        color: white;
-        padding: 0.3rem 0.6rem;
-        border-radius: 15px;
-        font-size: 0.75rem;
-        font-weight: 700;
-        box-shadow: 0 2px 6px rgba(237, 137, 54, 0.3);
     }
 </style>
 
 <div class="survey-container">
-    <div class="text-center text-white mb-4">
-        <h2 class="fw-bold mb-2">
-            <i class="icofont-calendar me-2"></i>Schedule Site Survey
-        </h2>
-        <p class="mb-0 opacity-75">Find the perfect time slot for your site survey</p>
+    <div class="page-header">
+        <div class="header-content">
+            <h1 class="header-title">Schedule Site Survey</h1>
+            <p class="opacity-75">AI-Powered Technician Matching & Route Optimization</p>
+        </div>
     </div>
-    
-    <div class="row g-4">
-        <div class="col-lg-5">
-            <div class="survey-card">
-                <div class="section-title">
-                    <i class="icofont-building"></i>
-                    Project Information
-                </div>
-                
-                <div class="info-card">
-                    <div class="info-item">
-                        <i class="icofont-folder"></i>
-                        <div>
-                            <span class="info-label">Project:</span>
-                            <span>{{ $project->project_name }}</span>
-                        </div>
-                    </div>
-                    <div class="info-item">
-                        <i class="icofont-user-alt-4"></i>
-                        <div>
-                            <span class="info-label">Customer:</span>
-                            <span>{{ $project->customer->first_name }} {{ $project->customer->last_name }}</span>
-                        </div>
-                    </div>
-                    <div class="info-item">
-                        <i class="icofont-location-pin"></i>
-                        <div>
-                            <span class="info-label">Address:</span>
-                            <span id="customerAddress">{{ $project->customer->street }}, {{ $project->customer->city }}, {{ $project->customer->state }} {{ $project->customer->zipcode }}</span>
-                        </div>
-                    </div>
-                </div>
 
-                @if($existingSurvey)
-                <div class="date-selector" style="background: linear-gradient(135deg, #1a202c 0%, #2d3748 100%); border: none; box-shadow: 0 8px 20px rgba(0,0,0,0.3);">
-                    <div class="text-center">
-                        <div style="background: linear-gradient(135deg, #48bb78 0%, #38a169 100%); width: 70px; height: 70px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 1.5rem; box-shadow: 0 8px 20px rgba(72, 187, 120, 0.4);">
-                            <i class="icofont-check-circled" style="font-size: 2.5rem; color: white;"></i>
-                        </div>
-                        <h5 style="color: white; font-weight: 700; margin-bottom: 1.5rem; font-size: 1.3rem;">Survey Already Scheduled</h5>
-                        
-                        <div style="background: rgba(255,255,255,0.1); border-radius: 12px; padding: 1.25rem; margin-bottom: 1rem; backdrop-filter: blur(10px);">
-                            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.75rem; padding-bottom: 0.75rem; border-bottom: 1px solid rgba(255,255,255,0.1);">
-                                <span style="color: rgba(255,255,255,0.7); font-size: 0.9rem;"><i class="icofont-calendar me-2"></i>Date</span>
-                                <span style="color: white; font-weight: 600;">{{ \Carbon\Carbon::parse($existingSurvey->survey_date)->format('F d, Y') }}</span>
-                            </div>
-                            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.75rem; padding-bottom: 0.75rem; border-bottom: 1px solid rgba(255,255,255,0.1);">
-                                <span style="color: rgba(255,255,255,0.7); font-size: 0.9rem;"><i class="icofont-clock-time me-2"></i>Time</span>
-                                <span style="color: white; font-weight: 600;">{{ $existingSurvey->start_time }} - {{ $existingSurvey->end_time }}</span>
-                            </div>
-                            <div style="display: flex; align-items: center; justify-content: space-between;">
-                                <span style="color: rgba(255,255,255,0.7); font-size: 0.9rem;"><i class="icofont-user-suited me-2"></i>Technician</span>
-                                <span style="color: white; font-weight: 600;">{{ $existingSurvey->technician->name }}</span>
-                            </div>
-                        </div>
-                        
-                        <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 12px; padding: 1rem; margin-top: 1rem; box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);">
-                            <i class="icofont-info-circle" style="font-size: 1.2rem; color: white; margin-right: 0.5rem;"></i>
-                            <span style="color: white; font-size: 0.9rem; font-weight: 500;">Technician reserved. Awaiting survey completion.</span>
-                        </div>
-                    </div>
-                </div>
-                @else
-                <div class="date-selector">
-                    <div class="section-title">
-                        <i class="icofont-calendar"></i>
-                        Select Survey Date
-                    </div>
-                    <input type="date" id="surveyDate" class="date-input" min="{{ date('Y-m-d') }}">
-                    <button onclick="loadAvailableSlots()" class="search-btn">
-                        <i class="icofont-search me-2"></i>Find Available Technicians
-                    </button>
-                </div>
-                @endif
+    <div class="main-grid">
+        <!-- Left Panel: Project Info -->
+        <div class="info-panel">
+            <div class="panel-title">
+                <i class="icofont-building-alt" style="color: #667eea;"></i>
+                Project Details
             </div>
+
+            <div class="info-row">
+                <span class="info-label">Project Name</span>
+                <div class="info-value">{{ $project->project_name }}</div>
+            </div>
+
+            <div class="info-row">
+                <span class="info-label">Customer</span>
+                <div class="info-value">{{ $project->customer->first_name }} {{ $project->customer->last_name }}</div>
+            </div>
+
+            <div class="info-row">
+                <span class="info-label">Location</span>
+                <div class="info-value" id="customerAddress">
+                    {{ $project->customer->street }}, {{ $project->customer->city }}, {{ $project->customer->state }} {{ $project->customer->zipcode }}
+                </div>
+            </div>
+
+            @if($existingSurvey)
+                <div class="mt-4 p-4 rounded-xl bg-green-50 border border-green-100">
+                    <div class="flex items-center gap-3 mb-2 text-green-700 font-bold">
+                        <i class="icofont-check-circled text-xl"></i>
+                        Survey Scheduled
+                    </div>
+                    <div class="text-sm text-green-600">
+                        {{ \Carbon\Carbon::parse($existingSurvey->survey_date)->format('F d, Y') }}<br>
+                        {{ $existingSurvey->start_time }} - {{ $existingSurvey->end_time }}
+                    </div>
+                </div>
+            @else
+                <button onclick="findTechnicians()" class="action-btn mt-4" id="findBtn">
+                    <i class="icofont-search-job"></i>
+                    Find Technicians
+                </button>
+            @endif
         </div>
 
-        <div class="col-lg-7">
-            <div class="survey-card">
-                <div class="section-title">
-                    <i class="icofont-clock-time"></i>
-                    Available Time Slots
-                </div>
-                
-                <div class="slots-container">
-                    <div id="availableSlots">
-                        <div class="empty-state">
-                            <i class="icofont-calendar"></i>
-                            <p class="mb-0">Select a date to view available time slots</p>
-                        </div>
-                    </div>
-                </div>
+        <!-- Right Panel: Results -->
+        <div class="results-area" id="resultsArea">
+            <div class="empty-state">
+                <i class="icofont-calendar empty-icon"></i>
+                <h3 class="font-bold text-gray-700 mb-2">Ready to Schedule</h3>
+                <p class="text-gray-500">Click "Find Technicians" to search for the best available slots over the next 7 days.</p>
             </div>
         </div>
     </div>
@@ -400,175 +382,222 @@
 <script>
 let selectedSlot = null;
 const projectId = {{ $project->id }};
-const customerAddress = document.getElementById('customerAddress').textContent;
+const customerAddress = document.getElementById('customerAddress').innerText.trim();
 
 async function geocodeAddress(address) {
-    const response = await fetch(`https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(address)}&key={{ env('GOOGLE_MAPS_API_KEY') }}`);
-    const data = await response.json();
-    if (data.results && data.results[0]) {
-        return data.results[0].geometry.location;
+    try {
+        const response = await fetch(`https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(address)}&key={{ env('GOOGLE_MAPS_API_KEY') }}`);
+        const data = await response.json();
+        if (data.results && data.results[0]) {
+            return data.results[0].geometry.location;
+        }
+    } catch (e) {
+        console.error('Geocoding error:', e);
     }
     return null;
 }
 
-async function loadAvailableSlots() {
-    const date = document.getElementById('surveyDate').value;
-    if (!date) {
-        alert('Please select a date');
-        return;
-    }
-
-    const container = document.getElementById('availableSlots');
+async function findTechnicians() {
+    const container = document.getElementById('resultsArea');
+    const btn = document.getElementById('findBtn');
+    
+    // UI Loading State
+    btn.disabled = true;
+    btn.innerHTML = '<i class="icofont-spinner-alt-4 fa-spin"></i> Searching...';
+    
     container.innerHTML = `
-        <div class="empty-state">
-            <div class="loading-container">
-                <div class="loading-circle"></div>
-                <div class="loading-icon">
-                    <i class="icofont-search"></i>
-                </div>
-            </div>
-            <p class="mt-4 mb-0" style="color: #667eea; font-weight: 600;">Finding available technicians...</p>
-        </div>`;
+        <div class="loading-state">
+            <div class="spinner"></div>
+            <h4 class="font-bold text-gray-700">Analyzing Schedules...</h4>
+            <p class="text-gray-500 mt-2">Checking availability and travel times for all technicians</p>
+        </div>
+    `;
 
-    const location = await geocodeAddress(customerAddress);
-    if (!location) {
+    try {
+        const location = await geocodeAddress(customerAddress);
+        
+        if (!location) {
+            throw new Error('Could not locate customer address');
+        }
+
+        const response = await fetch('/site-surveys/available-slots', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': '{{ csrf_token() }}'
+            },
+            body: JSON.stringify({
+                customer_address: customerAddress,
+                customer_lat: location.lat,
+                customer_lng: location.lng
+            })
+        });
+
+        const data = await response.json();
+        displayResults(data, location);
+
+    } catch (error) {
         container.innerHTML = `
             <div class="empty-state">
-                <i class="icofont-warning"></i>
-                <p class="mb-0">Unable to locate address</p>
-            </div>`;
-        return;
+                <i class="icofont-warning-alt empty-icon text-red-400"></i>
+                <h3 class="font-bold text-gray-700">Search Failed</h3>
+                <p class="text-gray-500">${error.message}</p>
+                <button onclick="findTechnicians()" class="mt-4 text-blue-600 font-semibold hover:underline">Try Again</button>
+            </div>
+        `;
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="icofont-search-job"></i> Find Technicians';
     }
-
-    const response = await fetch('/site-surveys/available-slots', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-CSRF-TOKEN': '{{ csrf_token() }}'
-        },
-        body: JSON.stringify({
-            date: date,
-            customer_address: customerAddress,
-            customer_lat: location.lat,
-            customer_lng: location.lng
-        })
-    });
-
-    const slots = await response.json();
-    console.log('API Response:', slots); // Debug log
-    displaySlots(slots, location);
 }
 
-function displaySlots(technicians, location) {
-    const container = document.getElementById('availableSlots');
+function displayResults(technicians, location) {
+    const container = document.getElementById('resultsArea');
     
-    // Check if technicians is an array
-    if (!Array.isArray(technicians)) {
-        console.error('Invalid response format:', technicians);
+    if (!technicians || technicians.length === 0) {
         container.innerHTML = `
             <div class="empty-state">
-                <i class="icofont-warning"></i>
-                <p class="mb-0">Error loading slots</p>
-                <small>Please try again</small>
-            </div>`;
-        return;
-    }
-    
-    if (technicians.length === 0) {
-        container.innerHTML = `
-            <div class="empty-state">
-                <i class="icofont-close-circled"></i>
-                <p class="mb-0">No available slots found for this date</p>
-                <small>Try selecting a different date</small>
-            </div>`;
+                <i class="icofont-sad empty-icon"></i>
+                <h3 class="font-bold text-gray-700">No Slots Available</h3>
+                <p class="text-gray-500">We couldn't find any technicians who can reach the site and return home within the 1-hour limit over the next 7 days.</p>
+            </div>
+        `;
         return;
     }
 
     let html = '';
-    technicians.forEach((tech, index) => {
-        html += `<div class="technician-group" style="animation-delay: ${index * 0.1}s">
-            <div class="tech-header">
-                <i class="icofont-user-suited"></i>
-                <div>
-                    <div class="fw-bold">${tech.technician.name}</div>
-                    <small class="opacity-75">${tech.slots.length} slot${tech.slots.length > 1 ? 's' : ''} available</small>
-                </div>
-                ${tech.upcoming_nearby ? '<span class="suitability-score"><i class="icofont-star me-1"></i>Nearby Jobs</span>' : ''}
-            </div>`;
+    
+    technicians.forEach((techData, index) => {
+        const tech = techData.technician;
         
-        tech.slots.forEach(slot => {
-            html += `<div class="slot-card" onclick="selectSlot(${tech.technician.id}, '${slot.start_time}', '${slot.end_time}', ${slot.travel_time}, ${slot.distance}, ${location.lat}, ${location.lng})">
-                <div class="d-flex justify-content-between align-items-center">
-                    <div class="slot-time">
-                        <i class="icofont-clock-time"></i>
-                        ${slot.start_time} - ${slot.end_time}
-                    </div>
-                    <div>
-                        <span class="travel-badge">
-                            <i class="icofont-car-alt me-1"></i>${slot.travel_time} min
-                        </span>
-                        <span class="distance-badge">
-                            <i class="icofont-map-pins me-1"></i>${slot.distance} miles
-                        </span>
+        html += `
+            <div class="technician-card" style="animation-delay: ${index * 0.1}s">
+                <div class="tech-header">
+                    <div class="tech-info">
+                        <div class="tech-avatar">
+                            <i class="icofont-user-suited"></i>
+                        </div>
+                        <div>
+                            <div class="tech-name">${tech.name}</div>
+                            <div class="text-sm text-gray-500">
+                                <i class="icofont-star text-yellow-500"></i> Match Score: ${techData.total_score}
+                            </div>
+                        </div>
                     </div>
                 </div>
-            </div>`;
+                
+                <div class="dates-grid">
+        `;
+
+        techData.dates.forEach(dateGroup => {
+            const dateObj = new Date(dateGroup.date);
+            const dateStr = dateObj.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+            
+            html += `
+                <div class="date-group">
+                    <div class="date-header">
+                        <i class="icofont-calendar text-blue-500"></i>
+                        ${dateStr}
+                    </div>
+                    <div class="slots-grid">
+            `;
+
+            dateGroup.slots.forEach(slot => {
+                html += `
+                    <div class="time-slot" onclick="selectSlot(this, ${tech.id}, '${dateGroup.date}', '${slot.start_time}', '${slot.end_time}', ${slot.travel_time}, ${slot.distance}, ${location.lat}, ${location.lng})">
+                        <span class="slot-time">${slot.start_time} - ${slot.end_time}</span>
+                        <div class="slot-meta">
+                            <i class="icofont-car-alt-1"></i> ${slot.travel_time} min
+                        </div>
+                        <div class="slot-meta">
+                            <i class="icofont-map-pins"></i> ${slot.distance} mi
+                        </div>
+                    </div>
+                `;
+            });
+
+            html += `
+                    </div>
+                </div>
+            `;
         });
-        
-        html += '</div>';
+
+        html += `
+                </div>
+            </div>
+        `;
     });
 
     container.innerHTML = html;
 }
 
-function selectSlot(technicianId, startTime, endTime, travelTime, distance, lat, lng) {
-    document.querySelectorAll('.slot-card').forEach(card => card.classList.remove('selected'));
-    event.target.closest('.slot-card').classList.add('selected');
+function selectSlot(element, techId, date, start, end, travel, dist, lat, lng) {
+    // Deselect all
+    document.querySelectorAll('.time-slot').forEach(el => el.classList.remove('selected'));
+    
+    // Select clicked
+    element.classList.add('selected');
     
     selectedSlot = {
-        technician_id: technicianId,
-        start_time: startTime,
-        end_time: endTime,
-        travel_time: travelTime,
-        distance: distance,
+        technician_id: techId,
+        survey_date: date,
+        start_time: start,
+        end_time: end,
+        travel_time: travel,
+        distance: dist,
         lat: lat,
         lng: lng
     };
 
-    if (confirm('Schedule this time slot?')) {
-        scheduleSurvey();
+    if(confirm(`Schedule survey for ${date} at ${start}?`)) {
+        submitSchedule();
     }
 }
 
-async function scheduleSurvey() {
+async function submitSchedule() {
     if (!selectedSlot) return;
 
-    const date = document.getElementById('surveyDate').value;
+    try {
+        const response = await fetch('/site-surveys/schedule', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': '{{ csrf_token() }}'
+            },
+            body: JSON.stringify({
+                project_id: projectId,
+                technician_id: selectedSlot.technician_id,
+                survey_date: selectedSlot.survey_date,
+                start_time: selectedSlot.start_time,
+                end_time: selectedSlot.end_time,
+                customer_address: customerAddress,
+                customer_lat: selectedSlot.lat,
+                customer_lng: selectedSlot.lng,
+                estimated_travel_time: selectedSlot.travel_time,
+                estimated_distance: selectedSlot.distance
+            })
+        });
 
-    const response = await fetch('/site-surveys/schedule', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-CSRF-TOKEN': '{{ csrf_token() }}'
-        },
-        body: JSON.stringify({
-            project_id: projectId,
-            technician_id: selectedSlot.technician_id,
-            survey_date: date,
-            start_time: selectedSlot.start_time,
-            end_time: selectedSlot.end_time,
-            customer_address: customerAddress,
-            customer_lat: selectedSlot.lat,
-            customer_lng: selectedSlot.lng,
-            estimated_travel_time: selectedSlot.travel_time,
-            estimated_distance: selectedSlot.distance
-        })
-    });
-
-    const result = await response.json();
-    if (result.success) {
-        alert('Site survey scheduled successfully!');
-        window.location.href = '/projects/' + projectId;
+        const result = await response.json();
+        
+        if (result.success) {
+            // Show success animation or toast
+            const container = document.getElementById('resultsArea');
+            container.innerHTML = `
+                <div class="empty-state">
+                    <div style="width: 80px; height: 80px; background: #48bb78; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 1.5rem; animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);">
+                        <i class="icofont-check text-white text-4xl"></i>
+                    </div>
+                    <h3 class="font-bold text-gray-800 text-2xl mb-2">Scheduled Successfully!</h3>
+                    <p class="text-gray-500 mb-6">The technician has been notified.</p>
+                    <a href="/projects/${projectId}" class="action-btn" style="max-width: 200px; margin: 0 auto;">Return to Project</a>
+                </div>
+            `;
+        } else {
+            alert(result.message || 'Failed to schedule survey');
+        }
+    } catch (e) {
+        alert('An error occurred while scheduling');
     }
 }
 </script>

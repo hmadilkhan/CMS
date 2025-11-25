@@ -7,6 +7,7 @@ use App\Models\User;
 use App\Models\Project;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Cache;
 use Carbon\Carbon;
 
 class SiteSurveyController extends Controller
@@ -21,7 +22,7 @@ class SiteSurveyController extends Controller
     ];
 
     private const MAX_TRAVEL_TIME = 700; // minutes
-    private const LOOKAHEAD_DAYS = 3; // Check upcoming schedule
+    private const LOOKAHEAD_DAYS = 7; // Check upcoming schedule
 
     public function showScheduleForm($projectId)
     {
@@ -37,7 +38,6 @@ class SiteSurveyController extends Controller
 
     public function getAvailableSlots(Request $request)
     {
-        $date = Carbon::parse($request->date);
         $customerLat = $request->customer_lat;
         $customerLng = $request->customer_lng;
 
@@ -45,47 +45,96 @@ class SiteSurveyController extends Controller
             $q->where('name', 'Technician');
         })->get();
 
-        $availableSlots = [];
+        $recommendations = [];
 
         foreach ($technicians as $technician) {
-            $technicianSlots = $this->findAvailableSlots($technician, $date, $customerLat, $customerLng);
+            // Get technician's home location
+            $homeLat = $technician->latitude;
+            $homeLng = $technician->longitude;
+
+            // If coordinates are null, geocode the address
+            if ((!$homeLat || !$homeLng) && $technician->address) {
+                $coords = $this->geocodeAddress($technician->address);
+                if ($coords) {
+                    $homeLat = $coords['lat'];
+                    $homeLng = $coords['lng'];
+                }
+            }
+
+            // Skip if no home location found
+            if (!$homeLat || !$homeLng) {
+                \Log::info("Skipping Technician {$technician->id} ({$technician->name}): No location found.");
+                continue;
+            }
+
+            // PRE-CHECK: Haversine Distance
+            $straightLineDist = $this->calculateDistance($customerLat, $customerLng, $homeLat, $homeLng);
+            if ($straightLineDist > 100) {
+                \Log::info("Skipping Technician {$technician->id} ({$technician->name}): Too far (Straight Line: {$straightLineDist} km).");
+                continue;
+            }
+
+            // Check Return to Home Constraint
+            $returnTravel = $this->getTravelTime($customerLat, $customerLng, $homeLat, $homeLng);
             
-            if (!empty($technicianSlots['slots'])) {
-                $availableSlots[] = $technicianSlots;
+            if (!$returnTravel) {
+                \Log::info("Skipping Technician {$technician->id} ({$technician->name}): Could not calculate travel time.");
+                continue;
+            }
+
+            if ($returnTravel['duration'] > 60) {
+                \Log::info("Skipping Technician {$technician->id} ({$technician->name}): Return travel time too long ({$returnTravel['duration']} mins > 60 mins).");
+                continue;
+            }
+
+            $technicianSchedule = [
+                'technician' => $technician,
+                'dates' => [],
+                'total_score' => 0
+            ];
+
+            // Check slots for the next LOOKAHEAD_DAYS
+            for ($i = 1; $i < self::LOOKAHEAD_DAYS; $i++) {
+                $date = Carbon::now()->addDays($i);
+                \Log::info("Dates : {$date->format('Y-m-d')}");
+                $daySlots = $this->findAvailableSlots($technician, $date, $customerLat, $customerLng, $homeLat, $homeLng);
+                
+                if (!empty($daySlots['slots'])) {
+                    $technicianSchedule['dates'][] = [
+                        'date' => $date->format('Y-m-d'),
+                        'slots' => $daySlots['slots'],
+                        'suitability_score' => $daySlots['suitability_score']
+                    ];
+                    $technicianSchedule['total_score'] += $daySlots['suitability_score'];
+                }
+            }
+
+            if (!empty($technicianSchedule['dates'])) {
+                \Log::info("Technician {$technician->id} ({$technician->name}) Qualified. Score: {$technicianSchedule['total_score']}");
+                $recommendations[] = $technicianSchedule;
+            } else {
+                \Log::info("Technician {$technician->id} ({$technician->name}): No available slots found.");
             }
         }
 
-        // Sort by suitability score (best match first)
-        usort($availableSlots, function ($a, $b) {
-            return $b['suitability_score'] <=> $a['suitability_score'];
+        // Sort by total score (best match first)
+        usort($recommendations, function ($a, $b) {
+            return $b['total_score'] <=> $a['total_score'];
         });
 
-        return response()->json($availableSlots);
+        return response()->json($recommendations);
     }
 
-    private function findAvailableSlots($technician, $date, $customerLat, $customerLng)
+    private function findAvailableSlots($technician, $date, $customerLat, $customerLng, $homeLat, $homeLng)
     {
         $slots = [];
         $suitabilityScore = 0;
 
         // Get existing surveys for the day
         $existingSurveys = SiteSurvey::where('technician_id', $technician->id)
-            ->where('survey_date', $date)
+            ->where('survey_date', $date->format('Y-m-d'))
             ->whereIn('status', ['scheduled', 'in_progress'])
             ->get();
-
-        // Get technician's home location from existing address fields
-        $homeLat = $technician->latitude;
-        $homeLng = $technician->longitude;
-
-        // If coordinates are null, geocode the address
-        if ((!$homeLat || !$homeLng) && $technician->address) {
-            $coords = $this->geocodeAddress($technician->address);
-            if ($coords) {
-                $homeLat = $coords['lat'];
-                $homeLng = $coords['lng'];
-            }
-        }
 
         // Check each fixed time slot
         foreach (self::TIME_SLOTS as $timeSlot) {
@@ -127,15 +176,15 @@ class SiteSurveyController extends Controller
             }
         }
 
-        // Boost score if technician has nearby jobs in next 2-3 days
-        $upcomingProximityBonus = $this->checkUpcomingProximity($technician, $date, $customerLat, $customerLng);
-        $suitabilityScore += $upcomingProximityBonus;
+        // Boost score if technician has nearby jobs (Same day or upcoming)
+        $proximityBonus = $this->checkProximityBonus($technician, $date, $customerLat, $customerLng);
+        $suitabilityScore += $proximityBonus;
 
         return [
             'technician' => $technician,
             'slots' => $slots,
             'suitability_score' => $suitabilityScore,
-            'upcoming_nearby' => $upcomingProximityBonus > 0
+            'upcoming_nearby' => $proximityBonus > 0
         ];
     }
 
@@ -178,17 +227,18 @@ class SiteSurveyController extends Controller
         return max(0, $score);
     }
 
-    private function checkUpcomingProximity($technician, $currentDate, $customerLat, $customerLng)
+    private function checkProximityBonus($technician, $currentDate, $customerLat, $customerLng)
     {
-        $startDate = $currentDate->copy()->addDay();
-        $endDate = $currentDate->copy()->addDays(self::LOOKAHEAD_DAYS);
+        // Check same day and upcoming days
+        $startDate = $currentDate->copy()->startOfDay(); // Include today
+        $endDate = $currentDate->copy()->addDays(self::LOOKAHEAD_DAYS)->endOfDay();
 
-        $upcomingSurveys = SiteSurvey::where('technician_id', $technician->id)
+        $nearbySurveys = SiteSurvey::where('technician_id', $technician->id)
             ->whereBetween('survey_date', [$startDate, $endDate])
             ->whereIn('status', ['scheduled', 'in_progress'])
             ->get();
 
-        foreach ($upcomingSurveys as $survey) {
+        foreach ($nearbySurveys as $survey) {
             $distance = $this->calculateDistance(
                 $survey->customer_lat,
                 $survey->customer_lng,
@@ -196,9 +246,9 @@ class SiteSurveyController extends Controller
                 $customerLng
             );
 
-            // If within 10km, give bonus points
+            // If within 10km, give HUGE bonus points
             if ($distance <= 10) {
-                return 50;
+                return 200; // Increased from 50
             }
         }
 
@@ -221,64 +271,79 @@ class SiteSurveyController extends Controller
 
     private function geocodeAddress($address)
     {
-        $apiKey = env('GOOGLE_MAPS_API_KEY');
+        // Cache key based on address
+        $cacheKey = 'geocode_' . md5(strtolower($address));
 
-        if (!$apiKey) return null;
+        return Cache::remember($cacheKey, 86400, function () use ($address) { // Cache for 24 hours
+            $apiKey = env('GOOGLE_MAPS_API_KEY');
 
-        try {
-            $response = Http::get('https://maps.googleapis.com/maps/api/geocode/json', [
-                'address' => $address,
-                'key' => $apiKey
-            ]);
+            if (!$apiKey) return null;
 
-            $data = $response->json();
+            try {
+                $response = Http::get('https://maps.googleapis.com/maps/api/geocode/json', [
+                    'address' => $address,
+                    'key' => $apiKey
+                ]);
 
-            if ($data['status'] === 'OK' && isset($data['results'][0])) {
-                $location = $data['results'][0]['geometry']['location'];
-                return [
-                    'lat' => $location['lat'],
-                    'lng' => $location['lng']
-                ];
+                $data = $response->json();
+
+                if ($data['status'] === 'OK' && isset($data['results'][0])) {
+                    $location = $data['results'][0]['geometry']['location'];
+                    return [
+                        'lat' => $location['lat'],
+                        'lng' => $location['lng']
+                    ];
+                }
+            } catch (\Exception $e) {
+                \Log::error('Geocoding API Error: ' . $e->getMessage());
             }
-        } catch (\Exception $e) {
-            \Log::error('Geocoding API Error: ' . $e->getMessage());
-        }
 
-        return null;
+            return null;
+        });
     }
 
     private function getTravelTime($fromLat, $fromLng, $toLat, $toLng)
     {
-        $apiKey = env('GOOGLE_MAPS_API_KEY');
+        // Round coordinates to 4 decimal places to improve cache hit rate
+        $fromLat = round($fromLat, 4);
+        $fromLng = round($fromLng, 4);
+        $toLat = round($toLat, 4);
+        $toLng = round($toLng, 4);
 
-        if (!$apiKey) return null;
+        $cacheKey = "travel_{$fromLat}_{$fromLng}_{$toLat}_{$toLng}";
 
-        try {
-            $response = Http::get('https://maps.googleapis.com/maps/api/distancematrix/json', [
-                'origins' => "{$fromLat},{$fromLng}",
-                'destinations' => "{$toLat},{$toLng}",
-                'departure_time' => 'now',
-                'traffic_model' => 'best_guess',
-                'key' => $apiKey
-            ]);
+        return Cache::remember($cacheKey, 3600, function () use ($fromLat, $fromLng, $toLat, $toLng) { // Cache for 1 hour
+            $apiKey = env('GOOGLE_MAPS_API_KEY');
 
-            $data = $response->json();
+            if (!$apiKey) return null;
 
-            if ($data['status'] === 'OK' && isset($data['rows'][0]['elements'][0])) {
-                $element = $data['rows'][0]['elements'][0];
+            try {
+                $response = Http::get('https://maps.googleapis.com/maps/api/distancematrix/json', [
+                    'origins' => "{$fromLat},{$fromLng}",
+                    'destinations' => "{$toLat},{$toLng}",
+                    'departure_time' => 'now',
+                    'traffic_model' => 'best_guess',
+                    'key' => $apiKey
+                ]);
 
-                if ($element['status'] === 'OK') {
-                    return [
-                        'duration' => round($element['duration_in_traffic']['value'] / 60),
-                        'distance' => round($element['distance']['value'] / 1609.34, 2)
-                    ];
+                $data = $response->json();
+
+                if ($data['status'] === 'OK' && isset($data['rows'][0]['elements'][0])) {
+                    $element = $data['rows'][0]['elements'][0];
+
+                    if ($element['status'] === 'OK') {
+                        return [
+                            'duration' => round($element['duration_in_traffic']['value'] / 60),
+                            'distance' => round($element['distance']['value'] / 1609.34, 2)
+                        ];
+                    }
                 }
+            } catch (\Exception $e) {
+                \Log::error('Google Maps API Error: ' . $e->getMessage());
             }
-        } catch (\Exception $e) {
-            \Log::error('Google Maps API Error: ' . $e->getMessage());
-        }
 
-        return null;
+            return null;
+        });
     }
 
     public function scheduleSurvey(Request $request)
