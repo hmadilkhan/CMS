@@ -1019,11 +1019,36 @@ class ProjectController extends Controller
             ]);
             $result = $this->uploads($request->file, 'project-acceptance/');
             if (!empty($result)) {
-                $project = Project::with("task", "customer", "customer.salespartner", "salesPartnerUser")->where("id", $request->project_id)->first();
+                $project = Project::with("task", "customer", "customer.salespartner", "customer.adders", "customer.finances", "customer.inverter", "salesPartnerUser")->where("id", $request->project_id)->first();
+                
+                // Calculate financial values (same logic as in blade)
+                $basePrice = $project->customer->finances->inverter_base_cost + $project->overwrite_base_price;
+                $moduleQtyPrice = $project->customer->finances->module_type_cost + $project->overwrite_panel_price;
+                $modulesAmount = $project->customer->panel_qty * $moduleQtyPrice;
+                
+                // Extract adder names
+                $addersList = [];
+                foreach ($project->customer->adders as $adder) {
+                    $addersList[] = $adder->type->name;
+                }
+                
                 $projectAcceptance = ProjectAcceptance::create([
                     "project_id" => $request->project_id,
                     "sales_partner_id" => $request->sales_partner_id,
                     "image" => $result["fileName"],
+                    
+                    // Save calculated financial snapshot
+                    "inverter_base_price" => $basePrice,
+                    "dealer_fee_amount" => $project->customer->finances->dealer_fee_amount,
+                    "module_qty_price" => $moduleQtyPrice,
+                    "modules_amount" => $modulesAmount,
+                    "panel_qty" => $project->customer->panel_qty,
+                    "contract_amount" => $project->customer->finances->contract_amount,
+                    "redline_costs" => $project->customer->finances->redline_costs,
+                    "adders_amount" => $project->customer->finances->adders,
+                    "commission_amount" => $project->customer->finances->commission,
+                    "inverter_name" => $project->customer->inverter->name,
+                    "adders_list" => $addersList,
                 ]);
                 $emailText = "<p>Hi " . $project->salesPartnerUser->name . "</p><p>The Project Acceptance Review for the project " . $project->customer->first_name . " " . $project->customer->last_name . " is ready to be approved.</p><p>Please login to the CRM and navigate to the “Acceptance” tab within the project to approve or dispute the commission amount.</p><p>We look forward to getting a reply within the next 24 hours, after which we will assume the commission as approved.</p><p>If you have any questions, please reach out to us at engineering@solenenergyco.com</p><p>Thank you for your continued support!</p><p>The Solen Energy Construction Engineering Team</p>";
                 $this->sendEmailForProjectAcceptance($project, "Project Acceptance Review - " . $project->customer->first_name . " " . $project->customer->last_name, $emailText, $project->salesPartnerUser->email);

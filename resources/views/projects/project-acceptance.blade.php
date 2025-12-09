@@ -59,58 +59,85 @@
             </div>
         </div>
         @php
-            // $basePrice = $project->customer->inverter->invertertyperates->base_cost + $project->overwrite_base_price;
-            $basePrice = $project->customer->finances->inverter_base_cost + $project->overwrite_base_price;
-            $moduleQtyPrice = $project->customer->finances->module_type_cost + $project->overwrite_panel_price;
-            // $moduleQtyPrice = $project->customer->module->amount + $project->overwrite_panel_price;
-            // $modulesAmount = $project->customer->panel_qty * $project->customer->module->amount + $project->overwrite_panel_price;
-            $modulesAmount = $project->customer->panel_qty * $moduleQtyPrice;
+            // Use saved values from projectAcceptance if available (for new records)
+            // Otherwise fall back to real-time calculations (for old records)
+            if (!empty($projectAcceptance) && !is_null($projectAcceptance->inverter_base_price)) {
+                // Use saved snapshot values
+                $basePrice = $projectAcceptance->inverter_base_price;
+                $moduleQtyPrice = $projectAcceptance->module_qty_price;
+                $modulesAmount = $projectAcceptance->modules_amount;
+                $dealerFeeAmount = $projectAcceptance->dealer_fee_amount;
+                $contractAmount = $projectAcceptance->contract_amount;
+                $redlineCosts = $projectAcceptance->redline_costs;
+                $addersAmount = $projectAcceptance->adders_amount;
+                $commissionAmount = $projectAcceptance->commission_amount;
+                $inverterName = $projectAcceptance->inverter_name;
+                $panelQty = $projectAcceptance->panel_qty;
+            } else {
+                // Fall back to real-time calculations (for old records)
+                $basePrice = $project->customer->finances->inverter_base_cost + $project->overwrite_base_price;
+                $moduleQtyPrice = $project->customer->finances->module_type_cost + $project->overwrite_panel_price;
+                $modulesAmount = $project->customer->panel_qty * $moduleQtyPrice;
+                $dealerFeeAmount = $project->customer->finances->dealer_fee_amount;
+                $contractAmount = $project->customer->finances->contract_amount;
+                $redlineCosts = $project->customer->finances->redline_costs;
+                $addersAmount = $project->customer->finances->adders;
+                $commissionAmount = $project->customer->finances->commission;
+                $inverterName = $project->customer->inverter->name;
+                $panelQty = $project->customer->panel_qty;
+            }
         @endphp
         <div class="row mt-4 mx-3 bg-light">
             <table class="table table-bordered table-striped">
                 <tr>
                     <td>Inverter Base</td>
-                    <td>{{ $project->customer->inverter->name }}</td>
+                    <td>{{ $inverterName }}</td>
                     <td>{{ number_format($basePrice, 2) }}</td>
                 </tr>
                 <tr>
                     <td>Dealer Fee </d>
                     <td>-</td>
-                    <td>{{ number_format($project->customer->finances->dealer_fee_amount, 2) }}</td>
+                    <td>{{ number_format($dealerFeeAmount, 2) }}</td>
                 </tr>
                 <tr>
                     <td>Module Count </d>
-                    <td>{{ $project->customer->panel_qty }} x {{ $moduleQtyPrice }}</td>
+                    <td>{{ $panelQty }} x {{ $moduleQtyPrice }}</td>
                     <td>{{ number_format($modulesAmount, 2) }}</td>
                 </tr>
                 <tr>
                     <td>Contract Price</d>
                     <td>-</td>
-                    <td>{{ number_format($project->customer->finances->contract_amount, 2) }}</td>
+                    <td>{{ number_format($contractAmount, 2) }}</td>
                 </tr>
                 <tr>
                     <td>System Cost</d>
                     <td>-</td>
-                    <td>{{ number_format($project->customer->finances->redline_costs, 2) }}</td>
+                    <td>{{ number_format($redlineCosts, 2) }}</td>
                 </tr>
                 <tr>
                     <td>Adder Total</d>
                     <td>-</td>
-                    <td>{{ number_format($project->customer->finances->adders, 2) }}</td>
+                    <td>{{ number_format($addersAmount, 2) }}</td>
                 </tr>
                 <tr>
                     <td>Commission</d>
                     <td>-</td>
-                    <td>{{ number_format($project->customer->finances->commission, 2) }}</td>
+                    <td>{{ number_format($commissionAmount, 2) }}</td>
                 </tr>
             </table>
         </div>
         <div class="row mx-4">
             <div class="col-md-12 ">
                 <h5 class="fs-10  flex-fill">Adders :
-                    @foreach ($project->customer->adders as $adders)
-                        {{ $adders->type->name }},
-                    @endforeach
+                    @if (!empty($projectAcceptance) && !is_null($projectAcceptance->adders_list))
+                        {{-- Use saved adders list --}}
+                        {{ implode(', ', $projectAcceptance->adders_list) }}
+                    @else
+                        {{-- Fall back to real-time adders --}}
+                        @foreach ($project->customer->adders as $adders)
+                            {{ $adders->type->name }},
+                        @endforeach
+                    @endif
                 </h5>
             </div>
         </div>
