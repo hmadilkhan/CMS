@@ -488,7 +488,7 @@ class ProjectController extends Controller
                 elseif (
                     $currentDepartmentId == 3 && $project->mpu_required === 'yes'
                     && in_array($field, ['meter_spot_request_date', 'meter_spot_request_number'])
-                    && (empty($project->meter_spot_request_date) || empty($project->meter_spot_request_number) || empty($project->meter_spot_result))
+                    && (empty($project->meter_spot_request_date) || empty($project->meter_spot_request_number))
                 ) {
                     $missingFields[] = $field;
                 }
