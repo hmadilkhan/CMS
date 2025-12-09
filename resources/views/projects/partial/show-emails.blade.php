@@ -27,7 +27,7 @@ return $item->department_id == $department->id;
                         <li class="clearfix">
                             @if(!empty($email->user))
                             <div class="message-data">
-                                <span class="message-data-time float-right">Sent By {{$email->user->name}} - {{date("d M Y H:i a", strtotime($email->received_date))}}</span>
+                                <span class="message-data-time float-right">Sent By {{$email->user->name}} - {{date("d M Y H:i a", strtotime($email->created_at))}}</span>
                             </div>
                             </br>
                             @endif
@@ -44,7 +44,7 @@ return $item->department_id == $department->id;
                         @else
                         <li class="clearfix">
                             <div class="message-data">
-                                <span class="message-data-time">{{date("d M Y H:i a", strtotime($email->created_at))}}</span>
+                                <span class="message-data-time">{{date("d M Y H:i a", strtotime($email->received_date))}}</span>
                             </div>
                             <div class="message my-message">
                                 {{ $email->subject }}</br>{{ $email->body }}</br>
