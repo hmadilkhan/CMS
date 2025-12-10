@@ -59,33 +59,16 @@
             </div>
         </div>
         @php
-            // Use saved values from projectAcceptance if available (for new records)
-            // Otherwise fall back to real-time calculations (for old records)
-            if (!empty($projectAcceptance) && !is_null($projectAcceptance->inverter_base_price)) {
-                // Use saved snapshot values
-                $basePrice = $projectAcceptance->inverter_base_price;
-                $moduleQtyPrice = $projectAcceptance->module_qty_price;
-                $modulesAmount = $projectAcceptance->modules_amount;
-                $dealerFeeAmount = $projectAcceptance->dealer_fee_amount;
-                $contractAmount = $projectAcceptance->contract_amount;
-                $redlineCosts = $projectAcceptance->redline_costs;
-                $addersAmount = $projectAcceptance->adders_amount;
-                $commissionAmount = $projectAcceptance->commission_amount;
-                $inverterName = $projectAcceptance->inverter_name;
-                $panelQty = $projectAcceptance->panel_qty;
-            } else {
-                // Fall back to real-time calculations (for old records)
-                $basePrice = $project->customer->finances->inverter_base_cost + $project->overwrite_base_price;
-                $moduleQtyPrice = $project->customer->finances->module_type_cost + $project->overwrite_panel_price;
-                $modulesAmount = $project->customer->panel_qty * $moduleQtyPrice;
-                $dealerFeeAmount = $project->customer->finances->dealer_fee_amount;
-                $contractAmount = $project->customer->finances->contract_amount;
-                $redlineCosts = $project->customer->finances->redline_costs;
-                $addersAmount = $project->customer->finances->adders;
-                $commissionAmount = $project->customer->finances->commission;
-                $inverterName = $project->customer->inverter->name;
-                $panelQty = $project->customer->panel_qty;
-            }
+            $basePrice = $projectAcceptance->inverter_base_price;
+            $moduleQtyPrice = $projectAcceptance->module_qty_price;
+            $modulesAmount = $projectAcceptance->modules_amount;
+            $dealerFeeAmount = $projectAcceptance->dealer_fee_amount;
+            $contractAmount = $projectAcceptance->contract_amount;
+            $redlineCosts = $projectAcceptance->redline_costs;
+            $addersAmount = $projectAcceptance->adders_amount;
+            $commissionAmount = $projectAcceptance->commission_amount;
+            $inverterName = $projectAcceptance->inverter_name;
+            $panelQty = $projectAcceptance->panel_qty;
         @endphp
         <div class="row mt-4 mx-3 bg-light">
             <table class="table table-bordered table-striped">
@@ -128,17 +111,7 @@
         </div>
         <div class="row mx-4">
             <div class="col-md-12 ">
-                <h5 class="fs-10  flex-fill">Adders :
-                    @if (!empty($projectAcceptance) && !is_null($projectAcceptance->adders_list))
-                        {{-- Use saved adders list --}}
-                        {{ implode(', ', $projectAcceptance->adders_list) }}
-                    @else
-                        {{-- Fall back to real-time adders --}}
-                        @foreach ($project->customer->adders as $adders)
-                            {{ $adders->type->name }},
-                        @endforeach
-                    @endif
-                </h5>
+                <h5 class="fs-10  flex-fill">Adders : {{ implode(', ', $projectAcceptance->adders_list) }}</h5>
             </div>
         </div>
         @if (!empty($projectAcceptance) && $projectAcceptance->action_by == 0)
@@ -229,13 +202,13 @@
                                 </div>
                                 <h6 class="fw-bold">Financial Details</h6>
                                 <table class="table table-bordered table-sm">
-                                    <tr><td>Inverter Base</td><td>{{ $project->customer->inverter->name }}</td><td>{{ number_format($basePrice, 2) }}</td></tr>
-                                    <tr><td>Dealer Fee</td><td>-</td><td>{{ number_format($project->customer->finances->dealer_fee_amount, 2) }}</td></tr>
-                                    <tr><td>Module Count</td><td>{{ $project->customer->panel_qty }} x {{ $moduleQtyPrice }}</td><td>{{ number_format($modulesAmount, 2) }}</td></tr>
-                                    <tr><td>Contract Price</td><td>-</td><td>{{ number_format($project->customer->finances->contract_amount, 2) }}</td></tr>
-                                    <tr><td>System Cost</td><td>-</td><td>{{ number_format($project->customer->finances->redline_costs, 2) }}</td></tr>
-                                    <tr><td>Adder Total</td><td>-</td><td>{{ number_format($project->customer->finances->adders, 2) }}</td></tr>
-                                    <tr><td>Commission</td><td>-</td><td>{{ number_format($project->customer->finances->commission, 2) }}</td></tr>
+                                    <tr><td>Inverter Base</td><td>{{ $rejected->inverter_name }}</td><td>{{ number_format($rejected->inverter_base_price, 2) }}</td></tr>
+                                    <tr><td>Dealer Fee</td><td>-</td><td>{{ number_format($rejected->dealer_fee_amount, 2) }}</td></tr>
+                                    <tr><td>Module Count</td><td>{{ $rejected->panel_qty }} x {{ $rejected->module_qty_price }}</td><td>{{ number_format($rejected->modules_amount, 2) }}</td></tr>
+                                    <tr><td>Contract Price</td><td>-</td><td>{{ number_format($rejected->contract_amount, 2) }}</td></tr>
+                                    <tr><td>System Cost</td><td>-</td><td>{{ number_format($rejected->redline_costs, 2) }}</td></tr>
+                                    <tr><td>Adder Total</td><td>-</td><td>{{ number_format($rejected->adders_amount, 2) }}</td></tr>
+                                    <tr><td>Commission</td><td>-</td><td>{{ number_format($rejected->commission_amount, 2) }}</td></tr>
                                 </table>
                             </div>
                         </div>
