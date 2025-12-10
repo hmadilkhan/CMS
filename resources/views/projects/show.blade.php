@@ -1389,31 +1389,54 @@
                         <div class="card mt-1">
                             <div class="card-body">
                                 @if (auth()->user()->hasAnyRole(['Super Admin', 'Admin', 'Employee']))
-                                    <form id="accept-form" method="post" enctype="multipart/form-data">
-                                        @csrf
-                                        <input type="hidden" name="project_id" value="{{ $project->id }}" />
-                                        <input type="hidden" name="sales_partner_id"
-                                            value="{{ $project->customer->sales_partner_id }}" />
-                                        <input type="hidden" name="mode" value="post" />
-                                        <div class="col-md-4 mb-3">
-                                            <label for="formFileMultipleoneone" class="form-label"
-                                                id="requiredfiles">Add
-                                                Design</label>
-                                            <input class="form-control" type="file" id="file" name="file"
-                                                accept=".png,.jpg,.pdf" multiple>
-                                            @error('file')
-                                                <div id="file_message" class="text-danger message mt-2">
-                                                    {{ $message }}
+                                    <div class="card shadow-sm border-0">
+                                        <div class="card-header bg-gradient text-white" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                                            <h5 class="mb-0"><i class="icofont-file-document me-2"></i>Project Acceptance Submission</h5>
+                                        </div>
+                                        <div class="card-body p-4">
+                                            <form id="accept-form" method="post" enctype="multipart/form-data">
+                                                @csrf
+                                                <input type="hidden" name="project_id" value="{{ $project->id }}" />
+                                                <input type="hidden" name="sales_partner_id"
+                                                    value="{{ $project->customer->sales_partner_id }}" />
+                                                <input type="hidden" name="mode" value="post" />
+                                                
+                                                <div class="row">
+                                                    <div class="col-md-6 mb-4">
+                                                        <label for="file" class="form-label fw-bold">
+                                                            <i class="icofont-upload-alt me-1"></i>Upload Design <span class="text-danger">*</span>
+                                                        </label>
+                                                        <input class="form-control form-control-lg" type="file" id="file" name="file"
+                                                            accept=".png,.jpg,.pdf" multiple>
+                                                        <small class="text-muted">Accepted formats: PNG, JPG, PDF</small>
+                                                        @error('file')
+                                                            <div id="file_message" class="text-danger message mt-2">
+                                                                {{ $message }}
+                                                            </div>
+                                                        @enderror
+                                                        <div id="file_message" class="text-danger message mt-2"></div>
+                                                    </div>
+                                                    
+                                                    <div class="col-md-6 mb-4">
+                                                        <label for="notes" class="form-label fw-bold">
+                                                            <i class="icofont-ui-note me-1"></i>Notes <span class="text-muted">(Optional)</span>
+                                                        </label>
+                                                        <textarea class="form-control" id="notes" name="notes" rows="4" 
+                                                            placeholder="Add any additional notes or comments..."></textarea>
+                                                        <small class="text-muted">Optional field for additional information</small>
+                                                    </div>
                                                 </div>
-                                            @enderror
-                                            <div id="file_message" class="text-danger message mt-2"></div>
+                                                
+                                                <div class="d-grid gap-2 d-md-flex justify-content-md-end mt-3">
+                                                    <button type="submit" class="btn btn-lg px-5" 
+                                                        style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none;"
+                                                        id="saveFiles">
+                                                        <i class="icofont-paper-plane me-2"></i>Submit
+                                                    </button>
+                                                </div>
+                                            </form>
                                         </div>
-                                        <div class="col-sm-12 mb-3">
-                                            <button type="submit" class="btn btn-dark me-1 mt-1 w-sm-100"
-                                                id="saveFiles"><i
-                                                    class="icofont-arrow-left me-2 fs-6"></i>Submit</button>
-                                        </div>
-                                    </form>
+                                    </div>
                                 @endif
                                 <div class="row" id="project-acceptance-view"></div>
                             </div>

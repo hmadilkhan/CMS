@@ -114,7 +114,17 @@
                 <h5 class="fs-10  flex-fill">Adders : {{ implode(', ', $projectAcceptance->adders_list) }}</h5>
             </div>
         </div>
-        @if (!empty($projectAcceptance) && $projectAcceptance->action_by == 0)
+        @if (!empty($projectAcceptance->notes))
+            <div class="row mx-4 mt-3">
+                <div class="col-md-12">
+                    <div class="alert alert-info">
+                        <h6 class="fw-bold mb-2"><i class="icofont-ui-note me-2"></i>Notes:</h6>
+                        <p class="mb-0">{{ $projectAcceptance->notes }}</p>
+                    </div>
+                </div>
+            </div>
+        @endif
+        @if (!empty($projectAcceptance) && $projectAcceptance->action_by == 0 && auth()->user()->hasAnyRole(['Manager', 'Sales Person']))
             <div class="row mx-4 border-bottom mt-3">
                 <div class="col-md-12 ">
                     <label for="customer_id" class="form-label">Reason : </label>
@@ -124,28 +134,21 @@
                 </div>
             </div>
         @endif
-        @if ($mode == 'view')
-            <div class="row mt-4 mx-3">
-                @if (!auth()->user()->hasAnyRole(['Manager', 'Sales Person']))
-                    {{-- <div class="col-md-12">
-                        <button type="button" class="btn btn-dark me-1 w-sm-100 float-right">Send Email<i
-                                class="icofont-arrow-right me-2 fs-6"></i></button>
-                    </div> --}}
-                @else
-                    @if (!empty($projectAcceptance) && $projectAcceptance->action_by == 0)
-                        <div class="col-md-12 ">
-                            <button
-                                onclick="acceptanceAction('2','{{ $projectAcceptance->id }}','{{ $projectAcceptance->project_id }}')"
-                                type="button" class="btn btn-danger me-1 w-sm-100 float-right text-white"><i
-                                    class="mr-1 icofont-close me-2 fs-6"></i>Reject</button>
-                            <button
-                                onclick="acceptanceAction('1','{{ $projectAcceptance->id }}','{{ $projectAcceptance->project_id }}')"
-                                type="button" class="btn btn-success me-1 w-sm-100 float-right text-white"><i
-                                    class="mr-1 icofont-tick-mark me-2 fs-6"></i> Approve</button>
-                        </div>
-                    @endif
-                @endif
-            </div>
+        @if ($mode == 'view' && auth()->user()->hasAnyRole(['Manager', 'Sales Person']))
+            @if (!empty($projectAcceptance) && $projectAcceptance->action_by == 0)
+                <div class="row mt-4 mx-3">
+                    <div class="col-md-12 ">
+                        <button
+                            onclick="acceptanceAction('2','{{ $projectAcceptance->id }}','{{ $projectAcceptance->project_id }}')"
+                            type="button" class="btn btn-danger me-1 w-sm-100 float-right text-white"><i
+                                class="mr-1 icofont-close me-2 fs-6"></i>Reject</button>
+                        <button
+                            onclick="acceptanceAction('1','{{ $projectAcceptance->id }}','{{ $projectAcceptance->project_id }}')"
+                            type="button" class="btn btn-success me-1 w-sm-100 float-right text-white"><i
+                                class="mr-1 icofont-tick-mark me-2 fs-6"></i> Approve</button>
+                    </div>
+                </div>
+            @endif
         @endif
         
         @if(isset($rejectedAcceptances) && $rejectedAcceptances->count() > 0)
@@ -166,7 +169,7 @@
                             @foreach($rejectedAcceptances as $index => $rejected)
                                 <tr>
                                     <td>{{ $rejected->user->name ?? 'N/A' }}</td>
-                                    <td>{{ date('d M Y H:i a', strtotime($rejected->approved_date)) }}</td>
+                                    <td>{{ $rejected->approved_date != "" ? date('d M Y H:i a', strtotime($rejected->approved_date)) : "N/A" }}</td>
                                     <td>{{ Str::limit($rejected->reason ?? 'No reason provided', 50) }}</td>
                                     <td>
                                         <button class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#rejectedModal{{ $index }}">
@@ -191,7 +194,7 @@
                             <div class="modal-body">
                                 <div class="alert alert-danger">
                                     <strong>Rejected By:</strong> {{ $rejected->user->name ?? 'N/A' }} | 
-                                    <strong>Date:</strong> {{ date('d M Y H:i a', strtotime($rejected->approved_date)) }}
+                                    <strong>Date:</strong> {{  $rejected->approved_date != "" ? date('d M Y H:i a', strtotime($rejected->approved_date)) : "N/A" }}
                                 </div>
                                 <div class="mb-3">
                                     <strong>Reason:</strong>

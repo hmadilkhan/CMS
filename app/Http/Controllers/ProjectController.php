@@ -1036,6 +1036,7 @@ class ProjectController extends Controller
                     "project_id" => $request->project_id,
                     "sales_partner_id" => $request->sales_partner_id,
                     "image" => $result["fileName"],
+                    "notes" => $request->notes,
                     
                     // Save calculated financial snapshot
                     "inverter_base_price" => $basePrice,
@@ -1059,11 +1060,20 @@ class ProjectController extends Controller
                     ->causedBy(auth()->user()) // Log who did the action
                     ->setEvent("move")
                     ->log("{$username} send the Project Acceptance Review to the Sales Partner. ");
+                $projectAcceptance = ProjectAcceptance::with("user")->where("project_id", $request->project_id)->latest()->first();
+                $rejectedAcceptances = ProjectAcceptance::where('project_id', $request->project_id)
+                    ->where('status', '!=', 1)
+                    ->where('id', '!=', $projectAcceptance->id)
+                    ->with('user')
+                    ->orderBy('created_at', 'desc')
+                    ->get();
                 if (!empty($projectAcceptance)) {
                     return view("projects.project-acceptance", [
                         "image" => $result["fileName"],
                         "project" => $project,
                         "mode" => "view",
+                        "projectAcceptance" => $projectAcceptance,
+                        "rejectedAcceptances" => $rejectedAcceptances,
                     ]);
                 }
             }
