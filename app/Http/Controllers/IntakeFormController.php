@@ -112,7 +112,7 @@ class IntakeFormController extends Controller
             ]);
             $holdBackAmount = 0;
             $financeOption = FinanceOption::where("id", $request->finance_option_id)->first();
-            if($financeOption->holdback == 1){
+            if ($financeOption->holdback == 1) {
                 $holdBackAmount = ($request->module_qty * $financeOption->dollar_watt_value);
             }
             CustomerFinance::create([
@@ -155,19 +155,19 @@ class IntakeFormController extends Controller
             $subdepartment = $subdepartment->first();
 
             $avgPermitFee = DB::table('projects')
-            ->selectRaw('AVG(actual_permit_fee) as avg_permit_fee')
-            ->whereNotNull('actual_permit_fee')
-            ->first();
+                ->selectRaw('AVG(actual_permit_fee) as avg_permit_fee')
+                ->whereNotNull('actual_permit_fee')
+                ->first();
 
             // Determine department based on schedule_survey checkbox
             $departmentId = 1;
             $subDepartmentId = $subdepartment->id;
-            
+
             if ($request->has('schedule_survey') && $request->schedule_survey == 1) {
                 $departmentId = 2; // Site Survey department
                 $subDepartmentId = 3; // Site Survey subdepartment
             }
-            
+
             $projectData = [
                 "customer_id" => $customer->id,
                 "project_name" => $request->first_name . "-" . $request->last_name,
@@ -181,7 +181,7 @@ class IntakeFormController extends Controller
                 "overwrite_panel_price" =>  $request->overwrite_panel_price,
                 "pre_estimated_permit_costs" =>  $avgPermitFee->avg_permit_fee,
             ];
-            
+
             // Add department review fields if schedule_survey is checked
             if ($request->has('schedule_survey') && $request->schedule_survey == 1) {
                 $projectData['utility_company'] = $request->utility_company;
@@ -189,7 +189,7 @@ class IntakeFormController extends Controller
                 $projectData['hoa'] = $request->hoa;
                 $projectData['hoa_phone_number'] = $request->hoa_phone_number;
             }
-            
+
             $project = Project::create($projectData);
             $username = auth()->user()->name;
             activity('project')
@@ -203,11 +203,11 @@ class IntakeFormController extends Controller
                 "department_id" => $departmentId,
                 "sub_department_id" => $subDepartmentId,
             ]);
-            
+
             // Handle file uploads if schedule_survey is checked
             if ($request->has('schedule_survey') && $request->schedule_survey == 1) {
                 $fileFields = ['contract_pdf', 'cpuc_pdf', 'disclosure_document', 'electronic_signature'];
-                
+
                 foreach ($fileFields as $field) {
                     if ($request->hasFile($field)) {
                         $result = $this->uploads($request->file($field), 'projects/');
@@ -222,11 +222,11 @@ class IntakeFormController extends Controller
                 }
             }
             DB::commit();
-            
+
             if ($request->has('schedule_survey') && $request->schedule_survey == 1) {
                 return redirect()->to('/site-surveys/schedule/' . $project->id);
             }
-            
+
             return redirect()->route("intake-form.index");
         } catch (\Throwable $th) {
             DB::rollBack();
@@ -265,10 +265,10 @@ class IntakeFormController extends Controller
 
     public function update(Request $request, $id)
     // {
-    //     $customer = Customer::findOrFail($id);
     {
         try {
             DB::beginTransaction();
+            $customer = Customer::findOrFail($id);
             $inverterBaseCost = InverterTypeRate::where("inverter_type_id", $request->inverter_type_id)->first();
             $moduleCost = ModuleType::where("inverter_type_id", $request->inverter_type_id)->where("id", $request->module_type_id)->first();
             $customer->update([
@@ -313,7 +313,7 @@ class IntakeFormController extends Controller
             }
             $holdBackAmount = 0;
             $financeOption = FinanceOption::where("id", $request->finance_option_id)->first();
-            if($financeOption->holdback == 1){
+            if ($financeOption->holdback == 1) {
                 $holdBackAmount = ($request->module_qty * $financeOption->dollar_watt_value);
             }
             $customer->finances()->update([
