@@ -11,7 +11,7 @@ function getFinanceOptionById(id) {
         method: "POST",
         url: window.location.origin + "/get-finance-option-by-id",
         data: {
-            _token: $('meta[name="csrf-token"]').attr('content'),
+            _token: $('meta[name="csrf_token"]').attr('content'),
             id: id,
         },
         dataType: 'json',
@@ -56,7 +56,7 @@ function getLoanTerms(id) {
         method: "POST",
         url: window.location.origin + "/get-loan-terms",
         data: {
-            _token: $('meta[name="csrf-token"]').attr('content'),
+            _token: $('meta[name="csrf_token"]').attr('content'),
             id: id,
         },
         dataType: 'json',
@@ -79,7 +79,7 @@ $("#loan_term_id").change(function() {
             method: "POST",
             url: window.location.origin + "/get-loan-aprs",
             data: {
-                _token: $('meta[name="csrf-token"]').attr('content'),
+                _token: $('meta[name="csrf_token"]').attr('content'),
                 id: $(this).val(),
                 finance_option_id: $("#finance_option_id").val(),
             },
@@ -109,7 +109,7 @@ function getDealerFee(value) {
         method: "POST",
         url: window.location.origin + "/get-dealer-fee",
         data: {
-            _token: $('meta[name="csrf-token"]').attr('content'),
+            _token: $('meta[name="csrf_token"]').attr('content'),
             id: value,
         },
         dataType: 'json',
@@ -135,7 +135,7 @@ function getRedlineCost() {
         method: "POST",
         url: window.location.origin + "/get-redline-cost",
         data: {
-            _token: $('meta[name="csrf-token"]').attr('content'),
+            _token: $('meta[name="csrf_token"]').attr('content'),
             qty: panelQty,
             inverterType: inverterType,
         },
@@ -176,7 +176,7 @@ function modulesType(id) {
             method: "POST",
             url: window.location.origin + "/get-module-types",
             data: {
-                _token: $('meta[name="csrf-token"]').attr('content'),
+                _token: $('meta[name="csrf_token"]').attr('content'),
                 id: id,
                 inverterTypeId: $("#inverter_type_id").val()
             },
@@ -251,9 +251,9 @@ $("#adders").change(function() {
     if ($(this).val() != "") {
         $.ajax({
             method: "POST",
-            url: window.location.origin + "/get-adders-details",
+            url: window.location.origin + "/get-adders",
             data: {
-                _token: $('meta[name="csrf-token"]').attr('content'),
+                _token: $('meta[name="csrf_token"]').attr('content'),
                 adder: $(this).val(),
             },
             dataType: 'json',
@@ -347,7 +347,7 @@ $("#sub_contractor_id").change(function() {
         method: "POST",
         url: window.location.origin + "/get-subcontractors-users",
         data: {
-            _token: $('meta[name="csrf-token"]').attr('content'),
+            _token: $('meta[name="csrf_token"]').attr('content'),
             id: $(this).val(),
         },
         dataType: 'json',
@@ -366,10 +366,10 @@ $("#sub_contractor_id").change(function() {
 $("#sales_partner_id").change(function() {
     $('#sales_partner_user_id').empty();
     $.ajax({
+        url: window.location.origin + "/get-sales-partner-users",
         method: "POST",
-        url: window.location.origin + "/get-salespartners-users",
         data: {
-            _token: $('meta[name="csrf-token"]').attr('content'),
+            _token: $('meta[name="csrf_token"]').attr('content'),
             id: $(this).val(),
         },
         dataType: 'json',
@@ -390,7 +390,7 @@ $("#sales_partner_user_id").change(function() {
         method: "POST",
         url: window.location.origin + "/sales-partner-overwrite-prices",
         data: {
-            _token: $('meta[name="csrf-token"]').attr('content'),
+            _token: $('meta[name="csrf_token"]').attr('content'),
             id: $(this).val(),
         },
         dataType: 'json',
@@ -409,4 +409,94 @@ $("#sales_partner_user_id").change(function() {
 
 $("#module_type_id").change(function() {
     modulesType($(this).val());
+});
+
+// Schedule Survey Checkbox Toggle
+$("#schedule_survey").change(function() {
+    console.log("cHECKBOX CHECKED");
+    
+    if ($(this).is(':checked')) {
+        $("#departmentReviewSection").slideDown(300);
+        // Make fields required
+        $("#utility_company, #ntp_approval_date, #hoa").attr('required', true);
+        $("#contract_pdf, #cpuc_pdf, #disclosure_document, #electronic_signature").attr('required', true);
+    } else {
+        $("#departmentReviewSection").slideUp(300);
+        // Remove required attribute
+        $("#utility_company, #ntp_approval_date, #hoa, #hoa_phone_number").attr('required', false);
+        $("#contract_pdf, #cpuc_pdf, #disclosure_document, #electronic_signature").attr('required', false);
+        // Clear values
+        $("#utility_company, #ntp_approval_date, #hoa, #hoa_phone_number").val('');
+        $("#contract_pdf, #cpuc_pdf, #disclosure_document, #electronic_signature").val('');
+        $("#hoa_select").hide();
+    }
+});
+
+// HOA Dropdown Toggle
+$("#hoa").change(function() {
+    if ($(this).val() == "yes") {
+        $("#hoa_select").slideDown(300);
+        $("#hoa_phone_number").attr('required', true);
+    } else {
+        $("#hoa_select").slideUp(300);
+        $("#hoa_phone_number").attr('required', false);
+        $("#hoa_phone_number").val('');
+    }
+});
+
+// Form Validation Before Submit
+$('form').on('submit', function(e) {
+    if ($("#schedule_survey").is(':checked')) {
+        let isValid = true;
+        let errorMessages = [];
+        
+        // Clear previous error messages
+        $('.text-danger.message').html('');
+        
+        // Validate department fields
+        if ($("#utility_company").val() == '') {
+            $("#utility_company_message").html('Utility Company is required');
+            isValid = false;
+        }
+        if ($("#ntp_approval_date").val() == '') {
+            $("#ntp_approval_date_message").html('NTP Approval Date is required');
+            isValid = false;
+        }
+        if ($("#hoa").val() == '') {
+            isValid = false;
+            errorMessages.push('HOA selection is required');
+        }
+        if ($("#hoa").val() == 'yes' && $("#hoa_phone_number").val() == '') {
+            $("#hoa_phone_number_message").html('HOA Phone Number is required');
+            isValid = false;
+        }
+        
+        // Validate file uploads
+        if (!$("#contract_pdf")[0].files.length) {
+            $("#contract_pdf_message").html('Contract PDF is required');
+            isValid = false;
+        }
+        if (!$("#cpuc_pdf")[0].files.length) {
+            $("#cpuc_pdf_message").html('CPUC PDF is required');
+            isValid = false;
+        }
+        if (!$("#disclosure_document")[0].files.length) {
+            $("#disclosure_document_message").html('Disclosure Document is required');
+            isValid = false;
+        }
+        if (!$("#electronic_signature")[0].files.length) {
+            $("#electronic_signature_message").html('Electronic Signature Certificate is required');
+            isValid = false;
+        }
+        
+        if (!isValid) {
+            e.preventDefault();
+            Swal.fire({
+                icon: 'error',
+                title: 'Validation Error',
+                text: 'Please fill all required department fields and upload all required documents.',
+            });
+            return false;
+        }
+    }
 });

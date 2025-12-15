@@ -24,6 +24,7 @@ use App\Models\SubContractor;
 use App\Models\SubDepartment;
 use App\Models\Task;
 use App\Models\User;
+use App\Models\UtilityCompany;
 use App\Traits\MediaTrait;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -54,6 +55,7 @@ class IntakeFormController extends Controller
             "adders" => AdderType::all(),
             "uoms" => AdderUnit::all(),
             "contractors" => SubContractor::all(),
+            "utilityCompanies" => UtilityCompany::all()
         ]);
     }
 
@@ -97,7 +99,6 @@ class IntakeFormController extends Controller
                 "phone" => $request->phone,
                 "email" => $request->email,
                 "sales_partner_id" => $request->sales_partner_id,
-                "sub_contractor_id" => $request->sub_contractor_id,
                 "sold_date" => $request->sold_date,
                 "panel_qty" => $request->panel_qty,
                 "inverter_type_id" => $request->inverter_type_id,
@@ -158,20 +159,38 @@ class IntakeFormController extends Controller
             ->whereNotNull('actual_permit_fee')
             ->first();
 
-            $project = Project::create([
+            // Determine department based on schedule_survey checkbox
+            $departmentId = 1;
+            $subDepartmentId = $subdepartment->id;
+            
+            if ($request->has('schedule_survey') && $request->schedule_survey == 1) {
+                $departmentId = 2; // Site Survey department
+                $subDepartmentId = 3; // Site Survey subdepartment
+            }
+            
+            $projectData = [
                 "customer_id" => $customer->id,
                 "project_name" => $request->first_name . "-" . $request->last_name,
-                "department_id" => 1,
-                "sub_department_id" => $subdepartment->id,
+                "department_id" => $departmentId,
+                "sub_department_id" => $subDepartmentId,
                 "description" =>  $request->notes,
                 "office_cost" => (!empty($officeCost) ? $officeCost->cost : ""),
                 "sales_partner_user_id" => $request->sales_partner_user_id,
-                "sub_contractor_user_id" => $request->sub_contractor_user_id,
                 "code" => $this->generateProjectCode(),
                 "overwrite_base_price" =>  $request->overwrite_base_price,
                 "overwrite_panel_price" =>  $request->overwrite_panel_price,
                 "pre_estimated_permit_costs" =>  $avgPermitFee->avg_permit_fee,
-            ]);
+            ];
+            
+            // Add department review fields if schedule_survey is checked
+            if ($request->has('schedule_survey') && $request->schedule_survey == 1) {
+                $projectData['utility_company'] = $request->utility_company;
+                $projectData['ntp_approval_date'] = $request->ntp_approval_date;
+                $projectData['hoa'] = $request->hoa;
+                $projectData['hoa_phone_number'] = $request->hoa_phone_number;
+            }
+            
+            $project = Project::create($projectData);
             $username = auth()->user()->name;
             activity('project')
                 ->performedOn($project)
@@ -181,13 +200,31 @@ class IntakeFormController extends Controller
             Task::create([
                 "project_id" => $project->id,
                 "employee_id" => 1,
-                "department_id" => 1,
-                "sub_department_id" => $subdepartment->id,
+                "department_id" => $departmentId,
+                "sub_department_id" => $subDepartmentId,
             ]);
+            
+            // Handle file uploads if schedule_survey is checked
+            if ($request->has('schedule_survey') && $request->schedule_survey == 1) {
+                $fileFields = ['contract_pdf', 'cpuc_pdf', 'disclosure_document', 'electronic_signature'];
+                
+                foreach ($fileFields as $field) {
+                    if ($request->hasFile($field)) {
+                        $result = $this->uploads($request->file($field), 'projects/');
+                        \App\Models\ProjectFile::create([
+                            "project_id" => $project->id,
+                            "task_id" => $project->task->first()->id,
+                            "department_id" => $departmentId,
+                            "filename" => $result["fileName"],
+                            "header_text" => ucfirst(str_replace('_', ' ', $field)),
+                        ]);
+                    }
+                }
+            }
             DB::commit();
             
             if ($request->has('schedule_survey') && $request->schedule_survey == 1) {
-                return redirect()->route('site-surveys.schedule.form', $project->id);
+                return redirect()->to('/site-surveys/schedule/' . $project->id);
             }
             
             return redirect()->route("intake-form.index");
@@ -244,7 +281,6 @@ class IntakeFormController extends Controller
                 "phone" => $request->phone,
                 "email" => $request->email,
                 "sales_partner_id" => $request->sales_partner_id,
-                "sub_contractor_id" => $request->sub_contractor_id,
                 "sold_date" => $request->sold_date,
                 "panel_qty" => $request->panel_qty,
                 "inverter_type_id" => $request->inverter_type_id,
