@@ -46,6 +46,12 @@
                     <i class="icofont-user-suited "></i> <span>Customers </span> <span class=" ms-auto text-end fs-5"></span></a>
             </li>
             @endcan
+            @can('View Intakeform')
+            <li class="collapsed">
+                <a class="m-link {{ (Route::currentRouteName() == 'intake-form.index' or Route::currentRouteName() == 'intake-form.create') ? 'active' : '' }}" href="{{route('intake-form.index')}}">
+                    <i class="icofont-user-suited "></i> <span>In-take Form </span> <span class=" ms-auto text-end fs-5"></span></a>
+            </li>
+            @endcan
             @can('View Project')
             <li class="collapsed">
                 <a class="m-link {{ (Route::currentRouteName() == 'projects.index' or Route::currentRouteName() == 'projects.create' or Route::currentRouteName() == 'projects.edit'  or Route::currentRouteName() == 'projects' or Route::currentRouteName() == 'projects.show' ) ? 'show' : '' }}" data-bs-toggle="collapse" data-bs-target="#project-Components" href="#">

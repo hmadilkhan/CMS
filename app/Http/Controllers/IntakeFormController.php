@@ -37,10 +37,15 @@ class IntakeFormController extends Controller
 {
     use MediaTrait;
 
+    public function __construct()
+    {
+        $this->middleware(['role:Sales Person|Sales Manager']);
+    }
+
     public function index()
     {
         return view("intake-form.index", [
-            "customers" => Customer::getCustomers()->latest()->get(),
+            "customers" => Customer::getCustomersBySalesUser()->latest()->get(),
         ]);
     }
 
@@ -48,14 +53,15 @@ class IntakeFormController extends Controller
     {
         return view("intake-form.create", [
             "financeoptions" => FinanceOption::all(),
-            "partners" => SalesPartner::all(),
+            "partners" => SalesPartner::where("id", auth()->user()->salesPartner->id)->get(),
             "inverter_types" => InverterType::all(),
             "battery_types" => BatteryType::all(),
             "modules" => ModuleType::all(),
             "adders" => AdderType::all(),
             "uoms" => AdderUnit::all(),
             "contractors" => SubContractor::all(),
-            "utilityCompanies" => UtilityCompany::all()
+            "utilityCompanies" => UtilityCompany::all(),
+            "salesPartnerUsers" => User::where("id", auth()->user()->id)->where("user_type_id",3)->get(),
         ]);
     }
 
@@ -98,6 +104,7 @@ class IntakeFormController extends Controller
                 "zipcode" => $request->zipcode,
                 "phone" => $request->phone,
                 "email" => $request->email,
+                "preferred_language" => $request->preferred_language,
                 "sales_partner_id" => $request->sales_partner_id,
                 "sold_date" => $request->sold_date,
                 "panel_qty" => $request->panel_qty,
@@ -260,6 +267,8 @@ class IntakeFormController extends Controller
             "uoms" => AdderUnit::all(),
             "users" => User::where("sales_partner_id", $customer->sales_partner_id)->get(),
             "contractors" => SubContractor::all(),
+            "utilityCompanies" => UtilityCompany::all(),
+            "salesPartnerUsers" => User::where("id", auth()->user()->id)->where("user_type_id",3)->get(),
         ]);
     }
 
@@ -280,6 +289,7 @@ class IntakeFormController extends Controller
                 "zipcode" => $request->zipcode,
                 "phone" => $request->phone,
                 "email" => $request->email,
+                "preferred_language" => $request->preferred_language,
                 "sales_partner_id" => $request->sales_partner_id,
                 "sold_date" => $request->sold_date,
                 "panel_qty" => $request->panel_qty,

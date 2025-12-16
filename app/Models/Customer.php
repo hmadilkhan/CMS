@@ -67,6 +67,17 @@ class Customer extends Model
         if ($this->getRoleName() == "Sub-Contractor User") {
             return $query->where("sub_contractor_id",auth()->user()->sales_partner_id);
         }
-        
+    }
+
+    public function scopeGetCustomersBySalesUser($query)
+    {
+        if ($this->getRoleName() == "Sales Person") {
+            return $query->whereHas('project', function($q) {
+                $q->where('sales_partner_user_id', auth()->user()->id);
+            });
+        }
+        if ($this->getRoleName() == "Sales Manager") {
+            return $query->where("sales_partner_id",auth()->user()->sales_partner_id);
+        }
     }
 }

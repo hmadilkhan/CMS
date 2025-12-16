@@ -155,6 +155,18 @@
                             <div class="text-danger mt-2">{{ $message }}</div>
                         @enderror
                     </div>
+                    <div class="col-sm-4">
+                        <label class="form-label premium-label">Preferred Language</label>
+                        <select class="form-select premium-input" id="preferred_language" name="preferred_language">
+                            <option value="">Select Language</option>
+                            <option value="English" {{ $customer->preferred_language == 'English' ? 'selected' : '' }}>English</option>
+                            <option value="Spanish" {{ $customer->preferred_language == 'Spanish' ? 'selected' : '' }}>Spanish</option>
+                            <option value="Chinese" {{ $customer->preferred_language == 'Chinese' ? 'selected' : '' }}>Chinese</option>
+                        </select>
+                        @error('preferred_language')
+                            <div class="text-danger mt-2">{{ $message }}</div>
+                        @enderror
+                    </div>
                 </div>
             </div>
 
@@ -290,6 +302,13 @@
                         <label class="form-label premium-label">Sold Production Value</label>
                         <input type="text" class="form-control premium-input" id="sold_production_value" name="sold_production_value" placeholder="Enter sold production value" value="{{$customer->sold_production_value}}">
                         @error('sold_production_value')
+                            <div class="text-danger mt-2">{{ $message }}</div>
+                        @enderror
+                    </div>
+                    <div class="col-sm-12">
+                        <label class="form-label premium-label">Notes</label>
+                        <textarea class="form-control premium-input" id="notes" name="notes" rows="3" placeholder="Enter notes">{{ $customer->notes }}</textarea>
+                        @error('notes')
                             <div class="text-danger mt-2">{{ $message }}</div>
                         @enderror
                     </div>
@@ -435,6 +454,93 @@
                         @error('dealer_fee_amount')
                             <div class="text-danger mt-2">{{ $message }}</div>
                         @enderror
+                    </div>
+                </div>
+            </div>
+
+            <div class="premium-section">
+                <h5 class="fw-bold mb-4" style="color: #2d3748;">
+                    <i class="icofont-calendar me-2"></i>Site Survey Scheduling
+                </h5>
+                <p class="text-muted">After updating the intake form, you can schedule a site survey for this project.
+                </p>
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="schedule_survey" name="schedule_survey"
+                        value="1">
+                    <label class="form-check-label" for="schedule_survey">
+                        Schedule Site Survey after submission
+                    </label>
+                </div>
+            </div>
+
+            <div class="premium-section" id="departmentReviewSection" style="display: none;">
+                <h5 class="fw-bold mb-4" style="color: #2d3748;">
+                    <i class="icofont-building me-2"></i>Department Review Fields
+                </h5>
+                <div class="row g-3 mb-4">
+                    <div class="col-sm-3">
+                        <label for="utility_company" class="form-label premium-label">Utility Company</label>
+                        <select class="form-select" aria-label="Default select HOA" wire:model.live="utility_company"
+                            id="utility_company" name="utility_company">
+                            <option value="">Select Utility Company</option>
+                            @foreach ($utilityCompanies as $utility)
+                                <option value="{{ $utility->name }}">{{ $utility->name }}</option>
+                            @endforeach
+                        </select>
+
+                        <div id="utility_company_message" class="text-danger message mt-2"></div>
+                    </div>
+
+                    <div class="col-sm-3">
+                        <label for="ntp_approval_date" class="form-label premium-label">NTP Approval Date</label>
+                        <input class="form-control premium-input" type="date" id="ntp_approval_date"
+                            name="ntp_approval_date">
+                        <div id="ntp_approval_date_message" class="text-danger message mt-2"></div>
+                    </div>
+                    <div class="col-sm-3">
+                        <label for="hoa" class="form-label premium-label">HOA</label>
+                        <select class="form-select premium-input" id="hoa" name="hoa">
+                            <option value="">Select HOA</option>
+                            <option value="yes">Yes</option>
+                            <option value="no">No</option>
+                        </select>
+                    </div>
+                    <div class="col-sm-3" id="hoa_select" style="display:none;">
+                        <label for="hoa_phone_number" class="form-label premium-label">HOA Phone Number</label>
+                        <input class="form-control premium-input" type="text" id="hoa_phone_number"
+                            name="hoa_phone_number">
+                        <div id="hoa_phone_number_message" class="text-danger message mt-2"></div>
+                    </div>
+                </div>
+
+                <h6 class="fw-bold mb-3" style="color: #2d3748;">
+                    <i class="icofont-file-pdf me-2"></i>Required Documents
+                </h6>
+                <div class="row g-3">
+                    <div class="col-sm-6">
+                        <label for="contract_pdf" class="form-label premium-label">Contract.pdf</label>
+                        <input class="form-control premium-input" type="file" id="contract_pdf"
+                            name="contract_pdf" accept=".pdf">
+                        <div id="contract_pdf_message" class="text-danger message mt-2"></div>
+                    </div>
+                    <div class="col-sm-6">
+                        <label for="cpuc_pdf" class="form-label premium-label">CPUC.pdf</label>
+                        <input class="form-control premium-input" type="file" id="cpuc_pdf" name="cpuc_pdf"
+                            accept=".pdf">
+                        <div id="cpuc_pdf_message" class="text-danger message mt-2"></div>
+                    </div>
+                    <div class="col-sm-6">
+                        <label for="disclosure_document" class="form-label premium-label">Disclosure Document</label>
+                        <input class="form-control premium-input" type="file" id="disclosure_document"
+                            name="disclosure_document" accept=".pdf">
+                        <div id="disclosure_document_message" class="text-danger message mt-2"></div>
+                    </div>
+                    <div class="col-sm-6">
+                        <label for="electronic_signature" class="form-label premium-label">Electronic Signature
+                            Certificate</label>
+                        <input class="form-control premium-input" type="file" id="electronic_signature"
+                            name="electronic_signature" accept=".pdf">
+                        <div id="electronic_signature_message" class="text-danger message mt-2"></div>
                     </div>
                 </div>
             </div>

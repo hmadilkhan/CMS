@@ -50,6 +50,11 @@ function getFinanceOptionById(id) {
 $("#finance_option_id").change(function() {
     getFinanceOptionById($(this).val())
 });
+$("#inverter_type_id").change(function() {
+    console.log(" Inverter Type Changed");
+    
+    getRedlineCost();
+});
 
 function getLoanTerms(id) {
     $.ajax({
@@ -363,14 +368,15 @@ $("#sub_contractor_id").change(function() {
     })
 })
 
-$("#sales_partner_id").change(function() {
+
+function loadSalesPartnerUsers(partnerId) { 
     $('#sales_partner_user_id').empty();
     $.ajax({
         url: window.location.origin + "/get-sales-partner-users",
         method: "POST",
         data: {
             _token: $('meta[name="csrf_token"]').attr('content'),
-            id: $(this).val(),
+            id: partnerId,
         },
         dataType: 'json',
         success: function(response) {
@@ -382,30 +388,34 @@ $("#sales_partner_id").change(function() {
         error: function(error) {
             console.log(error.responseJSON.message);
         }
-    })
+    });
+}
+
+$("#sales_partner_id").change(function() {
+    loadSalesPartnerUsers($(this).val());
 })
 
-$("#sales_partner_user_id").change(function() {
-    $.ajax({
-        method: "POST",
-        url: window.location.origin + "/sales-partner-overwrite-prices",
-        data: {
-            _token: $('meta[name="csrf_token"]').attr('content'),
-            id: $(this).val(),
-        },
-        dataType: 'json',
-        success: function(response) {
-            $("#overwrite_base_price").val(response.overwrites.overwrite_base_price)
-            $("#overwrite_panel_price").val(response.overwrites.overwrite_panel_price)
-            getRedlineCost();
-            calculateSystemSize();
-            calculateSystemSizeAmount();
-        },
-        error: function(error) {
-            console.log(error.responseJSON.message);
-        }
-    })
-});
+// $("#sales_partner_user_id").change(function() {
+//     $.ajax({
+//         method: "POST",
+//         url: window.location.origin + "/sales-partner-overwrite-prices",
+//         data: {
+//             _token: $('meta[name="csrf_token"]').attr('content'),
+//             id: $(this).val(),
+//         },
+//         dataType: 'json',
+//         success: function(response) {
+//             $("#overwrite_base_price").val(response.overwrites.overwrite_base_price)
+//             $("#overwrite_panel_price").val(response.overwrites.overwrite_panel_price)
+//             getRedlineCost();
+//             calculateSystemSize();
+//             calculateSystemSizeAmount();
+//         },
+//         error: function(error) {
+//             console.log(error.responseJSON.message);
+//         }
+//     })
+// });
 
 $("#module_type_id").change(function() {
     modulesType($(this).val());

@@ -138,7 +138,7 @@
                         <h3 class="fw-bold flex-fill mb-0 mt-sm-0">
                             <i class="icofont-ui-note me-2"></i>Intake Forms
                         </h3>
-                        @can("Create Customer")
+                        @can("Create Intakeform")
                         <a href="{{route('intake-form.create')}}" class="btn btn-light premium-btn mt-1 w-sm-100">
                             <i class="icofont-plus-circle me-2 fs-6"></i>New Intake Form
                         </a>
@@ -177,16 +177,16 @@
                             <td>{{ $customer->state }}</td>
                             <td>{{ $customer->street }}</td>
                             <td class="text-center">
-                                @can("Edit Customer")
+                                @can("Edit Intakeform")
                                 <a class="premium-action-btn" data-toggle="tooltip" title="Edit" href="{{route('intake-form.edit',$customer->id)}}">
                                     <i class="icofont-pencil text-warning fs-4"></i>
                                 </a>
                                 @endcan
-                                @can("Delete Customer")
+                                {{-- @can("Delete Customer")
                                 <a class="premium-action-btn ml-2" data-toggle="tooltip" title="Delete" onclick="deleteCustomerModal('{{ $customer->id }}')">
                                     <i class="icofont-trash text-danger fs-4"></i>
                                 </a>
-                                @endcan
+                                @endcan --}}
                             </td>
                         </tr>
                         @endforeach

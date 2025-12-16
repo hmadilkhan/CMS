@@ -102,8 +102,10 @@
         <div class="card-body p-4">
             <form id="form" method="post" action="{{ route('intake-form.store') }}" enctype="multipart/form-data">
                 @csrf
-                <input type="hidden" id="overwrite_base_price" name="overwrite_base_price" />
-                <input type="hidden" id="overwrite_panel_price" name="overwrite_panel_price" />
+                <input type="hidden" id="overwrite_base_price" name="overwrite_base_price"
+                    value="{{ isset($salesPartnerUsers[0]) ? $salesPartnerUsers[0]->overwrite_base_price : '' }}" />
+                <input type="hidden" id="overwrite_panel_price" name="overwrite_panel_price"
+                    value="{{ isset($salesPartnerUsers[0]) ? $salesPartnerUsers[0]->overwrite_panel_price : '' }}" />
 
                 <div class="premium-section">
                     <h5 class="fw-bold mb-4" style="color: #2d3748;">
@@ -174,6 +176,18 @@
                                 <div class="text-danger mt-2">{{ $message }}</div>
                             @enderror
                         </div>
+                        <div class="col-sm-4">
+                            <label class="form-label premium-label">Preferred Language</label>
+                            <select class="form-select premium-input" id="preferred_language" name="preferred_language">
+                                <option value="">Select Language</option>
+                                <option value="English">English</option>
+                                <option value="Spanish">Spanish</option>
+                                <option value="Chinese">Chinese</option>
+                            </select>
+                            @error('preferred_language')
+                                <div class="text-danger mt-2">{{ $message }}</div>
+                            @enderror
+                        </div>
                     </div>
                 </div>
 
@@ -195,7 +209,8 @@
                                 name="sales_partner_id">
                                 <option value="">Select Sales Partner</option>
                                 @foreach ($partners as $partner)
-                                    <option value="{{ $partner->id }}">{{ $partner->name }}</option>
+                                    <option @selected(auth()->user()->sales_partner_id == $partner->id) value="{{ $partner->id }}">{{ $partner->name }}
+                                    </option>
                                 @endforeach
                             </select>
                             @error('sales_partner_id')
@@ -203,10 +218,14 @@
                             @enderror
                         </div>
                         <div class="col-sm-4">
-                            <label class="form-label premium-label">Sales Partner User</label>
+                            <label class="form-label premium-label">Sales Partner User </label>
                             <select class="form-select select2 premium-input" id="sales_partner_user_id"
                                 name="sales_partner_user_id">
                                 <option value="">Select Sales Partner User</option>
+                                @foreach ($salesPartnerUsers as $salesUser)
+                                    <option @selected(auth()->user()->id == $salesUser->id) value="{{ $salesUser->id }}">
+                                        {{ $salesUser->name }}</option>
+                                @endforeach
                             </select>
                             @error('sales_partner_user_id')
                                 <div class="text-danger mt-2">{{ $message }}</div>
@@ -295,6 +314,14 @@
                             <input type="text" class="form-control premium-input" id="sold_production_value"
                                 name="sold_production_value" placeholder="Enter sold production value">
                             @error('sold_production_value')
+                                <div class="text-danger mt-2">{{ $message }}</div>
+                            @enderror
+                        </div>
+                        <div class="col-sm-12">
+                            <label class="form-label premium-label">Notes</label>
+                            <textarea class="form-control premium-input" id="notes" name="notes" rows="3"
+                                placeholder="Enter notes"></textarea>
+                            @error('notes')
                                 <div class="text-danger mt-2">{{ $message }}</div>
                             @enderror
                         </div>
@@ -411,8 +438,8 @@
                         </div>
                         <div class="col-sm-3">
                             <label class="form-label premium-label">Commission</label>
-                            <input readonly type="text" class="form-control premium-input" id="commission" name="commission"
-                                placeholder="0" value="0">
+                            <input readonly type="text" class="form-control premium-input" id="commission"
+                                name="commission" placeholder="0" value="0">
                             @error('commission')
                                 <div class="text-danger mt-2">{{ $message }}</div>
                             @enderror
