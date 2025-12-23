@@ -16,6 +16,7 @@
         "maatwebsite/excel": "^3.1",
         "setasign/fpdf": "^1.8",
         "spatie/laravel-activitylog": "^4.10",
+        "spatie/laravel-google-calendar": "^3.8",
         "spatie/laravel-permission": "^5.10",
         "webklex/laravel-imap": "^5.3",
         "webklex/php-imap": "^5.5"

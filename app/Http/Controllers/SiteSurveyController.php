@@ -27,12 +27,12 @@ class SiteSurveyController extends Controller
     public function showScheduleForm($projectId)
     {
         $project = Project::with('customer')->findOrFail($projectId);
-        
+
         // Check if project already has a pending/scheduled survey
         $existingSurvey = SiteSurvey::where('project_id', $projectId)
             ->whereIn('status', ['scheduled', 'in_progress'])
             ->first();
-        
+
         return view('site-surveys.schedule', compact('project', 'existingSurvey'));
     }
 
@@ -76,7 +76,7 @@ class SiteSurveyController extends Controller
 
             // Check Return to Home Constraint
             $returnTravel = $this->getTravelTime($customerLat, $customerLng, $homeLat, $homeLng);
-            
+
             if (!$returnTravel) {
                 \Log::info("Skipping Technician {$technician->id} ({$technician->name}): Could not calculate travel time.");
                 continue;
@@ -98,7 +98,7 @@ class SiteSurveyController extends Controller
                 $date = Carbon::now()->addDays($i);
                 \Log::info("Dates : {$date->format('Y-m-d')}");
                 $daySlots = $this->findAvailableSlots($technician, $date, $customerLat, $customerLng, $homeLat, $homeLng);
-                
+
                 if (!empty($daySlots['slots'])) {
                     $technicianSchedule['dates'][] = [
                         'date' => $date->format('Y-m-d'),
@@ -160,7 +160,7 @@ class SiteSurveyController extends Controller
             // Calculate travel time and distance
             if ($startLat && $startLng) {
                 $travelData = $this->getTravelTime($startLat, $startLng, $customerLat, $customerLng);
-                
+
                 if ($travelData && $travelData['duration'] <= self::MAX_TRAVEL_TIME) {
                     $slots[] = [
                         'start_time' => $timeSlot['start'],
@@ -401,7 +401,143 @@ class SiteSurveyController extends Controller
             ->causedBy(auth()->user())
             ->log('Site survey scheduled for ' . $survey->survey_date);
 
+        // Google Calendar Integration
+        $this->createCalendarEvent($survey, $project, $request->notes);
+
         return response()->json(['success' => true, 'survey' => $survey]);
+    }
+
+    private function createCalendarEvent($survey, $project, $notes = null)
+    {
+        try {
+            if (class_exists(\Spatie\GoogleCalendar\Event::class)) {
+                $technician = User::find($survey->technician_id);
+
+                $dateStr = $survey->survey_date instanceof Carbon ? $survey->survey_date->format('Y-m-d') : $survey->survey_date;
+                $startDateTime = Carbon::parse($dateStr . ' ' . $survey->start_time);
+                $endDateTime = Carbon::parse($dateStr . ' ' . $survey->end_time);
+
+                $description = "Project: {$project->name}\n";
+                $description .= "Address: {$survey->customer_address}\n";
+                if ($notes) {
+                    $description .= "Notes: {$notes}\n";
+                }
+
+                $eventData = [
+                    'name' => 'Site Survey - ' . ($project->customer ? $project->customer->first_name . ' ' . $project->customer->last_name : 'Client'),
+                    'startDateTime' => $startDateTime,
+                    'endDateTime' => $endDateTime,
+                    'description' => $description,
+                ];
+
+                // STRATEGY: Try to insert directly into Technician's calendar
+                $savedCheck = false;
+
+                if ($technician && $technician->email) {
+                    try {
+                        // Use static create method which accepts calendarId as second argument
+                        \Spatie\GoogleCalendar\Event::create($eventData, $technician->email);
+                        $savedCheck = true;
+                    } catch (\Exception $e) {
+                        \Log::warning("Google Calendar: Could not save to technician calendar ({$technician->email}). Error: " . $e->getMessage());
+                    }
+                }
+
+                // FALLBACK: Save to System Calendar if not saved yet
+                if (!$savedCheck) {
+                    if ($technician) {
+                        $eventData['description'] .= "\n\nAssigned Technician: " . $technician->name;
+                    }
+
+                    // Defaults to config calendar_id
+                    \Spatie\GoogleCalendar\Event::create($eventData);
+                }
+
+                return true;
+            }
+        } catch (\Exception $e) {
+            \Log::error('Google Calendar Sync Failed: ' . $e->getMessage());
+            return false;
+        }
+        return false;
+    }
+
+    public function testCalendarIntegration(Request $request)
+    {
+        // Try to find a technician with an email
+        $technician = User::whereHas('roles', function ($q) {
+            $q->where('name', 'Technician');
+        })->whereNotNull('email')->first();
+
+        // If no technician with email, fall back to any user with email just for testing
+        if (!$technician) {
+            $technician = User::whereNotNull('email')->first();
+        }
+
+        if (!$technician) {
+            return response()->json(['error' => 'No user with email found for testing'], 404);
+        }
+
+        $project = Project::first();
+        if (!$project) {
+            return response()->json(['error' => 'No project found for testing'], 404);
+        }
+
+        // Create a dummy survey object 
+        $survey = new SiteSurvey();
+        $survey->survey_date = now()->addDay()->format('Y-m-d');
+        $survey->start_time = '10:00';
+        $survey->end_time = '12:00';
+        $survey->customer_address = '123 Test St, Manual Test City';
+        $survey->technician_id = $technician->id;
+
+        // Manually run the logic to capture the specific error/path
+        $debug = [];
+        $debug['technician_name'] = $technician->name;
+        $debug['technician_email'] = $technician->email;
+        $debug['info'] = 'This test tries to write to the technician_email as the Calendar ID.';
+
+        $success = false;
+        $strategy = 'none';
+        $error = null;
+
+        try {
+            if (class_exists(\Spatie\GoogleCalendar\Event::class)) {
+                $eventData = [
+                    'name' => 'TEST EVENT - ' . $technician->name,
+                    'startDateTime' => Carbon::parse(now()->addDay()->format('Y-m-d') . ' 08:00'),
+                    'endDateTime' => Carbon::parse(now()->addDay()->format('Y-m-d') . ' 10:00'),
+                    'description' => "Debug Test Event\nThis test tries to write to the technician_email as the Calendar ID."
+                ];
+
+                // Try Strategy 1: Direct Insert (Technician Calendar)
+                try {
+                    \Spatie\GoogleCalendar\Event::create($eventData, $technician->email);
+                    $success = true;
+                    $strategy = 'direct_technician_calendar (' . $technician->email . ')';
+                } catch (\Exception $e) {
+                    $debug['strategy_1_error'] = $e->getMessage();
+
+                    // Try Strategy 2: Fallback (System Calendar)
+                    try {
+                        \Spatie\GoogleCalendar\Event::create($eventData);
+                        $success = true; // Overall success (fallback worked)
+                        $strategy = 'fallback_system_calendar (' . config('google-calendar.calendar_id') . ')';
+                    } catch (\Exception $ex) {
+                        $debug['strategy_2_error'] = $ex->getMessage();
+                    }
+                }
+            }
+        } catch (\Exception $e) {
+            $error = $e->getMessage();
+        }
+
+        return response()->json([
+            'success' => $success,
+            'strategy_used' => $strategy,
+            'debug_info' => $debug,
+            'global_error' => $error
+        ]);
     }
 
     public function updateLocation(Request $request)

@@ -180,7 +180,12 @@ Route::middleware('auth')->group(function () {
     Route::post('site-surveys/{survey}/complete', [App\Http\Controllers\SiteSurveyController::class, 'completeSurvey'])->name('site-surveys.complete');
     Route::post('site-surveys/update-location', [App\Http\Controllers\SiteSurveyController::class, 'updateLocation'])->name('site-surveys.update-location');
     Route::get('api/technician/surveys', [App\Http\Controllers\SiteSurveyController::class, 'getTechnicianSurveys'])->name('api.technician.surveys');
-    Route::get('technician/surveys', function() { return view('site-surveys.technician-app'); })->name('technician.surveys');
+    Route::get('technician/surveys', function () {
+        return view('site-surveys.technician-app');
+    })->name('technician.surveys');
+
+    // TEST ROUTE - GOOGLE CALENDAR
+    Route::get('test-google-calendar', [App\Http\Controllers\SiteSurveyController::class, 'testCalendarIntegration']);
 
     // ADDERS CONTROLLER
     Route::post('adders-store', [App\Http\Controllers\AdderController::class, 'store'])->name('adders.store');
@@ -294,7 +299,7 @@ Route::middleware('auth')->group(function () {
         //  Route::get("dynamic-report","DynamicReport");
         Route::get("dynamic-report", DynamicReport::class);
         Route::get("report-builder", DynamicReportBuilder::class)->name("report-builder");
-        Route::get("report-runner",ReportRunner::class)->name("report-runner");
+        Route::get("report-runner", ReportRunner::class)->name("report-runner");
         Route::get("dynamic-report-builder", DynamicReportBuilder::class)->name("dynamic-report-builder");
     });
 
@@ -323,12 +328,12 @@ Route::middleware('auth')->group(function () {
 });
 
 // Start impersonation — only Super Admins
-Route::middleware(['web','auth','role:Super Admin'])
+Route::middleware(['web', 'auth', 'role:Super Admin'])
     ->get('/impersonate/take/{id}', [ImpersonateController::class, 'take'])
     ->name('impersonate');
 
 // Stop impersonation — available only when impersonating
-Route::middleware(['web','auth'])->group(function () {
+Route::middleware(['web', 'auth'])->group(function () {
     Route::impersonate(); // creates 'impersonate' & 'impersonate.leave'
 });
 
