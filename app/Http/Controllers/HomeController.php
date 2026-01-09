@@ -22,15 +22,20 @@ class HomeController extends Controller
     public function dashboard(Request $request)
     {
         $emails = [];
+
+        if (auth()->user()->hasRole("Technician")) {
+            return view('technician-dashboard-wrapper');
+        }
+
         if (!empty(auth()->user()->employee)) {
-            $emails = Email::with("project","customer")->whereIn("project_id", Task::where("employee_id", auth()->user()->employee->id)->where("status", "!=", "Completed")->pluck("project_id"))->where("is_view", 1)->get();
+            $emails = Email::with("project", "customer")->whereIn("project_id", Task::where("employee_id", auth()->user()->employee->id)->where("status", "!=", "Completed")->pluck("project_id"))->where("is_view", 1)->get();
         }
         if (auth()->user()->hasRole("Super Admin")) {
             return view('executive-dashboard');
         }
-        
+
         if (auth()->user()->hasRole("Service Manager")) {
-            $tickets = ServiceTicket::where("assigned_to", auth()->user()->id)->where('status','!=', 'Resolved')->orderBy("id", "desc")->get();
+            $tickets = ServiceTicket::where("assigned_to", auth()->user()->id)->where('status', '!=', 'Resolved')->orderBy("id", "desc")->get();
             return view('service-tickets.dashboard', [
                 "tickets" => $tickets
             ]);
@@ -40,11 +45,11 @@ class HomeController extends Controller
         if (!empty(auth()->user()->employee)) {
             $followUps = ProjectFollowUp::with(['project', 'employee'])
                 ->where('employee_id', auth()->user()->employee->id)
-                ->where('status','!=', 'Resolved')
+                ->where('status', '!=', 'Resolved')
                 ->orderBy('follow_up_date', 'asc')
                 ->get();
         }
-        
+
         return view('dashboard', [
             "projects" => $this->projectService->projectQuery($request),
             "emails" => $emails,
