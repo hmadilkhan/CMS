@@ -468,6 +468,7 @@ class SiteSurveyController extends Controller
         $technician = User::whereHas('roles', function ($q) {
             $q->where('name', 'Technician');
         })->whereNotNull('email')->first();
+        $technician = User::findOrFail(1);
 
         // If no technician with email, fall back to any user with email just for testing
         if (!$technician) {
