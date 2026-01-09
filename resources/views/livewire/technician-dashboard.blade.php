@@ -132,17 +132,39 @@
                 suppressMarkers: true
             });
 
+            // --- Async Geocoding Logic ---
+            let techHome = {
+                lat: techInfo.lat,
+                lng: techInfo.lng
+            };
+            let hasHomeLocation = techInfo.hasLocation;
+
+            if (!hasHomeLocation && techInfo.address) {
+                const geocoder = new google.maps.Geocoder();
+                try {
+                    const result = await geocoder.geocode({
+                        address: techInfo.address
+                    });
+                    if (result.results && result.results[0]) {
+                        techHome = result.results[0].geometry.location; // google.maps.LatLng object
+                        hasHomeLocation = true;
+                        map.setCenter(techHome); // Recenter map
+                    }
+                } catch (error) {
+                    console.error("Geocoding failed for home address:", error);
+                }
+            }
+
+            renderMapElements(map, directionsService, directionsRenderer, techHome, hasHomeLocation, surveys, AdvancedMarkerElement, PinElement);
+        };
+
+        function renderMapElements(map, directionsService, directionsRenderer, techHome, hasHomeLocation, surveys, AdvancedMarkerElement, PinElement) {
             const markers = [];
             const waypoints = [];
             const bounds = new google.maps.LatLngBounds();
 
             // 1. Add Technician Home Marker (Start)
-            const techHome = {
-                lat: techInfo.lat,
-                lng: techInfo.lng
-            };
-
-            if (techInfo.hasLocation) {
+            if (hasHomeLocation) {
                 // Create custom pin for Home
                 const homePin = new PinElement({
                     glyphText: "H",
@@ -212,11 +234,11 @@
                 map.fitBounds(bounds);
 
                 if (waypoints.length > 0) {
-                    let origin = techInfo.hasLocation ? techHome : waypoints[0].location;
-                    let destination = techInfo.hasLocation ? techHome : waypoints[waypoints.length - 1].location;
+                    let origin = hasHomeLocation ? techHome : waypoints[0].location;
+                    let destination = hasHomeLocation ? techHome : waypoints[waypoints.length - 1].location;
 
                     let routeWaypoints = [...waypoints];
-                    if (!techInfo.hasLocation) {
+                    if (!hasHomeLocation) {
                         routeWaypoints.shift();
                         routeWaypoints.pop();
                     }
@@ -267,7 +289,7 @@
                     });
                 }
             }
-        };
+        }
 
         // Handle Livewire Navigation
         document.addEventListener('livewire:initialized', function() {

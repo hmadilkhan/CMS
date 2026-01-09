@@ -23,7 +23,8 @@ class TechnicianDashboard extends Component
         $this->techMapData = [
             'lat' => (float)($this->technician->latitude ?? 33.7490),
             'lng' => (float)($this->technician->longitude ?? -84.3880),
-            'hasLocation' => !empty($this->technician->latitude) && !empty($this->technician->longitude)
+            'hasLocation' => !empty($this->technician->latitude) && !empty($this->technician->longitude),
+            'address' => $this->technician->address ?? null // Fallback address
         ];
 
         $this->loadSurveys();
