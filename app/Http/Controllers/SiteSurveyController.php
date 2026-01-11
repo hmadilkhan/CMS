@@ -18,7 +18,6 @@ class SiteSurveyController extends Controller
         ['start' => '10:00', 'end' => '12:00'],
         ['start' => '12:00', 'end' => '14:00'],
         ['start' => '14:00', 'end' => '16:00'],
-        ['start' => '16:00', 'end' => '18:00'],
     ];
 
     private const MAX_TRAVEL_TIME = 700; // minutes

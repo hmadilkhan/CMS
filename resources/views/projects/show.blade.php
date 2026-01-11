@@ -837,6 +837,11 @@
                                 class="form-control" placeholder="Sold Production Value">
                         </div>
                     @endif
+                    <div class="col-sm-3">
+                            <label for="inverter_qty" class="form-label">Preferred Language</label>
+                            <input disabled value="{{ $project->customer->preferred_language }}" type="text"
+                                class="form-control" placeholder="Preferred Language">
+                        </div>
                 </div>
             </div>
         </div>
@@ -1119,15 +1124,15 @@
         <div class="card mt-1">
             <div class="card-body">
                 <ul class="nav nav-tabs px-3 border-bottom-0" role="tablist">
-                    <li class="nav-item"><a class="nav-link active" data-bs-toggle="tab" href="#calls"
-                            role="tab">Calls</a></li>
-                    <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#emails"
+                    {{-- <li class="nav-item"><a class="nav-link active" data-bs-toggle="tab" href="#calls"
+                            role="tab">Calls</a></li> --}}
+                    <li class="nav-item"><a class="nav-link active" data-bs-toggle="tab" href="#emails"
                             role="tab">Emails</a></li>
                     <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#acceptance"
                             role="tab">Acceptance</a></li>
                 </ul>
                 <div class="tab-content">
-                    <div class="tab-pane fade show active" id="calls" role="tabpanel">
+                    {{-- <div class="tab-pane fade show active" id="calls" role="tabpanel">
                         @if (!in_array('Sales Person', auth()->user()->getRoleNames()->toArray()))
                             <div class="row">
                                 <div class="col-md-4">
@@ -1244,8 +1249,8 @@
                                 </div>
                             </div>
                         </div>
-                    </div>
-                    <div class="tab-pane fade" id="emails" role="tabpanel">
+                    </div> --}}
+                    <div class="tab-pane fade show active" id="emails" role="tabpanel">
                         <div class="container">
                             @if (!in_array('Sales Person', auth()->user()->getRoleNames()->toArray()))
                                 <form id="emailform" method="post" enctype="multipart/form-data">
@@ -2466,7 +2471,9 @@
                     "</b>");
                 window.editor.setData(sales_partner_text1);
                 let projectcode = window.editor.getData();
-                projectcode = projectcode.replace("code", "<b>" +
+                
+                
+                projectcode = projectcode.replace("project_code", "<b>" +
                     code +
                     "</b>");
                 window.editor.setData(projectcode);
@@ -2626,11 +2633,6 @@
             success: function(response) {
                 $("#project-acceptance-view").empty();
                 $("#project-acceptance-view").html(response);
-                // if (response.success) {
-                //     console.log('File uploaded successfully.');
-                // } else {
-                //     console.error('Error: ' + response.message);
-                // }
             },
             error: function(xhr) {
                 console.error('Error uploading file: ' + xhr.responseText);

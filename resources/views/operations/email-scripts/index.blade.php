@@ -109,7 +109,7 @@
                         <tr>
                             <td>{{ ++$key }}</td>
                             <td>{{ $emailScript->email->name }}</td>
-                            <td>{{ $emailScript->department->name }}</td>
+                            <td>{{ $emailScript->department->name ?? "N/A" }}</td>
                             <td>{{ $emailScript->script }}</td>
                             <td class="text-center">
                                 <a style="cursor: pointer;" data-toggle="tooltip" title="Edit"

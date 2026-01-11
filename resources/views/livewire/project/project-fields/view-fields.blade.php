@@ -61,6 +61,10 @@
             <label for="permitting_approval_date" class="form-label">Permit Approval Date</label>
             <input disabled class="form-control" type="date" value="{{ $project->permitting_approval_date }}">
         </div>
+        <div class="col-sm-6 mb-3 ">
+            <label for="fire_review_required" class="form-label">Fire Review Required</label>
+            <input disabled class="form-control" type="text" value="{{ $project->fire_review_required == 1 ? 'Yes' : 'No' }}">
+        </div>
         @if ($project->hoa == 'yes')
             <div class="col-sm-6 mt-3 ">
                 <label for="hoa_approval_request_date" class="form-label">HOA Approval Request Date</label>

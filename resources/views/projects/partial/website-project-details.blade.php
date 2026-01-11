@@ -381,8 +381,8 @@
                         <ul class="nav nav-tabs px-3 border-bottom-0" role="tablist">
                             <li class="nav-item"><a class="nav-link active" data-bs-toggle="tab" href="#default"
                                     role="tab">Project Details</a></li>
-                            <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#calls"
-                                    role="tab">Call Details</a></li>
+                            {{-- <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#calls"
+                                    role="tab">Call Details</a></li> --}}
                             <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#emails"
                                     role="tab">Email Details</a></li>
                         </ul>
@@ -463,7 +463,7 @@
                         </div>`
                     </div>
                 </div>
-                <div class="tab-pane fade show active" id="calls" role="tabpanel">
+                {{-- <div class="tab-pane fade show active" id="calls" role="tabpanel">
                     <div class="card card-info mt-2">
                         <div class="card-body">
                             <div class="row clearfix">
@@ -510,8 +510,8 @@
                             </div>
                         </div>`
                     </div>
-                </div>
-                <div class="tab-pane fade" id="emails" role="tabpanel">
+                </div> --}}
+                <div class="tab-pane fade show active" id="emails" role="tabpanel">
                     <div class="container">
                         <div
                             class="card-header py-3 px-0 d-sm-flex align-items-center  justify-content-between border-bottom">
