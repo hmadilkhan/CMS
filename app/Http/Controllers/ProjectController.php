@@ -1235,7 +1235,8 @@ class ProjectController extends Controller
                 ]);
             }
 
-            $emailText = "<p>Hi " . $project->assignedPerson[0]->employee->name . "</p><p>The Project Acceptance Review for " . $project->customer->first_name . " " . $project->customer->last_name . " has been " . ($request->mode == 1 ? 'approved' : 'rejected') . "</p><p>Please take the necessary steps to continue moving the job forward.</p><p>Thank you!.</p>";
+            $projectUrl = url('/projects/' . $project->id);
+            $emailText = "<p>Hi " . $project->assignedPerson[0]->employee->name . "</p><p>The Project Acceptance Review for " . $project->customer->first_name . " " . $project->customer->last_name . " has been " . ($request->mode == 1 ? 'approved' : 'rejected') . "</p><p>Project URL: <a href='" . $projectUrl . "'>" . $projectUrl . "</a></p><p>Please take the necessary steps to continue moving the job forward.</p><p>Thank you!.</p>";
             $this->sendEmailForProjectAcceptance($project, "Project Acceptance Review Status - " . $project->customer->first_name . " " . $project->customer->last_name, $emailText, "engineering@solenenergyco.com");
             // Log the custom message
             $username = auth()->user()->name;

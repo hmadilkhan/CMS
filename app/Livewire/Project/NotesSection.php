@@ -23,10 +23,14 @@ class NotesSection extends Component
     public $projectDepartmentId = "";
     public $ghost = "";
     public $employees;
+    public $showToCustomer = 0;
+
+    protected $listeners = ['refresh' => '$refresh'];
 
     public function mount()
     {
         $loggedInUser = auth()->user();
+        $this->showToCustomer = 0;
         $this->employees = Employee::select('id', 'name', 'email')
             ->where(function($query) use ($loggedInUser) {
                 $query->whereHas('user.roles', function($q) {
@@ -92,15 +96,16 @@ class NotesSection extends Component
                 "project_id" => $this->projectId,
                 "task_id" => $this->taskId,
                 "department_id" => $this->departmentId,
-                "notes" => $cleanNote, // Store clean note with only names
+                "notes" => $cleanNote,
                 "user_id" => auth()->user()->id,
+                "show_to_customer" => $this->showToCustomer,
             ]);
 
             $username = auth()->user()->name;
 
             activity('project')
                 ->performedOn($project)
-                ->causedBy(auth()->user()) // Log who did the action
+                ->causedBy(auth()->user())
                 ->setEvent("updated")
                 ->withProperties([
                     'notes' => $cleanNote,
@@ -108,6 +113,7 @@ class NotesSection extends Component
                 ->log("{$username} added the notes to the project : {$cleanNote}.");
 
             $this->departmentNote = "";
+            $this->reset('showToCustomer');
             $this->dispatch('refresh');
         } catch (\Throwable $th) {
             //throw $th;
@@ -121,6 +127,7 @@ class NotesSection extends Component
         $note = DepartmentNote::findOrFail($id);
         $this->editingNoteId = $id;
         $this->departmentNote = $note->notes;
+        $this->showToCustomer = $note->show_to_customer;
         $this->projectId = $note->project_id;
         $this->taskId = $note->task_id;
         $this->departmentId = $note->department_id;
@@ -171,13 +178,14 @@ class NotesSection extends Component
             // Update the note with clean text (only names)
             $note->update([
                 "notes" => $cleanNote,
+                "show_to_customer" => $this->showToCustomer,
             ]);
 
             $username = auth()->user()->name;
 
             activity('project')
                 ->performedOn($project)
-                ->causedBy(auth()->user()) // Log who did the action
+                ->causedBy(auth()->user())
                 ->setEvent("updated")
                 ->withProperties([
                     'old_notes' => $oldNote,
@@ -188,6 +196,7 @@ class NotesSection extends Component
             // Reset editing state
             $this->editingNoteId = null;
             $this->departmentNote = "";
+            $this->reset('showToCustomer');
             $this->dispatch('refresh');
         } catch (\Throwable $th) {
             //throw $th;
@@ -199,6 +208,7 @@ class NotesSection extends Component
     {
         $this->editingNoteId = null;
         $this->departmentNote = "";
+        $this->reset('showToCustomer');
     }
 
     public function deleteNote($id)

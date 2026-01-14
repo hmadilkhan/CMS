@@ -265,6 +265,14 @@ Route::middleware('auth')->group(function () {
         Route::post('/loan-term-delete', 'loanTermDelete')->name("loan.term.delete");
     });
 
+    // ASSIGN DEPARTMENT
+    Route::controller(App\Http\Controllers\AssignDepartmentController::class)->group(function () {
+        Route::get('/assign-department/{id?}', 'index')->name('assign-department.index');
+        Route::post('/assign-department-store', 'store')->name('assign-department.store');
+        Route::post('/assign-department-update', 'update')->name('assign-department.update');
+        Route::post('/assign-department-delete', 'destroy')->name('assign-department.destroy');
+    });
+
     Route::controller(InverterTypeController::class)->group(function () {
         Route::get('/view-inverter-type/{id?}', 'inverterTypeIndex')->name("view-inverter-type");
         Route::post('/inverter-type-store', 'inverterTypeStore')->name("inverter.type.store");

@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Factories\BelongsToManyRelationship;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Spatie\Activitylog\LogOptions;
 use Spatie\Activitylog\Traits\LogsActivity;
@@ -43,6 +44,11 @@ class Employee extends Model
    public function department(): BelongsToMany
    {
       return $this->belongsToMany(Department::class, 'employee_departments')->withTrashed();
+   }
+
+   public function assignDepartments(): HasMany
+   {
+      return $this->hasMany(AssignDepartment::class, 'employee_id', 'id');
    }
 
    public function scopeGetUser($query, $departmentId, $roles)

@@ -19,4 +19,8 @@ class Department extends Model
     public function subdepartments() : HasMany {
         return $this->hasMany(SubDepartment::class,"department_id","id")->withTrashed();
     }
+
+    public function assignDepartments() : HasMany {
+        return $this->hasMany(AssignDepartment::class,"department_id","id");
+    }
 }
