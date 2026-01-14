@@ -39,6 +39,7 @@ class IntakeFormController extends Controller
 
     public function __construct()
     {
+        // Roles only allowed to access intake forms
         $this->middleware(['role:Sales Person|Sales Manager']);
     }
 
