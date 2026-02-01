@@ -912,7 +912,7 @@ class ProjectController extends Controller
 
     public function trackYourProject(Request $request)
     {
-        // $request->project_id = Crypt::decrypt($request->project_id);
+        $request->project_id = Crypt::decrypt($request->project_id);
         $project = Project::where('code', $request->project_id)->first();
         $task = Task::whereIn("status", ["In-Progress", "Hold"])->where("project_id", $project->id)->first();
         $departments = Department::whereIn("id", Task::where("project_id", $project->id)->whereNotIn("department_id", Department::where("id", ">", $task->department_id)->take(1)->pluck("id"))->groupBy("department_id")->orderBy("department_id")->pluck("department_id"))->get();
