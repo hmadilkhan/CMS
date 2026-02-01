@@ -27,9 +27,7 @@ class HomeController extends Controller
             return view('technician-dashboard-wrapper');
         }
 
-        if (!empty(auth()->user()->employee)) {
-            $emails = Email::with("project", "customer")->whereIn("project_id", Task::where("employee_id", auth()->user()->employee->id)->where("status", "!=", "Completed")->pluck("project_id"))->where("is_view", 1)->get();
-        }
+        
         if (auth()->user()->hasRole("Super Admin")) {
             return view('executive-dashboard');
         }
@@ -40,6 +38,11 @@ class HomeController extends Controller
                 "tickets" => $tickets
             ]);
         }
+        
+        if (!empty(auth()->user()->employee)) {
+            $emails = Email::with("project", "customer")->whereIn("project_id", Task::where("employee_id", auth()->user()->employee->id)->where("status", "!=", "Completed")->pluck("project_id"))->where("is_view", 1)->get();
+        }
+
         // Get follow-ups for logged-in employee
         $followUps = [];
         if (!empty(auth()->user()->employee)) {
@@ -50,10 +53,22 @@ class HomeController extends Controller
                 ->get();
         }
 
+        // Get service tickets for logged-in employee
+        $serviceTickets = [];
+        if (!empty(auth()->user()->id)) {
+            $serviceTickets = ServiceTicket::with(['project', 'assignedUser'])
+                ->withCount('comments')
+                ->where('assigned_to', auth()->user()->id)
+                ->where('status', '!=', 'Resolved')
+                ->orderBy('created_at', 'desc')
+                ->get();
+        }
+
         return view('dashboard', [
             "projects" => $this->projectService->projectQuery($request),
             "emails" => $emails,
-            "followUps" => $followUps
+            "followUps" => $followUps,
+            "serviceTickets" => $serviceTickets
         ]);
     }
 }

@@ -51,8 +51,6 @@ $("#finance_option_id").change(function() {
     getFinanceOptionById($(this).val())
 });
 $("#inverter_type_id").change(function() {
-    console.log(" Inverter Type Changed");
-    
     getRedlineCost();
 });
 
@@ -423,8 +421,6 @@ $("#module_type_id").change(function() {
 
 // Schedule Survey Checkbox Toggle
 $("#schedule_survey").change(function() {
-    console.log("cHECKBOX CHECKED");
-    
     if ($(this).is(':checked')) {
         $("#departmentReviewSection").slideDown(300);
         // Make fields required

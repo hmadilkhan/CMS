@@ -153,6 +153,14 @@
                         <!-- Hidden input to store raw version with ID -->
                         <input type="hidden" x-ref="rawNoteInput" wire:model="departmentNote">
 
+                        <!-- Show to Customer Toggle -->
+                        <div class="mt-3 d-flex align-items-center">
+                            <label class="form-check form-switch mb-0">
+                                <input class="form-check-input" type="checkbox" wire:model="showToCustomer" value="1">
+                                <span class="form-check-label ms-2" style="font-size: 0.9rem;">Show to Customer</span>
+                            </label>
+                        </div>
+
                         <!-- SUGGESTIONS dropdown -->
                         <ul x-show="showSuggestions" class="list-group position-absolute bg-white z-10 suggestions-dropdown"
                             style="top: 100%; left: 0; right: 0; max-height: 200px; overflow-y: auto; margin-top: 0.5rem;">
@@ -209,6 +217,14 @@
 
                                 <!-- Hidden input to store raw version with ID -->
                                 <input type="hidden" x-ref="rawNoteInput" wire:model="departmentNote">
+
+                                <!-- Show to Customer Toggle -->
+                                <div class="mt-3 d-flex align-items-center">
+                                    <label class="form-check form-switch mb-0">
+                                        <input class="form-check-input" type="checkbox" wire:model="showToCustomer" value="1">
+                                        <span class="form-check-label ms-2" style="font-size: 0.9rem;">Show to Customer</span>
+                                    </label>
+                                </div>
 
                                 <!-- SUGGESTIONS dropdown -->
                                 <ul x-show="showSuggestions"
