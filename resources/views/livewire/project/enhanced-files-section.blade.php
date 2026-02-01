@@ -143,7 +143,8 @@
             color: white;
         }
 
-        .btn-secondary,.btn-danger {
+        .btn-secondary,
+        .btn-danger {
             border-radius: 20px;
             padding: 10px 25px;
             font-weight: 600;
@@ -288,7 +289,7 @@
                 ($ghost == 'ghost' && $departmentId == 7) ||
                 ($ghost != 'ghost' && $departmentId == $projectDepartmentId);
         @endphp
-        @if ($showEditFields)
+        @if ($showEditFields && $viewSource != 'website')
             <div class="mb-4">
                 <button type="button" wire:click="openModal" class="upload-btn">
                     <i class="icofont-upload-alt me-2"></i>Upload Files
@@ -307,11 +308,11 @@
             @endphp
             <div class="file-card">
                 <div class="file-preview">
-                    @if($isImage)
+                    @if ($isImage)
                         <img src="{{ $filePath }}" alt="{{ $file->header_text }}">
                     @elseif($isPdf)
-                        <iframe src="{{ $filePath }}#toolbar=0&navpanes=0&scrollbar=0" 
-                                title="{{ $file->header_text }}"></iframe>
+                        <iframe src="{{ $filePath }}#toolbar=0&navpanes=0&scrollbar=0"
+                            title="{{ $file->header_text }}"></iframe>
                     @elseif($extension === 'docx')
                         <div class="file-type-icon">
                             <i class="icofont-file-word file-icon"></i>
@@ -334,21 +335,22 @@
                         </div>
                     @endif
                     @can('File Delete')
-                        <div class="delete-icon" wire:click="$dispatch('deleteConfirmation', {id: {{ $file->id }}})">
-                            <i class="icofont-trash"></i>
-                        </div>
+                        @if ($viewSource != 'website')
+                            <div class="delete-icon"
+                                wire:click="$dispatch('deleteConfirmation', {id: {{ $file->id }}})">
+                                <i class="icofont-trash"></i>
+                            </div>
+                        @endif
                     @endcan
                 </div>
                 <div class="file-info">
-                    <div class="file-header editable-title" 
-                         contenteditable="true" 
-                         data-file-id="{{ $file->id }}"
-                         x-data="{ originalText: '{{ $file->header_text ?? 'Untitled' }}' }"
-                         x-on:blur="if($el.textContent.trim() !== originalText) { $wire.updateTitle({{ $file->id }}, $el.textContent.trim()); originalText = $el.textContent.trim(); }">{{ $file->header_text ?? 'Untitled' }}</div>
+                    <div class="file-header {{ $viewSource != 'website' ? 'editable-title' : '' }}" contenteditable="{{ $viewSource == 'website' ? 'true' : 'false' }}" data-file-id="{{ $file->id }}"
+                        x-data="{ originalText: '{{ $file->header_text ?? 'Untitled' }}' }"
+                        x-on:blur="if($el.textContent.trim() !== originalText) { $wire.updateTitle({{ $file->id }}, $el.textContent.trim()); originalText = $el.textContent.trim(); }">
+                        {{ $file->header_text ?? 'Untitled' }}</div>
                     <div class="file-name">
                         <i class="icofont-file-document"></i>
-                        <a target="_blank" href="{{ $filePath }}" 
-                           class="text-white text-decoration-none">
+                        <a target="_blank" href="{{ $filePath }}" class="text-white text-decoration-none">
                             {{ Str::limit(preg_replace('/^\d+_/', '', $file->filename), 30) }}
                         </a>
                     </div>
@@ -364,7 +366,8 @@
 
     <!-- Upload Modal -->
     @if ($showModal)
-        <div class="modal fade show d-block" tabindex="-1" style="background: rgba(0,0,0,0.5); z-index: 1050;" wire:ignore.self>
+        <div class="modal fade show d-block" tabindex="-1" style="background: rgba(0,0,0,0.5); z-index: 1050;"
+            wire:ignore.self>
             <div class="modal-dialog modal-dialog-centered modal-lg" style="pointer-events: auto;">
                 <div class="modal-content" style="pointer-events: auto;">
                     <div class="modal-header">
@@ -374,51 +377,47 @@
                         <button type="button" class="btn-close btn-close-white" wire:click="closeModal"></button>
                     </div>
                     <div class="modal-body">
-                        <div class="premium-dropzone" 
-                             ondrop="handleDrop(event)" 
-                             ondragover="handleDragOver(event)" 
-                             ondragleave="handleDragLeave(event)"
-                             onclick="document.getElementById('fileInput').click()">
+                        <div class="premium-dropzone" ondrop="handleDrop(event)" ondragover="handleDragOver(event)"
+                            ondragleave="handleDragLeave(event)" onclick="document.getElementById('fileInput').click()">
                             <i class="icofont-cloud-upload display-3 text-primary mb-3"></i>
                             <h5 class="fw-bold mb-2">Drop files here or click to browse</h5>
                             <p class="text-muted mb-0">Supports: PDF, JPG, PNG, HEIC, DXF, DOCX, DWG (Max 50MB)</p>
-                            <input type="file" 
-                                   id="fileInput" 
-                                   wire:model="files" 
-                                   multiple 
-                                   accept=".pdf,.jpg,.jpeg,.png,.heic,.dxf,.docx,.dwg"
-                                   style="display: none;">
+                            <input type="file" id="fileInput" wire:model="files" multiple
+                                accept=".pdf,.jpg,.jpeg,.png,.heic,.dxf,.docx,.dwg" style="display: none;">
                         </div>
-                        
-                        @error('files.*') 
+
+                        @error('files.*')
                             <div class="alert alert-danger mt-3">{{ $message }}</div>
                         @enderror
-                        
+
                         <div wire:loading wire:target="files" class="text-center mt-3">
                             <i class="icofont-spinner icofont-spin fs-3 text-primary"></i>
                             <p class="text-primary mt-2">Processing files...</p>
                         </div>
 
-                        @if(count($uploadedFiles) > 0)
+                        @if (count($uploadedFiles) > 0)
                             <div class="preview-grid mt-4">
-                                @foreach($uploadedFiles as $index => $file)
+                                @foreach ($uploadedFiles as $index => $file)
                                     <div class="preview-card" wire:key="preview-{{ $index }}">
-                                        <button type="button" class="preview-remove" wire:click="removePreview({{ $index }})">
+                                        <button type="button" class="preview-remove"
+                                            wire:click="removePreview({{ $index }})">
                                             <i class="icofont-close"></i>
                                         </button>
-                                        @if($file['isImage'])
-                                            @if($file['preview'])
-                                                <img src="{{ $file['preview'] }}" alt="Preview" 
-                                                     onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';"
-                                                     loading="lazy">
+                                        @if ($file['isImage'])
+                                            @if ($file['preview'])
+                                                <img src="{{ $file['preview'] }}" alt="Preview"
+                                                    onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';"
+                                                    loading="lazy">
                                             @endif
-                                            <div class="preview-icon" @if($file['preview']) style="display: none;" @endif>
+                                            <div class="preview-icon"
+                                                @if ($file['preview']) style="display: none;" @endif>
                                                 <i class="icofont-image fs-1 text-success"></i>
                                                 <span class="d-block mt-2">{{ strtoupper($file['extension']) }}</span>
                                             </div>
                                         @else
                                             <div class="preview-icon">
-                                                <i class="icofont-file-{{ $file['extension'] === 'pdf' ? 'pdf' : 'document' }} fs-1"></i>
+                                                <i
+                                                    class="icofont-file-{{ $file['extension'] === 'pdf' ? 'pdf' : 'document' }} fs-1"></i>
                                                 <span class="d-block mt-2">{{ strtoupper($file['extension']) }}</span>
                                             </div>
                                         @endif
@@ -430,8 +429,8 @@
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" wire:click="closeModal">Cancel</button>
-                        <button type="button" class="btn btn-save" wire:click="save" 
-                                @if(count($uploadedFiles) === 0) disabled @endif>
+                        <button type="button" class="btn btn-save" wire:click="save"
+                            @if (count($uploadedFiles) === 0) disabled @endif>
                             <i class="icofont-save me-2"></i>Save Files
                         </button>
                     </div>
@@ -457,11 +456,13 @@
             e.preventDefault();
             e.stopPropagation();
             e.currentTarget.classList.remove('dragover');
-            
+
             const files = e.dataTransfer.files;
             const fileInput = document.getElementById('fileInput');
             fileInput.files = files;
-            fileInput.dispatchEvent(new Event('change', { bubbles: true }));
+            fileInput.dispatchEvent(new Event('change', {
+                bubbles: true
+            }));
         }
     </script>
 
@@ -487,38 +488,38 @@
 </div>
 
 @script
-<script>
-    window.addEventListener('show-delete-modal', () => {
-        $('#deletefile').modal('show');
-    });
+    <script>
+        window.addEventListener('show-delete-modal', () => {
+            $('#deletefile').modal('show');
+        });
 
-    window.addEventListener('hide-delete-modal', () => {
-        $('#deletefile').modal('hide');
-    });
+        window.addEventListener('hide-delete-modal', () => {
+            $('#deletefile').modal('hide');
+        });
 
-    function handleDragOver(e) {
-        e.preventDefault();
-        e.stopPropagation();
-        e.currentTarget.classList.add('drag-over');
-    }
+        function handleDragOver(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            e.currentTarget.classList.add('drag-over');
+        }
 
-    function handleDragLeave(e) {
-        e.preventDefault();
-        e.stopPropagation();
-        e.currentTarget.classList.remove('drag-over');
-    }
+        function handleDragLeave(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            e.currentTarget.classList.remove('drag-over');
+        }
 
-    function handleDrop(e) {
-        e.preventDefault();
-        e.stopPropagation();
-        e.currentTarget.classList.remove('drag-over');
-        
-        const files = e.dataTransfer.files;
-        const input = document.getElementById('fileInput');
-        input.files = files;
-        input.dispatchEvent(new Event('change', { bubbles: true }));
-    }
+        function handleDrop(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            e.currentTarget.classList.remove('drag-over');
 
-
-</script>
+            const files = e.dataTransfer.files;
+            const input = document.getElementById('fileInput');
+            input.files = files;
+            input.dispatchEvent(new Event('change', {
+                bubbles: true
+            }));
+        }
+    </script>
 @endscript

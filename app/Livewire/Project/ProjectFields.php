@@ -11,6 +11,7 @@ class ProjectFields extends Component
     public $departmentId;
     public $projectDepartmentId;
     public $ghost;
+    public $viewSource;
 
     public function render()
     {

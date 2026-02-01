@@ -19,6 +19,7 @@ class EnhancedFilesSection extends Component
     public $projectDepartmentId = "";
     public $ghost;
     public $deleteId;
+    public $viewSource = "";
     
     public $showModal = false;
     public $files = [];

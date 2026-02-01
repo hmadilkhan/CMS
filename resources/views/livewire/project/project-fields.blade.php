@@ -3,7 +3,7 @@
         $showEditFields =
             ($ghost == 'ghost' && $departmentId == 7) || ($ghost != 'ghost' && $departmentId == $projectDepartmentId);
     @endphp
-    @if ($showEditFields)
+    @if ($showEditFields && ($viewSource != 'website'))
         @livewire('project.project-fields.edit-fields', ['project' => $project, 'departmentId' => $departmentId, 'ghost' => $ghost])
     @else
         @livewire('project.project-fields.view-fields', ['project' => $project, 'departmentId' => $departmentId])

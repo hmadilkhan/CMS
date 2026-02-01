@@ -912,11 +912,14 @@ class ProjectController extends Controller
 
     public function trackYourProject(Request $request)
     {
-        $request->project_id = Crypt::decrypt($request->project_id);
+        // $request->project_id = Crypt::decrypt($request->project_id);
         $project = Project::where('code', $request->project_id)->first();
         $task = Task::whereIn("status", ["In-Progress", "Hold"])->where("project_id", $project->id)->first();
         $departments = Department::whereIn("id", Task::where("project_id", $project->id)->whereNotIn("department_id", Department::where("id", ">", $task->department_id)->take(1)->pluck("id"))->groupBy("department_id")->orderBy("department_id")->pluck("department_id"))->get();
         $fwdDepartments =  array_merge($departments->toArray(), Department::where("id", ">", $task->department_id)->take(1)->get()->toArray());
+        $departments = Department::whereIn("id", Task::where("project_id", $project->id)->whereNotIn("department_id", Department::where("id", ">", $task->department_id)->take(1)->pluck("id"))->where("id", "!=", 9)->groupBy("department_id")->orderBy("department_id")->pluck("department_id"))->get();
+        $fwdIds = collect($fwdDepartments)->pluck("id");
+        $nextSubDepartments =  SubDepartment::whereIn("department_id", $fwdIds)->orderby('order', 'asc')->get();
         try {
             if ($request->project_id) {
                 return view("projects.partial.website-project-details", [
@@ -929,7 +932,9 @@ class ProjectController extends Controller
                     "employees" => $this->getEmployees($project->department_id),
                     "adders" => AdderType::all(),
                     "uoms" => AdderUnit::all(),
-                    "tools" => Tool::where("department_id", $project->department_id)->get()
+                    "tools" => Tool::where("department_id", $project->department_id)->get(),
+                    "ghost" => [],
+                    "nextSubDepartments" => [],
                 ]);
             }
         } catch (\Throwable $th) {

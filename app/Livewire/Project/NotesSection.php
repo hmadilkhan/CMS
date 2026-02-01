@@ -23,6 +23,7 @@ class NotesSection extends Component
     public $projectDepartmentId = "";
     public $ghost = "";
     public $employees;
+    public $viewSource = "";
 
     public function mount()
     {

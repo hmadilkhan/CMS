@@ -213,7 +213,7 @@ class IntakeFormController extends Controller
 
             // Handle file uploads if schedule_survey is checked
             if ($request->has('schedule_survey') && $request->schedule_survey == 1) {
-                $fileFields = ['contract_pdf', 'cpuc_pdf', 'disclosure_document', 'electronic_signature'];
+                $fileFields = ['contract_pdf', 'cpuc_pdf', 'disclosure_document', 'electronic_signature', 'utility_bill'];
 
                 foreach ($fileFields as $field) {
                     if ($request->hasFile($field)) {

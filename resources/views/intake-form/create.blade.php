@@ -547,6 +547,12 @@
                                 name="electronic_signature" accept=".pdf">
                             <div id="electronic_signature_message" class="text-danger message mt-2"></div>
                         </div>
+                        <div class="col-sm-6">
+                            <label for="utility_bill" class="form-label premium-label">Utility Bill</label>
+                            <input class="form-control premium-input" type="file" id="utility_bill"
+                                name="utility_bill" accept=".pdf">
+                            <div id="utility_bill_message" class="text-danger message mt-2"></div>
+                        </div>
                     </div>
                 </div>
 

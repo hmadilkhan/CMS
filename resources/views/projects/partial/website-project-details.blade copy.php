@@ -3,18 +3,19 @@
 @section('content')
     <style>
         body {
+            background-color: #f4f7f6;
             margin-top: 20px;
         }
 
         .card {
             background: #fff;
-            transition: all 0.3s ease;
+            transition: .5s;
             border: 0;
             margin-bottom: 30px;
-            border-radius: 16px;
+            border-radius: .55rem;
             position: relative;
             width: 100%;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+            box-shadow: 0 1px 2px 0 rgb(0 0 0 / 10%);
         }
 
         .chat-app .people-list {
@@ -268,55 +269,8 @@
 
         .main-container {
             width: 650px;
-        }
-
-        .card-header {
-            background: linear-gradient(135deg, #2c3e50 0%, #000000 100%);
-            color: white;
-            border-radius: 16px 16px 0 0 !important;
-            padding: 1.5rem;
-            border: none;
-        }
-
-        .nav-tabs {
-            border: none;
-            background: white;
-            padding: 1rem;
-            border-radius: 12px;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
-        }
-
-        .nav-tabs .nav-link {
-            border: none;
-            color: #6c757d;
-            font-weight: 600;
-            padding: 0.75rem 1.5rem;
-            border-radius: 8px;
-            transition: all 0.3s;
-        }
-
-        .nav-tabs .nav-link:hover {
-            background: #f8f9fa;
-            color: #2c3e50;
-        }
-
-        .nav-tabs .nav-link.active {
-            background: linear-gradient(135deg, #2c3e50 0%, #000000 100%);
-            color: white;
-        }
-
-        .form-control,
-        .form-select {
-            border-radius: 10px;
-            border: 2px solid #e9ecef;
-            padding: 0.75rem 1rem;
-            transition: all 0.3s;
-        }
-
-        .form-control:focus,
-        .form-select:focus {
-            border-color: #2c3e50;
-            box-shadow: 0 0 0 0.2rem rgba(44, 62, 80, 0.25);
+            /* margin-left: auto;
+                        margin-right: auto; */
         }
     </style>
     <div id="mytask-layout" class="theme-indigo">
@@ -325,72 +279,22 @@
                 <div class="row clearfix">
                     <div class="col-md-12">
                         <div class="card border-0 mb-4 no-bg">
-                            <div class="col-md-12">
-                                <div class="card border-0 mb-4 no-bg">
-                                    <div
-                                        class="card-header py-3 px-3 d-sm-flex align-items-center  justify-content-between border-bottom">
-                                        <h3 class=" fw-bold flex-fill mb-0 mt-sm-0">{{ $project->project_name }}</h3>
-                                        <a class="btn {{ $task->status == 'Hold' ? 'btn-warning' : ($task->status == 'Cancelled' ? 'btn-danger' : 'btn-dark') }} text-white me-1 mt-1 w-sm-100"
-                                            id="openemployee">{{ $task->status }}</a>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="d-flex justify-content-center align-items-center">
-                                <nav class="navbar navbar-expand-lg ">
-                                    <div class="container-fluid">
-                                        <div class="collapse navbar-collapse">
-                                            <ul class="nav nav-tabs tab-body-header rounded ms-3 prtab-set w-sm-100"
-                                                style="overflow: visible !important;">
-                                                @foreach ($departments as $department)
-                                                   
-                                                    @if ($department->id < $project->department_id)
-                                                        <li class="nav-item dropdown bg-success">
-                                                            <a class="nav-link dropdown-toggle  text-white"
-                                                                id="navbarDropdown" role="button" data-bs-toggle="dropdown"
-                                                                aria-expanded="false">
-                                                                {{ $department->name }}
-                                                            </a>
-                                                            
-                                                        </li>
-                                                    @elseif($department->id == $project->department_id)
-                                                        <li class="nav-item dropdown bg-success">
-                                                            <a class="nav-link dropdown-toggle active text-white"
-                                                                id="navbarDropdown" role="button" data-bs-toggle="dropdown"
-                                                                aria-expanded="false">
-                                                                {{ $department->name }}
-                                                            </a>
-                                                            
-                                                        </li>
-                                                    @else
-                                                        <li class="nav-item dropdown">
-                                                            <a class="nav-link dropdown-toggle " id="navbarDropdown"
-                                                                role="button" data-bs-toggle="dropdown"
-                                                                aria-expanded="false">
-                                                                {{ $department->name }}
-                                                            </a>
-                                                            
-                                                        </li>
-                                                    @endif
-                                                @endforeach
-
-                                            </ul>
-                                        </div>
-                                    </div>
-                                </nav>
+                            <div
+                                class="card-header py-3 px-0 d-sm-flex align-items-center  justify-content-between border-bottom">
+                                <h3 class=" fw-bold flex-fill mb-0 mt-sm-0">{{ $project->project_name }}</h3>
+                                <a class="btn {{ $task->status == 'Hold' ? 'btn-warning' : ($task->status == 'Cancelled' ? 'btn-danger' : 'btn-dark') }} text-white me-1 mt-1 w-sm-100"
+                                    id="openemployee">{{ $task->status }}</a>
                             </div>
                         </div>
                     </div>
-                </div>
-                <div class="row clearfix">
-
-                    <div class="card-header py-3 px-3 d-sm-flex align-items-center  justify-content-between border-bottom">
+                    <div class="card-header py-3 px-0 d-sm-flex align-items-center  justify-content-between border-bottom">
                         <h3 class=" fw-bold flex-fill mb-0 mt-sm-0">Customer Details</h3>
                     </div>
                     <div class="row g-3 mb-3">
                         <div class="col-sm-3">
                             <label for="first_name" class="form-label">First Name</label>
-                            <input disabled value="{{ $project->customer->first_name }}" type="text"
-                                class="form-control" id="first_name" name="first_name" placeholder="First Name">
+                            <input disabled value="{{ $project->customer->first_name }}" type="text" class="form-control"
+                                id="first_name" name="first_name" placeholder="First Name">
                         </div>
                         <div class="col-sm-3">
                             <label for="last_name" class="form-label">Last Name</label>
@@ -414,8 +318,8 @@
                         </div>
                         <div class="col-sm-3">
                             <label for="zipcode" class="form-label">Zip Code</label>
-                            <input disabled value="{{ $project->customer->zipcode }}" type="text"
-                                class="form-control" id="zipcode" name="zipcode" placeholder="Zip Code">
+                            <input disabled value="{{ $project->customer->zipcode }}" type="text" class="form-control"
+                                id="zipcode" name="zipcode" placeholder="Zip Code">
                         </div>
                         <div class="col-sm-3">
                             <label for="phone" class="form-label">Phone</label>
@@ -430,8 +334,8 @@
 
                         <div class="col-sm-3">
                             <label for="sold_date" class="form-label">Sold Date</label>
-                            <input disabled value="{{ $project->customer->sold_date }}" type="date"
-                                class="form-control" id="sold_date" name="sold_date" placeholder="Sold Date">
+                            <input disabled value="{{ $project->customer->sold_date }}" type="date" class="form-control"
+                                id="sold_date" name="sold_date" placeholder="Sold Date">
                         </div>
                         <div class="col-sm-3">
                             <label class="form-label">Sales Partner</label>
@@ -493,14 +397,14 @@
                                 <div class="col-md-12">
                                     <div class="card border-0 mb-4 no-bg">
                                         <div
-                                            class="card-header py-3 px-0 d-sm-flex align-items-center bg-light text-center  justify-content-between border-bottom">
+                                            class="card-header py-3 px-0 d-sm-flex align-items-center text-center  justify-content-between border-bottom">
                                             <h3 class=" fw-bold flex-fill mb-0 mt-sm-0">Project Notes </h3>
                                         </div>
                                     </div>
                                 </div>
                                 @foreach ($departments as $department)
                                     <div class="col-md-12">
-                                        <div class="card border-0 mb-4 bg-light text-center">
+                                        <div class="card border-0 mb-4 no-bg">
                                             <div
                                                 class="card-header py-3 px-0 d-sm-flex align-items-center  justify-content-between border-bottom border-top">
                                                 <h3 class=" fw-bold flex-fill mb-0 mt-sm-0 px-2">{{ $department->name }}
@@ -524,20 +428,90 @@
                                     @endphp
 
                                     <div class="col-sm-6 mb-3">
-                                        @livewire('project.notes-section', ['projectId' => $project->id, 'taskId' => $task->id, 'departmentId' => $department->id, 'projectDepartmentId' => $project->department_id, 'ghost' => $ghost, 'viewSource' => 'website'], key($project->id))
-                                        @livewire('project.project-fields', ['project' => $project, 'taskId' => $task->id, 'departmentId' => $department->id, 'projectDepartmentId' => $project->department_id, 'ghost' => $ghost, 'viewSource' => 'website'], key($project->id))
+                                        <div class="col-sm-12 mb-3">
+                                            <label for="formFileMultipleoneone"
+                                                class="form-label fw-bold flex-fill mb-2 mt-sm-0">Department Notes</label>
+                                            @foreach ($filtered_collection as $value)
+                                                @if ($value->notes != '')
+                                                    <textarea class="form-control" disabled rows="3">{{ $value->notes }} {{ !empty($value->user) ? '( Added by ' . $value->user->name . ')' : '' }}</textarea>
+                                                @endif
+                                            @endforeach
+                                        </div>
+                                        @include('projects.partial.website-department-fields')
                                     </div>
 
                                     <div class="col-sm-6 mb-3">
-                                        @livewire('project.enhanced-files-section', ['projectId' => $project->id, 'taskId' => $task->id, 'departmentId' => $department->id, 'projectDepartmentId' => $project->department_id, 'ghost' => $ghost, 'viewSource' => 'website'], key('enhanced-' . $department->id))
+                                        <label for="formFileMultipleoneone"
+                                            class="form-label fw-bold flex-fill mb-2 mt-sm-0">Files</label>
+                                        <ul class="list-group list-group-custom">
+                                            @foreach ($files as $file)
+                                                <!-- <label class="badge bg-light"> <a target="_blank" href="{{ asset('storage/projects/' . $file->filename) }}" class="ml-3">{{ $file->filename }}</a></label> -->
+                                                <li class="list-group-item light-primary-bg">
+                                                    {{-- @can('File Delete')
+                                                        <i class="icofont-trash text-danger fs-6" style="cursor:pointer;"
+                                                            onclick="deleteFile('{{ $file->id }}')">&nbsp;</i>
+                                                    @endcan --}}
+                                                    <a target="_blank"
+                                                        href="{{ asset('storage/projects/' . $file->filename) }}"
+                                                        class="ml-3">{{ $file->filename }}</a>
+                                                </li>
+                                            @endforeach
+                                        </ul>
                                     </div>
                                 @endforeach
                             </div>
                         </div>`
                     </div>
                 </div>
+                {{-- <div class="tab-pane fade show active" id="calls" role="tabpanel">
+                    <div class="card card-info mt-2">
+                        <div class="card-body">
+                            <div class="row clearfix">
+                                <div class="col-md-12">
+                                    <div class="card border-0 mb-4 no-bg">
+                                        <div
+                                            class="card-header py-3 px-0 d-sm-flex align-items-center  justify-content-between text-center border">
+                                            <h3 class=" fw-bold flex-fill mb-0 mt-sm-0">Project Call Logs
+                                            </h3>
+                                        </div>
+                                    </div>
+                                </div>
+                                @foreach ($departments as $department)
+                                    <div class="col-md-12">
+                                        <div class="card border-0 mb-4 no-bg">
+                                            <div style="background-color: #E5E4E2;"
+                                                class="card-header py-3 px-0 d-sm-flex align-items-center   justify-content-between border-bottom border-top">
+                                                <h3 class=" fw-bold flex-fill mb-0 mt-sm-0 px-2">
+                                                    {{ $department->name }}
+                                                </h3>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    @php
+                                        $logs = $project->logs
+                                            ->filter(function ($item) use ($department) {
+                                                return $item->department_id == $department->id;
+                                            })
+                                            ->values();
+                                    @endphp
 
-                <div class="tab-pane fade show " id="emails" role="tabpanel">
+                                    <input type="hidden" id="{{ $department->id }}_log_count"
+                                        value="{{ count($logs) }}" />
+
+                                    @foreach ($logs as $key => $log)
+                                        <div class="col-sm-12 mb-3">
+                                            <label for="formFileMultipleoneone"
+                                                class="form-label fw-bold flex-fill mb-2 mt-sm-0">
+                                                {{ $log->call->name }} :</label>
+                                            <textarea class="form-control" disabled rows="3">{{ $log->notes }}</textarea>
+                                        </div>
+                                    @endforeach
+                                @endforeach
+                            </div>
+                        </div>`
+                    </div>
+                </div> --}}
+                <div class="tab-pane fade show active" id="emails" role="tabpanel">
                     <div class="container">
                         <div
                             class="card-header py-3 px-0 d-sm-flex align-items-center  justify-content-between border-bottom">
@@ -549,27 +523,27 @@
                 </div>
             </div>
         </div>
-    @endsection
-    @section('scripts')
-        <script>
-            showEmails("{{ $project->id }}");
+@endsection
+@section('scripts')
+    <script>
+        showEmails("{{ $project->id }}");
 
-            function showEmails(projectId) {
-                $.ajax({
-                    method: "POST",
-                    url: "{{ route('show.website.emails') }}",
-                    data: {
-                        _token: "{{ csrf_token() }}",
-                        project_id: projectId,
-                    },
-                    success: function(response) {
-                        $("#emailDiv").empty();
-                        $("#emailDiv").html(response);
-                    },
-                    error: function(error) {
-                        console.log(error);
-                    }
-                })
-            }
-        </script>
-    @endsection
+        function showEmails(projectId) {
+            $.ajax({
+                method: "POST",
+                url: "{{ route('show.website.emails') }}",
+                data: {
+                    _token: "{{ csrf_token() }}",
+                    project_id: projectId,
+                },
+                success: function(response) {
+                    $("#emailDiv").empty();
+                    $("#emailDiv").html(response);
+                },
+                error: function(error) {
+                    console.log(error);
+                }
+            })
+        }
+    </script>
+@endsection

@@ -116,7 +116,7 @@
                     ($ghost == 'ghost' && $departmentId == 7) ||
                     ($ghost != 'ghost' && $departmentId == $projectDepartmentId);
             @endphp
-            @if ($showEditFields)
+            @if ($showEditFields && $viewSource != 'website')
                 <div class="notes-section">
                     <div class="note-header">
                         <i class="icofont-ui-note me-2"></i>Add New Notes
@@ -242,7 +242,7 @@
                                             style="resize: none; background-color: white; border: none; padding: 0; min-height: 60px; height: auto; overflow: hidden;"
                                             onload="this.style.height = this.scrollHeight + 'px'">{{ $value->notes }}</textarea>
                                     </div>
-                                    @if ($value->user_id == auth()->user()->id)
+                                    @if ($value->user_id == auth()->user()->id && $viewSource != 'website')
                                         <div class="note-actions ms-3">
                                             <div class="note-icon edit" wire:click="editNote({{ $value->id }})">
                                                 <i class="icofont-pencil"></i>
