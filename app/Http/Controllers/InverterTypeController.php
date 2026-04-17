@@ -7,6 +7,21 @@ use Illuminate\Http\Request;
 
 class InverterTypeController extends Controller
 {
+    protected function normalizeTags(?string $tags): array
+    {
+        if (empty($tags)) {
+            return [];
+        }
+
+        $decoded = json_decode($tags, true);
+
+        if (!is_array($decoded)) {
+            return [];
+        }
+
+        return array_values(array_unique(array_filter(array_map('trim', $decoded))));
+    }
+
     public function inverterTypeIndex(Request $request)
     {
         return view("operations.invertertype.index",[
@@ -26,6 +41,7 @@ class InverterTypeController extends Controller
             if ($count == 0) {
                 InverterType::create([
                     "name" => $request->name,
+                    "tags" => $this->normalizeTags($request->tags),
                 ]);
                 return redirect()->route("view-inverter-type")->with("success", "Data Saved Successfully");
             } else {
@@ -41,6 +57,7 @@ class InverterTypeController extends Controller
         try {
             $inverterType = InverterType::find($request->id);
             $inverterType->name = $request->name;
+            $inverterType->tags = $this->normalizeTags($request->tags);
             $inverterType->save();
             return redirect()->route("view-inverter-type");
         } catch (\Throwable $th) {

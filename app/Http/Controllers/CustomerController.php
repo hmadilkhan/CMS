@@ -35,6 +35,16 @@ use Illuminate\Validation\Rule;
 class CustomerController extends Controller
 {
     use MediaTrait;
+
+    protected function financeOptionRequiresLoanId(?int $financeOptionId): bool
+    {
+        if (empty($financeOptionId)) {
+            return false;
+        }
+
+        return (int) FinanceOption::where('id', $financeOptionId)->value('loan_id') === 1;
+    }
+
     /**
      * Display a listing of the resource.
      */
@@ -89,9 +99,19 @@ class CustomerController extends Controller
             'commission' => 'required',
             'dealer_fee' => 'required',
             'sales_partner_user_id' => 'required',
+            'third_party_credit' => [
+                Rule::requiredIf(function () use ($request) {
+                    return (int) $request->finance_option_id === 9;
+                }),
+            ],
+            'customer_portion' => [
+                Rule::requiredIf(function () use ($request) {
+                    return (int) $request->finance_option_id === 9;
+                }),
+            ],
             'loanId' => [
                 Rule::requiredIf(function () use ($request) {
-                    return !in_array((int) $request->finance_option_id, [1, 5]);
+                    return $this->financeOptionRequiresLoanId((int) $request->finance_option_id);
                 }),
             ],
         ]);
@@ -139,6 +159,8 @@ class CustomerController extends Controller
                 "commission" => $request->commission,
                 "dealer_fee" => $request->dealer_fee,
                 "dealer_fee_amount" => $request->dealer_fee_amount,
+                "third_party_credit" => ((int) $request->finance_option_id === 9 ? $request->third_party_credit : 0),
+                "customer_portion" => ((int) $request->finance_option_id === 9 ? $request->customer_portion : 0),
                 "total_overwrite_base_price" => $request->overwrite_base_price,
                 "total_overwrite_panel_price" => ($request->overwrite_panel_price * $request->panel_qty),
                 "module_type_cost" => $moduleCost->amount,
@@ -315,6 +337,8 @@ class CustomerController extends Controller
                 "commission" => $request->commission,
                 "dealer_fee" => $request->dealer_fee,
                 "dealer_fee_amount" => $request->dealer_fee_amount,
+                "third_party_credit" => ((int) $request->finance_option_id === 9 ? $request->third_party_credit : 0),
+                "customer_portion" => ((int) $request->finance_option_id === 9 ? $request->customer_portion : 0),
                 "module_type_cost" => $moduleCost->amount,
                 "inverter_base_cost" => $inverterBaseCost->base_cost,
                 "holdback_amount" => $holdBackAmount,
@@ -507,41 +531,3 @@ class CustomerController extends Controller
         return $values;
     }
 }
-/*
-public function index()
-    {
-        // Mailbox::from('info@testsolencrm.com', function (InboundEmail $email) {
-        //     return $email;
-        // });
-        $client = Client::account('default');
-        if (!$client->isConnected()) {
-            $client->connect();
-        }
-
-        // DB::select();
-
-        // return $messages;
-        $folders = $client->getFolders($hierarchical = true);
-        foreach ($folders as $key => $folder) {
-            $query = $folder->query();
-            // $messages = $query->from('hmadilkhan@gmail.com')->get();
-            $messages = $query->all()->get();
-            return $messages;
-            foreach ($messages as $key => $message) {
-                // echo $message->hasAttachments();
-                // echo $message->getSubject();
-                // return $message->getBodies();
-                $attachments = $message->getAttachments();
-                foreach ($attachments as $attachment) {
-                    $attachment->save($path = public_path('/'), $filename = null);
-                    // if (!empty($attachment)) {
-                    //     # code...
-                    // }
-                }
-                echo $message->getTextBody()."</br>";
-            }
-        }
-        // return $folders;
-         
-    }
-*/

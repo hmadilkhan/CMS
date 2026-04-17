@@ -1,5 +1,5 @@
 @extends('layouts.master')
-@section('title', 'Projects')
+@section('title', $project->project_name)
 @section('content')
     <style>
         body {
@@ -353,6 +353,49 @@
             border: none;
         }
 
+        .project-tag-panel {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 14px;
+            padding: 1rem 1.25rem;
+            margin: -0.5rem 0 1rem;
+        }
+
+        .project-tag-title {
+            font-size: 0.78rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            color: #475569;
+            margin-bottom: 0.5rem;
+        }
+
+        .project-tag-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+        }
+
+        .project-tag-chip {
+            display: inline-flex;
+            align-items: center;
+            padding: 0.45rem 0.85rem;
+            border-radius: 999px;
+            font-size: 0.84rem;
+            font-weight: 600;
+            line-height: 1;
+        }
+
+        .project-tag-chip.inverter-tag {
+            background: rgba(13, 148, 136, 0.12);
+            color: #115e59;
+        }
+
+        .project-tag-chip.adder-tag {
+            background: rgba(37, 99, 235, 0.12);
+            color: #1d4ed8;
+        }
+
         .nav-tabs {
             border: none;
             background: white;
@@ -519,6 +562,37 @@
                                 id="openemployee"><i class="icofont-arrow-left me-2 fs-6"></i>Back to List</a>
                         </div>
                     </div>
+
+                    @php
+                        $inverterTags = optional($project->customer->inverter)->tag_list ?? [];
+                        $adderTags = $project->customer->adders
+                            ->map(fn($adder) => optional($adder->type)->tag)
+                            ->filter()
+                            ->unique()
+                            ->values();
+                    @endphp
+
+                    @if (count($inverterTags) || count($adderTags))
+                        <div class="project-tag-panel">
+                            @if (count($inverterTags))
+                                <div class="project-tag-title">Inverter Tags</div>
+                                <div class="project-tag-list">
+                                    @foreach ($inverterTags as $tag)
+                                        <span class="project-tag-chip inverter-tag">{{ $tag }}</span>
+                                    @endforeach
+                                </div>
+                            @endif
+
+                            @if (count($adderTags))
+                                <div class="project-tag-title {{ count($inverterTags) ? 'mt-3' : '' }}">Adder Tags</div>
+                                <div class="project-tag-list">
+                                    @foreach ($adderTags as $tag)
+                                        <span class="project-tag-chip adder-tag">{{ $tag }}</span>
+                                    @endforeach
+                                </div>
+                            @endif
+                        </div>
+                    @endif
 
                     <div class="d-flex justify-content-center align-items-center">
                         <nav class="navbar navbar-expand-lg ">
@@ -968,6 +1042,20 @@
                             <input type="text" class="form-control"
                                 value="$ {{ number_format($totalCommission, 2) }}" id="commission" name="commission">
                         </div>
+                        @if ((int) $project->customer->finances->finance_option_id === 9)
+                            <div class="col-sm-3 ">
+                                <label for="third_party_credit" class="form-label">Third Party Credit</label>
+                                <input type="text" class="form-control"
+                                    value="$ {{ number_format($project->customer->finances->third_party_credit, 2) }}"
+                                    id="third_party_credit" name="third_party_credit">
+                            </div>
+                            <div class="col-sm-3 ">
+                                <label for="customer_portion" class="form-label">Customer Portion</label>
+                                <input type="text" class="form-control"
+                                    value="$ {{ number_format($project->customer->finances->customer_portion, 2) }}"
+                                    id="customer_portion" name="customer_portion">
+                            </div>
+                        @endif
                         @if (
                             $project->customer->finances->finance->name != 'Cash' &&
                                 $project->customer->finances->finance->name != 'LightReach PPA')

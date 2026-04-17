@@ -375,6 +375,22 @@
                             <div class="text-danger message mt-2">{{ $message }}</div>
                         @enderror
                     </div>
+                    <div class="col-sm-3 mb-3 prepaidPPADiv" style="display: none;">
+                        <label for="third_party_credit" class="form-label">Third Party Credit</label>
+                        <input type="text" class="form-control" id="third_party_credit" name="third_party_credit"
+                            placeholder="Third Party Credit" value="{{ old('third_party_credit', 0) }}">
+                        @error('third_party_credit')
+                            <div class="text-danger message mt-2">{{ $message }}</div>
+                        @enderror
+                    </div>
+                    <div class="col-sm-3 mb-3 prepaidPPADiv" style="display: none;">
+                        <label for="customer_portion" class="form-label">Customer Portion</label>
+                        <input readonly type="text" class="form-control" id="customer_portion" name="customer_portion"
+                            placeholder="Customer Portion" value="{{ old('customer_portion', 0) }}">
+                        @error('customer_portion')
+                            <div class="text-danger message mt-2">{{ $message }}</div>
+                        @enderror
+                    </div>
                     <div class="col-sm-3 mb-3">
                         <label for="redline_costs" class="form-label">Redline Costs</label>
                         <input type="text" class="form-control" id="redline_costs" name="redline_costs"
@@ -415,6 +431,7 @@
                             <div class="text-danger message mt-2">{{ $message }}</div>
                         @enderror
                     </div>
+                    
                 </div>
                 <button type="submit" class="btn btn-primary"><i class="icofont-save me-2 fs-6"></i>Create</button>
             </form>
@@ -428,6 +445,7 @@
         var systemSize = 0;
         $(document).ready(function() {
             $(".loandiv").css("display", "none");
+            togglePrepaidPPAFields($("#finance_option_id").val());
         });
 
         function getFinanceOptionById(id) {
@@ -461,6 +479,8 @@
                             $("#dealer_fee_amount").val(0);
                             calculateCommission()
                         }
+
+                        togglePrepaidPPAFields(id);
 
                     } else {
                         console.log(response.message);
@@ -709,6 +729,30 @@
             }
             calculateCommission()
         }
+
+        function togglePrepaidPPAFields(financeOptionId) {
+            if (parseInt(financeOptionId) === 9) {
+                $(".prepaidPPADiv").show();
+                calculateCustomerPortion();
+            } else {
+                $(".prepaidPPADiv").hide();
+                $("#third_party_credit").val(0);
+                $("#customer_portion").val(0);
+            }
+        }
+
+        function calculateCustomerPortion() {
+            let contractAmount = parseFloat($("#contract_amount").val()) || 0;
+            let thirdPartyCredit = parseFloat($("#third_party_credit").val()) || 0;
+            let customerPortion = contractAmount - thirdPartyCredit;
+            $("#customer_portion").val(customerPortion.toFixed(2));
+        }
+
+        $("#contract_amount, #third_party_credit").on('input blur', function() {
+            if (parseInt($("#finance_option_id").val()) === 9) {
+                calculateCustomerPortion();
+            }
+        });
 
         function calculateCommission() {
             let contractAmount = parseFloat($("#contract_amount").val());

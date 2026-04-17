@@ -11,6 +11,54 @@
     {{session('error')}}
 </div>
 @endif
+<style>
+    .tag-editor {
+        min-height: 48px;
+        display: flex;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 8px;
+        padding: 8px 12px;
+        border: 1px solid #ced4da;
+        border-radius: 10px;
+        background: #fff;
+    }
+
+    .tag-editor:focus-within {
+        border-color: #0d6efd;
+        box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.15);
+    }
+
+    .tag-editor input {
+        border: none;
+        outline: none;
+        flex: 1 1 140px;
+        min-width: 140px;
+        padding: 6px 0;
+    }
+
+    .tag-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 6px 10px;
+        border-radius: 999px;
+        background: linear-gradient(135deg, #1f2937 0%, #374151 100%);
+        color: #fff;
+        font-size: 13px;
+        font-weight: 600;
+    }
+
+    .tag-chip button {
+        border: 0;
+        background: transparent;
+        color: #fff;
+        cursor: pointer;
+        line-height: 1;
+        padding: 0;
+        font-size: 14px;
+    }
+</style>
 <div class="card card-info">
     <div class="card-header">
         <h4 class="card-title">Add Adder Types</h4>
@@ -32,6 +80,15 @@
                     </span>
                     @enderror
                     <!-- </div> -->
+                </div>
+                <div class="col-sm-4">
+                    <label>Tag</label>
+                    <div class="tag-editor" id="adderTagEditor">
+                        <input type="text" id="adderTagInput" placeholder="Type tag and press Enter">
+                    </div>
+                    <input type="hidden" id="adderTagValue" name="tag"
+                        value="{{ !empty($adder) ? $adder->tag : old('tag') }}">
+                    <small class="text-muted">Only one tag is allowed for each adder type.</small>
                 </div>
                 <div class="col-4 mt-3">
                     <label></label>
@@ -58,6 +115,7 @@
                 <tr>
                     <th>No.</th>
                     <th>Name</th>
+                    <th>Tag</th>
                     <th>Actions</th>
                 </tr>
             </thead>
@@ -66,6 +124,7 @@
                 <tr>
                     <td>{{ ++$key }}</td>
                     <td>{{ $adderList->name }}</td>
+                    <td>{{ $adderList->tag ?? '-' }}</td>
                     <td class="text-center">
                         <a style="cursor: pointer;" data-toggle="tooltip" title="Edit" href="{{ route('view.adder.types',$adderList->id)}}">
                             <i class="icofont-pencil text-warning"></i></a>
@@ -101,6 +160,65 @@
 @endsection
 @section("scripts")
 <script>
+    (function() {
+        const editor = document.getElementById('adderTagEditor');
+        const input = document.getElementById('adderTagInput');
+        const hidden = document.getElementById('adderTagValue');
+
+        if (!editor || !input || !hidden) {
+            return;
+        }
+
+        function syncHidden(value) {
+            hidden.value = value;
+        }
+
+        function clearChip() {
+            const chip = editor.querySelector('.tag-chip');
+            if (chip) {
+                chip.remove();
+            }
+        }
+
+        function renderChip(value) {
+            clearChip();
+
+            if (!value) {
+                syncHidden('');
+                return;
+            }
+
+            const chip = document.createElement('span');
+            chip.className = 'tag-chip';
+            chip.innerHTML = `<span>${value}</span><button type="button" aria-label="Remove tag">&times;</button>`;
+            chip.querySelector('button').addEventListener('click', function() {
+                clearChip();
+                syncHidden('');
+            });
+            editor.insertBefore(chip, input);
+            syncHidden(value);
+        }
+
+        input.addEventListener('keydown', function(event) {
+            if (event.key === 'Enter' || event.key === ',') {
+                event.preventDefault();
+                const value = input.value.trim();
+                if (!value) {
+                    return;
+                }
+
+                renderChip(value);
+                input.value = '';
+            }
+        });
+
+        editor.addEventListener('click', function() {
+            input.focus();
+        });
+
+        renderChip(hidden.value.trim());
+    })();
+
     function deleteDealerModal(id) {
         $("#deleteId").val(id);
         $("#deleteproject").modal("show")

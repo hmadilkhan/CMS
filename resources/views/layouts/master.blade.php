@@ -6,8 +6,10 @@
     <meta http-equiv="X-UA-Compatible" content="IE=Edge">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
     <meta name="csrf_token" content="{{ csrf_token() }}" />
-    <title>Solen Energy Construction - @yield('title')</title>
-    <link rel="icon" href="favicon.ico" type="image/x-icon"> <!-- Favicon-->
+    <title> @yield('title') - Solen Energy Construction</title>
+    <link rel="icon" type="image/png" sizes="32x32" href="{{ asset('website/images/favicon_big.png') }}">
+    <link rel="shortcut icon" href="{{ asset('website/images/favicon_big.png') }}">
+    <link rel="apple-touch-icon" href="{{ asset('website/images/favicon_big.png') }}"> <!-- Favicon-->
     <!-- plugin css file  -->
     <link rel="stylesheet" href="{{ asset('assets/plugin/datatables/responsive.dataTables.min.css') }}">
     <link rel="stylesheet" href="{{ asset('assets/plugin/datatables/dataTables.bootstrap5.min.css') }}">

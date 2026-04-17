@@ -17,6 +17,7 @@ use App\Models\EmailScript;
 use App\Models\EmailType;
 use App\Models\Employee;
 use App\Models\EmployeeDepartment;
+use App\Models\FinanceOption;
 use App\Models\Project;
 use App\Models\ProjectAcceptance;
 use App\Models\ProjectAddersLock;
@@ -261,6 +262,7 @@ class ProjectController extends Controller
     public function getProjectList(Request $request)
     {
         $result =  $this->projectQuery($request);
+        $financeOption = FinanceOption::all();
 
         return view("projects.project-list", [
             "projects" => $result["projects"],
@@ -268,6 +270,7 @@ class ProjectController extends Controller
             "departments" => $result["departments"],
             "value" => $request->id,
             "ghostProjects" => $result["ghostProjects"],
+            "financeOptions" => $financeOption,
         ]);
     }
 
@@ -742,7 +745,7 @@ class ProjectController extends Controller
 
     public function projectQuery(Request $request)
     {
-        $query = Project::with("customer", "customer.salespartner", "department", "subdepartment", "assignedPerson", "assignedPerson.employee", "task", "notes", "projectAcceptance");
+        $query = Project::with("customer", "customer.salespartner", "customer.finances", "department", "subdepartment", "assignedPerson", "assignedPerson.employee", "task", "notes", "projectAcceptance");
         $query->withCount(['emails as viewed_emails_count' => function ($query) {
             $query->where('is_view', 1);
         }]);

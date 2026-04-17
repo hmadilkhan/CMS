@@ -125,6 +125,10 @@
             <label for="sub_contractor_user" class="form-label">Sub-Contractor User</label>
             <input disabled class="form-control" type="text" value="{{ $project->subContractorUser->name ?? 'N/A' }}">
         </div>
+        <div class="col-sm-6 mb-3">
+            <label for="monitoring_link" class="form-label">Monitoring Link</label>
+            <input disabled class="form-control" type="text" value="{{ $project->monitoring_link }}">
+        </div>
 
     @endif
     @if ($departmentId == 6)

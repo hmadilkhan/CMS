@@ -19,8 +19,10 @@
                 enctype="multipart/form-data">
                 @method('PUT')
                 @csrf
-                <input type="hidden" id="overwrite_base_price" name="overwrite_base_price"  value="{{$customer->project->overwrite_base_price}}"/>
-                <input type="hidden" id="overwrite_panel_price" name="overwrite_panel_price"  value="{{$customer->project->overwrite_panel_price}}" />
+                <input type="hidden" id="overwrite_base_price" name="overwrite_base_price"
+                    value="{{ $customer->project->overwrite_base_price }}" />
+                <input type="hidden" id="overwrite_panel_price" name="overwrite_panel_price"
+                    value="{{ $customer->project->overwrite_panel_price }}" />
                 <div class="row g-3 mb-3">
                     <div class="col-sm-6 mb-3">
                         <label for="exampleFormControlInput877" class="form-label">First Name</label>
@@ -229,7 +231,8 @@
 
                     <div id="loadIdDiv" class="col-sm-4 ">
                         <label for="exampleFormControlInput877" class="form-label">Loan Id</label>
-                        <input type="text" class="form-control" id="loanId" name="loanId" placeholder="loan Id" value="{{$customer->loan_id}}">
+                        <input type="text" class="form-control" id="loanId" name="loanId" placeholder="loan Id"
+                            value="{{ $customer->loan_id }}">
                         @error('loanId')
                             <div class="text-danger message mt-2">{{ $message }}</div>
                         @enderror
@@ -238,14 +241,15 @@
                     <div id="soldProductionValueDiv" class="col-sm-4 ">
                         <label for="exampleFormControlInput877" class="form-label">Sold Production Value</label>
                         <input type="text" class="form-control" id="sold_production_value"
-                            name="sold_production_value" placeholder="Sold Production Value" value="{{$customer->sold_production_value}}">
+                            name="sold_production_value" placeholder="Sold Production Value"
+                            value="{{ $customer->sold_production_value }}">
                         @error('sold_production_value')
                             <div class="text-danger message mt-2">{{ $message }}</div>
                         @enderror
                     </div>
 
                     <div class="col-sm-4 mb-3">
-                  
+
                     </div>
                 </div>
                 <div class="row clearfix">
@@ -272,7 +276,7 @@
                             @endforeach
                         </select>
                     </div>
-          
+
                     <div class="col-sm-3 mb-3">
                         <label for="uom" class="form-label">UOM</label>
                         <select class="form-select select2" aria-label="Default select UOM" id="uom">
@@ -391,6 +395,24 @@
                             <div class="text-danger message mt-2">{{ $message }}</div>
                         @enderror
                     </div>
+                    <div class="col-sm-3 mb-3 prepaidPPADiv" style="display: none;">
+                        <label for="third_party_credit" class="form-label">Third Party Credit</label>
+                        <input type="text" class="form-control" id="third_party_credit" name="third_party_credit"
+                            placeholder="Third Party Credit"
+                            value="{{ old('third_party_credit', $customer->finances->third_party_credit ?? 0) }}">
+                        @error('third_party_credit')
+                            <div class="text-danger message mt-2">{{ $message }}</div>
+                        @enderror
+                    </div>
+                    <div class="col-sm-3 mb-3 prepaidPPADiv" style="display: none;">
+                        <label for="customer_portion" class="form-label">Customer Portion</label>
+                        <input readonly type="text" class="form-control" id="customer_portion"
+                            name="customer_portion" placeholder="Customer Portion"
+                            value="{{ old('customer_portion', $customer->finances->customer_portion ?? 0) }}">
+                        @error('customer_portion')
+                            <div class="text-danger message mt-2">{{ $message }}</div>
+                        @enderror
+                    </div>
                     <div class="col-sm-3 mb-3">
                         <label for="redline_costs" class="form-label">Redline Costs</label>
                         <input type="text" class="form-control" id="redline_costs" name="redline_costs"
@@ -431,6 +453,7 @@
                             <div class="text-danger message mt-2">{{ $message }}</div>
                         @enderror
                     </div>
+
                 </div>
                 <button type="submit" class="btn btn-primary"><i class="icofont-save me-2 fs-6"></i>Update</button>
             </form>
@@ -448,8 +471,9 @@
             $("#soldProductionValueDiv").css("display", "none");
             $("#loadIdDiv").css("display", "none");
             getFinanceOptionById({{ $customer->finances->finance_option_id }});
+            togglePrepaidPPAFields($("#finance_option_id").val());
         });
-       
+
         function getFinanceOptionById(id) {
             $.ajax({
                 method: "POST",
@@ -472,7 +496,7 @@
                         } else {
                             $("#soldProductionValueDiv").css("display", "none");
                         }
-                        
+
                         if (finance.dealer_fee == 1) {
                             $(".loandiv").css("display", "block");
                             getLoanTerms(id);
@@ -482,6 +506,8 @@
                             $("#dealer_fee_amount").val(0);
                             calculateCommission()
                         }
+
+                        togglePrepaidPPAFields(id);
 
                     } else {
                         console.log(response.message);
@@ -495,6 +521,7 @@
         $("#finance_option_id").change(function() {
             getFinanceOptionById($(this).val());
         });
+
         function getLoanTerms(id) {
             $.ajax({
                 method: "POST",
@@ -588,7 +615,7 @@
                 success: function(response) {
                     $('#redline_costs').val('');
                     baseCost = response.redlinecost;
-                    let redlinecost = response.redlinecost  + overwriteBaseCost;
+                    let redlinecost = response.redlinecost + overwriteBaseCost;
                     $('#redline_costs').val(redlinecost);
 
                 },
@@ -602,7 +629,7 @@
                     $("#module_qty").val(panelQty * moduleQty);
                     let totalOverwritePanelCost = overwritePanelCost * panelQty;
                     let redlinecost = baseCost + (panelQty * moduleCost) + overwriteBaseCost +
-                    totalOverwritePanelCost;
+                        totalOverwritePanelCost;
                     // console.log("Redline Cost", redlinecost);
                     $("#redline_costs").val(redlinecost);
                     // console.log(baseCost);
@@ -628,6 +655,30 @@
             calculateCommission()
         }
 
+        function togglePrepaidPPAFields(financeOptionId) {
+            if (parseInt(financeOptionId) === 9) {
+                $(".prepaidPPADiv").show();
+                calculateCustomerPortion();
+            } else {
+                $(".prepaidPPADiv").hide();
+                $("#third_party_credit").val(0);
+                $("#customer_portion").val(0);
+            }
+        }
+
+        function calculateCustomerPortion() {
+            let contractAmount = parseFloat($("#contract_amount").val()) || 0;
+            let thirdPartyCredit = parseFloat($("#third_party_credit").val()) || 0;
+            let customerPortion = contractAmount - thirdPartyCredit;
+            $("#customer_portion").val(customerPortion.toFixed(2));
+        }
+
+        $("#contract_amount, #third_party_credit").on('input blur', function() {
+            if (parseInt($("#finance_option_id").val()) === 9) {
+                calculateCustomerPortion();
+            }
+        });
+
         function calculateCommission() {
             let contractAmount = parseFloat($("#contract_amount").val());
             let dealerFeeAmount = parseFloat($("#dealer_fee_amount").val());
@@ -650,7 +701,7 @@
             overwriteBaseCost = parseFloat(overwriteBaseCost);
 
             $("#module_qty").val(panelQty * systemSize);
-            let redlinecost = baseCost + (panelQty * moduleCost)+ overwriteBaseCost + totalOverwritePanelCost;
+            let redlinecost = baseCost + (panelQty * moduleCost) + overwriteBaseCost + totalOverwritePanelCost;
             // console.log("Redline Cost", redlinecost);
             $("#redline_costs").val(redlinecost);
             // console.log("Base Cost", baseCost);
@@ -839,7 +890,7 @@
         //         }
         //     })
         // }
-        
+
         $("#sales_partner_id").change(function() {
             $('#sales_partner_user_id').empty();
             $.ajax({

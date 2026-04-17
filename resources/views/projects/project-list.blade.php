@@ -300,17 +300,24 @@
                     <i class="icofont-tasks me-2"></i>{{ $subdepartment->name }}
                     <span class="count-badge" id="count-{{ $subdepartment->id }}">{{ count($collections) }}</span>
                 </h3>
-                @if (in_array($subdepartment->name, ['Permitting New', 'Permitting Rework']))
+                @if (in_array($subdepartment->id, [9,10]))
                     <select class="premium-filter" style="width: 220px;" onchange="filterPermitting(this.value, {{ $subdepartment->id }})">
-                        <option value="all">🔍 All Projects</option>
+                        <option value="all">🔍 All Projects {{$subdepartment->id}}</option>
                         <option value="submitted">✅ Submitted</option>
                         <option value="not_submitted">⏳ Not Submitted</option>
                     </select>
-                @elseif (in_array($subdepartment->name, ['PTO']))
+                @elseif (in_array($subdepartment->id, [18]))
                     <select class="premium-filter" style="width: 220px;" onchange="filterPTO(this.value, {{ $subdepartment->id }})">
                         <option value="all">🔍 All Projects</option>
                         <option value="submitted">✅ Submitted</option>
                         <option value="not_submitted">⏳ Not Submitted</option>
+                    </select>
+                @elseif (in_array($subdepartment->department_id, [5]))
+                    <select class="premium-filter" style="width: 220px;" onchange="filterFinanceOption(this.value, {{ $subdepartment->id }})">
+                        <option value="all">🔍 All Options</option>
+                        @foreach ($financeOptions as $option)
+                            <option value="{{ $option->id }}">{{ $option->name }}</option>
+                        @endforeach
                     </select>
                 @endif
             </div>
@@ -343,6 +350,7 @@
                                 style="cursor:pointer; min-width: 320px; max-width: 380px; padding: 0.5rem;"
                                 data-submitted="{{ $project->permitting_submittion_date ? 'yes' : 'no' }}"
                                 data-pto-submitted="{{ $project->pto_submission_date ? 'yes' : 'no' }}"
+                                data-finance-option="{{ $project->customer->finances->finance_option_id ?? '' }}"
                                 onclick="showProject('{{ $project->id }}')">
                                 <div class="card project-card border-0">
                                     <div class="project-header">
@@ -418,6 +426,11 @@
                                             <div class="notes-section">
                                                 <i
                                                     class="icofont-ui-note me-2"></i>{{ $project->notes->assign_to_notes }}
+                                            </div>
+                                        @else
+                                        <div class="notes-section">
+                                                <i
+                                                    class="icofont-ui-note me-2"></i>Currently no notes attached
                                             </div>
                                         @endif
 
@@ -526,81 +539,6 @@
                                     </div>
                                 </div>
                             @endif
-                            {{-- <div class="col-xxl-2 col-xl-3 col-lg-3 col-md-4 col-sm-6 mb-3">
-                                <div class="card premium-card h-100"
-                                    style="cursor:pointer; transition: all 0.3s ease;"
-                                    onclick="showGhostProject('{{ $project->id }}','ghost')"
-                                    onmouseover="this.style.transform='translateY(-5px)'; this.style.boxShadow='0 10px 30px rgba(0,0,0,0.15)';"
-                                    onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='';">
-                                    <div class="card-header premium-header d-flex align-items-center justify-content-between"
-                                        style="padding: 1rem;">
-                                        <div class="d-flex align-items-center">
-                                            <img src="{{ $project->customer->salespartner->image != '' ? asset('storage/salespartners/' . $project->customer->salespartner->image) : asset('assets/images/profile_av.png') }}"
-                                                alt="" class="rounded-circle"
-                                                style="width: 40px; height: 40px; object-fit: cover; border: 2px solid #fff; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
-                                            <h6 class="mb-0 fw-bold ms-2" style="font-size: 0.9rem;">
-                                                {{ Str::limit($project->project_name, 15) }}</h6>
-                                        </div>
-                                        <span class="badge"
-                                            style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); font-size: 0.75rem; padding: 0.4rem 0.6rem;">
-                                            @if (empty($project->pto_approval_date))
-                                                {{ now()->diffInDays(Carbon\Carbon::parse($project->customer->sold_date)) }}d
-                                            @else
-                                                {{ Carbon\Carbon::parse($project->pto_approval_date)->diffInDays(Carbon\Carbon::parse($project->customer->sold_date)) }}d
-                                            @endif
-                                        </span>
-                                    </div>
-                                    <div class="card-body premium-body" style="padding: 1rem;">
-                                        <div class="mb-2">
-                                            <div class="d-flex justify-content-between align-items-center mb-1">
-                                                <small class="text-muted"><i
-                                                        class="icofont-code-alt me-1"></i>Code</small>
-                                                <small class="fw-bold text-success">{{ $project->code }}</small>
-                                            </div>
-                                            <div class="d-flex justify-content-between align-items-center mb-1">
-                                                <small class="text-muted"><i
-                                                        class="icofont-ui-user me-1"></i>Partner</small>
-                                                <small
-                                                    class="fw-bold">{{ Str::limit($project->customer->salespartner->name, 12) }}</small>
-                                            </div>
-                                            <div class="d-flex justify-content-between align-items-center mb-1">
-                                                <small class="text-muted"><i
-                                                        class="icofont-sand-clock me-1"></i>Status</small>
-                                                <small
-                                                    class="fw-bold text-danger">{{ $project->assignedPerson[0]->status }}</small>
-                                            </div>
-                                            <div class="d-flex justify-content-between align-items-center mb-2">
-                                                <small class="text-muted"><i
-                                                        class="icofont-group-students me-1"></i>Assigned</small>
-                                                <small
-                                                    class="fw-bold">{{ Str::limit($project->assignedPerson[0]->employee->name, 12) }}</small>
-                                            </div>
-                                        </div>
-
-                                        <div class="mt-3">
-                                            <div class="d-flex justify-content-between align-items-center mb-1">
-                                                <small class="fw-bold">Progress</small>
-                                                <small
-                                                    class="fw-bold">{{ round(($project->department_id / 8) * 100) }}%</small>
-                                            </div>
-                                            <div class="progress" style="height: 6px; border-radius: 10px;">
-                                                <div class="progress-bar" role="progressbar"
-                                                    style="width: {{ ($project->department_id / 8) * 100 }}%; background: linear-gradient(90deg, #48bb78 0%, #38a169 100%); border-radius: 10px;"
-                                                    aria-valuenow="{{ ($project->department_id / 8) * 100 }}"
-                                                    aria-valuemin="0" aria-valuemax="100"></div>
-                                            </div>
-                                        </div>
-
-                                        @if (!empty($project->notes) && $project->notes->assign_to_notes != '')
-                                            <div class="mt-2 p-2"
-                                                style="background: #f8f9fa; border-radius: 8px; border-left: 3px solid #667eea;">
-                                                <small class="text-muted d-block"
-                                                    style="font-size: 0.75rem;">{{ Str::limit($project->notes->assign_to_notes, 50) }}</small>
-                                            </div>
-                                        @endif
-                                    </div>
-                                </div>
-                            </div> --}}
                         @endforeach
                     @else
                         <div class="col-xxl-12 col-xl-12 col-lg-12 col-md-12 col-sm-12 ">
@@ -686,11 +624,13 @@
     });
 
     function showProject(id) {
-        window.location.href = "{{ url('projects') }}" + "/" + id;
+        // window.location.href = "{{ url('projects') }}" + "/" + id;
+        window.open("{{ url('projects') }}/" + id, "_blank");
     }
 
     function showGhostProject(id, ghost) {
-        window.location.href = "{{ url('projects') }}" + "/" + id + "/ghost";
+        // window.location.href = "{{ url('projects') }}" + "/" + id + "/ghost";
+        window.open("{{ url('projects') }}/" + id + "/ghost", "_blank");
     }
 
     function filterPermitting(filter, subdeptId) {
@@ -751,6 +691,28 @@
             }
         });
         
+        document.getElementById('count-' + subdeptId).textContent = visibleCount;
+        noResultsMsg.style.display = visibleCount === 0 ? 'block' : 'none';
+    }
+
+    function filterFinanceOption(filter, subdeptId) {
+        const container = document.querySelector('.subdept-' + subdeptId);
+        const projects = container.querySelectorAll('.project-item');
+        const noResultsMsg = document.getElementById('no-results-' + subdeptId);
+        let visibleCount = 0;
+
+        projects.forEach(project => {
+            if (filter === 'all') {
+                project.style.display = '';
+                visibleCount++;
+            } else if (project.dataset.financeOption === filter) {
+                project.style.display = '';
+                visibleCount++;
+            } else {
+                project.style.display = 'none';
+            }
+        });
+
         document.getElementById('count-' + subdeptId).textContent = visibleCount;
         noResultsMsg.style.display = visibleCount === 0 ? 'block' : 'none';
     }

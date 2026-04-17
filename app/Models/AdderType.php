@@ -11,4 +11,9 @@ class AdderType extends Model
     use HasFactory,SoftDeletes;
 
     protected $guarded = [];
+
+    public function getTagListAttribute(): array
+    {
+        return empty($this->tag) ? [] : [$this->tag];
+    }
 }

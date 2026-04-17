@@ -47,6 +47,7 @@ class EditFields extends Component
     // FIFTH DEPARTMENT
     public $solar_install_date;
     public $battery_install_date;
+    public $monitoring_link;
     // public $actual_labor_cost;
     // public $actual_material_cost;
     public $placards_ordered;
@@ -108,6 +109,7 @@ class EditFields extends Component
         // FIFTH DEPARTMENT
         $this->solar_install_date = $this->project->solar_install_date;
         $this->battery_install_date = $this->project->battery_install_date;
+        $this->monitoring_link = $this->project->monitoring_link;
         // $this->actual_labor_cost = $this->project->actual_labor_cost;
         // $this->actual_material_cost = $this->project->actual_material_cost;
         $this->placards_ordered = $this->project->placards_ordered;
@@ -335,6 +337,7 @@ class EditFields extends Component
                 // "placards_ordered" => $this->placards_ordered,
                 // "placards_note" => $this->placards_note,
                 "battery_install_date" => $this->battery_install_date,
+                "monitoring_link" => $this->monitoring_link,
                 "mpu_install_date" => $this->mpu_install_date,
                 "meter_spot_result" => $this->meter_spot_result,
                 "sub_contractor_user_id" => $this->sub_contractor_user_id,

@@ -260,46 +260,7 @@
                         <div class="text-danger message mt-2">{{ $message }}</div>
                     @enderror
                 </div>
-                {{-- <div class="col-sm-4 ">
-                    <label for="placards_ordered" class="form-label">Placards Required</label>
-                    <select class="form-select" aria-label="Default select MPU Required" id="placards_ordered"
-                        name="placards_ordered" wire:model.live="placards_ordered">
-                        <option value="">Select Placards Required</option>
-                        <option
-                            {{ $project->placards_ordered != '' && $project->placards_ordered == 'yes' ? 'selected' : '' }}
-                            value="yes">Yes</option>
-                        <option
-                            {{ $project->placards_ordered != '' && $project->placards_ordered == 'no' ? 'selected' : '' }}
-                            value="no">No</option>
-                    </select>
-                    @error('placards_ordered')
-                        <div class="text-danger message mt-2">{{ $message }}</div>
-                    @enderror
-                </div>
-                <div class="col-sm-4 mb-3 ">
-                    <label for="placards_note" class="form-label">Placards Note</label>
-                    <input class="form-control" type="text" id="placards_note" name="placards_note"
-                        wire:model="placards_note">
-                    @error('placards_note')
-                        <div id="placards_note_message" class="text-danger message mt-2">{{ $message }}</div>
-                    @enderror
-                </div> --}}
-                {{-- <div class="col-sm-4 mb-3 ">
-                    <label for="actual_labor_cost" class="form-label">Actual Labor Cost</label>
-                    <input class="form-control" type="text" id="actual_labor_cost" name="actual_labor_cost"
-                        wire:model="actual_labor_cost">
-                    @error('actual_labor_cost')
-                        <div id="actual_labor_cost_message" class="text-danger message mt-2">{{ $message }}</div>
-                    @enderror
-                </div>
-                <div class="col-sm-4 mb-3 ">
-                    <label for="actual_material_cost" class="form-label">Actual Material Cost</label>
-                    <input class="form-control" type="text" id="actual_material_cost" name="actual_material_cost"
-                        wire:model="actual_material_cost">
-                    @error('actual_material_cost')
-                        <div id="actual_material_cost_message" class="text-danger message mt-2">{{ $message }}</div>
-                    @enderror
-                </div> --}}
+                
                 @if ($project->mpu_required == 'yes')
                     <div class="col-sm-4 mb-3 ">
                         <label for="mpu_install_date" class="form-label">MPU Install Date</label>
@@ -326,6 +287,14 @@
                         @enderror
                     </div>
                 @endif
+                <div class="col-sm-4 mb-3">
+                    <label for="monitoring_link" class="form-label">Monitoring Link</label>
+                    <input class="form-control" type="text" id="monitoring_link" name="monitoring_link"
+                        wire:model="monitoring_link">
+                    @error('monitoring_link')
+                        <div id="monitoring_link_message" class="text-danger message mt-2">{{ $message }}</div>
+                    @enderror
+                </div>
             @endif
             @if ($departmentId == 6)
                 <div class="col-sm-4 mb-3 ">

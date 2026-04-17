@@ -250,13 +250,13 @@ class OperationController extends Controller
                     "name" => $request->name,
                     "loan_id" => $request->loan_id,
                     "production_requirements" => $request->production_requirements,
-                    "positive_variance" => $request->positive_variance,
-                    "negative_variance" => $request->negative_variance,
+                    "positive_variance" => ($request->production_requirements == 0 ? 0 : $request->positive_variance),
+                    "negative_variance" => ($request->production_requirements == 0 ? 0 : $request->negative_variance),
                     "dealer_fee" => $request->dealer_fee,
                     "pto_restriction" => $request->pto_restriction,
-                    "no_of_days" => $request->no_of_days,
+                    "no_of_days" => ($request->pto_restriction == 0 ? 0 : $request->no_of_days),
                     "holdback" => $request->holdback,
-                    "dollar_watt_value" => $request->dollar_watt_value,
+                    "dollar_watt_value" => ($request->holdback == 0 ? 0 : $request->dollar_watt_value),
                 ]);
                 LoanTerm::create([
                     "finance_option_id" => $finance->id,
@@ -273,6 +273,7 @@ class OperationController extends Controller
                 return redirect()->route("finance.option.types")->with("error", "Data already exists");
             }
         } catch (\Throwable $th) {
+            DB::rollBack();
 
             return redirect()->route("finance.option.types")->with("error", $th->getMessage());
         }
@@ -331,6 +332,7 @@ class OperationController extends Controller
             if ($count == 0) {
                 AdderType::create([
                     "name" => $request->name,
+                    "tag" => $request->tag,
                 ]);
                 return redirect()->route("view.adder.types")->with("success", "Data Saved Successfully");
             } else {
@@ -346,6 +348,7 @@ class OperationController extends Controller
         try {
             $adder = AdderType::find($request->id);
             $adder->name = $request->name;
+            $adder->tag = $request->tag;
             $adder->save();
             return redirect()->route("view.adder.types");
         } catch (\Throwable $th) {
