@@ -374,6 +374,7 @@
             display: flex;
             flex-wrap: wrap;
             gap: 0.5rem;
+            justify-content: center;
         }
 
         .project-tag-chip {
@@ -574,23 +575,15 @@
 
                     @if (count($inverterTags) || count($adderTags))
                         <div class="project-tag-panel">
-                            @if (count($inverterTags))
-                                <div class="project-tag-title">Inverter Tags</div>
-                                <div class="project-tag-list">
-                                    @foreach ($inverterTags as $tag)
-                                        <span class="project-tag-chip inverter-tag">{{ $tag }}</span>
-                                    @endforeach
-                                </div>
-                            @endif
+                            <div class="project-tag-list">
+                                @foreach ($inverterTags as $tag)
+                                    <span class="project-tag-chip inverter-tag">{{ $tag }}</span>
+                                @endforeach
 
-                            @if (count($adderTags))
-                                <div class="project-tag-title {{ count($inverterTags) ? 'mt-3' : '' }}">Adder Tags</div>
-                                <div class="project-tag-list">
-                                    @foreach ($adderTags as $tag)
-                                        <span class="project-tag-chip adder-tag">{{ $tag }}</span>
-                                    @endforeach
-                                </div>
-                            @endif
+                                @foreach ($adderTags as $tag)
+                                    <span class="project-tag-chip adder-tag">{{ $tag }}</span>
+                                @endforeach
+                            </div>
                         </div>
                     @endif
 

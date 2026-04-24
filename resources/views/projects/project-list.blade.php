@@ -154,6 +154,18 @@
         color: #6c757d;
         margin: 0;
     }
+
+    .project-link {
+        display: block;
+        color: inherit;
+        text-decoration: none;
+    }
+
+    .project-link:hover,
+    .project-link:focus {
+        color: inherit;
+        text-decoration: none;
+    }
 </style>
 @if ($value == 'all')
     @foreach ($departments as $department)
@@ -190,9 +202,10 @@
                                 }
                             }
                         @endphp
-                        <div class="col-xxxl-3 col-xxl-3 col-xl-4 col-lg-4 col-md-6 col-sm-12"
+                        <a href="{{ url('projects/' . $project->id) }}"
+                            class="col-xxxl-3 col-xxl-3 col-xl-4 col-lg-4 col-md-6 col-sm-12 project-link"
                             style="cursor:pointer; min-width: 320px; max-width: 380px; padding: 0.5rem;"
-                            onclick="showProject('{{ $project->id }}')">
+                            >
                             <div class="card project-card border-0">
                                 <div class="project-header">
                                     <div class="d-flex align-items-center justify-content-between">
@@ -270,7 +283,7 @@
 
                                 </div>
                             </div>
-                        </div>
+                        </a>
                     @endforeach
                 @else
                     <div class="col-xxl-12 col-xl-12 col-lg-12 col-md-12 col-sm-12 ">
@@ -346,12 +359,13 @@
                                     }
                                 }
                             @endphp
-                            <div class="col-xxxl-3 col-xxl-3 col-xl-4 col-lg-4 col-md-6 col-sm-12 project-item"
+                            <a href="{{ url('projects/' . $project->id) }}"
+                                class="col-xxxl-3 col-xxl-3 col-xl-4 col-lg-4 col-md-6 col-sm-12 project-item project-link"
                                 style="cursor:pointer; min-width: 320px; max-width: 380px; padding: 0.5rem;"
                                 data-submitted="{{ $project->permitting_submittion_date ? 'yes' : 'no' }}"
                                 data-pto-submitted="{{ $project->pto_submission_date ? 'yes' : 'no' }}"
                                 data-finance-option="{{ $project->customer->finances->finance_option_id ?? '' }}"
-                                onclick="showProject('{{ $project->id }}')">
+                                >
                                 <div class="card project-card border-0">
                                     <div class="project-header">
                                         <div class="d-flex align-items-center justify-content-between">
@@ -436,7 +450,7 @@
 
                                     </div>
                                 </div>
-                            </div>
+                            </a>
                         @endforeach
                     @else
                         <div class="col-xxl-12 col-xl-12 col-lg-12 col-md-12 col-sm-12 ">
@@ -453,9 +467,10 @@
                     @if (count($ghostProjects) > 0)
                         @foreach ($ghostProjects as $project)
                             @if ($project->assignedPerson[0]->status == 'In-Progress')
-                                <div class="col-xxxl-3 col-xxl-3 col-xl-4 col-lg-4 col-md-6 col-sm-12"
+                                <a href="{{ url('projects/' . $project->id . '/ghost') }}"
+                                    class="col-xxxl-3 col-xxl-3 col-xl-4 col-lg-4 col-md-6 col-sm-12 project-link"
                                     style="cursor:pointer; min-width: 320px; max-width: 380px; padding: 0.5rem;"
-                                    onclick="showGhostProject('{{ $project->id }}','ghost')">
+                                    >
                                     <div class="card project-card border-0">
                                         <div class="project-header">
                                             <div class="d-flex align-items-center justify-content-between">
@@ -537,7 +552,7 @@
 
                                         </div>
                                     </div>
-                                </div>
+                                </a>
                             @endif
                         @endforeach
                     @else
@@ -622,16 +637,6 @@
             }
         })
     });
-
-    function showProject(id) {
-        // window.location.href = "{{ url('projects') }}" + "/" + id;
-        window.open("{{ url('projects') }}/" + id, "_blank");
-    }
-
-    function showGhostProject(id, ghost) {
-        // window.location.href = "{{ url('projects') }}" + "/" + id + "/ghost";
-        window.open("{{ url('projects') }}/" + id + "/ghost", "_blank");
-    }
 
     function filterPermitting(filter, subdeptId) {
         const container = document.querySelector('.subdept-' + subdeptId);
