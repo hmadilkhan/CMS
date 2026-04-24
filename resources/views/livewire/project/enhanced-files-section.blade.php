@@ -344,8 +344,8 @@
                     @endcan
                 </div>
                 <div class="file-info">
-                    <div class="file-header {{ $viewSource != 'website' ? 'editable-title' : '' }}" contenteditable="{{ $viewSource == 'website' ? 'true' : 'false' }}" data-file-id="{{ $file->id }}"
-                        x-data="{ originalText: '{{ $file->header_text ?? 'Untitled' }}' }"
+                    <div class="file-header {{ $viewSource != 'website' ? 'editable-title' : '' }}" contenteditable="{{ $viewSource != 'website' ? 'true' : 'false' }}" data-file-id="{{ $file->id }}"
+                        x-data="{ originalText: @js($file->header_text ?? 'Untitled') }"
                         x-on:blur="if($el.textContent.trim() !== originalText) { $wire.updateTitle({{ $file->id }}, $el.textContent.trim()); originalText = $el.textContent.trim(); }">
                         {{ $file->header_text ?? 'Untitled' }}</div>
                     <div class="file-name">
