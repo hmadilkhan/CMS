@@ -1008,7 +1008,7 @@ class ProjectController extends Controller
         if ($request->id != "") {
             try {
                 $file = ProjectFile::findOrFail($request->id);
-                $this->removeImage("", $file->filename);
+                $this->removeImage("projects/", $file->filename);
                 $file->delete();
                 return response()->json(["status" => 200, "message" => "File delete successfully"]);
             } catch (\Throwable $th) {

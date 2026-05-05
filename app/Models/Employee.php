@@ -53,8 +53,9 @@ class Employee extends Model
 
    public function scopeGetUser($query, $departmentId, $roles)
    {
-      return $this->where("department_id", $departmentId)
-         // ->with("user","user.roles")
+      return $this->whereHas("department", function ($query) use ($departmentId) {
+            $query->where("departments.id", $departmentId);
+         })
          ->whereHas("user", function ($query) use ($roles) {
             $query->whereHas('roles', function ($q) use ($roles) {
                $q->whereIn('roles.name', $roles);
@@ -64,8 +65,9 @@ class Employee extends Model
 
    public function scopeGetUserWithRoleAndDepartment($query, $departmentId)
    {
-      return $this->where("department_id", $departmentId)
-         // ->with("user","user.roles")
+      return $this->whereHas("department", function ($query) use ($departmentId) {
+            $query->where("departments.id", $departmentId);
+         })
          ->whereHas("user", function ($query) {
             $query->whereHas('roles', function ($q) {
                $q->whereIn('roles.name', ["Employee"]);

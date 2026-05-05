@@ -1,0 +1,102 @@
+Dated: 05 May 2026 Tuesday
+
+**CRM QA Progress Summary**
+
+We started building a structured testing and QA process for the CRM so that important workflows can be checked regularly, ideally twice per month, before users face issues in production.
+
+**Work Completed So Far**
+
+1. Created a CRM QA plan document:
+   - Added `docs/CRM_QA_PLAN.md`
+   - This gives a module-wise testing approach for regular CRM checks.
+
+2. Set up automated test coverage for authentication:
+   - Login
+   - Invalid login
+   - Registration access rules
+   - Admin user creation
+   - Password/profile behavior
+
+3. Added CRM access and module smoke tests:
+   - Confirmed protected CRM pages redirect guests.
+   - Confirmed Super Admin can open key CRM pages.
+   - Confirmed removed/debug routes are not active.
+
+4. Added customer and project workflow tests:
+   - Customer creation
+   - Customer finance creation
+   - Project creation
+   - Initial task assignment
+   - Project detail page opening correctly
+
+5. Added project movement tests:
+   - Moving project between departments
+   - Completing old task
+   - Creating new task for target department
+   - Assigning project to target department manager
+   - Blocking movement when required department fields are missing
+   - Rollback check if target department has no employee
+
+6. Added Livewire component tests:
+   - Project notes save/edit/delete
+   - Mention handling in notes
+   - Customer-visible notes flag
+   - Project field updates
+   - Production variance validation
+
+7. Added project file/document tests:
+   - File upload through project file component
+   - Enhanced file upload component
+   - File title update
+   - File delete
+   - Legacy file upload/delete routes
+   - Invalid file type rejection
+
+8. Added service ticket workflow tests:
+   - Ticket creation
+   - Assignment
+   - Comments
+   - Resolve flow
+   - Validation for required fields
+
+9. Added operations module tests:
+   - Module type create/update/delete
+   - Office cost replacement
+   - Labor cost replacement
+   - Finance option create/update/delete
+   - Sales partner create/update/delete
+
+**Issues Found And Fixed**
+
+1. Fixed broken `module-types` Blade file.
+2. Fixed employee department query issue.
+3. Fixed customer permit-cost null issue.
+4. Removed/commented active debug `dd()` stops from Livewire modules.
+5. Confirmed unsafe debug/test routes were commented out.
+6. Rebuilt frontend assets after `build.zip` deletion.
+7. Fixed project file delete route so it removes the physical storage file, not just the database record.
+
+**Current Test Status**
+
+The automated CRM test suite is passing:
+
+```bash
+53 tests passed
+294 assertions passed
+```
+
+**What This Means**
+
+We now have a repeatable automated QA base for the CRM. Instead of checking everything manually every time, we can run the test suite and quickly confirm that core CRM workflows are not broken.
+
+**Remaining Areas For Next QA Phase**
+
+Recommended next modules to test:
+
+1. Project email logs and call logs.
+2. Project acceptance workflow.
+3. PDF/email generation behavior.
+4. Sales intake form.
+5. User, role, permission, department, and employee management.
+6. Reports and dashboards with real seeded data.
+7. Manual browser checklist for UI/visual testing twice per month.

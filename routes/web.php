@@ -41,11 +41,11 @@ Route::get('/CRM', function () {
 });
 
 
-Route::get('/storage-link', function () {
-    $targetFolder = storage_path("app/public");
-    $linkFolder = $_SERVER['DOCUMENT_ROOT'] . "/storage";
-    symlink($targetFolder, $linkFolder);
-});
+// Route::get('/storage-link', function () {
+//     $targetFolder = storage_path("app/public");
+//     $linkFolder = $_SERVER['DOCUMENT_ROOT'] . "/storage";
+//     symlink($targetFolder, $linkFolder);
+// });
 
 Route::get('/', function () {
     return auth()->check() ? redirect('/dashboard') : redirect('/login');
@@ -142,7 +142,7 @@ Route::middleware('auth')->group(function () {
 
     Route::post('project-list', [App\Http\Controllers\ProjectController::class, 'getProjectList'])->name('projects.list');
     Route::post('get-sub-departments', [App\Http\Controllers\ProjectController::class, 'getSubDepartments'])->name('get.sub.departments');
-    Route::post('projects-move', [App\Http\Controllers\ProjectController::class, 'projectMove'])->name('projects.move'); // OLD Should be remove in Future
+    // Route::post('projects-move', [App\Http\Controllers\ProjectController::class, 'projectMove'])->name('projects.move'); // OLD Should be remove in Future
     Route::post('move-project', [App\Http\Controllers\ProjectController::class, 'moveProject'])->name('move.project'); // NEW 
     Route::post('project-call-logs', [App\Http\Controllers\ProjectController::class, 'saveCallLogs'])->name('projects.call.logs');
     Route::post('project-call-script', [App\Http\Controllers\ProjectController::class, 'getCallScript'])->name('projects.call.script');
@@ -185,7 +185,7 @@ Route::middleware('auth')->group(function () {
     })->name('technician.surveys');
 
     // TEST ROUTE - GOOGLE CALENDAR
-    Route::get('test-google-calendar', [App\Http\Controllers\SiteSurveyController::class, 'testCalendarIntegration']);
+    // Route::get('test-google-calendar', [App\Http\Controllers\SiteSurveyController::class, 'testCalendarIntegration']);
 
     // ADDERS CONTROLLER
     Route::post('adders-store', [App\Http\Controllers\AdderController::class, 'store'])->name('adders.store');

@@ -387,9 +387,10 @@ class EditFields extends Component
             $this->message = 'Data updated successfully!';
             $this->messageType = 'success';
         } catch (\Exception $e) {
+            report($e);
             $this->message = 'Failed to update data!';
             $this->messageType = 'error';
-            dd($e->getMessage());
+            // dd($e->getMessage());
         }
     }
 

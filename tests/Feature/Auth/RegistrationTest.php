@@ -2,31 +2,61 @@
 
 namespace Tests\Feature\Auth;
 
-use App\Providers\RouteServiceProvider;
+use App\Models\User;
+use App\Models\UserType;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Spatie\Permission\Models\Role;
 use Tests\TestCase;
 
 class RegistrationTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_registration_screen_can_be_rendered(): void
+    public function test_public_registration_screen_redirects_to_login(): void
     {
         $response = $this->get('/register');
 
-        $response->assertStatus(200);
+        $response->assertRedirect('/login');
     }
 
-    public function test_new_users_can_register(): void
+    public function test_super_admin_can_render_crm_user_registration_screen(): void
     {
-        $response = $this->post('/register', [
+        UserType::create(['name' => 'Admin']);
+        $admin = User::factory()->create();
+        Role::firstOrCreate(['name' => 'Super Admin']);
+        $admin->assignRole('Super Admin');
+
+        $response = $this->actingAs($admin)->get(route('get.register'));
+
+        $response->assertOk();
+    }
+
+    public function test_super_admin_can_create_a_crm_user(): void
+    {
+        UserType::create(['name' => 'Admin']);
+        $admin = User::factory()->create();
+        $role = Role::firstOrCreate(['name' => 'Employee']);
+        Role::firstOrCreate(['name' => 'Super Admin']);
+        $admin->assignRole('Super Admin');
+
+        $response = $this->actingAs($admin)->post(route('store.register'), [
             'name' => 'Test User',
             'email' => 'test@example.com',
+            'username' => 'testuser',
             'password' => 'password',
             'password_confirmation' => 'password',
+            'user_type_id' => 1,
+            'role' => [$role->id],
         ]);
 
-        $this->assertAuthenticated();
-        $response->assertRedirect(RouteServiceProvider::HOME);
+        $response->assertRedirect();
+
+        $this->assertDatabaseHas('users', [
+            'email' => 'test@example.com',
+            'username' => 'testuser',
+            'user_type_id' => 1,
+        ]);
+
+        $this->assertTrue(User::where('username', 'testuser')->first()->hasRole('Employee'));
     }
 }

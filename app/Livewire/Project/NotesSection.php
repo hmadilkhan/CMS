@@ -200,8 +200,8 @@ class NotesSection extends Component
             $this->reset('showToCustomer');
             $this->dispatch('refresh');
         } catch (\Throwable $th) {
-            //throw $th;
-            dd($th->getMessage());
+            report($th);
+            // dd($th->getMessage());
         }
     }
 
