@@ -1,0 +1,88 @@
+Dated: 06 May 2026 Wednesday
+
+**CRM QA Progress Summary**
+
+Today we continued the CRM QA work from yesterday and added another group of workflow tests for higher-level CRM areas. The main focus was to cover project acceptance, communication history, intake form behavior, admin management, and reporting/dashboard pages.
+
+**Work Completed Today**
+
+1. Added project acceptance workflow tests:
+   - Project acceptance form submission.
+   - Acceptance file/image handling.
+   - Financial snapshot values during acceptance.
+   - Validation checks for required acceptance data.
+
+2. Added project communication workflow tests:
+   - Project email log behavior.
+   - Project call log behavior.
+   - Communication records linked with the correct project.
+   - Required field validation for communication entries.
+
+3. Added intake form workflow tests:
+   - Sales intake form submission.
+   - Customer/project creation from intake data.
+   - Default permit-cost handling.
+   - Intake validation behavior.
+   - Optional department review fields during scheduled survey flow.
+
+4. Added admin management workflow tests:
+   - User management behavior.
+   - Role and permission related checks.
+   - Department/employee management coverage.
+   - Access checks around CRM admin workflows.
+
+5. Added report and dashboard workflow tests:
+   - Dashboard page access.
+   - Report page access.
+   - Report data rendering checks.
+   - Empty-data and seeded-data scenarios for report pages.
+
+6. Improved existing registration tests:
+   - Replaced hardcoded `user_type_id` assumptions.
+   - Used the actual created/found Admin user type ID.
+   - Made the tests more stable across different database states.
+
+7. Fixed project acceptance creation data:
+   - Added default `action_by` value.
+   - Added default `status` value.
+   - This prevents acceptance records from failing when those fields are required.
+
+8. Fixed intake form permit-cost handling:
+   - Added a safe fallback when average permit fee data is missing.
+   - Intake-created projects now use `0` instead of breaking on a null permit-fee record.
+
+9. Removed Laravel Dusk setup:
+   - Removed `laravel/dusk` from `composer.json`.
+   - Restored `composer.json` to its original condition.
+   - Removed Dusk from `composer.lock` and vendor dependencies.
+   - Deleted generated Dusk files:
+     - `phpunit.dusk.xml`
+     - `tests/DuskTestCase.php`
+     - `tests/Browser/`
+
+**Files Added Today**
+
+1. `tests/Feature/AdminManagementWorkflowTest.php`
+2. `tests/Feature/IntakeFormWorkflowTest.php`
+3. `tests/Feature/ProjectAcceptanceWorkflowTest.php`
+4. `tests/Feature/ProjectCommunicationWorkflowTest.php`
+5. `tests/Feature/ReportDashboardWorkflowTest.php`
+
+**Files Updated Today**
+
+1. `app/Http/Controllers/IntakeFormController.php`
+2. `app/Http/Controllers/ProjectController.php`
+3. `tests/Feature/Auth/RegistrationTest.php`
+
+**Current Status**
+
+The CRM now has broader automated QA coverage beyond the first testing phase. Yesterday's work covered the core CRM flows, and today's work expanded that coverage into admin management, intake, acceptance, communication, reports, and dashboards.
+
+Laravel Dusk was removed after review, so the project is back to the normal PHPUnit feature-test approach without browser-test scaffolding.
+
+**Recommended Next Steps**
+
+1. Run the full automated test suite before the next commit or deployment.
+2. Add more report assertions using realistic business data.
+3. Add email/PDF generation tests where output files or mail payloads need verification.
+4. Keep a small manual UI checklist for browser-only visual checks.
