@@ -187,7 +187,7 @@ class IntakeFormController extends Controller
                 "code" => $this->generateProjectCode(),
                 "overwrite_base_price" =>  $request->overwrite_base_price,
                 "overwrite_panel_price" =>  $request->overwrite_panel_price,
-                "pre_estimated_permit_costs" =>  $avgPermitFee->avg_permit_fee,
+                "pre_estimated_permit_costs" =>  $avgPermitFee->avg_permit_fee ?? 0,
             ];
 
             // Add department review fields if schedule_survey is checked

@@ -1044,6 +1044,8 @@ class ProjectController extends Controller
                     "project_id" => $request->project_id,
                     "sales_partner_id" => $request->sales_partner_id,
                     "image" => $result["fileName"],
+                    "action_by" => 0,
+                    "status" => 0,
                     "notes" => $request->notes,
                     
                     // Save calculated financial snapshot

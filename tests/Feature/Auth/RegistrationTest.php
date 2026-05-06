@@ -21,8 +21,8 @@ class RegistrationTest extends TestCase
 
     public function test_super_admin_can_render_crm_user_registration_screen(): void
     {
-        UserType::create(['name' => 'Admin']);
-        $admin = User::factory()->create();
+        $userType = UserType::firstOrCreate(['name' => 'Admin']);
+        $admin = User::factory()->create(['user_type_id' => $userType->id]);
         Role::firstOrCreate(['name' => 'Super Admin']);
         $admin->assignRole('Super Admin');
 
@@ -33,8 +33,8 @@ class RegistrationTest extends TestCase
 
     public function test_super_admin_can_create_a_crm_user(): void
     {
-        UserType::create(['name' => 'Admin']);
-        $admin = User::factory()->create();
+        $userType = UserType::firstOrCreate(['name' => 'Admin']);
+        $admin = User::factory()->create(['user_type_id' => $userType->id]);
         $role = Role::firstOrCreate(['name' => 'Employee']);
         Role::firstOrCreate(['name' => 'Super Admin']);
         $admin->assignRole('Super Admin');
@@ -45,7 +45,7 @@ class RegistrationTest extends TestCase
             'username' => 'testuser',
             'password' => 'password',
             'password_confirmation' => 'password',
-            'user_type_id' => 1,
+            'user_type_id' => $userType->id,
             'role' => [$role->id],
         ]);
 
@@ -54,7 +54,7 @@ class RegistrationTest extends TestCase
         $this->assertDatabaseHas('users', [
             'email' => 'test@example.com',
             'username' => 'testuser',
-            'user_type_id' => 1,
+            'user_type_id' => $userType->id,
         ]);
 
         $this->assertTrue(User::where('username', 'testuser')->first()->hasRole('Employee'));
