@@ -11,19 +11,30 @@
     {{session('error')}}
 </div>
 @endif
-<div class="card card-info">
+@include('operations.partials.index-styles')
+<div class="operation-page-header">
+    <div>
+        <h1 class="operation-page-title">Dealer Fee</h1>
+        <p class="operation-page-subtitle">Maintain APR and dealer fee values by loan term and finance option.</p>
+    </div>
+    <div class="operation-summary">
+        <span>Total Records</span>
+        <strong>{{ $dealerfeelist->count() }}</strong>
+    </div>
+</div>
+<div class="card operation-card">
     <div class="card-header">
-        <h4 class="card-title">Change DealerFee</h4>
+        <h4 class="card-title">{{ !empty($loan) ? 'Update Dealer Fee' : 'Add Dealer Fee' }}</h4>
     </div>
     <div class="card-body">
         <!-- ADD NEW PRODUCT PART START -->
-        <form method="POST" action="{{ !empty($loan) ? route('dealerfee.update',$loan->id) :  route('dealerfee.store') }}">
+        <form class="operation-form" method="POST" action="{{ !empty($loan) ? route('dealerfee.update',$loan->id) :  route('dealerfee.store') }}">
             @csrf
             <input type="hidden" name="id" value="{{ !empty($loan) ? $loan->id : '' }}" />
-            <div class="row g-3  mb-3 align-items-center">
-                <div class="col-sm-4">
+            <div class="row g-3 align-items-start">
+                <div class="col-xl-3 col-lg-6 col-md-6 col-12">
                     <label class="form-label">Loan Term</label>
-                    <select class="form-select select2" aria-label="Default select Loan Term" id="loan_term_id" name="loan_term_id">
+                    <select class="form-select select2" aria-label="Default select Loan Term" id="loan_term_id" name="loan_term_id" required>
                         <option value="">Select Loan Term</option>
                         @foreach ($terms as $term)
                         <option {{(!empty($loan) && $loan->loan_term_id == $term->id ? 'selected' : '')}} value="{{ $term->id }}">
@@ -35,9 +46,9 @@
                     <div class="text-danger message mt-2">{{$message}}</div>
                     @enderror
                 </div>
-                <div class="col-sm-4">
+                <div class="col-xl-3 col-lg-6 col-md-6 col-12">
                     <label class="form-label">Finance Option</label>
-                    <select class="form-select select2" aria-label="Default select Finance Option" id="finance_option_id" name="finance_option_id">
+                    <select class="form-select select2" aria-label="Default select Finance Option" id="finance_option_id" name="finance_option_id" required>
                         <option value="">Select Finance Option</option>
                         @foreach ($financing as $finance)
                         <option {{(!empty($loan) && $loan->finance_option_id == $finance->id ? 'selected' : '')}} value="{{ $finance->id }}">
@@ -45,14 +56,14 @@
                         </option>
                         @endforeach
                     </select>
-                    @error("loan_term_id")
+                    @error("finance_option_id")
                     <div class="text-danger message mt-2">{{$message}}</div>
                     @enderror
                 </div>
-                <div class="col-sm-4 ">
+                <div class="col-xl-3 col-lg-6 col-md-6 col-12">
                     <!-- <div class="form-group"> -->
                     <label>APR</label>
-                    <input type="text" class="form-control @error('apr') is-invalid @enderror" id="apr" name="apr" placeholder="Enter Apr" value="{{ !empty($loan) ? $loan->apr : old('apr') }}">
+                    <input type="number" step="0.0001" min="0" required class="form-control @error('apr') is-invalid @enderror" id="apr" name="apr" placeholder="Enter Apr" value="{{ old('apr', !empty($loan) ? $loan->apr : '') }}">
                     @error('apr')
                     <span class="invalid-feedback" role="alert">
                         <strong>{{ $message }}</strong>
@@ -60,10 +71,10 @@
                     @enderror
                     <!-- </div> -->
                 </div>
-                <div class="col-sm-4">
+                <div class="col-xl-3 col-lg-6 col-md-6 col-12">
                     <!-- <div class="form-group"> -->
                     <label>Dealer Fee</label>
-                    <input type="text" class="form-control @error('dealer_fee') is-invalid @enderror" id="dealer_fee" name="dealer_fee" placeholder="Enter Dealer Fee" value="{{ !empty($loan) ? $loan->dealer_fee : old('dealer_fee') }}">
+                    <input type="number" step="0.0001" min="0" required class="form-control @error('dealer_fee') is-invalid @enderror" id="dealer_fee" name="dealer_fee" placeholder="Enter Dealer Fee" value="{{ old('dealer_fee', !empty($loan) ? $loan->dealer_fee : '') }}">
                     @error('dealer_fee')
                     <span class="invalid-feedback" role="alert">
                         <strong>{{ $message }}</strong>
@@ -71,14 +82,10 @@
                     @enderror
                     <!-- </div> -->
                 </div>
-                <div class="col-4 mt-3">
-                    <label></label>
-                    <div class="form-group float-left ">
-                        <button type="button" class="btn btn-danger float-right ml-2 text-white"><i class="icofont-ban"></i>
-                            Cancel
-                        </button>
-                        <button type="submit" class="btn btn-primary float-right " value="save"><i class="icofont-save"></i> Save
-                        </button>
+                <div class="col-12">
+                    <div class="operation-actions">
+                        <button type="submit" class="btn btn-primary" value="save"><i class="icofont-save"></i> Save</button>
+                        <a href="{{ route('view-dealer-fee') }}" class="btn btn-outline-secondary"><i class="icofont-ban"></i> Cancel</a>
                     </div>
                 </div>
             </div>
@@ -86,12 +93,12 @@
         <!-- ADD NEW PRODUCT PART END -->
     </div>
 </div>
-<div class="card mt-3">
+<div class="card operation-card mt-3">
     <div class="card-header">
-        <h4 class="card-title">DealerFee List</h3>
+        <h4 class="card-title">Dealer Fee List</h4>
     </div>
     <div class="card-body">
-        <table id="example1" class="table table-bordered table-striped datatable">
+        <table id="example1" class="table table-hover operation-table datatable">
             <thead>
                 <tr>
                     <th>No.</th>
@@ -106,21 +113,24 @@
                 @foreach ($dealerfeelist as $key => $list)
                 <tr>
                     <td>{{ ++$key }}</td>
-                    <td>{{ $list->loan->year }}</td>
+                    <td>{{ $list->loan->year ?? 'N/A' }}</td>
                     {{-- <td>{{(!empty($list->loan->finance) ? $list->loan->finance->name : '') }}</td> --}}
-                    <td>{{$list->finance->name }}</td>
-                    <td>{{ $list->apr }}</td>
-                    <td>{{ $list->dealer_fee }}</td>
+                    <td>{{ $list->finance->name ?? 'N/A' }}</td>
+                    <td class="cost-value">{{ $list->apr }}</td>
+                    <td class="cost-value">{{ $list->dealer_fee }}</td>
                     <td class="text-center">
-                        <a style="cursor: pointer;" data-toggle="tooltip" title="Edit" href="{{ route('view-dealer-fee',$list->id)}}">
+                        <a class="action-link" data-toggle="tooltip" title="Edit" href="{{ route('view-dealer-fee',$list->id)}}">
                             <i class="icofont-pencil text-warning"></i></a>
-                        <a style="cursor: pointer;" data-toggle="tooltip" title="Delete" class="ml-2" onclick="deleteDealerModal    ('{{ $list->id }}')">
+                        <a class="action-link ml-2" data-toggle="tooltip" title="Delete" onclick="deleteDealerModal('{{ $list->id }}')">
                             <i class="icofont-trash text-danger"></i></a>
                     </td>
                 </tr>
                 @endforeach
             </tbody>
         </table>
+        @if($dealerfeelist->isEmpty())
+        <div class="empty-state">No dealer fee records have been added yet.</div>
+        @endif
     </div>
 </div>
 <!-- Modal  Delete Folder/ File-->

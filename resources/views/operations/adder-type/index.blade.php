@@ -11,69 +11,32 @@
     {{session('error')}}
 </div>
 @endif
-<style>
-    .tag-editor {
-        min-height: 48px;
-        display: flex;
-        align-items: center;
-        flex-wrap: wrap;
-        gap: 8px;
-        padding: 8px 12px;
-        border: 1px solid #ced4da;
-        border-radius: 10px;
-        background: #fff;
-    }
-
-    .tag-editor:focus-within {
-        border-color: #0d6efd;
-        box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.15);
-    }
-
-    .tag-editor input {
-        border: none;
-        outline: none;
-        flex: 1 1 140px;
-        min-width: 140px;
-        padding: 6px 0;
-    }
-
-    .tag-chip {
-        display: inline-flex;
-        align-items: center;
-        gap: 8px;
-        padding: 6px 10px;
-        border-radius: 999px;
-        background: linear-gradient(135deg, #1f2937 0%, #374151 100%);
-        color: #fff;
-        font-size: 13px;
-        font-weight: 600;
-    }
-
-    .tag-chip button {
-        border: 0;
-        background: transparent;
-        color: #fff;
-        cursor: pointer;
-        line-height: 1;
-        padding: 0;
-        font-size: 14px;
-    }
-</style>
-<div class="card card-info">
+@include('operations.partials.index-styles')
+<div class="operation-page-header">
+    <div>
+        <h1 class="operation-page-title">Adder Types</h1>
+        <p class="operation-page-subtitle">Maintain adder categories and their search tags.</p>
+    </div>
+    <div class="operation-summary">
+        <span>Total Records</span>
+        <strong>{{ $adders->count() }}</strong>
+    </div>
+</div>
+<div class="card operation-card">
     <div class="card-header">
-        <h4 class="card-title">Add Adder Types</h4>
+        <h4 class="card-title">{{ !empty($adder) ? 'Update Adder Type' : 'Add Adder Type' }}</h4>
     </div>
     <div class="card-body">
         <!-- ADD NEW PRODUCT PART START -->
-        <form method="POST" action="{{ !empty($adder) ? route('adder.type.update',$adder->id) :  route('adder.type.store') }}">
+        <form class="operation-form" method="POST" action="{{ !empty($adder) ? route('adder.type.update',$adder->id) :  route('adder.type.store') }}">
             @csrf
             <input type="hidden" name="id" value="{{ !empty($adder) ? $adder->id : '' }}" />
-            <div class="row g-3  mb-3 align-items-center">
+            <div class="row g-3 align-items-start">
                
-                <div class="col-sm-4 ">
+                <div class="col-xl-4 col-lg-6 col-md-6 col-12">
                     <!-- <div class="form-group"> -->
                     <label>Adder Type Name</label>
-                    <input type="text" class="form-control @error('name') is-invalid @enderror" id="name" name="name" placeholder="Enter Name" value="{{ !empty($adder) ? $adder->name : old('name') }}">
+                    <input type="text" required class="form-control @error('name') is-invalid @enderror" id="name" name="name" placeholder="Enter Name" value="{{ old('name', !empty($adder) ? $adder->name : '') }}">
                     @error('name')
                     <span class="invalid-feedback" role="alert">
                         <strong>{{ $message }}</strong>
@@ -81,23 +44,22 @@
                     @enderror
                     <!-- </div> -->
                 </div>
-                <div class="col-sm-4">
+                <div class="col-xl-4 col-lg-6 col-md-6 col-12">
                     <label>Tag</label>
                     <div class="tag-editor" id="adderTagEditor">
                         <input type="text" id="adderTagInput" placeholder="Type tag and press Enter">
                     </div>
                     <input type="hidden" id="adderTagValue" name="tag"
                         value="{{ !empty($adder) ? $adder->tag : old('tag') }}">
+                    @error('tag')
+                    <div class="text-danger message mt-2">{{$message}}</div>
+                    @enderror
                     <small class="text-muted">Only one tag is allowed for each adder type.</small>
                 </div>
-                <div class="col-4 mt-3">
-                    <label></label>
-                    <div class="form-group float-left ">
-                        <button type="button" class="btn btn-danger float-right ml-2 text-white"><i class="icofont-ban"></i>
-                            Cancel
-                        </button>
-                        <button type="submit" class="btn btn-primary float-right " value="save"><i class="icofont-save"></i> Save
-                        </button>
+                <div class="col-12">
+                    <div class="operation-actions">
+                        <button type="submit" class="btn btn-primary" value="save"><i class="icofont-save"></i> Save</button>
+                        <a href="{{ route('view.adder.types') }}" class="btn btn-outline-secondary"><i class="icofont-ban"></i> Cancel</a>
                     </div>
                 </div>
             </div>
@@ -105,12 +67,12 @@
         <!-- ADD NEW PRODUCT PART END -->
     </div>
 </div>
-<div class="card mt-3">
+<div class="card operation-card mt-3">
     <div class="card-header">
-        <h4 class="card-title">Adder Types</h3>
+        <h4 class="card-title">Adder Types</h4>
     </div>
     <div class="card-body">
-        <table id="example1" class="table table-bordered table-striped datatable">
+        <table id="example1" class="table table-hover operation-table datatable">
             <thead>
                 <tr>
                     <th>No.</th>
@@ -126,15 +88,18 @@
                     <td>{{ $adderList->name }}</td>
                     <td>{{ $adderList->tag ?? '-' }}</td>
                     <td class="text-center">
-                        <a style="cursor: pointer;" data-toggle="tooltip" title="Edit" href="{{ route('view.adder.types',$adderList->id)}}">
+                        <a class="action-link" data-toggle="tooltip" title="Edit" href="{{ route('view.adder.types',$adderList->id)}}">
                             <i class="icofont-pencil text-warning"></i></a>
-                        <a style="cursor: pointer;" data-toggle="tooltip" title="Delete" class="ml-2" onclick="deleteDealerModal('{{ $adderList->id }}')">
+                        <a class="action-link ml-2" data-toggle="tooltip" title="Delete" onclick="deleteDealerModal('{{ $adderList->id }}')">
                             <i class="icofont-trash text-danger"></i></a>
                     </td>
                 </tr>
                 @endforeach
             </tbody>
         </table>
+        @if($adders->isEmpty())
+        <div class="empty-state">No adder types have been added yet.</div>
+        @endif
     </div>
 </div>
 <!-- Modal  Delete Folder/ File-->

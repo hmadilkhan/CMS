@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\LaborCost;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class LaborCostController extends Controller
 {
@@ -31,15 +32,20 @@ class LaborCostController extends Controller
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'cost' => 'required',
+            'cost' => ['required', 'numeric', 'min:0'],
         ]);
+
         try {
-            LaborCost::orderBy("id", "desc")->delete();
-            LaborCost::create($request->except(["id"]));
-            return redirect()->route("labor-costs.index");
+            DB::transaction(function () use ($validated) {
+                LaborCost::query()->delete();
+                LaborCost::create([
+                    "cost" => $validated["cost"],
+                ]);
+            });
+
+            return redirect()->route("labor-costs.index")->with("success", "Labor cost saved successfully");
         } catch (\Throwable $th) {
-            return $th->getMessage();
-            return redirect()->route("labor-costs.index");
+            return redirect()->route("labor-costs.index")->with("error", $th->getMessage());
         }
     }
 

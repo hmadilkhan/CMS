@@ -11,16 +11,27 @@
     {{session('error')}}
 </div>
 @endif
-<div class="card card-info">
+@include('operations.partials.index-styles')
+<div class="operation-page-header">
+    <div>
+        <h1 class="operation-page-title">Assign Departments</h1>
+        <p class="operation-page-subtitle">Connect employees with departments for operational ownership.</p>
+    </div>
+    <div class="operation-summary">
+        <span>Total Records</span>
+        <strong>{{ $assignDepartments->count() }}</strong>
+    </div>
+</div>
+<div class="card operation-card">
     <div class="card-header">
         <h4 class="card-title">{{ !empty($assignDepartment) ? 'Edit' : 'Add' }} Assign Department</h4>
     </div>
     <div class="card-body">
-        <form method="POST" action="{{ !empty($assignDepartment) ? route('assign-department.update', $assignDepartment->id) : route('assign-department.store') }}">
+        <form class="operation-form" method="POST" action="{{ !empty($assignDepartment) ? route('assign-department.update', $assignDepartment->id) : route('assign-department.store') }}">
             @csrf
             <input type="hidden" name="id" value="{{ !empty($assignDepartment) ? $assignDepartment->id : '' }}" />
-            <div class="row g-3 mb-3 align-items-center">
-                <div class="col-sm-4">
+            <div class="row g-3 align-items-start">
+                <div class="col-xl-4 col-lg-6 col-md-6 col-12">
                     <label>Department <span class="text-danger">*</span></label>
                     <select class="form-select select2 @error('department_id') is-invalid @enderror" name="department_id" required>
                         <option value="">Select Department</option>
@@ -36,7 +47,7 @@
                     </span>
                     @enderror
                 </div>
-                <div class="col-sm-4">
+                <div class="col-xl-4 col-lg-6 col-md-6 col-12">
                     <label>Employee <span class="text-danger">*</span></label>
                     <select class="form-select select2 @error('employee_id')  is-invalid @enderror" name="employee_id" required>
                         <option value="">Select Employee</option>
@@ -52,27 +63,26 @@
                     </span>
                     @enderror
                 </div>
-                <div class="col-4 mt-3">
-                    <label></label>
-                    <div class="form-group float-left">
-                        <a href="{{ route('assign-department.index') }}" class="btn btn-danger float-right ml-2 text-white">
-                            <i class="icofont-ban"></i> Cancel
-                        </a>
-                        <button type="submit" class="btn btn-primary float-right">
+                <div class="col-12">
+                    <div class="operation-actions">
+                        <button type="submit" class="btn btn-primary">
                             <i class="icofont-save"></i> Save
                         </button>
+                        <a href="{{ route('assign-department.index') }}" class="btn btn-outline-secondary">
+                            <i class="icofont-ban"></i> Cancel
+                        </a>
                     </div>
                 </div>
             </div>
         </form>
     </div>
 </div>
-<div class="card mt-3">
+<div class="card operation-card mt-3">
     <div class="card-header">
         <h4 class="card-title">Assign Departments List</h4>
     </div>
     <div class="card-body">
-        <table id="example1" class="table table-bordered table-striped datatable">
+        <table id="example1" class="table table-hover operation-table datatable">
             <thead>
                 <tr>
                     <th>No.</th>
@@ -88,10 +98,10 @@
                     <td>{{ $assign->department->name ?? 'N/A' }}</td>
                     <td>{{ $assign->employee->user->name ?? 'N/A' }}</td>
                     <td class="text-center">
-                        <a style="cursor: pointer;" data-toggle="tooltip" title="Edit" href="{{ route('assign-department.index', $assign->id) }}">
+                        <a class="action-link" data-toggle="tooltip" title="Edit" href="{{ route('assign-department.index', $assign->id) }}">
                             <i class="icofont-pencil text-warning"></i>
                         </a>
-                        <a style="cursor: pointer;" data-toggle="tooltip" title="Delete" class="ml-2" onclick="deleteModal('{{ $assign->id }}')">
+                        <a class="action-link ml-2" data-toggle="tooltip" title="Delete" onclick="deleteModal('{{ $assign->id }}')">
                             <i class="icofont-trash text-danger"></i>
                         </a>
                     </td>
@@ -99,6 +109,9 @@
                 @endforeach
             </tbody>
         </table>
+        @if($assignDepartments->isEmpty())
+        <div class="empty-state">No department assignments have been added yet.</div>
+        @endif
     </div>
 </div>
 <!-- Modal Delete -->

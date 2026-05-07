@@ -11,59 +11,71 @@
     {{session('error')}}
 </div>
 @endif
-<div class="card card-info">
+@include('operations.partials.index-styles')
+<div class="operation-page-header">
+    <div>
+        <h1 class="operation-page-title">Sales Partners</h1>
+        <p class="operation-page-subtitle">Maintain sales partner contact details and logo assets.</p>
+    </div>
+    <div class="operation-summary">
+        <span>Total Records</span>
+        <strong>{{ $partners->count() }}</strong>
+    </div>
+</div>
+<div class="card operation-card">
     <div class="card-header">
-        <h4 class="card-title">Add Sales Partner</h4>
+        <h4 class="card-title">{{ !empty($partner) ? 'Update Sales Partner' : 'Add Sales Partner' }}</h4>
     </div>
     <div class="card-body">
         <!-- ADD NEW PRODUCT PART START -->
-        <form method="POST" action="{{ !empty($partner) ? route('sales.partner.update',$partner->id) :  route('sales.partner.store') }}" enctype="multipart/form-data">
+        <form class="operation-form" method="POST" action="{{ !empty($partner) ? route('sales.partner.update',$partner->id) :  route('sales.partner.store') }}" enctype="multipart/form-data">
             @csrf
             <input type="hidden" name="id" value="{{ !empty($partner) ? $partner->id : '' }}" />
             <input type="hidden" name="previous_logo" value="{{ !empty($partner) ? $partner->image : '' }}" />
-            <div class="row g-3  mb-3 align-items-center">
+            <div class="row g-3 align-items-start">
                
-                <div class="col-sm-4 ">
+                <div class="col-xl-4 col-lg-6 col-md-6 col-12">
                     <label>Sales Partner Name</label>
-                    <input type="text" class="form-control @error('name') is-invalid @enderror" id="name" name="name" placeholder="Enter Name" value="{{ !empty($partner) ? $partner->name : old('name') }}">
+                    <input type="text" required class="form-control @error('name') is-invalid @enderror" id="name" name="name" placeholder="Enter Name" value="{{ old('name', !empty($partner) ? $partner->name : '') }}">
                     @error('name')
                     <span class="invalid-feedback" role="alert">
                         <strong>{{ $message }}</strong>
                     </span>
                     @enderror
                 </div>
-                <div class="col-sm-4 ">
+                <div class="col-xl-4 col-lg-6 col-md-6 col-12">
                     <label>Email</label>
-                    <input type="email" class="form-control @error('email') is-invalid @enderror" id="email" name="email" placeholder="Enter Email" value="{{ !empty($partner) ? $partner->email : old('email') }}">
+                    <input type="email" class="form-control @error('email') is-invalid @enderror" id="email" name="email" placeholder="Enter Email" value="{{ old('email', !empty($partner) ? $partner->email : '') }}">
                     @error('email')
                     <span class="invalid-feedback" role="alert">
                         <strong>{{ $message }}</strong>
                     </span>
                     @enderror
                 </div>
-                <div class="col-sm-4 ">
+                <div class="col-xl-4 col-lg-6 col-md-6 col-12">
                     <label>Phone</label>
-                    <input type="text" class="form-control @error('phone') is-invalid @enderror" id="phone" name="phone" placeholder="Enter Phone" value="{{ !empty($partner) ? $partner->phone : old('phone') }}">
+                    <input type="text" class="form-control @error('phone') is-invalid @enderror" id="phone" name="phone" placeholder="Enter Phone" value="{{ old('phone', !empty($partner) ? $partner->phone : '') }}">
                     @error('phone')
                     <span class="invalid-feedback" role="alert">
                         <strong>{{ $message }}</strong>
                     </span>
                     @enderror
                 </div>
-                <div class="col-sm-4 mb-2">
+                <div class="col-xl-4 col-lg-6 col-md-6 col-12 mb-2">
                     <div class="form-group">
                         <label for="formFileMultipleoneone" class="form-label">Image</label>
-                        <input class="form-control" type="file" id="formFileMultipleoneone" name="file">
+                        <input class="form-control @error('file') is-invalid @enderror" type="file" id="formFileMultipleoneone" name="file" accept="image/*">
+                        @error('file')
+                        <span class="invalid-feedback" role="alert">
+                            <strong>{{ $message }}</strong>
+                        </span>
+                        @enderror
                     </div>
                 </div>
-                <div class="col-4 mt-3">
-                    <label></label>
-                    <div class="form-group float-left ">
-                        <button type="button" class="btn btn-danger float-right ml-2 text-white"><i class="icofont-ban"></i>
-                            Cancel
-                        </button>
-                        <button type="submit" class="btn btn-primary float-right " value="save"><i class="icofont-save"></i> Save
-                        </button>
+                <div class="col-12">
+                    <div class="operation-actions">
+                        <button type="submit" class="btn btn-primary" value="save"><i class="icofont-save"></i> Save</button>
+                        <a href="{{ route('sales.partner.types') }}" class="btn btn-outline-secondary"><i class="icofont-ban"></i> Cancel</a>
                     </div>
                 </div>
             </div>
@@ -71,12 +83,12 @@
         <!-- ADD NEW PRODUCT PART END -->
     </div>
 </div>
-<div class="card mt-3">
+<div class="card operation-card mt-3">
     <div class="card-header">
-        <h4 class="card-title">Sales Partner List</h3>
+        <h4 class="card-title">Sales Partner List</h4>
     </div>
     <div class="card-body">
-        <table id="example1" class="table table-bordered table-striped datatable">
+        <table id="example1" class="table table-hover operation-table datatable">
             <thead>
                 <tr>
                     <th>No.</th>
@@ -96,15 +108,18 @@
                     <td>{{ $partnerList->email }}</td>
                     <td>{{ $partnerList->phone }}</td>
                     <td class="text-center">
-                        <a style="cursor: pointer;" data-toggle="tooltip" title="Edit" href="{{ route('sales.partner.types',$partnerList->id)}}">
+                        <a class="action-link" data-toggle="tooltip" title="Edit" href="{{ route('sales.partner.types',$partnerList->id)}}">
                             <i class="icofont-pencil text-warning"></i></a>
-                        <a style="cursor: pointer;" data-toggle="tooltip" title="Delete" class="ml-2" onclick="deleteDealerModal('{{ $partnerList->id }}')">
+                        <a class="action-link ml-2" data-toggle="tooltip" title="Delete" onclick="deleteDealerModal('{{ $partnerList->id }}')">
                             <i class="icofont-trash text-danger"></i></a>
                     </td>
                 </tr>
                 @endforeach
             </tbody>
         </table>
+        @if($partners->isEmpty())
+        <div class="empty-state">No sales partners have been added yet.</div>
+        @endif
     </div>
 </div>
 <!-- Modal  Delete Folder/ File-->

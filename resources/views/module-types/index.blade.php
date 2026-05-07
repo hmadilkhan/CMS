@@ -1,34 +1,55 @@
 @extends("layouts.master")
 @section('title', 'Module Types')
 @section('content')
-<div class="card card-info">
+@if(session('success'))
+<div class="alert alert-primary" role="alert">
+    {{session('success')}}
+</div>
+@endif
+@if(session('error'))
+<div class="alert alert-danger" role="alert">
+    {{session('error')}}
+</div>
+@endif
+@include('operations.partials.index-styles')
+<div class="operation-page-header">
+    <div>
+        <h1 class="operation-page-title">Module Types</h1>
+        <p class="operation-page-subtitle">Maintain module wattage, customer pricing, and internal module cost by inverter type.</p>
+    </div>
+    <div class="operation-summary">
+        <span>Total Records</span>
+        <strong>{{ $types->count() }}</strong>
+    </div>
+</div>
+<div class="card operation-card">
     <div class="card-header">
-        <h4 class="card-title">Create New Module</h4>
+        <h4 class="card-title">{{ !empty($type) ? 'Update Module Type' : 'Create New Module' }}</h4>
     </div>
     <div class="card-body">
         <!-- ADD NEW PRODUCT PART START -->
-        <form method="POST" action="{{ !empty($type) ? route('module-types.update',$type->id) :  route('module-types.store') }}">
+        <form class="operation-form" method="POST" action="{{ !empty($type) ? route('module-types.update',$type->id) :  route('module-types.store') }}">
             @csrf
             @if(!empty($type))
             @method("PUT")
             @endif
             <input type="hidden" name="id" value="{{ !empty($type) ? $type->id : '' }}" />
-            <div class="row g-3  mb-3 align-items-center">
-                <div class="col-sm-3 ">
+            <div class="row g-3 align-items-start">
+                <div class="col-xl-3 col-lg-4 col-md-6 col-12">
                     <label>Name</label>
-                    <input type="text" class="form-control @error('name') is-invalid @enderror" id="name" name="name" placeholder="Enter Complete Name" value="{{ !empty($type) ? $type->name : old('name') }}">
+                    <input type="text" required class="form-control @error('name') is-invalid @enderror" id="name" name="name" placeholder="Enter Complete Name" value="{{ old('name', !empty($type) ? $type->name : '') }}">
                     @error('name')
                     <span class="invalid-feedback" role="alert">
                         <strong>{{ $message }}</strong>
                     </span>
                     @enderror
                 </div>
-                <div class="col-sm-3">
+                <div class="col-xl-3 col-lg-4 col-md-6 col-12">
                     <label class="form-label">Inverter Type</label>
-                    <select class="form-select select2" aria-label="Default select Inverter Type" id="inverter_type_id" name="inverter_type_id">
+                    <select class="form-select select2" aria-label="Default select Inverter Type" id="inverter_type_id" name="inverter_type_id" required>
                         <option value="">Select Inverter Type</option>
                         @foreach ($inverterTypes as $inverter)
-                        <option {{(!empty($type) && $inverter->id == $type->inverter->id ? 'selected' : '')}} value="{{ $inverter->id }}">
+                        <option {{ old('inverter_type_id', !empty($type) ? $type->inverter_type_id : '') == $inverter->id ? 'selected' : '' }} value="{{ $inverter->id }}">
                             {{ $inverter->name }}
                         </option>
                         @endforeach
@@ -37,41 +58,43 @@
                     <div class="text-danger message mt-2">{{$message}}</div>
                     @enderror
                 </div>
-                <div class="col-sm-3">
+                <div class="col-xl-3 col-lg-4 col-md-6 col-12">
                     <label>Watt</label>
-                    <input type="text" class="form-control @error('value') is-invalid @enderror" id="value" name="value" placeholder="Enter Value in Watt" value="{{ !empty($type) ? $type->value : old('value') }}">
+                    <input type="number" step="0.01" min="0" required class="form-control @error('value') is-invalid @enderror" id="value" name="value" placeholder="Enter Value in Watt" value="{{ old('value', !empty($type) ? $type->value : '') }}">
                     @error('value')
                     <span class="invalid-feedback" role="alert">
                         <strong>{{ $message }}</strong>
                     </span>
                     @enderror
                 </div>
-                <div class="col-sm-3">
+                <div class="col-xl-3 col-lg-4 col-md-6 col-12">
                     <label>Amount</label>
-                    <input type="text" class="form-control @error('amount') is-invalid @enderror" id="amount" name="amount" placeholder="Enter Amount" value="{{ !empty($type) ? $type->amount : old('amount') }}">
+                    <div class="input-group cost-input-group">
+                        <span class="input-group-text">$</span>
+                        <input type="number" step="0.01" min="0" required class="form-control @error('amount') is-invalid @enderror" id="amount" name="amount" placeholder="0.00" value="{{ old('amount', !empty($type) ? $type->amount : '') }}">
+                    </div>
                     @error('amount')
                     <span class="invalid-feedback" role="alert">
                         <strong>{{ $message }}</strong>
                     </span>
                     @enderror
                 </div>
-                <div class="col-sm-3">
+                <div class="col-xl-3 col-lg-4 col-md-6 col-12">
                     <label>Internal Module Cost</label>
-                    <input type="text" class="form-control @error('internal_module_cost') is-invalid @enderror" id="internal_module_cost" name="internal_module_cost" placeholder="Enter Internal Module Cost" value="{{ !empty($type) ? $type->internal_module_cost : old('internal_module_cost') }}">
+                    <div class="input-group cost-input-group">
+                        <span class="input-group-text">$</span>
+                        <input type="number" step="0.01" min="0" class="form-control @error('internal_module_cost') is-invalid @enderror" id="internal_module_cost" name="internal_module_cost" placeholder="0.00" value="{{ old('internal_module_cost', !empty($type) ? $type->internal_module_cost : '') }}">
+                    </div>
                     @error('internal_module_cost')
                     <span class="invalid-feedback" role="alert">
                         <strong>{{ $message }}</strong>
                     </span>
                     @enderror
                 </div>
-                <div class="col-3">
-                    <label></label>
-                    <div class="form-group ">
-                        <button type="button" class="btn btn-danger float-right ml-2 text-white"><i class="icofont-ban"></i>
-                            Cancel
-                        </button>
-                        <button type="submit" class="btn btn-primary float-right " value="save"><i class="icofont-save"></i> Save
-                        </button>
+                <div class="col-12">
+                    <div class="operation-actions">
+                        <button type="submit" class="btn btn-primary" value="save"><i class="icofont-save"></i> Save</button>
+                        <a href="{{ route('module-types.index') }}" class="btn btn-outline-secondary"><i class="icofont-ban"></i> Cancel</a>
                     </div>
                 </div>
             </div>
@@ -79,12 +102,12 @@
         <!-- ADD NEW PRODUCT PART END -->
     </div>
 </div>
-<div class="card mt-3">
+<div class="card operation-card mt-3">
     <div class="card-header">
-        <h4 class="card-title">Module Type List</h3>
+        <h4 class="card-title">Module Type List</h4>
     </div>
     <div class="card-body">
-        <table id="example1" class="table table-bordered table-striped datatable">
+        <table id="example1" class="table table-hover operation-table datatable">
             <thead>
                 <tr>
                     <th>No.</th>
@@ -101,20 +124,23 @@
                 <tr>
                     <td>{{ ++$key }}</td>
                     <td>{{ $type->name }}</td>
-                    <td>{{ $type->inverter->name }}</td>
-                    <td>{{ $type->value }}</td>
-                    <td>{{ $type->amount }}</td>
-                    <td>{{ $type->internal_module_cost }}</td>
+                    <td>{{ $type->inverter->name ?? 'N/A' }}</td>
+                    <td class="cost-value">{{ $type->value }}</td>
+                    <td class="cost-value">$ {{ number_format($type->amount, 2) }}</td>
+                    <td class="cost-value">$ {{ number_format($type->internal_module_cost, 2) }}</td>
                     <td class="text-center">
-                        <a style="cursor: pointer;" data-toggle="tooltip" title="Edit" href="{{ route('module-types.edit',$type->id)}}">
+                        <a class="action-link" data-toggle="tooltip" title="Edit" href="{{ route('module-types.edit',$type->id)}}">
                             <i class="icofont-pencil text-warning"></i></a>
-                        <a style="cursor: pointer;" data-toggle="tooltip" title="Delete" class="ml-2" onclick="deleteModuleType('{{ $type->id }}')">
+                        <a class="action-link ml-2" data-toggle="tooltip" title="Delete" onclick="deleteModuleTypeModal('{{ $type->id }}')">
                             <i class="icofont-trash text-danger"></i></a>
                     </td>
                 </tr>
                 @endforeach
             </tbody>
         </table>
+        @if($types->isEmpty())
+        <div class="empty-state">No module types have been added yet.</div>
+        @endif
     </div>
 </div>
 <!-- Modal  Delete Folder/ File-->
@@ -141,7 +167,7 @@
 
 @section("scripts")
 <script>
-    function deleteModuleType(id) {
+    function deleteModuleTypeModal(id) {
         $("#deleteId").val(id);
         $("#deleteproject").modal("show")
     }

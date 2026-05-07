@@ -119,7 +119,7 @@ Route::middleware('auth')->group(function () {
     Route::resource('labor-costs', LaborCostController::class);
 
     Route::resource('tools', ToolController::class);
-    Route::get('tools-index/{id?}', [App\Http\Controllers\ToolController::class, 'index'])->name('tools.index');
+    Route::get('tools-index/{id?}', [App\Http\Controllers\ToolController::class, 'index'])->name('tools.manage');
     Route::post('tools-delete', [App\Http\Controllers\ToolController::class, 'toolDelete'])->name('tools.delete');
 
 
@@ -227,6 +227,18 @@ Route::middleware('auth')->group(function () {
         Route::post('/utility-company-update', 'utilityCompanyUpdate')->name("utility.type.update");
         Route::post('/utility-company-delete', 'utilityCompanyDelete')->name("utility.type.delete");
 
+        // DEPARTMENTS
+        Route::get('/view-departments/{id?}', 'departmentList')->name("departments.list");
+        Route::post('/department-store', 'departmentStore')->name("department.store");
+        Route::post('/department-update', 'departmentUpdate')->name("department.update");
+        Route::post('/department-delete', 'departmentDelete')->name("department.delete");
+
+        // SUB DEPARTMENTS
+        Route::get('/view-sub-departments/{id?}', 'subDepartmentList')->name("sub.departments.list");
+        Route::post('/sub-department-store', 'subDepartmentStore')->name("sub.department.store");
+        Route::post('/sub-department-update', 'subDepartmentUpdate')->name("sub.department.update");
+        Route::post('/sub-department-delete', 'subDepartmentDelete')->name("sub.department.delete");
+
         // FINANCE OPTION VIEW
         Route::get('/view-finance-option/{id?}', 'financeOptionView')->name("finance.option.types");
         Route::post('/finance-option-store', 'financeOptionStore')->name("finance.option.store");
@@ -247,12 +259,20 @@ Route::middleware('auth')->group(function () {
         Route::post('/sub-contractor-delete', 'subContractorDelete')->name("sub.contractor.delete");
 
         // CALL SCRIPTS
+        Route::get('/view-call-types/{id?}', 'callTypeList')->name("call.types.list");
+        Route::post('/call-types-store', 'callTypeStore')->name("call.types.store");
+        Route::post('/call-types-update', 'callTypeUpdate')->name("call.types.update");
+        Route::post('/call-types-delete', 'callTypeDelete')->name("call.types.delete");
         Route::get('/view-call-scripts/{id?}', 'callScriptList')->name("call.scripts.list");
         Route::post('/call-scripts-store', 'callScriptStore')->name("call.scripts.store");
         Route::post('/call-scripts-update', 'callScriptUpdate')->name("call.scripts.update");
         Route::post('/call-scripts-delete', 'callScriptDelete')->name("call.scripts.delete");
 
         // Email SCRIPTS
+        Route::get('/view-email-types/{id?}', 'emailTypeList')->name("email.types.list");
+        Route::post('/email-types-store', 'emailTypeStore')->name("email.types.store");
+        Route::post('/email-types-update', 'emailTypeUpdate')->name("email.types.update");
+        Route::post('/email-types-delete', 'emailTypeDelete')->name("email.types.delete");
         Route::get('/view-email-scripts/{id?}', 'emailScriptList')->name("email.scripts.list");
         Route::post('/email-scripts-store', 'emailScriptStore')->name("email.scripts.store");
         Route::post('/email-scripts-update', 'emailScriptUpdate')->name("email.scripts.update");

@@ -11,65 +11,28 @@
     {{session('error')}}
 </div>
 @endif
-<style>
-    .tag-editor {
-        min-height: 48px;
-        display: flex;
-        align-items: center;
-        flex-wrap: wrap;
-        gap: 8px;
-        padding: 8px 12px;
-        border: 1px solid #ced4da;
-        border-radius: 10px;
-        background: #fff;
-    }
-
-    .tag-editor:focus-within {
-        border-color: #0d6efd;
-        box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.15);
-    }
-
-    .tag-editor input {
-        border: none;
-        outline: none;
-        flex: 1 1 140px;
-        min-width: 140px;
-        padding: 6px 0;
-    }
-
-    .tag-chip {
-        display: inline-flex;
-        align-items: center;
-        gap: 8px;
-        padding: 6px 10px;
-        border-radius: 999px;
-        background: linear-gradient(135deg, #0f766e 0%, #115e59 100%);
-        color: #fff;
-        font-size: 13px;
-        font-weight: 600;
-    }
-
-    .tag-chip button {
-        border: 0;
-        background: transparent;
-        color: #fff;
-        cursor: pointer;
-        line-height: 1;
-        padding: 0;
-        font-size: 14px;
-    }
-</style>
-<div class="card card-info">
+@include('operations.partials.index-styles')
+<div class="operation-page-header">
+    <div>
+        <h1 class="operation-page-title">Inverter Types</h1>
+        <p class="operation-page-subtitle">Maintain inverter type names and searchable tags.</p>
+    </div>
+    <div class="operation-summary">
+        <span>Total Records</span>
+        <strong>{{ $inverterTypes->count() }}</strong>
+    </div>
+</div>
+<div class="card operation-card">
     <div class="card-header">
-        <h4 class="card-title">Inverter Types</h4>
+        <h4 class="card-title">{{ !empty($inverterType) ? 'Update Inverter Type' : 'Add Inverter Type' }}</h4>
     </div>
     <div class="card-body">
         <!-- ADD NEW PRODUCT PART START -->
-        <form method="POST" action="{{ !empty($inverterType) ? route('inverter.type.update',$inverterType->id) :  route('inverter.type.store') }}">
+        <form class="operation-form" method="POST" action="{{ !empty($inverterType) ? route('inverter.type.update',$inverterType->id) :  route('inverter.type.store') }}">
             @csrf
             <input type="hidden" name="id" value="{{ !empty($inverterType) ? $inverterType->id : '' }}" />
-            <div class="row g-3  mb-3 align-items-center">
-                <div class="col-sm-4">
+            <div class="row g-3 align-items-start">
+                <div class="col-xl-4 col-lg-6 col-md-6 col-12">
                     <!-- <div class="form-group"> -->
                     <label>Inverter Type Name</label>
                     <input type="text" class="form-control @error('name') is-invalid @enderror" id="name" name="name" placeholder="Enter Inverter Type Name" value="{{ !empty($inverterType) ? $inverterType->name : old('name') }}">
@@ -80,7 +43,7 @@
                     @enderror
                     <!-- </div> -->
                 </div>
-                <div class="col-sm-4">
+                <div class="col-xl-4 col-lg-6 col-md-6 col-12">
                     <label>Tags</label>
                     <div class="tag-editor" id="inverterTagsEditor">
                         <input type="text" id="inverterTagsInput" placeholder="Type tag and press Enter">
@@ -89,14 +52,10 @@
                         value='@json(!empty($inverterType) ? $inverterType->tag_list : (old("tags") ? json_decode(old("tags"), true) : []))'>
                     <small class="text-muted">You can add multiple tags for one inverter type.</small>
                 </div>
-                <div class="col-4 mt-3">
-                    <label></label>
-                    <div class="form-group float-left ">
-                        <button type="button" class="btn btn-danger float-right ml-2 text-white"><i class="icofont-ban"></i>
-                            Cancel
-                        </button>
-                        <button type="submit" class="btn btn-primary float-right " value="save"><i class="icofont-save"></i> Save
-                        </button>
+                <div class="col-12">
+                    <div class="operation-actions">
+                        <button type="submit" class="btn btn-primary" value="save"><i class="icofont-save"></i> Save</button>
+                        <a href="{{ route('view-inverter-type') }}" class="btn btn-outline-secondary"><i class="icofont-ban"></i> Cancel</a>
                     </div>
                 </div>
             </div>
@@ -104,12 +63,12 @@
         <!-- ADD NEW PRODUCT PART END -->
     </div>
 </div>
-<div class="card mt-3">
+<div class="card operation-card mt-3">
     <div class="card-header">
-        <h4 class="card-title">Inverter Type List</h3>
+        <h4 class="card-title">Inverter Type List</h4>
     </div>
     <div class="card-body">
-        <table id="example1" class="table table-bordered table-striped datatable">
+        <table id="example1" class="table table-hover operation-table datatable">
             <thead>
                 <tr>
                     <th>No.</th>
@@ -125,15 +84,18 @@
                     <td>{{ $list->name }}</td>
                     <td>{{ count($list->tag_list) ? implode(', ', $list->tag_list) : '-' }}</td>
                     <td class="text-center">
-                        <a style="cursor: pointer;" data-toggle="tooltip" title="Edit" href="{{ route('view-inverter-type',$list->id)}}">
+                        <a class="action-link" data-toggle="tooltip" title="Edit" href="{{ route('view-inverter-type',$list->id)}}">
                             <i class="icofont-pencil text-warning"></i></a>
-                        <a style="cursor: pointer;" data-toggle="tooltip" title="Delete" class="ml-2" onclick="deleteModal('{{ $list->id }}')">
+                        <a class="action-link ml-2" data-toggle="tooltip" title="Delete" onclick="deleteModal('{{ $list->id }}')">
                             <i class="icofont-trash text-danger"></i></a>
                     </td>
                 </tr>
                 @endforeach
             </tbody>
         </table>
+        @if($inverterTypes->isEmpty())
+        <div class="empty-state">No inverter types have been added yet.</div>
+        @endif
     </div>
 </div>
 <!-- Modal  Delete Folder/ File-->

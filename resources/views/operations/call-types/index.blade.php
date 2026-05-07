@@ -1,5 +1,5 @@
 @extends("layouts.master")
-@section('title', 'Utility Company')
+@section('title', 'Call Types')
 @section('content')
 @if(session('success'))
 <div class="alert alert-primary" role="alert">
@@ -14,50 +14,45 @@
 @include('operations.partials.index-styles')
 <div class="operation-page-header">
     <div>
-        <h1 class="operation-page-title">Utility Companies</h1>
-        <p class="operation-page-subtitle">Maintain utility company options used across projects.</p>
+        <h1 class="operation-page-title">Call Types</h1>
+        <p class="operation-page-subtitle">Maintain call type options used by call scripts and workflows.</p>
     </div>
     <div class="operation-summary">
         <span>Total Records</span>
-        <strong>{{ $utilityCompanies->count() }}</strong>
+        <strong>{{ $callTypes->count() }}</strong>
     </div>
 </div>
 <div class="card operation-card">
     <div class="card-header">
-        <h4 class="card-title">{{ !empty($utility) ? 'Update Utility Company' : 'Add Utility Company' }}</h4>
+        <h4 class="card-title">{{ !empty($callType) ? 'Update Call Type' : 'Add Call Type' }}</h4>
     </div>
     <div class="card-body">
-        <!-- ADD NEW PRODUCT PART START -->
-        <form class="operation-form" method="POST" action="{{ !empty($utility) ? route('utility.type.update',$utility->id) :  route('utility.type.store') }}">
+        <form class="operation-form" method="POST" action="{{ !empty($callType) ? route('call.types.update', $callType->id) : route('call.types.store') }}">
             @csrf
-            <input type="hidden" name="id" value="{{ !empty($utility) ? $utility->id : '' }}" />
+            <input type="hidden" name="id" value="{{ !empty($callType) ? $callType->id : '' }}" />
             <div class="row g-3 align-items-start">
-               
                 <div class="col-xl-4 col-lg-6 col-md-6 col-12">
-                    <!-- <div class="form-group"> -->
-                    <label>Utility Company Name</label>
-                    <input type="text" required class="form-control @error('name') is-invalid @enderror" id="name" name="name" placeholder="Enter Name" value="{{ old('name', !empty($utility) ? $utility->name : '') }}">
+                    <label>Call Type Name</label>
+                    <input type="text" required class="form-control @error('name') is-invalid @enderror" id="name" name="name" placeholder="Enter Call Type Name" value="{{ old('name', !empty($callType) ? $callType->name : '') }}">
                     @error('name')
                     <span class="invalid-feedback" role="alert">
                         <strong>{{ $message }}</strong>
                     </span>
                     @enderror
-                    <!-- </div> -->
                 </div>
                 <div class="col-12">
                     <div class="operation-actions">
                         <button type="submit" class="btn btn-primary" value="save"><i class="icofont-save"></i> Save</button>
-                        <a href="{{ route('view.utility.types') }}" class="btn btn-outline-secondary"><i class="icofont-ban"></i> Cancel</a>
+                        <a href="{{ route('call.types.list') }}" class="btn btn-outline-secondary"><i class="icofont-ban"></i> Cancel</a>
                     </div>
                 </div>
             </div>
         </form>
-        <!-- ADD NEW PRODUCT PART END -->
     </div>
 </div>
 <div class="card operation-card mt-3">
     <div class="card-header">
-        <h4 class="card-title">Utility Companies</h4>
+        <h4 class="card-title">Call Type List</h4>
     </div>
     <div class="card-body">
         <table id="example1" class="table table-hover operation-table datatable">
@@ -69,32 +64,31 @@
                 </tr>
             </thead>
             <tbody>
-                @foreach ($utilityCompanies as $key => $utilityList)
+                @foreach ($callTypes as $key => $list)
                 <tr>
                     <td>{{ ++$key }}</td>
-                    <td>{{ $utilityList->name }}</td>
+                    <td>{{ $list->name }}</td>
                     <td class="text-center">
-                        <a class="action-link" data-toggle="tooltip" title="Edit" href="{{ route('view.utility.types',$utilityList->id)}}">
+                        <a class="action-link" data-toggle="tooltip" title="Edit" href="{{ route('call.types.list', $list->id) }}">
                             <i class="icofont-pencil text-warning"></i></a>
-                        <a class="action-link ml-2" data-toggle="tooltip" title="Delete" onclick="deleteDealerModal('{{ $utilityList->id }}')">
+                        <a class="action-link ml-2" data-toggle="tooltip" title="Delete" onclick="deleteCallTypeModal('{{ $list->id }}')">
                             <i class="icofont-trash text-danger"></i></a>
                     </td>
                 </tr>
                 @endforeach
             </tbody>
         </table>
-        @if($utilityCompanies->isEmpty())
-        <div class="empty-state">No utility companies have been added yet.</div>
+        @if($callTypes->isEmpty())
+        <div class="empty-state">No call types have been added yet.</div>
         @endif
     </div>
 </div>
-<!-- Modal  Delete Folder/ File-->
 <div class="modal fade" id="deleteproject" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered modal-md modal-dialog-scrollable">
         <input type="hidden" id="deleteId" />
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title  fw-bold" id="deleteprojectLabel"> Delete item Permanently?</h5>
+                <h5 class="modal-title fw-bold" id="deleteprojectLabel">Delete item Permanently?</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body justify-content-center flex-column d-flex">
@@ -103,7 +97,7 @@
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                <button type="button" class="btn btn-danger color-fff" onclick="deleteDealerFee()">Delete</button>
+                <button type="button" class="btn btn-danger color-fff" onclick="deleteCallType()">Delete</button>
             </div>
         </div>
     </div>
@@ -111,15 +105,15 @@
 @endsection
 @section("scripts")
 <script>
-    function deleteDealerModal(id) {
+    function deleteCallTypeModal(id) {
         $("#deleteId").val(id);
         $("#deleteproject").modal("show")
     }
 
-    function deleteDealerFee() {
+    function deleteCallType() {
         $.ajax({
             method: "POST",
-            url: "{{ route('utility.type.delete') }}",
+            url: "{{ route('call.types.delete') }}",
             data: {
                 _token: "{{csrf_token()}}",
                 id: $("#deleteId").val()

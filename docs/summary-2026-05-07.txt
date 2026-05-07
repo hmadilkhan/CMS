@@ -1,0 +1,46 @@
+Work Summary - 2026-05-07
+
+- Reviewed OperationController for validation and logic issues.
+- Added proper server-side validation in OperationController for redline cost, dealer fee, adders, finance options, loan terms, scripts, utility companies, partners, subcontractors, and related delete actions.
+- Fixed dealer fee logic so store and update resolve the correct loan term by selected term year and finance option.
+- Fixed loan term validation so the same finance option cannot be stored again, even when the year changes.
+- Customized duplicate loan term validation message to show "The record already exists."
+- Fixed finance option delete flow to also delete related LoanApr records.
+- Fixed loan term delete flow to delete related LoanApr records.
+- Fixed transaction handling in finance option, office cost, and labor cost save flows.
+- Added a guard migration to restore adders.adder_type_id because the application still depends on that column.
+- Updated operation index Blade pages to a shared professional layout style.
+- Created shared layout style partial at resources/views/operations/partials/index-styles.blade.php.
+- Updated operation index pages with responsive grids, cleaner cards, page headers, record counters, cleaner tables, empty states, and aligned Save/Cancel buttons.
+- Fixed Select2 styling so select controls match normal input fields.
+- Fixed currency input prefix styling so the dollar sign stays inline with the textbox.
+- Removed awkward custom table scrollbar from the redline cost page.
+- Updated Inverter Base Cost view layout and then applied the same pattern across other operation index pages.
+- Reviewed and fixed ModuleTypeController validation and logic.
+- Added duplicate validation for Module Types based on same name and inverter type ID.
+- Updated Module Types index view to match the new operation layout.
+- Fixed Module Types delete JavaScript function naming conflict.
+- Reviewed and fixed ToolController validation and logic.
+- Added validation for tool name, department, description, and file upload.
+- Added duplicate Tool validation scoped by department.
+- Fixed duplicate tools.index route naming by renaming the custom editable listing route to tools.manage.
+- Updated Tools index layout to match the operation layout.
+- Reviewed and fixed OfficeCostController validation and transaction handling.
+- Reviewed and fixed LaborCostController validation and transaction handling.
+- Updated Office Cost and Labor Cost index layouts to match the operation layout.
+- Added Call Types CRUD in OperationController.
+- Added Email Types CRUD in OperationController.
+- Created Call Types and Email Types operation views.
+- Added Call Types and Email Types routes.
+- Added Call Types and Email Types sidebar links, then later commented out Call Types and Call Scripts from the Operations sidebar as requested.
+- Added Department CRUD in OperationController.
+- Added Sub Department CRUD in OperationController.
+- Created Department and Sub Department operation views.
+- Added Department and Sub Department routes.
+- Added Department and Sub Department links under the Operations sidebar.
+- Added guarded support to Call and EmailType models.
+- Added SoftDeletes support to Call model to match its migration.
+- Fixed Sub Contractor sidebar/view delete AJAX route issue.
+- Added Labor Cost to the Operations sidebar active/open state.
+- Ran syntax checks with php -l on changed controllers, models, views, sidebar, and new migration files.
+- Ran route checks with php artisan route:list for new and modified operation routes.

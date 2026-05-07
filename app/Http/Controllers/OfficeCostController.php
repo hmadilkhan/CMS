@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\OfficeCost;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class OfficeCostController extends Controller
 {
@@ -31,15 +32,20 @@ class OfficeCostController extends Controller
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'cost' => 'required',
+            'cost' => ['required', 'numeric', 'min:0'],
         ]);
+
         try {
-            OfficeCost::orderBy("id","desc")->delete();
-            OfficeCost::create($request->except(["id"]));
-            return redirect()->route("office-costs.index");
+            DB::transaction(function () use ($validated) {
+                OfficeCost::query()->delete();
+                OfficeCost::create([
+                    "cost" => $validated["cost"],
+                ]);
+            });
+
+            return redirect()->route("office-costs.index")->with("success", "Office cost saved successfully");
         } catch (\Throwable $th) {
-            return $th->getMessage();
-            return redirect()->route("office-costs.index");
+            return redirect()->route("office-costs.index")->with("error", $th->getMessage());
         }
     }
 

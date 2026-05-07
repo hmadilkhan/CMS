@@ -1,42 +1,63 @@
 @extends("layouts.master")
 @section('title', 'Tools')
 @section('content')
-<div class="card card-info">
+@if(session('success'))
+<div class="alert alert-primary" role="alert">
+    {{session('success')}}
+</div>
+@endif
+@if(session('error'))
+<div class="alert alert-danger" role="alert">
+    {{session('error')}}
+</div>
+@endif
+@include('operations.partials.index-styles')
+<div class="operation-page-header">
+    <div>
+        <h1 class="operation-page-title">Tools</h1>
+        <p class="operation-page-subtitle">Maintain department tools and their attached files.</p>
+    </div>
+    <div class="operation-summary">
+        <span>Total Records</span>
+        <strong>{{ $tools->count() }}</strong>
+    </div>
+</div>
+<div class="card operation-card">
     <div class="card-header">
-        <h5 class="card-title">Create New Tool</h5>
+        <h5 class="card-title">{{ !empty($tool) ? 'Update Tool' : 'Create New Tool' }}</h5>
     </div>
     <div class="card-body">
         <!-- ADD NEW PRODUCT PART START -->
-        <form method="POST" action="{{ !empty($tool) ? route('tools.update',$tool->id) :  route('tools.store') }}" enctype="multipart/form-data">
+        <form class="operation-form" method="POST" action="{{ !empty($tool) ? route('tools.update',$tool->id) :  route('tools.store') }}" enctype="multipart/form-data">
             @csrf
             @if(!empty($tool))
                 @method("PUT")
             @endif
             <input type="hidden" name="id" value="{{ !empty($tool) ? $tool->id : '' }}" />
             <input type="hidden" name="previous_logo" value="{{ !empty($tool) ? $tool->file : '' }}" />
-            <div class="row g-3  mb-3 align-items-center">
-                <div class="col-sm-3">
+            <div class="row g-3 align-items-start">
+                <div class="col-xl-3 col-lg-4 col-md-6 col-12">
                     <div class="form-group">
                         <label>Department</label>
-                        <select id="department_id" name="department_id" class="form-control select2 @error('department_id') is-invalid @enderror" style="width: 100%;">
+                        <select id="department_id" name="department_id" class="form-select select2 @error('department_id') is-invalid @enderror" required>
                             <option value="">Select Department</option>
                             @foreach ($departments as $department)
-                                <option {{!empty($tool) && $tool->department_id == $department->id ? 'selected' : ''}} value="{{ $department->id }}" {{ old('type') == $department->id ? 'selected' : '' }}>
+                                <option value="{{ $department->id }}" {{ old('department_id', !empty($tool) ? $tool->department_id : '') == $department->id ? 'selected' : '' }}>
                                     {{ $department->name }}
                                 </option>
                             @endforeach
                         </select>
-                        @error('type')
+                        @error('department_id')
                         <span class="invalid-feedback" role="alert">
                             <strong>{{ $message }}</strong>
                         </span>
                         @enderror
                     </div>
                 </div>
-                <div class="col-sm-3 ">
+                <div class="col-xl-3 col-lg-4 col-md-6 col-12">
                     <!-- <div class="form-group"> -->
                     <label>Name</label>
-                    <input type="text" class="form-control @error('name') is-invalid @enderror" id="name" name="name" placeholder="Enter Name" value="{{ !empty($tool) ? $tool->name : old('name') }}">
+                    <input type="text" required class="form-control @error('name') is-invalid @enderror" id="name" name="name" placeholder="Enter Name" value="{{ old('name', !empty($tool) ? $tool->name : '') }}">
                     @error('name')
                     <span class="invalid-feedback" role="alert">
                         <strong>{{ $message }}</strong>
@@ -45,10 +66,10 @@
                     <!-- </div> -->
                 </div>
                
-                <div class="col-sm-3">
+                <div class="col-xl-3 col-lg-4 col-md-6 col-12">
                     <!-- <div class="form-group "> -->
                     <label>Description</label>
-                    <input type="text" class="form-control @error('description') is-invalid @enderror" id="description" name="description" placeholder="Enter description" value="{{ !empty($tool) ? $tool->description : old('description') }}">
+                    <input type="text" class="form-control @error('description') is-invalid @enderror" id="description" name="description" placeholder="Enter description" value="{{ old('description', !empty($tool) ? $tool->description : '') }}">
                     @error('description')
                     <span class="invalid-feedback" role="alert">
                         <strong>{{ $message }}</strong>
@@ -57,20 +78,21 @@
                     <!-- </div> -->
                 </div>
 
-                <div class="col-sm-4 mb-2">
+                <div class="col-xl-3 col-lg-4 col-md-6 col-12 mb-2">
                     <div class="form-group">
-                        <label for="formFileMultipleoneone" class="form-label">Image</label>
-                        <input class="form-control" type="file" id="formFileMultipleoneone" name="file">
+                        <label for="formFileMultipleoneone" class="form-label">File</label>
+                        <input class="form-control @error('file') is-invalid @enderror" type="file" id="formFileMultipleoneone" name="file" {{ empty($tool) ? 'required' : '' }}>
+                        @error('file')
+                        <span class="invalid-feedback" role="alert">
+                            <strong>{{ $message }}</strong>
+                        </span>
+                        @enderror
                     </div>
                 </div>
-                <div class="col-sm-4 mb-3">
-                    <label></label>
-                    <div class="form-group float-left mt-3">
-                        <button type="button" class="btn btn-danger float-right ml-2 text-white"><i class="icofont-ban"></i>
-                            Cancel
-                        </button>
-                        <button type="submit" name="buttonstatus" class="btn btn-primary float-right " value="save"><i class="icofont-save"></i> Save
-                        </button>
+                <div class="col-12">
+                    <div class="operation-actions">
+                        <button type="submit" name="buttonstatus" class="btn btn-primary" value="save"><i class="icofont-save"></i> Save</button>
+                        <a href="{{ route('tools.manage') }}" class="btn btn-outline-secondary"><i class="icofont-ban"></i> Cancel</a>
                     </div>
                 </div>
             </div>
@@ -79,12 +101,12 @@
     </div>
 </div>
 
-<div class="card mt-3">
+<div class="card operation-card mt-3">
     <div class="card-header">
-        <h4 class="card-title">Tools List</h3>
+        <h4 class="card-title">Tools List</h4>
     </div>
     <div class="card-body">
-        <table id="example1" class="table table-bordered table-striped datatable">
+        <table id="example1" class="table table-hover operation-table datatable">
             <thead>
                 <tr>
                     <th>No.</th>
@@ -99,20 +121,23 @@
                 @foreach ($tools as $key => $tool)
                 <tr>
                     <td>{{ ++$key }}</td>
-                    <td>{{ $tool->department->name }}</td>
+                    <td>{{ $tool->department->name ?? 'N/A' }}</td>
                     <td>{{ $tool->name }}</td>
                     <td>{{ $tool->description }}</td>
                     <td><a target="_blank" href="{{asset('storage/tools/'.$tool->file)}}">{{ $tool->file }}</a></td>
                     <td class="text-center">
-                        <a style="cursor: pointer;" data-toggle="tooltip" title="Edit" href="{{ route('tools.index',$tool->id)  }}">
+                        <a class="action-link" data-toggle="tooltip" title="Edit" href="{{ route('tools.manage',$tool->id)  }}">
                             <i class="icofont-pencil text-warning"></i></a>
-                        <a style="cursor: pointer;" data-toggle="tooltip" title="Delete" class="ml-2" onclick="deleteToolModal('{{ $tool->id }}')">
+                        <a class="action-link ml-2" data-toggle="tooltip" title="Delete" onclick="deleteToolModal('{{ $tool->id }}')">
                             <i class="icofont-trash text-danger"></i></a>
                     </td>
                 </tr>
                 @endforeach
             </tbody>
         </table>
+        @if($tools->isEmpty())
+        <div class="empty-state">No tools have been added yet.</div>
+        @endif
     </div>
 </div>
 <div class="modal fade" id="deleteproject" tabindex="-1" aria-hidden="true">

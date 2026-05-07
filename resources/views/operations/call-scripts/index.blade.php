@@ -12,19 +12,30 @@
             {{ session('error') }}
         </div>
     @endif
-    <div class="card card-info">
+    @include('operations.partials.index-styles')
+    <div class="operation-page-header">
+        <div>
+            <h1 class="operation-page-title">Call Scripts</h1>
+            <p class="operation-page-subtitle">Maintain department-specific scripts for call workflows.</p>
+        </div>
+        <div class="operation-summary">
+            <span>Total Records</span>
+            <strong>{{ $callScripts->count() }}</strong>
+        </div>
+    </div>
+    <div class="card operation-card">
         <div class="card-header">
             <h4 class="card-title">Create Call Script</h4>
         </div>
         <div class="card-body">
-            <form method="POST"
+            <form class="operation-form" method="POST"
                 action="{{ !empty($script) ? route('call.scripts.update', $script->id) : route('call.scripts.store') }}">
                 @csrf
                 <input type="hidden" name="id" value="{{ !empty($script) ? $script->id : '' }}" />
-                <div class="row g-3  mb-3 ">
-                    <div class="col-sm-4">
+                <div class="row g-3">
+                    <div class="col-xl-4 col-lg-6 col-md-6 col-12">
                         <label class="form-label">Call</label></br>
-                        <select class="form-select select2" aria-label="Default select Call" id="call" name="call">
+                        <select class="form-select select2" aria-label="Default select Call" id="call" name="call" required>
                             <option value="">Select Call</option>
                             @foreach ($calls as $call)
                                 <option {{ !empty($script) && $script->call_id == $call->id ? 'selected' : '' }}
@@ -33,14 +44,14 @@
                                 </option>
                             @endforeach
                         </select>
-                        @error('call_id')
+                        @error('call')
                             <div class="text-danger message mt-2">{{ $message }}</div>
                         @enderror
                     </div>
-                    <div class="col-sm-4">
+                    <div class="col-xl-4 col-lg-6 col-md-6 col-12">
                         <label class="form-label">Department</label>
                         <select class="form-select select2" aria-label="Default select Call" id="department"
-                            name="department">
+                            name="department" required>
                             <option value="">Select Department</option>
                             @foreach ($departments as $department)
                                 <option {{ !empty($script) && $script->department_id == $department->id ? 'selected' : '' }}
@@ -53,11 +64,11 @@
                             <div class="text-danger message mt-2">{{ $message }}</div>
                         @enderror
                     </div>
-                    <div class="col-sm-4 ">
+                    <div class="col-xl-4 col-lg-6 col-md-6 col-12">
                         <label>Extra Filter</label>
                         <input type="text" class="form-control @error('extra') is-invalid @enderror" id="extra"
                             name="extra" placeholder="Enter Extra Filter"
-                            value="{{ !empty($script) ? $script->extra_filter : old('extra') }}">
+                            value="{{ old('extra', !empty($script) ? $script->extra_filter : '') }}">
                         @error('extra')
                             <span class="invalid-feedback" role="alert">
                                 <strong>{{ $message }}</strong>
@@ -65,35 +76,36 @@
                         @enderror
                     </div>
                 </div>
-                <div class="row g-3  mb-3 ">
+                <div class="row g-3 mt-1">
                     <div class="col-md-12 col-sm-12">
                         <label class="form-label">Script</label></br>
-                        <textarea id="editor" name="script" class="form-control" rows="5">{!!  !empty($script) ?  $script->script : '' !!}</textarea>
+                        <textarea id="editor" name="script" class="form-control @error('script') is-invalid @enderror" rows="5">{!! old('script', !empty($script) ?  $script->script : '') !!}</textarea>
+                        @error('script')
+                            <div class="text-danger message mt-2">{{ $message }}</div>
+                        @enderror
                     </div>
                 </div>
-                <div class="row g-3  mb-3 ">
-                    <div class="col-4 mt-3">
-                        <label></label>
-                        <div class="form-group float-left ">
-                            <button type="button" class="btn btn-danger float-right ml-2 text-white"><i
-                                    class="icofont-ban"></i>
-                                Cancel
-                            </button>
-                            <button type="submit" class="btn btn-primary float-right " value="save"><i
+                <div class="row g-3">
+                    <div class="col-12">
+                        <div class="operation-actions">
+                            <button type="submit" class="btn btn-primary" value="save"><i
                                     class="icofont-save"></i> Save
                             </button>
+                            <a href="{{ route('call.scripts.list') }}" class="btn btn-outline-secondary"><i
+                                    class="icofont-ban"></i> Cancel
+                            </a>
                         </div>
                     </div>
                 </div>
             </form>
         </div>
     </div>
-    <div class="card mt-3">
+    <div class="card operation-card mt-3">
         <div class="card-header">
-            <h4 class="card-title">Call Scripts</h3>
+            <h4 class="card-title">Call Scripts</h4>
         </div>
         <div class="card-body">
-            <table id="example1" class="table table-bordered table-striped datatable">
+            <table id="example1" class="table table-hover operation-table datatable">
                 <thead>
                     <tr>
                         <th>No.</th>
@@ -107,14 +119,14 @@
                     @foreach ($callScripts as $key => $callScript)
                         <tr>
                             <td>{{ ++$key }}</td>
-                            <td>{{ $callScript->call->name }}</td>
-                            <td>{{ $callScript->department->name }}</td>
+                            <td>{{ $callScript->call->name ?? 'N/A' }}</td>
+                            <td>{{ $callScript->department->name ?? 'N/A' }}</td>
                             <td>{!! $callScript->script !!}</td>
                             <td class="text-center">
-                                <a style="cursor: pointer;" data-toggle="tooltip" title="Edit"
+                                <a class="action-link" data-toggle="tooltip" title="Edit"
                                     href="{{ route('call.scripts.list', $callScript->id) }}">
                                     <i class="icofont-pencil text-warning"></i></a>
-                                <a style="cursor: pointer;" data-toggle="tooltip" title="Delete" class="ml-2"
+                                <a class="action-link ml-2" data-toggle="tooltip" title="Delete"
                                     onclick="deleteDealerModal('{{ $callScript->id }}')">
                                     <i class="icofont-trash text-danger"></i></a>
                             </td>
@@ -122,6 +134,9 @@
                     @endforeach
                 </tbody>
             </table>
+            @if($callScripts->isEmpty())
+            <div class="empty-state">No call scripts have been added yet.</div>
+            @endif
         </div>
     </div>
     <!-- Modal  Delete Folder/ File-->
