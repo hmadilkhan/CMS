@@ -1,0 +1,25 @@
+# Dusk Testing - Ignore these files
+tests/Browser/screenshots/*
+!tests/Browser/screenshots/.gitignore
+
+tests/Browser/console/*
+!tests/Browser/console/.gitignore
+
+tests/Browser/source/*
+!tests/Browser/source/.gitignore
+
+# Chrome Driver binaries
+chromedriver-*
+chromedriver.exe
+chromedriver
+
+# Dusk environment file (contains local settings)
+.env.dusk.local
+
+# Test database
+database/testing.sqlite
+
+# Batch files (optional - if you don't want to share)
+# quick-test.bat
+# run-tests-simple.bat
+# run-specific-test.bat
