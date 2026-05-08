@@ -17,8 +17,10 @@
             </div><!-- Row End -->
             <form id="form" method="post" action="{{ route('customers.store') }}" enctype="multipart/form-data">
                 @csrf
-                <input type="hidden" id="overwrite_base_price" name="overwrite_base_price" />
-                <input type="hidden" id="overwrite_panel_price" name="overwrite_panel_price" />
+                <input type="hidden" id="overwrite_base_price" name="overwrite_base_price"
+                    value="{{ old('overwrite_base_price', 0) }}" />
+                <input type="hidden" id="overwrite_panel_price" name="overwrite_panel_price"
+                    value="{{ old('overwrite_panel_price', 0) }}" />
                 <div class="row g-3 mb-3">
                     <div class="col-sm-6 mb-3">
                         <label for="exampleFormControlInput877" class="form-label">First Name</label>
@@ -160,7 +162,7 @@
                             name="module_type_id" onchange="calculateSystemSize()">
                             <option value="">Select Module Type</option>
                             @foreach ($modules as $module)
-                                <option value="{{ $module->id }}">
+                                <option value="{{ $module->id }}" {{ old('module_type_id') == $module->id ? 'selected' : '' }}>
                                     {{ $module->inverter->name . ' ' . $module->name }}
                                 </option>
                             @endforeach
@@ -174,7 +176,8 @@
                     <div class="col-sm-4">
                         <label for="code" class="form-label">Panel Qty</label>
                         <input type="text" class="form-control" id="panel_qty" name="panel_qty"
-                            placeholder="Panel Qty" onblur="calculateSystemSizeAmount()">
+                            placeholder="Panel Qty" onblur="calculateSystemSizeAmount()"
+                            value="{{ old('panel_qty') }}">
                         @error('panel_qty')
                             <div class="text-danger message mt-2">{{ $message }}</div>
                         @enderror
@@ -196,7 +199,7 @@
                     <div class="col-sm-4 mb-3">
                         <label for="exampleFormControlInput877" class="form-label">System Size</label>
                         <input type="text" class="form-control" id="module_qty" name="module_qty"
-                            placeholder="System Size">
+                            placeholder="System Size" value="{{ old('module_qty') }}">
                         @error('module_qty')
                             <div class="text-danger message mt-2">{{ $message }}</div>
                         @enderror
@@ -204,7 +207,7 @@
                     <div class="col-sm-4 mb-3">
                         <label for="exampleFormControlInput877" class="form-label">Inverter Qty</label>
                         <input type="text" class="form-control" id="inverter_qty" name="inverter_qty"
-                            placeholder="Inverter Qty">
+                            placeholder="Inverter Qty" value="{{ old('inverter_qty') }}">
                         @error('inverter_qty')
                             <div class="text-danger message mt-2">{{ $message }}</div>
                         @enderror
@@ -215,8 +218,8 @@
                         <select class="form-select select2" aria-label="Default select ADU" id="adu"
                             name="adu">
                             <option value="">Select ADU</option>
-                            <option value="1">Yes</option>
-                            <option selected value="0">No</option>
+                            <option value="1" {{ old('adu') === '1' ? 'selected' : '' }}>Yes</option>
+                            <option value="0" {{ old('adu', '0') === '0' ? 'selected' : '' }}>No</option>
                         </select>
                         @error('adu')
                             <div class="text-danger message mt-2">{{ $message }}</div>
@@ -225,7 +228,8 @@
 
                     <div id="loadIdDiv" class="col-sm-4 ">
                         <label for="exampleFormControlInput877" class="form-label">Loan Id</label>
-                        <input type="text" class="form-control" id="loanId" name="loanId" placeholder="loan Id">
+                        <input type="text" class="form-control" id="loanId" name="loanId" placeholder="loan Id"
+                            value="{{ old('loanId') }}">
                         @error('loanId')
                             <div class="text-danger message mt-2">{{ $message }}</div>
                         @enderror
@@ -234,7 +238,8 @@
                     <div id="soldProductionValueDiv" class="col-sm-4 ">
                         <label for="exampleFormControlInput877" class="form-label">Sold Production Value</label>
                         <input type="text" class="form-control" id="sold_production_value"
-                            name="sold_production_value" placeholder="Sold Production Value">
+                            name="sold_production_value" placeholder="Sold Production Value"
+                            value="{{ old('sold_production_value') }}">
                         @error('sold_production_value')
                             <div class="text-danger message mt-2">{{ $message }}</div>
                         @enderror
@@ -318,6 +323,30 @@
                         </tr>
                     </thead>
                     <tbody>
+                        @foreach (old('uom', []) as $key => $oldUomId)
+                            @php
+                                $oldAdderId = old("adders.$key");
+                                $oldAmount = old("amount.$key");
+                                $oldAdder = $adders->firstWhere('id', $oldAdderId);
+                                $oldUom = $uoms->firstWhere('id', $oldUomId);
+                                $index = $key + 1;
+                            @endphp
+                            @if ($oldAdder && $oldUom)
+                                <tr id="row{{ $index }}">
+                                    <input type="hidden" value="{{ $oldAdderId }}" name="adders[]" />
+                                    <input type="hidden" value="{{ $oldUomId }}" name="uom[]" />
+                                    <input type="hidden" value="{{ $oldAmount }}" name="amount[]" />
+                                    <td>{{ $index }}</td>
+                                    <td>{{ $oldAdder->name }}</td>
+                                    <td>{{ $oldUom->name }}</td>
+                                    <td>{{ $oldAmount }}</td>
+                                    <td>
+                                        <i style='cursor: pointer;' class='icofont-trash text-danger'
+                                            onClick="deleteItem('{{ $index }}')"> Delete</i>
+                                    </td>
+                                </tr>
+                            @endif
+                        @endforeach
                     </tbody>
                 </table>
                 <!-- Adders Area End -->
@@ -338,7 +367,7 @@
                             id="finance_option_id" name="finance_option_id">
                             <option value="">Select Finance Option</option>
                             @foreach ($financeoptions as $financeOption)
-                                <option value="{{ $financeOption->id }}">
+                                <option value="{{ $financeOption->id }}" {{ old('finance_option_id') == $financeOption->id ? 'selected' : '' }}>
                                     {{ $financeOption->name }}
                                 </option>
                             @endforeach
@@ -370,7 +399,7 @@
                     <div class="col-sm-3 mb-3">
                         <label for="contract_amount" class="form-label">Contract Amount</label>
                         <input type="text" class="form-control" id="contract_amount" name="contract_amount"
-                            placeholder="Contract Amount" onblur="dealerFee()" value="0">
+                            placeholder="Contract Amount" onblur="dealerFee()" value="{{ old('contract_amount', 0) }}">
                         @error('contract_amount')
                             <div class="text-danger message mt-2">{{ $message }}</div>
                         @enderror
@@ -394,7 +423,7 @@
                     <div class="col-sm-3 mb-3">
                         <label for="redline_costs" class="form-label">Redline Costs</label>
                         <input type="text" class="form-control" id="redline_costs" name="redline_costs"
-                            placeholder="Redline Costs" value="0">
+                            placeholder="Redline Costs" value="{{ old('redline_costs', 0) }}">
                         @error('redline_costs')
                             <div class="text-danger message mt-2">{{ $message }}</div>
                         @enderror
@@ -402,7 +431,7 @@
                     <div class="col-sm-3 mb-3">
                         <label for="adders" class="form-label">Adders</label>
                         <input type="text" class="form-control" id="adders_amount" name="adders_amount"
-                            placeholder="Adders" value="0">
+                            placeholder="Adders" value="{{ old('adders_amount', 0) }}">
                         @error('adders')
                             <div class="text-danger message mt-2">{{ $message }}</div>
                         @enderror
@@ -410,7 +439,7 @@
                     <div class="col-sm-3 mb-3">
                         <label for="commission" class="form-label">Commission</label>
                         <input type="text" class="form-control" id="commission" name="commission"
-                            placeholder="Commission" value="0">
+                            placeholder="Commission" value="{{ old('commission', 0) }}">
                         @error('commission')
                             <div class="text-danger message mt-2">{{ $message }}</div>
                         @enderror
@@ -418,7 +447,7 @@
                     <div class="col-sm-3 mb-3">
                         <label for="dealer_fee" class="form-label">Dealer Fee</label>
                         <input readonly type="text" class="form-control" id="dealer_fee" name="dealer_fee"
-                            placeholder="Dealer Fee" value="0">
+                            placeholder="Dealer Fee" value="{{ old('dealer_fee', 0) }}">
                         @error('dealer_fee')
                             <div class="text-danger message mt-2">{{ $message }}</div>
                         @enderror
@@ -426,7 +455,7 @@
                     <div class="col-sm-3 mb-3">
                         <label for="dealer_fee_amount" class="form-label">Dealer Fee Amount</label>
                         <input type="text" class="form-control" id="dealer_fee_amount" name="dealer_fee_amount"
-                            placeholder="Dealer Fee Amount" value="0">
+                            placeholder="Dealer Fee Amount" value="{{ old('dealer_fee_amount', 0) }}">
                         @error('dealer_fee_amount')
                             <div class="text-danger message mt-2">{{ $message }}</div>
                         @enderror
@@ -443,12 +472,40 @@
     <script>
         var moduleCost = 0;
         var systemSize = 0;
+        var baseCost = 0;
+        var oldSalesPartnerUserId = @json(old('sales_partner_user_id'));
+        var oldFinanceOptionId = @json(old('finance_option_id'));
+        var oldLoanTermId = @json(old('loan_term_id'));
+        var oldLoanAprId = @json(old('loan_apr_id'));
+        var oldModuleTypeId = @json(old('module_type_id'));
         $(document).ready(function() {
             $(".loandiv").css("display", "none");
+            $("#soldProductionValueDiv").css("display", "none");
+            $("#loadIdDiv").css("display", "none");
             togglePrepaidPPAFields($("#finance_option_id").val());
+
+            if ($("#sales_partner_id").val() != "") {
+                loadSalesPartnerUsers($("#sales_partner_id").val(), oldSalesPartnerUserId);
+            }
+
+            if (oldFinanceOptionId) {
+                getFinanceOptionById(oldFinanceOptionId, oldLoanTermId, oldLoanAprId);
+            }
+
+            if ($("#inverter_type_id").val() != "") {
+                getRedlineCost(oldModuleTypeId, false);
+            }
+
+            if (oldModuleTypeId) {
+                modulesType(oldModuleTypeId, true);
+            }
         });
 
-        function getFinanceOptionById(id) {
+        function getFinanceOptionById(id, selectedLoanTermId = null, selectedLoanAprId = null) {
+            if (!id) {
+                return;
+            }
+
             $.ajax({
                 method: "POST",
                 url: "{{ route('get.finance.option.by.id') }}",
@@ -472,7 +529,7 @@
                         }
                         if (finance.dealer_fee == 1) {
                             $(".loandiv").css("display", "block");
-                            getLoanTerms(id);
+                            getLoanTerms(id, selectedLoanTermId, selectedLoanAprId);
                         } else {
                             $(".loandiv").css("display", "none");
                             $("#dealer_fee").val(0);
@@ -526,7 +583,7 @@
             // }
         });
 
-        function getLoanTerms(id) {
+        function getLoanTerms(id, selectedLoanTermId = null, selectedLoanAprId = null) {
             $.ajax({
                 method: "POST",
                 url: "{{ route('get.loan.terms') }}",
@@ -539,9 +596,12 @@
                     $('#loan_term_id').empty();
                     $('#loan_term_id').append($('<option value="">Select Loan Term</soption>'));
                     $.each(response.terms, function(i, term) {
-                        $('#loan_term_id').append($('<option  value="' + term.id + '">' +
+                        $('#loan_term_id').append($('<option ' + (selectedLoanTermId == term.id ? 'selected' : '') + ' value="' + term.id + '">' +
                             term.year + '</option>'));
                     });
+                    if (selectedLoanTermId) {
+                        getLoanAprs(selectedLoanTermId, selectedLoanAprId);
+                    }
                 },
                 error: function(error) {
                     console.log(error.responseJSON.message);
@@ -550,29 +610,33 @@
         }
         $("#loan_term_id").change(function() {
             if ($(this).val() != "") {
-                $.ajax({
-                    method: "POST",
-                    url: "{{ route('get.loan.aprs') }}",
-                    data: {
-                        _token: "{{ csrf_token() }}",
-                        id: $(this).val(),
-                        finance_option_id: $("#finance_option_id").val(),
-                    },
-                    dataType: 'json',
-                    success: function(response) {
-                        $('#loan_apr_id').empty();
-                        $('#loan_apr_id').append($('<option value="">Select Loan Apr</soption>'));
-                        $.each(response.aprs, function(i, apr) {
-                            $('#loan_apr_id').append($('<option  value="' + apr.id + '">' + (apr
-                                .apr * 100).toFixed(2) + '%</option>'));
-                        });
-                    },
-                    error: function(error) {
-                        console.log(error.responseJSON.message);
-                    }
-                })
+                getLoanAprs($(this).val());
             }
         });
+
+        function getLoanAprs(loanTermId, selectedLoanAprId = null) {
+            $.ajax({
+                method: "POST",
+                url: "{{ route('get.loan.aprs') }}",
+                data: {
+                    _token: "{{ csrf_token() }}",
+                    id: loanTermId,
+                    finance_option_id: $("#finance_option_id").val(),
+                },
+                dataType: 'json',
+                success: function(response) {
+                    $('#loan_apr_id').empty();
+                    $('#loan_apr_id').append($('<option value="">Select Loan Apr</soption>'));
+                    $.each(response.aprs, function(i, apr) {
+                        $('#loan_apr_id').append($('<option ' + (selectedLoanAprId == apr.id ? 'selected' : '') + ' value="' + apr.id + '">' + (apr
+                            .apr * 100).toFixed(2) + '%</option>'));
+                    });
+                },
+                error: function(error) {
+                    console.log(error.responseJSON.message);
+                }
+            })
+        }
         $("#loan_apr_id").change(function() {
             if ($(this).val() != "") {
                 getDealerFee($(this).val())
@@ -598,15 +662,13 @@
                 }
             })
         }
-        var baseCost = 0;
-
-        function getRedlineCost() {
+        function getRedlineCost(selectedModuleId = null, recalculate = true) {
             let panelQty = $("#panel_qty").val();
             let inverterType = $("#inverter_type_id").val();
             let overwriteBaseCost = $("#overwrite_base_price").val();
-            overwriteBaseCost = parseFloat(overwriteBaseCost);
+            overwriteBaseCost = parseFloat(overwriteBaseCost) || 0;
             let overwritePanelCost = $("#overwrite_panel_price").val();
-            overwritePanelCost = parseFloat(overwritePanelCost);
+            overwritePanelCost = parseFloat(overwritePanelCost) || 0;
             // console.log(overwriteBaseCost);
             // overwriteBaseCost = (overwriteBaseCost != 0.00 )
 
@@ -621,24 +683,31 @@
                 },
                 dataType: 'json',
                 success: function(response) {
-                    $('#redline_costs').val('');
+                    if (recalculate) {
+                        $('#redline_costs').val('');
+                    }
                     if (response.modules.length > 0) {
                         $("#module_type_id").empty();
                         $('#module_type_id').append($('<option  value="">Select Module Type</option>'));
                         $.each(response.modules, function(i, user) {
-                            $('#module_type_id').append($('<option  value="' + user.id + '">' + user
+                            $('#module_type_id').append($('<option ' + (selectedModuleId == user.id ? 'selected' : '') + ' value="' + user.id + '">' + user
                                 .name + '</option>'));
                         });
                     }
                     baseCost = response.redlinecost;
-                    let redlinecost = response.redlinecost + overwriteBaseCost;
-                    $('#redline_costs').val(redlinecost);
+                    if (recalculate) {
+                        let redlinecost = response.redlinecost + overwriteBaseCost;
+                        $('#redline_costs').val(redlinecost);
+                    }
 
                 },
                 error: function(error) {
                     console.log(error.responseJSON.message);
                 }
             })
+            if (!recalculate) {
+                return;
+            }
             setTimeout(() => {
                 if (panelQty != "" && inverterType != "") {
                     let moduleQty = $("#module_qty").val();
@@ -655,7 +724,7 @@
             calculateCommission()
         }
 
-        function modulesType(id) {
+        function modulesType(id, preserveSystemSize = false) {
             if (id != "") {
                 $("#inverter_type_id").prop("disabled", false)
                 $.ajax({
@@ -670,7 +739,9 @@
                     success: function(response) {
                         moduleCost = response.types.amount;
                         systemSize = response.types.value;
-                        $("#module_qty").val(response.types.value);
+                        if (!preserveSystemSize) {
+                            $("#module_qty").val(response.types.value);
+                        }
                     },
                     error: function(error) {
                         console.log(error.responseJSON.message);
@@ -755,10 +826,10 @@
         });
 
         function calculateCommission() {
-            let contractAmount = parseFloat($("#contract_amount").val());
-            let dealerFeeAmount = parseFloat($("#dealer_fee_amount").val());
-            let redlineFee = parseFloat($("#redline_costs").val());
-            let adders = parseFloat($("#adders_amount").val());
+            let contractAmount = parseFloat($("#contract_amount").val()) || 0;
+            let dealerFeeAmount = parseFloat($("#dealer_fee_amount").val()) || 0;
+            let redlineFee = parseFloat($("#redline_costs").val()) || 0;
+            let adders = parseFloat($("#adders_amount").val()) || 0;
             let commission = contractAmount - dealerFeeAmount - redlineFee - adders;
             $("#commission").val(commission.toFixed(2));
         }
@@ -868,6 +939,7 @@
                 adders_amount += $(this).children().eq(6).text() * 1;
             });
             $("#adders_amount").val(adders_amount);
+            calculateCommission();
         }
 
         function emptyControls() {
@@ -900,21 +972,21 @@
         //         }
         //     })
         // })
-        $("#sales_partner_id").change(function() {
+        function loadSalesPartnerUsers(salesPartnerId, selectedUserId = null) {
             $('#sales_partner_user_id').empty();
             $.ajax({
                 method: "POST",
                 url: "{{ route('get.salespartnets.users') }}",
                 data: {
                     _token: "{{ csrf_token() }}",
-                    id: $(this).val(),
+                    id: salesPartnerId,
                 },
                 dataType: 'json',
                 success: function(response) {
                     $('#sales_partner_user_id').append(
                         "<option value=''>Select Sales Person User</option> ");
                     $.each(response.users, function(i, user) {
-                        $('#sales_partner_user_id').append($('<option  value="' + user.id +
+                        $('#sales_partner_user_id').append($('<option ' + (selectedUserId == user.id ? 'selected' : '') + ' value="' + user.id +
                             '">' + user.name + '</option>'));
                     });
                 },
@@ -922,6 +994,10 @@
                     console.log(error.responseJSON.message);
                 }
             })
+        }
+
+        $("#sales_partner_id").change(function() {
+            loadSalesPartnerUsers($(this).val());
         })
 
         $("#sales_partner_user_id").change(function() {
