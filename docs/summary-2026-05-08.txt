@@ -1,0 +1,63 @@
+Work Summary - 2026-05-08
+
+What we did today
+
+- Updated the Customer create and edit workflow.
+- Refactored CustomerController so create and update use shared helper methods instead of duplicated logic.
+- Added a shared customerValidationRules method for customer form validation.
+- Added validation for required customer fields, numeric finance fields, finance option references, loan term/APR references, module/inverter references, and adder rows.
+- Added special validation for Loan Id when the selected finance option requires a loan.
+- Added special handling for Prepaid PPA finance options so Third Party Credit and Customer Portion are required only for that finance type.
+- Added customer cost validation so the system shows clear validation errors when inverter base cost, module cost, or finance option setup is missing.
+- Added starting subdepartment validation for ADU and normal customer flows.
+- Updated customer create flow to save customer, customer finance, adders, project, and first task inside one database transaction.
+- Updated customer edit flow to update customer, project, related task subdepartment, adders, and finance data inside one database transaction.
+- Reworked customer finance saving through a shared financeData method.
+- Reworked customer adder saving through a shared syncCustomerAdders method.
+- Updated holdback calculation so it uses the selected finance option holdback settings.
+- Added lockForUpdate when generating the project code to reduce duplicate project-code risk during simultaneous customer creation.
+- Improved controller error handling so validation exceptions return back to the form, and unexpected create/update failures redirect back with input and an error message.
+- Improved AJAX error responses in CustomerController so failed lookup requests return proper JSON errors.
+- Added not-found responses for finance option, dealer fee, redline cost, adder details, and module type lookups.
+
+Customer form changes
+
+- Updated customer create form to preserve old input after validation errors.
+- Updated customer edit form to preserve submitted values after validation errors instead of always reverting to saved database values.
+- Preserved selected sales partner, sales partner user, inverter type, module type, finance option, loan term, and loan APR after failed submission.
+- Preserved customer adder rows after validation errors on both create and edit screens.
+- Preserved overwrite base price and overwrite panel price hidden values.
+- Preserved panel quantity, system size, inverter quantity, ADU, Loan Id, sold production value, contract amount, redline costs, adders amount, commission, dealer fee, and dealer fee amount.
+- Updated page JavaScript so dependent dropdowns can reload with previously selected values.
+- Updated loan term and loan APR loading so edit/create pages can restore selections on page load.
+- Updated sales partner user loading so the selected user can be restored after validation errors.
+- Updated redline/module loading so existing values are not overwritten unnecessarily during page initialization.
+- Improved commission calculation to use zero defaults instead of producing NaN when fields are blank.
+- Recalculated commission when adder totals change.
+
+Files changed today
+
+- app/Http/Controllers/CustomerController.php
+- resources/views/customer/create.blade.php
+- resources/views/customer/edit.blade.php
+
+Known problems to rectify next
+
+- CustomerController is still large and mixes form validation, finance calculations, project creation, AJAX lookup responses, and mail/action helpers. It should be split later into smaller services or form requests.
+- Customer create/edit Blade files still contain a large amount of duplicated JavaScript. The shared customer form behavior should be moved into a reusable partial or JS file.
+- Some customer form JavaScript still contains typo text like "Select Loan Term</soption>" and "Select Loan Apr</soption>"; this should be corrected to proper option tags.
+- Sub-contractor user loading is currently commented out in the customer edit view, so the sub-contractor user dropdown may not behave correctly when changing contractors.
+- The customer form still depends on finance option ID 9 for Prepaid PPA behavior in JavaScript. The frontend should eventually use a backend flag or finance option property instead of a hard-coded ID.
+- The controller checks Prepaid PPA by ID or name. This is safer than ID only, but a dedicated database flag would be cleaner.
+- The ADU field is used to decide the starting subdepartment, but the validation rules do not explicitly validate ADU as yes/no. Add a nullable/in:0,1 or required/in:0,1 rule.
+- Some optional fields such as sub_contractor_id, sub_contractor_user_id, notes, and sold_production_value are saved but do not yet have explicit validation rules.
+- Customer update assumes the customer has related finance/project data in several places. More null-safe handling should be added for old or incomplete records.
+- AJAX endpoints should eventually validate their request input before querying, especially IDs passed from dropdowns.
+- Customer delete currently deletes project and customer, but related finance/adders/task cleanup should be reviewed to confirm database relationships or cascade deletes handle everything correctly.
+- The customer create/edit pages should be manually tested end to end after validation errors, finance option changes, adder add/remove, ADU changes, and customer update.
+
+Verification notes
+
+- Reviewed the latest commit for today: 849df5a Customer Controller Update.
+- Git working tree was clean after the commit.
+- No automated customer workflow test run was recorded today.
