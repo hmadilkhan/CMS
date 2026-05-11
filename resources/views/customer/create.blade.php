@@ -549,38 +549,7 @@
             })
         }
         $("#finance_option_id").change(function() {
-            getFinanceOptionById($(this).val())
-            // if ($(this).val() != 1 && $(this).val() != 5) {
-            //     $(".loandiv").css("display", "block");
-            // } else {
-            //     $(".loandiv").css("display", "none");
-            // }
-            // if ($(this).val() != 1 && $(this).val() != 5) {
-            //     $.ajax({
-            //         method: "POST",
-            //         url: "{{ route('get.loan.terms') }}",
-            //         data: {
-            //             _token: "{{ csrf_token() }}",
-            //             id: $(this).val(),
-            //         },
-            //         dataType: 'json',
-            //         success: function(response) {
-            //             $('#loan_term_id').empty();
-            //             $('#loan_term_id').append($('<option value="">Select Loan Term</soption>'));
-            //             $.each(response.terms, function(i, term) {
-            //                 $('#loan_term_id').append($('<option  value="' + term.id + '">' +
-            //                     term.year + '</option>'));
-            //             });
-            //         },
-            //         error: function(error) {
-            //             console.log(error.responseJSON.message);
-            //         }
-            //     })
-            // } else {
-            //     $("#dealer_fee").val(0);
-            //     $("#dealer_fee_amount").val(0);
-            //     calculateCommission()
-            // }
+            getFinanceOptionById($(this).val());
         });
 
         function getLoanTerms(id, selectedLoanTermId = null, selectedLoanAprId = null) {
@@ -669,8 +638,6 @@
             overwriteBaseCost = parseFloat(overwriteBaseCost) || 0;
             let overwritePanelCost = $("#overwrite_panel_price").val();
             overwritePanelCost = parseFloat(overwritePanelCost) || 0;
-            // console.log(overwriteBaseCost);
-            // overwriteBaseCost = (overwriteBaseCost != 0.00 )
 
 
             $.ajax({
@@ -715,16 +682,14 @@
                     let totalOverwritePanelCost = overwritePanelCost * panelQty;
                     let redlinecost = baseCost + (panelQty * moduleCost) + overwriteBaseCost +
                         totalOverwritePanelCost;
-                    // console.log("Redline Cost", redlinecost);
                     $("#redline_costs").val(redlinecost);
-                    // console.log(baseCost);
                 }
             }, 2000);
             // }
             calculateCommission()
         }
 
-        function modulesType(id, preserveSystemSize = false) {
+        function modulesType(id, preserveSystemSize = false, callback = null) {
             if (id != "") {
                 $("#inverter_type_id").prop("disabled", false)
                 $.ajax({
@@ -740,7 +705,10 @@
                         moduleCost = response.types.amount;
                         systemSize = response.types.value;
                         if (!preserveSystemSize) {
-                            $("#module_qty").val(response.types.value);
+                            $("#module_qty").val(systemSize);
+                        }
+                        if (typeof callback === 'function') {
+                            callback();
                         }
                     },
                     error: function(error) {
@@ -754,34 +722,26 @@
 
 
         function calculateSystemSize() {
-            let moduleQty = $("#module_qty").val();
-            modulesType($("#module_type_id").val());
-            let panelQty = $("#panel_qty").val();
-            let inverterType = $("#inverter_type_id").val();
-            let overwritePanelCost = $("#overwrite_panel_price").val();
-            let overwriteBaseCost = $("#overwrite_base_price").val();
-            let totalOverwritePanelCost = overwritePanelCost * panelQty;
-            overwritePanelCost = parseFloat(overwritePanelCost);
-            overwriteBaseCost = parseFloat(overwriteBaseCost);
+            modulesType($("#module_type_id").val(), true, function() {
+                applySystemSizeCalculation();
+            });
+        }
 
-            $("#module_qty").val(panelQty * systemSize);
-            let redlinecost = baseCost + (panelQty * moduleCost) + overwriteBaseCost + totalOverwritePanelCost;
-            // console.log("Redline Cost", redlinecost);
+        function applySystemSizeCalculation() {
+            let panelQtyValue = $("#panel_qty").val();
+            let panelQty = parseFloat(panelQtyValue) || 0;
+            let overwritePanelCost = parseFloat($("#overwrite_panel_price").val()) || 0;
+            let overwriteBaseCost = parseFloat($("#overwrite_base_price").val()) || 0;
+            let totalOverwritePanelCost = overwritePanelCost * panelQty;
+
+            $("#module_qty").val(panelQtyValue !== "" ? panelQty * systemSize : systemSize);
+            let redlinecost = baseCost + (panelQty * moduleCost) + totalOverwritePanelCost + overwriteBaseCost;
             $("#redline_costs").val(redlinecost);
-            // console.log("Base Cost", baseCost);
+            calculateCommission();
         }
 
         function calculateSystemSizeAmount() {
-            let panelQty = $("#panel_qty").val();
-            let moduleQty = $("#module_qty").val();
-            let overwritePanelCost = $("#overwrite_panel_price").val();
-            let overwriteBaseCost = $("#overwrite_base_price").val();
-            overwritePanelCost = parseFloat(overwritePanelCost);
-            overwriteBaseCost = parseFloat(overwriteBaseCost);
-            let totalOverwritePanelCost = overwritePanelCost * panelQty;
-            $("#module_qty").val(panelQty * systemSize);
-            let redlinecost = baseCost + (panelQty * moduleCost) + totalOverwritePanelCost + overwriteBaseCost;
-            $("#redline_costs").val(redlinecost);
+            applySystemSizeCalculation();
         }
 
 
@@ -881,14 +841,12 @@
             if (result == false) {
                 let newRow = "<tr id='row" + (rowLength + 1) + "'>" +
                     '<input type="hidden" value="' + adders_id + '" name="adders[]" />' +
-                    // '<input type="hidden" value="' + subadder_id + '" name="subadders[]" />' +
                     '<input type="hidden" value="' + unit_id + '" name="uom[]" />' +
                     '<input type="hidden" value="' + amount + '" name="amount[]" />' +
 
 
                     "<td>" + (rowLength + 1) + "</td>" +
                     "<td>" + adders_name + "</td>" +
-                    // "<td>" + subadder_name + "</td>" +
                     "<td>" + unit_name + "</td>" +
                     "<td>" + amount + "</td>" +
 
@@ -912,7 +870,6 @@
 
         function editItem(id, addersId, uomId, amount) { //subAdderId
             $("#adders").val(addersId).change();
-            // $("#sub_type").val(subAdderId).change()
             $("#uom").val(uomId).change();
             $("#amount").val(amount).change();
 
@@ -922,7 +879,6 @@
             let result = false;
             $("#adderTable tbody tr").each(function(index) {
                 let first = $(this).children().eq(0).val();
-                // let second = $(this).children().eq(1).val();
                 let third = $(this).children().eq(2).val();
                 if (firstval == first && thirdval == third) { //&& secondval == second
                     result = true;
@@ -944,7 +900,6 @@
 
         function emptyControls() {
             $("#adders").val('').change();
-            // $("#sub_type").val('').change();
             $("#uom").val('').change();
             $("#amount").val('');
         }
@@ -1010,8 +965,6 @@
                 },
                 dataType: 'json',
                 success: function(response) {
-                    // console.log(response.overwrites.overwrite_base_price);
-                    // console.log(response.overwrites.overwrite_panel_price);
                     $("#overwrite_base_price").val(response.overwrites.overwrite_base_price)
                     $("#overwrite_panel_price").val(response.overwrites.overwrite_panel_price)
                     getRedlineCost();
