@@ -95,7 +95,7 @@
                     value="{{ old('overwrite_panel_price', $customer->project->overwrite_panel_price) }}" />
                 <div class="premium-section">
                     <h5 class="fw-bold mb-4" style="color: #2d3748;">
-                        <i class="icofont-user me-2"></i>Customer
+                        <i class="icofont-user me-2"></i>Customer Information
                     </h5>
                     <div class="row g-3">
                     <div class="col-sm-6 mb-3">
@@ -162,6 +162,14 @@
                             <div class="text-danger message mt-2">{{ $message }}</div>
                         @enderror
                     </div>
+                    </div>
+                </div>
+
+                <div class="premium-section">
+                    <h5 class="fw-bold mb-4" style="color: #2d3748;">
+                        <i class="icofont-briefcase me-2"></i>Sales & Partnership Details
+                    </h5>
+                    <div class="row g-3">
                     <div class="col-sm-4">
                         <label for="sold_date" class="form-label">Sold Date</label>
                         <input type="date" class="form-control" id="sold_date" name="sold_date"
@@ -230,6 +238,14 @@
                         @enderror
                     </div> --}}
 
+                    </div>
+                </div>
+
+                <div class="premium-section">
+                    <h5 class="fw-bold mb-4" style="color: #2d3748;">
+                        <i class="icofont-solar-panel me-2"></i>System Configuration
+                    </h5>
+                    <div class="row g-3">
                     <div class="col-sm-4">
                         <label class="form-label">Module Type</label>
                         <select class="form-select select2" aria-label="Default select Module Type" id="module_type_id"
