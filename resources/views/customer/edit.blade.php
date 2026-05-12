@@ -1,20 +1,90 @@
 @extends('layouts.master')
 @section('title', 'Edit Customer')
 @section('content')
-    <div class="card card-info">
-        <div class="card-body">
-            <div class="row clearfix">
-                <div class="col-md-12">
-                    <div class="card border-0 mb-4 no-bg">
-                        <div
-                            class="card-header py-3 px-0 d-sm-flex align-items-center  justify-content-between border-bottom">
-                            <h3 class=" fw-bold flex-fill mb-0 mt-sm-0">Edit Customer</h3>
-                            <a href="{{ route('customers.index') }}" class="btn btn-dark me-1 mt-1 w-sm-100"
-                                id="openemployee"><i class="icofont-arrow-left me-2 fs-6"></i>Back to List</a>
-                        </div>
-                    </div>
-                </div>
-            </div><!-- Row End -->
+    <style>
+        .premium-card {
+            border-radius: 20px;
+            box-shadow: 0 15px 50px rgba(0, 0, 0, 0.1);
+            border: none;
+            overflow: hidden;
+        }
+
+        .premium-header {
+            background: linear-gradient(135deg, #2d3748 0%, #1a202c 100%);
+            color: white;
+            padding: 25px;
+            border-radius: 20px 20px 0 0;
+        }
+
+        .premium-section {
+            background: linear-gradient(135deg, #f7fafc 0%, #edf2f7 100%);
+            padding: 20px;
+            border-radius: 15px;
+            margin: 20px 0;
+            border-left: 5px solid #2d3748;
+        }
+
+        .premium-card .form-label {
+            font-weight: 600;
+            color: #2d3748;
+            margin-bottom: 8px;
+        }
+
+        .premium-card .form-control,
+        .premium-card .form-select {
+            border: 2px solid #e2e8f0;
+            border-radius: 10px;
+            padding: 12px 15px;
+            transition: all 0.3s ease;
+        }
+
+        .premium-card .form-control:focus,
+        .premium-card .form-select:focus {
+            border-color: #4a5568;
+            box-shadow: 0 0 0 0.2rem rgba(45, 55, 72, 0.25);
+        }
+
+        .premium-card .select2-container--default .select2-selection--single {
+            border: 2px solid #e2e8f0;
+            border-radius: 10px;
+            height: 45px;
+            padding: 5px;
+        }
+
+        .premium-card .btn-primary {
+            background: linear-gradient(135deg, #2d3748 0%, #1a202c 100%);
+            border: none;
+            color: white;
+            border-radius: 10px;
+            padding: 12px 30px;
+            font-weight: 600;
+            box-shadow: 0 5px 15px rgba(45, 55, 72, 0.4);
+        }
+
+        .premium-card .table {
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
+        }
+
+        .premium-card .table thead tr th {
+            background: linear-gradient(135deg, #2d3748 0%, #1a202c 100%);
+            color: white;
+        }
+    </style>
+
+    <div class="premium-card">
+        <div class="premium-header">
+            <div class="d-sm-flex align-items-center justify-content-between">
+                <h3 class="fw-bold mb-0">
+                    <i class="icofont-user me-2"></i>Edit Customer
+                </h3>
+                <a href="{{ route('customers.index') }}" class="btn btn-light mt-2 mt-sm-0" id="openemployee">
+                    <i class="icofont-arrow-left me-2"></i>Back to List
+                </a>
+            </div>
+        </div>
+        <div class="card-body p-4">
             <form id="form" method="post" action="{{ route('customers.update', $customer->id) }}"
                 enctype="multipart/form-data">
                 @method('PUT')
@@ -23,7 +93,11 @@
                     value="{{ old('overwrite_base_price', $customer->project->overwrite_base_price) }}" />
                 <input type="hidden" id="overwrite_panel_price" name="overwrite_panel_price"
                     value="{{ old('overwrite_panel_price', $customer->project->overwrite_panel_price) }}" />
-                <div class="row g-3 mb-3">
+                <div class="premium-section">
+                    <h5 class="fw-bold mb-4" style="color: #2d3748;">
+                        <i class="icofont-user me-2"></i>Customer
+                    </h5>
+                    <div class="row g-3">
                     <div class="col-sm-6 mb-3">
                         <label for="exampleFormControlInput877" class="form-label">First Name</label>
                         <input type="text" class="form-control" id="first_name" name="first_name"
@@ -252,18 +326,13 @@
 
                     </div>
                 </div>
-                <div class="row clearfix">
-                    <div class="col-md-12">
-                        <div class="card border-0 mb-4 no-bg">
-                            <div
-                                class="card-header py-3 px-0 d-sm-flex align-items-center  justify-content-between border-bottom">
-                                <h6 class=" fw-bold flex-fill mb-0 mt-sm-0">Adders Area</h6>
-                            </div>
-                        </div>
-                    </div>
-                </div><!-- Row End -->
+                </div>
 
-                <div class="row g-3 mb-3">
+                <div class="premium-section">
+                    <h5 class="fw-bold mb-4" style="color: #2d3748;">
+                        <i class="icofont-plus-square me-2"></i>Adders Area
+                    </h5>
+                    <div class="row g-3 mb-3">
                     <div class="col-sm-3 mb-3">
                         <label for="adders" class="form-label">Adders</label>
                         <select class="form-select select2" aria-label="Default select Adders" id="adders"
@@ -364,18 +433,14 @@
                         @endif
                     </tbody>
                 </table>
+                </div>
                 <!-- Adders Area End -->
-                <div class="row clearfix">
-                    <div class="col-md-12">
-                        <div class="card border-0 mb-4 no-bg">
-                            <div
-                                class="card-header py-3 px-0 d-sm-flex align-items-center  justify-content-between border-bottom">
-                                <h6 class=" fw-bold flex-fill mb-0 mt-sm-0">Customer Financing</h6>
-                            </div>
-                        </div>
-                    </div>
-                </div><!-- Row End -->
-                <div class="row g-3 mb-3">
+
+                <div class="premium-section">
+                    <h5 class="fw-bold mb-4" style="color: #2d3748;">
+                        <i class="icofont-dollar me-2"></i>Customer Financing
+                    </h5>
+                    <div class="row g-3 mb-3">
                     <div class="col-sm-3 mb-3">
                         <label for="finance_option_id" class="form-label">Finance Option</label>
                         <select class="form-select select2" aria-label="Default select Finance Option"
@@ -481,8 +546,13 @@
                         @enderror
                     </div>
 
+                    </div>
                 </div>
-                <button type="submit" class="btn btn-primary"><i class="icofont-save me-2 fs-6"></i>Update</button>
+                <div class="text-center mt-4">
+                    <button type="submit" class="btn btn-primary btn-lg px-5">
+                        <i class="icofont-save me-2 fs-6"></i>Update
+                    </button>
+                </div>
             </form>
 
         </div>
