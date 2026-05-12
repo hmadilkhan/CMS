@@ -1,133 +1,32 @@
 @extends('layouts.master')
 @section('title', 'Create Customer')
 @section('content')
-    <style>
-        .premium-card {
-            align-self: flex-start;
-            border-radius: 20px;
-            box-shadow: 0 15px 50px rgba(0, 0, 0, 0.1);
-            border: none;
-            overflow: hidden;
-            width: 100%;
-        }
-
-        .premium-header {
-            background: linear-gradient(135deg, #2d3748 0%, #1a202c 100%);
-            color: white;
-            padding: 25px;
-            border-radius: 20px 20px 0 0;
-        }
-
-        .premium-section {
-            background: linear-gradient(135deg, #f7fafc 0%, #edf2f7 100%);
-            padding: 20px;
-            border-radius: 15px;
-            margin: 20px 0;
-            border-left: 5px solid #2d3748;
-        }
-
-        .premium-card .card-body {
-            padding-bottom: 1.25rem !important;
-        }
-
-        .premium-card .premium-section:last-of-type {
-            margin-bottom: 0;
-        }
-
-        .premium-card form > .text-center:last-of-type {
-            margin-top: 1.25rem !important;
-            margin-bottom: 0;
-        }
-
-        .premium-card .form-label {
-            display: block;
-            font-weight: 600;
-            color: #2d3748;
-            margin-bottom: 8px;
-        }
-
-        .premium-card .form-control,
-        .premium-card .form-select {
-            border: 2px solid #e2e8f0;
-            border-radius: 10px;
-            padding: 12px 15px;
-            transition: all 0.3s ease;
-        }
-
-        .premium-card .form-control:focus,
-        .premium-card .form-select:focus {
-            border-color: #4a5568;
-            box-shadow: 0 0 0 0.2rem rgba(45, 55, 72, 0.25);
-        }
-
-        .premium-card .select2-container--default .select2-selection--single {
-            border: 2px solid #e2e8f0;
-            border-radius: 10px;
-            height: 45px;
-            padding: 5px;
-        }
-
-        .premium-card .select2-container {
-            display: block;
-            width: 100% !important;
-        }
-
-        .premium-card .select2-container--default .select2-selection--single .select2-selection__rendered {
-            line-height: 31px;
-            padding-left: 8px;
-            padding-right: 28px;
-        }
-
-        .premium-card .select2-container--default .select2-selection--single .select2-selection__arrow {
-            height: 43px;
-            right: 8px;
-        }
-
-        .premium-card .btn-primary {
-            background: linear-gradient(135deg, #2d3748 0%, #1a202c 100%);
-            border: none;
-            color: white;
-            border-radius: 10px;
-            padding: 12px 30px;
-            font-weight: 600;
-            box-shadow: 0 5px 15px rgba(45, 55, 72, 0.4);
-        }
-
-        .premium-card .table {
-            border-radius: 10px;
-            overflow: hidden;
-            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
-        }
-
-        .premium-card .table thead tr th {
-            background: linear-gradient(135deg, #2d3748 0%, #1a202c 100%);
-            color: white;
-        }
-    </style>
-
-    <div class="premium-card">
-        <div class="premium-header">
-            <div class="d-sm-flex align-items-center justify-content-between">
-                <h3 class="fw-bold mb-0">
-                    <i class="icofont-user me-2"></i>Customer
-                </h3>
-                <a href="{{ route('customers.index') }}" class="btn btn-light mt-2 mt-sm-0" id="openemployee">
-                    <i class="icofont-arrow-left me-2"></i>Back to List
-                </a>
-            </div>
+@include('operations.partials.index-styles')
+<div class="w-100">
+    <div class="operation-page-header">
+        <div>
+            <h1 class="operation-page-title">Customer</h1>
+            <p class="operation-page-subtitle">Create a customer with system configuration, adders, and financing in one form.</p>
         </div>
-        <div class="card-body p-4">
-            <form id="form" method="post" action="{{ route('customers.store') }}" enctype="multipart/form-data">
+        <a href="{{ route('customers.index') }}" class="btn btn-outline-secondary" id="openemployee">
+            <i class="icofont-arrow-left me-2"></i>Back to List
+        </a>
+    </div>
+    <div class="card operation-card">
+        <div class="card-header">
+            <h4 class="card-title">Customer</h4>
+        </div>
+        <div class="card-body">
+            <form class="operation-form" id="form" method="post" action="{{ route('customers.store') }}" enctype="multipart/form-data">
                 @csrf
                 <input type="hidden" id="overwrite_base_price" name="overwrite_base_price"
                     value="{{ old('overwrite_base_price', 0) }}" />
                 <input type="hidden" id="overwrite_panel_price" name="overwrite_panel_price"
                     value="{{ old('overwrite_panel_price', 0) }}" />
-                <div class="premium-section">
-                    <h5 class="fw-bold mb-4" style="color: #2d3748;">
-                        <i class="icofont-user me-2"></i>Customer Information
-                    </h5>
-                    <div class="row g-3">
+                <div class="border-bottom pb-2 mb-3">
+                    <h5 class="mb-0 fw-bold text-dark">Customer Information</h5>
+                </div>
+                <div class="row g-3 mb-3">
                     <div class="col-sm-6 mb-3">
                         <label for="exampleFormControlInput877" class="form-label">First Name</label>
                         <input type="text" class="form-control" id="first_name" name="first_name"
@@ -185,14 +84,6 @@
                             <div class="text-danger message mt-2">{{ $message }}</div>
                         @enderror
                     </div>
-                    </div>
-                </div>
-
-                <div class="premium-section">
-                    <h5 class="fw-bold mb-4" style="color: #2d3748;">
-                        <i class="icofont-briefcase me-2"></i>Sales & Partnership Details
-                    </h5>
-                    <div class="row g-3">
                     <div class="col-sm-4">
                         <label for="sold_date" class="form-label">Sold Date</label>
                         <input type="date" class="form-control" id="sold_date" name="sold_date"
@@ -254,14 +145,6 @@
                         @enderror
                     </div> --}}
 
-                    </div>
-                </div>
-
-                <div class="premium-section">
-                    <h5 class="fw-bold mb-4" style="color: #2d3748;">
-                        <i class="icofont-solar-panel me-2"></i>System Configuration
-                    </h5>
-                    <div class="row g-3">
                     <div class="col-sm-4">
                         <label class="form-label">Inverter Type</label>
                         <select class="form-select select2" aria-label="Default select Inverter Type"
@@ -375,13 +258,11 @@
     @enderror -->
                     </div>
                 </div>
+                <div class="border-top pt-3 mt-2 mb-3">
+                    <h5 class="mb-0 fw-bold text-dark">Adders Area</h5>
                 </div>
 
-                <div class="premium-section">
-                    <h5 class="fw-bold mb-4" style="color: #2d3748;">
-                        <i class="icofont-plus-square me-2"></i>Adders Area
-                    </h5>
-                    <div class="row g-3 mb-3">
+                <div class="row g-3 mb-3">
                     <div class="col-sm-3 mb-3">
                         <label for="adders" class="form-label">Adders</label>
                         <select class="form-select select2" aria-label="Default select Adders" id="adders"
@@ -428,52 +309,51 @@
                     </div>
                 </div>
                 </hr>
-                <table id="adderTable" class="table table-bordered table-striped">
-                    <thead>
-                        <tr>
-                            <th>No.</th>
-                            <th>Adder</th>
-                            <!-- <th>Sub Adders</th> -->
-                            <th>Unit</th>
-                            <th>Amount</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @foreach (old('uom', []) as $key => $oldUomId)
-                            @php
-                                $oldAdderId = old("adders.$key");
-                                $oldAmount = old("amount.$key");
-                                $oldAdder = $adders->firstWhere('id', $oldAdderId);
-                                $oldUom = $uoms->firstWhere('id', $oldUomId);
-                                $index = $key + 1;
-                            @endphp
-                            @if ($oldAdder && $oldUom)
-                                <tr id="row{{ $index }}">
-                                    <input type="hidden" value="{{ $oldAdderId }}" name="adders[]" />
-                                    <input type="hidden" value="{{ $oldUomId }}" name="uom[]" />
-                                    <input type="hidden" value="{{ $oldAmount }}" name="amount[]" />
-                                    <td>{{ $index }}</td>
-                                    <td>{{ $oldAdder->name }}</td>
-                                    <td>{{ $oldUom->name }}</td>
-                                    <td>{{ $oldAmount }}</td>
-                                    <td>
-                                        <i style='cursor: pointer;' class='icofont-trash text-danger'
-                                            onClick="deleteItem('{{ $index }}')"> Delete</i>
-                                    </td>
-                                </tr>
-                            @endif
-                        @endforeach
-                    </tbody>
-                </table>
+                <div class="table-responsive">
+                    <table id="adderTable" class="table table-hover operation-table">
+                        <thead>
+                            <tr>
+                                <th>No.</th>
+                                <th>Adder</th>
+                                <!-- <th>Sub Adders</th> -->
+                                <th>Unit</th>
+                                <th>Amount</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (old('uom', []) as $key => $oldUomId)
+                                @php
+                                    $oldAdderId = old("adders.$key");
+                                    $oldAmount = old("amount.$key");
+                                    $oldAdder = $adders->firstWhere('id', $oldAdderId);
+                                    $oldUom = $uoms->firstWhere('id', $oldUomId);
+                                    $index = $key + 1;
+                                @endphp
+                                @if ($oldAdder && $oldUom)
+                                    <tr id="row{{ $index }}">
+                                        <input type="hidden" value="{{ $oldAdderId }}" name="adders[]" />
+                                        <input type="hidden" value="{{ $oldUomId }}" name="uom[]" />
+                                        <input type="hidden" value="{{ $oldAmount }}" name="amount[]" />
+                                        <td>{{ $index }}</td>
+                                        <td>{{ $oldAdder->name }}</td>
+                                        <td>{{ $oldUom->name }}</td>
+                                        <td>{{ $oldAmount }}</td>
+                                        <td>
+                                            <i style='cursor: pointer;' class='icofont-trash text-danger'
+                                                onClick="deleteItem('{{ $index }}')"> Delete</i>
+                                        </td>
+                                    </tr>
+                                @endif
+                            @endforeach
+                        </tbody>
+                    </table>
                 </div>
                 <!-- Adders Area End -->
-
-                <div class="premium-section">
-                    <h5 class="fw-bold mb-4" style="color: #2d3748;">
-                        <i class="icofont-dollar me-2"></i>Customer Financing
-                    </h5>
-                    <div class="row g-3 mb-3">
+                <div class="border-top pt-3 mt-3 mb-3">
+                    <h5 class="mb-0 fw-bold text-dark">Customer Financing</h5>
+                </div>
+                <div class="row g-3 mb-3">
                     <div class="col-sm-3 mb-3">
                         <label for="finance_option_id" class="form-label">Finance Option</label>
                         <select class="form-select select2" aria-label="Default select Finance Option"
@@ -574,17 +454,12 @@
                         @enderror
                     </div>
                     
-                    </div>
                 </div>
-                <div class="text-center mt-4">
-                    <button type="submit" class="btn btn-primary btn-lg px-5">
-                        <i class="icofont-save me-2 fs-6"></i>Create
-                    </button>
-                </div>
+                <div class="operation-actions"><button type="submit" class="btn btn-primary"><i class="icofont-save me-2 fs-6"></i>Create</button></div>
             </form>
-
         </div>
     </div>
+</div>
 @endsection
 @section('scripts')
     <script>
@@ -1097,3 +972,4 @@
         });
     </script>
 @endsection
+
