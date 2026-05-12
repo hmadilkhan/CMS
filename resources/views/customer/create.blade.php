@@ -2,6 +2,28 @@
 @section('title', 'Create Customer')
 @section('content')
 @include('operations.partials.index-styles')
+<style>
+    .customer-section-card .card-header {
+        background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+    }
+
+    .customer-section-card .card-title {
+        align-items: center;
+        display: flex;
+        gap: 8px;
+    }
+
+    .customer-section-card .section-icon {
+        align-items: center;
+        background: #eef2ff;
+        border-radius: 8px;
+        color: #2d3748;
+        display: inline-flex;
+        height: 30px;
+        justify-content: center;
+        width: 30px;
+    }
+</style>
 <div class="w-100">
     <div class="operation-page-header">
         <div>
@@ -12,20 +34,18 @@
             <i class="icofont-arrow-left me-2"></i>Back to List
         </a>
     </div>
-    <div class="card operation-card">
-        <div class="card-header">
-            <h4 class="card-title">Customer</h4>
-        </div>
-        <div class="card-body">
-            <form class="operation-form" id="form" method="post" action="{{ route('customers.store') }}" enctype="multipart/form-data">
+
+    <form class="operation-form" id="form" method="post" action="{{ route('customers.store') }}" enctype="multipart/form-data">
                 @csrf
                 <input type="hidden" id="overwrite_base_price" name="overwrite_base_price"
                     value="{{ old('overwrite_base_price', 0) }}" />
                 <input type="hidden" id="overwrite_panel_price" name="overwrite_panel_price"
                     value="{{ old('overwrite_panel_price', 0) }}" />
-                <div class="border-bottom pb-2 mb-3">
-                    <h5 class="mb-0 fw-bold text-dark">Customer Information</h5>
-                </div>
+                                <div class="card operation-card customer-section-card mb-3">
+                    <div class="card-header">
+                        <h4 class="card-title"><span class="section-icon"><i class="icofont-user"></i></span>Customer Information</h4>
+                    </div>
+                    <div class="card-body">
                 <div class="row g-3 mb-3">
                     <div class="col-sm-6 mb-3">
                         <label for="exampleFormControlInput877" class="form-label">First Name</label>
@@ -84,6 +104,15 @@
                             <div class="text-danger message mt-2">{{ $message }}</div>
                         @enderror
                     </div>
+                    </div>
+                </div>
+
+                <div class="card operation-card customer-section-card mb-3">
+                    <div class="card-header">
+                        <h4 class="card-title"><span class="section-icon"><i class="icofont-briefcase"></i></span>Sales & Partner Information</h4>
+                    </div>
+                    <div class="card-body">
+                        <div class="row g-3 mb-3">
                     <div class="col-sm-4">
                         <label for="sold_date" class="form-label">Sold Date</label>
                         <input type="date" class="form-control" id="sold_date" name="sold_date"
@@ -144,7 +173,16 @@
                             <div class="text-danger message mt-2">{{ $message }}</div>
                         @enderror
                     </div> --}}
+                        </div>
+                    </div>
+                </div>
 
+                <div class="card operation-card customer-section-card mb-3">
+                    <div class="card-header">
+                        <h4 class="card-title"><span class="section-icon"><i class="icofont-solar-panel"></i></span>System Configuration</h4>
+                    </div>
+                    <div class="card-body">
+                        <div class="row g-3 mb-3">
                     <div class="col-sm-4">
                         <label class="form-label">Inverter Type</label>
                         <select class="form-select select2" aria-label="Default select Inverter Type"
@@ -257,12 +295,16 @@
         <div class="text-danger message mt-2">{{ $message }}</div>
     @enderror -->
                     </div>
-                </div>
-                <div class="border-top pt-3 mt-2 mb-3">
-                    <h5 class="mb-0 fw-bold text-dark">Adders Area</h5>
+                </div>                </div>
+                    </div>
                 </div>
 
-                <div class="row g-3 mb-3">
+                <div class="card operation-card customer-section-card mb-3">
+                    <div class="card-header">
+                        <h4 class="card-title"><span class="section-icon"><i class="icofont-plus-square"></i></span>Adders</h4>
+                    </div>
+                    <div class="card-body">
+                        <div class="row g-3 mb-3">
                     <div class="col-sm-3 mb-3">
                         <label for="adders" class="form-label">Adders</label>
                         <select class="form-select select2" aria-label="Default select Adders" id="adders"
@@ -348,12 +390,16 @@
                             @endforeach
                         </tbody>
                     </table>
+                </div>                <!-- Adders Area End -->
+                    </div>
                 </div>
-                <!-- Adders Area End -->
-                <div class="border-top pt-3 mt-3 mb-3">
-                    <h5 class="mb-0 fw-bold text-dark">Customer Financing</h5>
-                </div>
-                <div class="row g-3 mb-3">
+
+                <div class="card operation-card customer-section-card mb-3">
+                    <div class="card-header">
+                        <h4 class="card-title"><span class="section-icon"><i class="icofont-dollar"></i></span>Customer Financing</h4>
+                    </div>
+                    <div class="card-body">
+                        <div class="row g-3 mb-3">
                     <div class="col-sm-3 mb-3">
                         <label for="finance_option_id" class="form-label">Finance Option</label>
                         <select class="form-select select2" aria-label="Default select Finance Option"
@@ -453,12 +499,14 @@
                             <div class="text-danger message mt-2">{{ $message }}</div>
                         @enderror
                     </div>
-                    
+                        </div>
+                    </div>
                 </div>
-                <div class="operation-actions"><button type="submit" class="btn btn-primary"><i class="icofont-save me-2 fs-6"></i>Create</button></div>
+
+                <div class="operation-actions">
+                    <button type="submit" class="btn btn-primary"><i class="icofont-save me-2 fs-6"></i>Create</button>
+                </div>
             </form>
-        </div>
-    </div>
 </div>
 @endsection
 @section('scripts')
@@ -972,4 +1020,5 @@
         });
     </script>
 @endsection
+
 
