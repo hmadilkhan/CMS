@@ -3,10 +3,12 @@
 @section('content')
     <style>
         .premium-card {
+            align-self: flex-start;
             border-radius: 20px;
             box-shadow: 0 15px 50px rgba(0, 0, 0, 0.1);
             border: none;
             overflow: hidden;
+            width: 100%;
         }
 
         .premium-header {
