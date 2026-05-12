@@ -1,513 +1,486 @@
 @extends('layouts.master')
 @section('title', 'Create Customer')
 @section('content')
-@include('operations.partials.index-styles')
-<style>
-    .customer-section-card .card-header {
-        background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
-    }
+    @include('operations.partials.index-styles')
+    <style>
+        .customer-section-card .card-header {
+            background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+        }
 
-    .customer-section-card .card-title {
-        align-items: center;
-        display: flex;
-        gap: 8px;
-    }
+        .customer-section-card .card-title {
+            align-items: center;
+            display: flex;
+            gap: 8px;
+        }
 
-    .customer-section-card .section-icon {
-        align-items: center;
-        background: #eef2ff;
-        border-radius: 8px;
-        color: #2d3748;
-        display: inline-flex;
-        height: 30px;
-        justify-content: center;
-        width: 30px;
-    }
-</style>
-<div class="w-100">
-    <div class="operation-page-header">
-        <div>
-            <h1 class="operation-page-title">Customer</h1>
-            <p class="operation-page-subtitle">Create a customer with system configuration, adders, and financing in one form.</p>
+        .customer-section-card .section-icon {
+            align-items: center;
+            background: #eef2ff;
+            border-radius: 8px;
+            color: #2d3748;
+            display: inline-flex;
+            height: 30px;
+            justify-content: center;
+            width: 30px;
+        }
+    </style>
+    <div class="w-100">
+        <div class="operation-page-header">
+            <div>
+                <h1 class="operation-page-title">Customer</h1>
+                <p class="operation-page-subtitle">Create a customer with system configuration, adders, and financing in one
+                    form.</p>
+            </div>
+            <a href="{{ route('customers.index') }}" class="btn btn-outline-secondary" id="openemployee">
+                <i class="icofont-arrow-left me-2"></i>Back to List
+            </a>
         </div>
-        <a href="{{ route('customers.index') }}" class="btn btn-outline-secondary" id="openemployee">
-            <i class="icofont-arrow-left me-2"></i>Back to List
-        </a>
+
+        <form class="operation-form" id="form" method="post" action="{{ route('customers.store') }}"
+            enctype="multipart/form-data">
+            @csrf
+            <input type="hidden" id="overwrite_base_price" name="overwrite_base_price"
+                value="{{ old('overwrite_base_price', 0) }}" />
+            <input type="hidden" id="overwrite_panel_price" name="overwrite_panel_price"
+                value="{{ old('overwrite_panel_price', 0) }}" />
+            <div class="card operation-card customer-section-card mb-3">
+                <div class="card-header">
+                    <h4 class="card-title"><span class="section-icon"><i class="icofont-user"></i></span>Customer
+                        Information</h4>
+                </div>
+                <div class="card-body">
+                    <div class="row g-3 mb-3">
+                        <div class="col-sm-6 mb-3">
+                            <label for="exampleFormControlInput877" class="form-label">First Name</label>
+                            <input type="text" class="form-control" id="first_name" name="first_name"
+                                placeholder="First Name" value="{{ old('first_name') }}">
+                            @error('first_name')
+                                <div class="text-danger message mt-2">{{ $message }}</div>
+                            @enderror
+                        </div>
+                        <div class="col-sm-6 mb-3">
+                            <label for="exampleFormControlInput877" class="form-label">Last Name</label>
+                            <input type="text" class="form-control" id="last_name" name="last_name"
+                                placeholder="Last Name" value="{{ old('last_name') }}">
+                            @error('last_name')
+                                <div class="text-danger message mt-2">{{ $message }}</div>
+                            @enderror
+                        </div>
+                        <div class="col-sm-4 mb-3">
+                            <label for="exampleFormControlInput877" class="form-label">Street</label>
+                            <input type="text" class="form-control" id="street" name="street" placeholder="Street"
+                                value="{{ old('street') }}">
+                            @error('street')
+                                <div class="text-danger message mt-2">{{ $message }}</div>
+                            @enderror
+                        </div>
+                        <div class="col-sm-4 mb-3">
+                            <label for="exampleFormControlInput877" class="form-label">City</label>
+                            <input type="text" class="form-control" id="city" name="city" placeholder="City"
+                                value="{{ old('city') }}">
+                            @error('city')
+                                <div class="text-danger message mt-2">{{ $message }}</div>
+                            @enderror
+                        </div>
+                        <div class="col-sm-4 mb-3">
+                            <label for="exampleFormControlInput877" class="form-label">State</label>
+                            <input type="text" class="form-control" id="state" name="state" placeholder="State"
+                                value="{{ old('state') }}">
+                            @error('state')
+                                <div class="text-danger message mt-2">{{ $message }}</div>
+                            @enderror
+                        </div>
+                        <div class="col-sm-4 mb-3">
+                            <label for="exampleFormControlInput877" class="form-label">Zip Code</label>
+                            <input type="text" class="form-control" id="zipcode" name="zipcode" placeholder="Zip Code"
+                                value="{{ old('zipcode') }}">
+                            @error('zipcode')
+                                <div class="text-danger message mt-2">{{ $message }}</div>
+                            @enderror
+                        </div>
+                        <div class="col-sm-4 mb-3">
+                            <label for="exampleFormControlInput877" class="form-label">Phone</label>
+                            <input type="text" class="form-control" id="phone" name="phone" placeholder="phone"
+                                value="{{ old('phone') }}">
+                            @error('phone')
+                                <div class="text-danger message mt-2">{{ $message }}</div>
+                            @enderror
+                        </div>
+                        <div class="col-sm-4 mb-3">
+                            <label for="exampleFormControlInput877" class="form-label">Email</label>
+                            <input type="text" class="form-control" id="email" name="email"
+                                placeholder="Email" value="{{ old('email') }}">
+                            @error('email')
+                                <div class="text-danger message mt-2">{{ $message }}</div>
+                            @enderror
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card operation-card customer-section-card ">
+                    <div class="card-header">
+                        <h4 class="card-title"><span class="section-icon"><i class="icofont-briefcase"></i></span>Sales &
+                            Partner Information</h4>
+                    </div>
+                    <div class="card-body">
+                        <div class="row g-3 mb-3">
+                            <div class="col-sm-4">
+                                <label for="sold_date" class="form-label">Sold Date</label>
+                                <input type="date" class="form-control" id="sold_date" name="sold_date"
+                                    placeholder="Sold Date" value="{{ old('sold_date') }}">
+                                @error('sold_date')
+                                    <div class="text-danger message mt-2">{{ $message }}</div>
+                                @enderror
+                            </div>
+                            <div class="col-sm-4">
+                                <label class="form-label">Sales Partner</label>
+                                <select class="form-select select2" aria-label="Default select Sales Partner"
+                                    id="sales_partner_id" name="sales_partner_id">
+                                    <option value="">Select Sales Partner</option>
+                                    @foreach ($partners as $partner)
+                                        <option value="{{ $partner->id }}"
+                                            {{ old('sales_partner_id') == $partner->id ? 'selected' : '' }}>
+                                            {{ $partner->name }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                                @error('sales_partner_id')
+                                    <div class="text-danger message mt-2">{{ $message }}</div>
+                                @enderror
+                            </div>
+                            <div class="col-sm-4">
+                                <label class="form-label">Sales Partner User</label>
+                                <select class="form-select select2" aria-label="Default select Sales Partner"
+                                    id="sales_partner_user_id" name="sales_partner_user_id">
+                                    <option value="">Select Sales Partner User</option>
+                                </select>
+                                @error('sales_partner_user_id')
+                                    <div class="text-danger message mt-2">{{ $message }}</div>
+                                @enderror
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card operation-card customer-section-card mb-3">
+                    <div class="card-header">
+                        <h4 class="card-title"><span class="section-icon"><i
+                                    class="icofont-solar-panel"></i></span>System Configuration</h4>
+                    </div>
+                    <div class="card-body">
+                        <div class="row g-3 mb-3">
+                            <div class="col-sm-4">
+                                <label class="form-label">Inverter Type</label>
+                                <select class="form-select select2" aria-label="Default select Inverter Type"
+                                    id="inverter_type_id" name="inverter_type_id" onchange="getRedlineCost()">
+                                    <option value="">Select Inverter Type</option>
+                                    @foreach ($inverter_types as $inverter)
+                                        <option value="{{ $inverter->id }}"
+                                            {{ old('inverter_type_id') == $inverter->id ? 'selected' : '' }}>
+                                            {{ $inverter->name }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                                @error('inverter_type_id')
+                                    <div class="text-danger message mt-2">{{ $message }}</div>
+                                @enderror
+                            </div>
+
+                            <div class="col-sm-4">
+                                <label class="form-label">Module Type</label>
+                                <select class="form-select select2" aria-label="Default select Module Type"
+                                    id="module_type_id" name="module_type_id" onchange="calculateSystemSize()">
+                                    <option value="">Select Module Type</option>
+                                    @foreach ($modules as $module)
+                                        <option value="{{ $module->id }}"
+                                            {{ old('module_type_id') == $module->id ? 'selected' : '' }}>
+                                            {{ $module->inverter->name . ' ' . $module->name }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                                @error('module_type_id')
+                                    <div class="text-danger message mt-2">{{ $message }}</div>
+                                @enderror
+                            </div>
+
+
+                            <div class="col-sm-4">
+                                <label for="code" class="form-label">Panel Qty</label>
+                                <input type="text" class="form-control" id="panel_qty" name="panel_qty"
+                                    placeholder="Panel Qty" onblur="calculateSystemSizeAmount()"
+                                    value="{{ old('panel_qty') }}">
+                                @error('panel_qty')
+                                    <div class="text-danger message mt-2">{{ $message }}</div>
+                                @enderror
+                            </div>
+                           
+                            <div class="col-sm-4 mb-3">
+                                <label for="exampleFormControlInput877" class="form-label">System Size</label>
+                                <input type="text" class="form-control" id="module_qty" name="module_qty"
+                                    placeholder="System Size" value="{{ old('module_qty') }}">
+                                @error('module_qty')
+                                    <div class="text-danger message mt-2">{{ $message }}</div>
+                                @enderror
+                            </div>
+                            <div class="col-sm-4 mb-3">
+                                <label for="exampleFormControlInput877" class="form-label">Inverter Qty</label>
+                                <input type="text" class="form-control" id="inverter_qty" name="inverter_qty"
+                                    placeholder="Inverter Qty" value="{{ old('inverter_qty') }}">
+                                @error('inverter_qty')
+                                    <div class="text-danger message mt-2">{{ $message }}</div>
+                                @enderror
+                            </div>
+
+                            <div class="col-sm-4 mt-4">
+                                <label for="adu" class="form-label">Is ADU?</label></br>
+                                <select class="form-select select2" aria-label="Default select ADU" id="adu"
+                                    name="adu">
+                                    <option value="">Select ADU</option>
+                                    <option value="1" {{ old('adu') === '1' ? 'selected' : '' }}>Yes</option>
+                                    <option value="0" {{ old('adu', '0') === '0' ? 'selected' : '' }}>No</option>
+                                </select>
+                                @error('adu')
+                                    <div class="text-danger message mt-2">{{ $message }}</div>
+                                @enderror
+                            </div>
+
+                            <div id="loadIdDiv" class="col-sm-4 ">
+                                <label for="exampleFormControlInput877" class="form-label">Loan Id</label>
+                                <input type="text" class="form-control" id="loanId" name="loanId"
+                                    placeholder="loan Id" value="{{ old('loanId') }}">
+                                @error('loanId')
+                                    <div class="text-danger message mt-2">{{ $message }}</div>
+                                @enderror
+                            </div>
+
+                            <div id="soldProductionValueDiv" class="col-sm-4 ">
+                                <label for="exampleFormControlInput877" class="form-label">Sold Production Value</label>
+                                <input type="text" class="form-control" id="sold_production_value"
+                                    name="sold_production_value" placeholder="Sold Production Value"
+                                    value="{{ old('sold_production_value') }}">
+                                @error('sold_production_value')
+                                    <div class="text-danger message mt-2">{{ $message }}</div>
+                                @enderror
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card operation-card customer-section-card mb-3">
+                <div class="card-header">
+                    <h4 class="card-title"><span class="section-icon"><i class="icofont-plus-square"></i></span>Adders
+                    </h4>
+                </div>
+                <div class="card-body">
+                    <div class="row g-3 mb-3">
+                        <div class="col-sm-3 mb-3">
+                            <label for="adders" class="form-label">Adders</label>
+                            <select class="form-select select2" aria-label="Default select Adders" id="adders"
+                                name="adders">
+                                <option value="">Select Adders</option>
+                                @foreach ($adders as $adder)
+                                    <option value="{{ $adder->id }}">
+                                        {{ $adder->name }}
+                                    </option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <!-- <div class="col-sm-3 mb-3">
+                                                                <label for="sub_type" class="form-label">Sub Type</label>
+                                                                <select class="form-select select2" aria-label="Default select Sub Type" id="sub_type" name="sub_type">
+                                                                    <option value="">Select Sub Type</option>
+                                                                </select>
+                                                            </div> -->
+                        <div class="col-sm-3 mb-3">
+                            <label for="uom" class="form-label">UOM</label>
+                            <select class="form-select select2" aria-label="Default select UOM" id="uom">
+                                <option value="">Select UOM</option>
+                                @foreach ($uoms as $uom)
+                                    <option value="{{ $uom->id }}">
+                                        {{ $uom->name }}
+                                    </option>
+                                @endforeach
+                            </select>
+                            @error('uom')
+                                <div class="text-danger message mt-2">{{ $message }}</div>
+                            @enderror
+                        </div>
+                        <div class="col-sm-3 mb-3">
+                            <label for="amount" class="form-label">Amount</label>
+                            <input type="text" class="form-control" id="amount" name="amount"
+                                placeholder="Adders Amount">
+                            @error('amount')
+                                <div class="text-danger message mt-2">{{ $message }}</div>
+                            @enderror
+                        </div>
+                        <div class="col-sm-3 mt-5">
+                            <button type="button" id="btnAdder" class="btn btn-primary"><i
+                                    class="icofont-save me-2 fs-6"></i>Add</button>
+                        </div>
+                    </div>
+                    </hr>
+                    <div class="table-responsive">
+                        <table id="adderTable" class="table table-hover operation-table">
+                            <thead>
+                                <tr>
+                                    <th>No.</th>
+                                    <th>Adder</th>
+                                    <!-- <th>Sub Adders</th> -->
+                                    <th>Unit</th>
+                                    <th>Amount</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (old('uom', []) as $key => $oldUomId)
+                                    @php
+                                        $oldAdderId = old("adders.$key");
+                                        $oldAmount = old("amount.$key");
+                                        $oldAdder = $adders->firstWhere('id', $oldAdderId);
+                                        $oldUom = $uoms->firstWhere('id', $oldUomId);
+                                        $index = $key + 1;
+                                    @endphp
+                                    @if ($oldAdder && $oldUom)
+                                        <tr id="row{{ $index }}">
+                                            <input type="hidden" value="{{ $oldAdderId }}" name="adders[]" />
+                                            <input type="hidden" value="{{ $oldUomId }}" name="uom[]" />
+                                            <input type="hidden" value="{{ $oldAmount }}" name="amount[]" />
+                                            <td>{{ $index }}</td>
+                                            <td>{{ $oldAdder->name }}</td>
+                                            <td>{{ $oldUom->name }}</td>
+                                            <td>{{ $oldAmount }}</td>
+                                            <td>
+                                                <i style='cursor: pointer;' class='icofont-trash text-danger'
+                                                    onClick="deleteItem('{{ $index }}')"> Delete</i>
+                                            </td>
+                                        </tr>
+                                    @endif
+                                @endforeach
+                            </tbody>
+                        </table>
+                    </div> <!-- Adders Area End -->
+                </div>
+            </div>
+
+            <div class="card operation-card customer-section-card mb-3">
+                <div class="card-header">
+                    <h4 class="card-title"><span class="section-icon"><i class="icofont-dollar"></i></span>Customer
+                        Financing</h4>
+                </div>
+                <div class="card-body">
+                    <div class="row g-3 mb-3">
+                        <div class="col-sm-3 mb-3">
+                            <label for="finance_option_id" class="form-label">Finance Option</label>
+                            <select class="form-select select2" aria-label="Default select Finance Option"
+                                id="finance_option_id" name="finance_option_id">
+                                <option value="">Select Finance Option</option>
+                                @foreach ($financeoptions as $financeOption)
+                                    <option value="{{ $financeOption->id }}"
+                                        {{ old('finance_option_id') == $financeOption->id ? 'selected' : '' }}>
+                                        {{ $financeOption->name }}
+                                    </option>
+                                @endforeach
+                            </select>
+                            @error('finance_option_id')
+                                <div class="text-danger message mt-2">{{ $message }}</div>
+                            @enderror
+                        </div>
+                        <div class="col-sm-3 mb-3 loandiv">
+                            <label for="loan_term_id" class="form-label">Loan Term</label>
+                            <select class="form-select select2" aria-label="Default select Loan Term" id="loan_term_id"
+                                name="loan_term_id">
+                                <option value="">Select Loan Term</option>
+                            </select>
+                            @error('loan_term_id')
+                                <div class="text-danger message mt-2">{{ $message }}</div>
+                            @enderror
+                        </div>
+                        <div class="col-sm-3 mb-3 loandiv">
+                            <label for="loan_apr_id" class="form-label">Loan Apr</label>
+                            <select class="form-select select2" aria-label="Default select Loan Apr" id="loan_apr_id"
+                                name="loan_apr_id">
+                                <option value="">Select Loan Apr</option>
+                            </select>
+                            @error('loan_apr_id')
+                                <div class="text-danger message mt-2">{{ $message }}</div>
+                            @enderror
+                        </div>
+                        <div class="col-sm-3 mb-3">
+                            <label for="contract_amount" class="form-label">Contract Amount</label>
+                            <input type="text" class="form-control" id="contract_amount" name="contract_amount"
+                                placeholder="Contract Amount" onblur="dealerFee()"
+                                value="{{ old('contract_amount', 0) }}">
+                            @error('contract_amount')
+                                <div class="text-danger message mt-2">{{ $message }}</div>
+                            @enderror
+                        </div>
+                        <div class="col-sm-3 mb-3 prepaidPPADiv" style="display: none;">
+                            <label for="third_party_credit" class="form-label">Third Party Credit</label>
+                            <input type="text" class="form-control" id="third_party_credit" name="third_party_credit"
+                                placeholder="Third Party Credit" value="{{ old('third_party_credit', 0) }}">
+                            @error('third_party_credit')
+                                <div class="text-danger message mt-2">{{ $message }}</div>
+                            @enderror
+                        </div>
+                        <div class="col-sm-3 mb-3 prepaidPPADiv" style="display: none;">
+                            <label for="customer_portion" class="form-label">Customer Portion</label>
+                            <input readonly type="text" class="form-control" id="customer_portion"
+                                name="customer_portion" placeholder="Customer Portion"
+                                value="{{ old('customer_portion', 0) }}">
+                            @error('customer_portion')
+                                <div class="text-danger message mt-2">{{ $message }}</div>
+                            @enderror
+                        </div>
+                        <div class="col-sm-3 mb-3">
+                            <label for="redline_costs" class="form-label">Redline Costs</label>
+                            <input type="text" class="form-control" id="redline_costs" name="redline_costs"
+                                placeholder="Redline Costs" value="{{ old('redline_costs', 0) }}">
+                            @error('redline_costs')
+                                <div class="text-danger message mt-2">{{ $message }}</div>
+                            @enderror
+                        </div>
+                        <div class="col-sm-3 mb-3">
+                            <label for="adders" class="form-label">Adders</label>
+                            <input type="text" class="form-control" id="adders_amount" name="adders_amount"
+                                placeholder="Adders" value="{{ old('adders_amount', 0) }}">
+                            @error('adders')
+                                <div class="text-danger message mt-2">{{ $message }}</div>
+                            @enderror
+                        </div>
+                        <div class="col-sm-3 mb-3">
+                            <label for="commission" class="form-label">Commission</label>
+                            <input type="text" class="form-control" id="commission" name="commission"
+                                placeholder="Commission" value="{{ old('commission', 0) }}">
+                            @error('commission')
+                                <div class="text-danger message mt-2">{{ $message }}</div>
+                            @enderror
+                        </div>
+                        <div class="col-sm-3 mb-3">
+                            <label for="dealer_fee" class="form-label">Dealer Fee</label>
+                            <input readonly type="text" class="form-control" id="dealer_fee" name="dealer_fee"
+                                placeholder="Dealer Fee" value="{{ old('dealer_fee', 0) }}">
+                            @error('dealer_fee')
+                                <div class="text-danger message mt-2">{{ $message }}</div>
+                            @enderror
+                        </div>
+                        <div class="col-sm-3 mb-3">
+                            <label for="dealer_fee_amount" class="form-label">Dealer Fee Amount</label>
+                            <input type="text" class="form-control" id="dealer_fee_amount" name="dealer_fee_amount"
+                                placeholder="Dealer Fee Amount" value="{{ old('dealer_fee_amount', 0) }}">
+                            @error('dealer_fee_amount')
+                                <div class="text-danger message mt-2">{{ $message }}</div>
+                            @enderror
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="operation-actions">
+                <button type="submit" class="btn btn-primary"><i class="icofont-save me-2 fs-6"></i>Create</button>
+            </div>
+        </form>
     </div>
-
-    <form class="operation-form" id="form" method="post" action="{{ route('customers.store') }}" enctype="multipart/form-data">
-                @csrf
-                <input type="hidden" id="overwrite_base_price" name="overwrite_base_price"
-                    value="{{ old('overwrite_base_price', 0) }}" />
-                <input type="hidden" id="overwrite_panel_price" name="overwrite_panel_price"
-                    value="{{ old('overwrite_panel_price', 0) }}" />
-                                <div class="card operation-card customer-section-card mb-3">
-                    <div class="card-header">
-                        <h4 class="card-title"><span class="section-icon"><i class="icofont-user"></i></span>Customer Information</h4>
-                    </div>
-                    <div class="card-body">
-                <div class="row g-3 mb-3">
-                    <div class="col-sm-6 mb-3">
-                        <label for="exampleFormControlInput877" class="form-label">First Name</label>
-                        <input type="text" class="form-control" id="first_name" name="first_name"
-                            placeholder="First Name" value="{{ old('first_name') }}">
-                        @error('first_name')
-                            <div class="text-danger message mt-2">{{ $message }}</div>
-                        @enderror
-                    </div>
-                    <div class="col-sm-6 mb-3">
-                        <label for="exampleFormControlInput877" class="form-label">Last Name</label>
-                        <input type="text" class="form-control" id="last_name" name="last_name" placeholder="Last Name" value="{{ old('last_name') }}">
-                        @error('last_name')
-                            <div class="text-danger message mt-2">{{ $message }}</div>
-                        @enderror
-                    </div>
-                    <div class="col-sm-4 mb-3">
-                        <label for="exampleFormControlInput877" class="form-label">Street</label>
-                        <input type="text" class="form-control" id="street" name="street" placeholder="Street" value="{{ old('street') }}">
-                        @error('street')
-                            <div class="text-danger message mt-2">{{ $message }}</div>
-                        @enderror
-                    </div>
-                    <div class="col-sm-4 mb-3">
-                        <label for="exampleFormControlInput877" class="form-label">City</label>
-                        <input type="text" class="form-control" id="city" name="city" placeholder="City" value="{{ old('city') }}">
-                        @error('city')
-                            <div class="text-danger message mt-2">{{ $message }}</div>
-                        @enderror
-                    </div>
-                    <div class="col-sm-4 mb-3">
-                        <label for="exampleFormControlInput877" class="form-label">State</label>
-                        <input type="text" class="form-control" id="state" name="state" placeholder="State" value="{{ old('state') }}">
-                        @error('state')
-                            <div class="text-danger message mt-2">{{ $message }}</div>
-                        @enderror
-                    </div>
-                    <div class="col-sm-4 mb-3">
-                        <label for="exampleFormControlInput877" class="form-label">Zip Code</label>
-                        <input type="text" class="form-control" id="zipcode" name="zipcode" placeholder="Zip Code" value="{{ old('zipcode') }}">
-                        @error('zipcode')
-                            <div class="text-danger message mt-2">{{ $message }}</div>
-                        @enderror
-                    </div>
-                    <div class="col-sm-4 mb-3">
-                        <label for="exampleFormControlInput877" class="form-label">Phone</label>
-                        <input type="text" class="form-control" id="phone" name="phone" placeholder="phone" value="{{ old('phone') }}">
-                        @error('phone')
-                            <div class="text-danger message mt-2">{{ $message }}</div>
-                        @enderror
-                    </div>
-                    <div class="col-sm-4 mb-3">
-                        <label for="exampleFormControlInput877" class="form-label">Email</label>
-                        <input type="text" class="form-control" id="email" name="email" placeholder="Email" value="{{ old('email') }}">
-                        @error('email')
-                            <div class="text-danger message mt-2">{{ $message }}</div>
-                        @enderror
-                    </div>
-                    </div>
-                </div>
-
-                <div class="card operation-card customer-section-card mb-3">
-                    <div class="card-header">
-                        <h4 class="card-title"><span class="section-icon"><i class="icofont-briefcase"></i></span>Sales & Partner Information</h4>
-                    </div>
-                    <div class="card-body">
-                        <div class="row g-3 mb-3">
-                    <div class="col-sm-4">
-                        <label for="sold_date" class="form-label">Sold Date</label>
-                        <input type="date" class="form-control" id="sold_date" name="sold_date"
-                            placeholder="Sold Date" value="{{ old('sold_date') }}">
-                        @error('sold_date')
-                            <div class="text-danger message mt-2">{{ $message }}</div>
-                        @enderror
-                    </div>
-                    <div class="col-sm-4">
-                        <label class="form-label">Sales Partner</label>
-                        <select class="form-select select2" aria-label="Default select Sales Partner"
-                            id="sales_partner_id" name="sales_partner_id">
-                            <option value="">Select Sales Partner</option>
-                            @foreach ($partners as $partner)
-                                <option value="{{ $partner->id }}" {{ old('sales_partner_id') == $partner->id ? 'selected' : '' }}>
-                                    {{ $partner->name }}
-                                </option>
-                            @endforeach
-                        </select>
-                        @error('sales_partner_id')
-                            <div class="text-danger message mt-2">{{ $message }}</div>
-                        @enderror
-                    </div>
-                    <div class="col-sm-4">
-                        <label class="form-label">Sales Partner User</label>
-                        <select class="form-select select2" aria-label="Default select Sales Partner"
-                            id="sales_partner_user_id" name="sales_partner_user_id">
-                            <option value="">Select Sales Partner User</option>
-                        </select>
-                        @error('sales_partner_user_id')
-                            <div class="text-danger message mt-2">{{ $message }}</div>
-                        @enderror
-                    </div>
-
-                    {{-- <div class="col-sm-4">
-                        <label class="form-label">Sub-Contractors</label>
-                        <select class="form-select select2" aria-label="Default select Sub-Contractors"
-                            id="sub_contractor_id" name="sub_contractor_id">
-                            <option value="">Select Sub-Contractors</option>
-                            @foreach ($contractors as $contractor)
-                                <option value="{{ $contractor->id }}" {{ old('sub_contractor_id') == $contractor->id ? 'selected' : '' }}>
-                                    {{ $contractor->name }}
-                                </option>
-                            @endforeach
-                        </select>
-                        @error('sub_contractor_id')
-                            <div class="text-danger message mt-2">{{ $message }}</div>
-                        @enderror
-                    </div>
-
-                    <div class="col-sm-4">
-                        <label class="form-label">Sub-Contractor User</label>
-                        <select class="form-select select2" aria-label="Default select Sub-Contractor"
-                            id="sub_contractor_user_id" name="sub_contractor_user_id">
-                            <option value="">Select Sub-Contractor User</option>
-                        </select>
-                        @error('sub_contractor_user_id')
-                            <div class="text-danger message mt-2">{{ $message }}</div>
-                        @enderror
-                    </div> --}}
-                        </div>
-                    </div>
-                </div>
-
-                <div class="card operation-card customer-section-card mb-3">
-                    <div class="card-header">
-                        <h4 class="card-title"><span class="section-icon"><i class="icofont-solar-panel"></i></span>System Configuration</h4>
-                    </div>
-                    <div class="card-body">
-                        <div class="row g-3 mb-3">
-                    <div class="col-sm-4">
-                        <label class="form-label">Inverter Type</label>
-                        <select class="form-select select2" aria-label="Default select Inverter Type"
-                            id="inverter_type_id" name="inverter_type_id" onchange="getRedlineCost()">
-                            <option value="">Select Inverter Type</option>
-                            @foreach ($inverter_types as $inverter)
-                                <option value="{{ $inverter->id }}" {{ old('inverter_type_id') == $inverter->id ? 'selected' : '' }}>
-                                    {{ $inverter->name }}
-                                </option>
-                            @endforeach
-                        </select>
-                        @error('inverter_type_id')
-                            <div class="text-danger message mt-2">{{ $message }}</div>
-                        @enderror
-                    </div>
-
-                    <div class="col-sm-4">
-                        <label class="form-label">Module Type</label>
-                        <select class="form-select select2" aria-label="Default select Module Type" id="module_type_id"
-                            name="module_type_id" onchange="calculateSystemSize()">
-                            <option value="">Select Module Type</option>
-                            @foreach ($modules as $module)
-                                <option value="{{ $module->id }}" {{ old('module_type_id') == $module->id ? 'selected' : '' }}>
-                                    {{ $module->inverter->name . ' ' . $module->name }}
-                                </option>
-                            @endforeach
-                        </select>
-                        @error('module_type_id')
-                            <div class="text-danger message mt-2">{{ $message }}</div>
-                        @enderror
-                    </div>
-
-
-                    <div class="col-sm-4">
-                        <label for="code" class="form-label">Panel Qty</label>
-                        <input type="text" class="form-control" id="panel_qty" name="panel_qty"
-                            placeholder="Panel Qty" onblur="calculateSystemSizeAmount()"
-                            value="{{ old('panel_qty') }}">
-                        @error('panel_qty')
-                            <div class="text-danger message mt-2">{{ $message }}</div>
-                        @enderror
-                    </div>
-                    <!-- <div class="col-sm-4"> -->
-                    <!-- <label class="form-label">Battery Type</label>
-                                                            <select class="form-select select2" aria-label="Default select Battery Type" id="battery_type_id" name="battery_type_id">
-                                                                <option value="">Select Battery Type</option>
-                                                                @foreach ($battery_types as $battery)
-    <option value="{{ $battery->id }}">
-                                                                    {{ $battery->name }}
-                                                                </option>
-    @endforeach
-                                                            </select>
-                                                            @error('battery_type_id')
-        <div class="text-danger message mt-2">{{ $message }}</div>
-    @enderror -->
-                    <!-- </div> -->
-                    <div class="col-sm-4 mb-3">
-                        <label for="exampleFormControlInput877" class="form-label">System Size</label>
-                        <input type="text" class="form-control" id="module_qty" name="module_qty"
-                            placeholder="System Size" value="{{ old('module_qty') }}">
-                        @error('module_qty')
-                            <div class="text-danger message mt-2">{{ $message }}</div>
-                        @enderror
-                    </div>
-                    <div class="col-sm-4 mb-3">
-                        <label for="exampleFormControlInput877" class="form-label">Inverter Qty</label>
-                        <input type="text" class="form-control" id="inverter_qty" name="inverter_qty"
-                            placeholder="Inverter Qty" value="{{ old('inverter_qty') }}">
-                        @error('inverter_qty')
-                            <div class="text-danger message mt-2">{{ $message }}</div>
-                        @enderror
-                    </div>
-
-                    <div class="col-sm-4 mt-4">
-                        <label for="adu" class="form-label">Is ADU?</label></br>
-                        <select class="form-select select2" aria-label="Default select ADU" id="adu"
-                            name="adu">
-                            <option value="">Select ADU</option>
-                            <option value="1" {{ old('adu') === '1' ? 'selected' : '' }}>Yes</option>
-                            <option value="0" {{ old('adu', '0') === '0' ? 'selected' : '' }}>No</option>
-                        </select>
-                        @error('adu')
-                            <div class="text-danger message mt-2">{{ $message }}</div>
-                        @enderror
-                    </div>
-
-                    <div id="loadIdDiv" class="col-sm-4 ">
-                        <label for="exampleFormControlInput877" class="form-label">Loan Id</label>
-                        <input type="text" class="form-control" id="loanId" name="loanId" placeholder="loan Id"
-                            value="{{ old('loanId') }}">
-                        @error('loanId')
-                            <div class="text-danger message mt-2">{{ $message }}</div>
-                        @enderror
-                    </div>
-
-                    <div id="soldProductionValueDiv" class="col-sm-4 ">
-                        <label for="exampleFormControlInput877" class="form-label">Sold Production Value</label>
-                        <input type="text" class="form-control" id="sold_production_value"
-                            name="sold_production_value" placeholder="Sold Production Value"
-                            value="{{ old('sold_production_value') }}">
-                        @error('sold_production_value')
-                            <div class="text-danger message mt-2">{{ $message }}</div>
-                        @enderror
-                    </div>
-
-                    <div class="col-sm-4 mb-3">
-                        <!-- <label for="exampleFormControlInput877" class="form-label">Battery Qty</label>
-                                                            <input type="text" class="form-control" id="battery_qty" name="battery_qty" placeholder="Battery Qty">
-                                                            @error('battery_qty')
-        <div class="text-danger message mt-2">{{ $message }}</div>
-    @enderror -->
-                    </div>
-                </div>                </div>
-                    </div>
-                </div>
-
-                <div class="card operation-card customer-section-card mb-3">
-                    <div class="card-header">
-                        <h4 class="card-title"><span class="section-icon"><i class="icofont-plus-square"></i></span>Adders</h4>
-                    </div>
-                    <div class="card-body">
-                        <div class="row g-3 mb-3">
-                    <div class="col-sm-3 mb-3">
-                        <label for="adders" class="form-label">Adders</label>
-                        <select class="form-select select2" aria-label="Default select Adders" id="adders"
-                            name="adders">
-                            <option value="">Select Adders</option>
-                            @foreach ($adders as $adder)
-                                <option value="{{ $adder->id }}">
-                                    {{ $adder->name }}
-                                </option>
-                            @endforeach
-                        </select>
-                    </div>
-                    <!-- <div class="col-sm-3 mb-3">
-                                                            <label for="sub_type" class="form-label">Sub Type</label>
-                                                            <select class="form-select select2" aria-label="Default select Sub Type" id="sub_type" name="sub_type">
-                                                                <option value="">Select Sub Type</option>
-                                                            </select>
-                                                        </div> -->
-                    <div class="col-sm-3 mb-3">
-                        <label for="uom" class="form-label">UOM</label>
-                        <select class="form-select select2" aria-label="Default select UOM" id="uom">
-                            <option value="">Select UOM</option>
-                            @foreach ($uoms as $uom)
-                                <option value="{{ $uom->id }}">
-                                    {{ $uom->name }}
-                                </option>
-                            @endforeach
-                        </select>
-                        @error('uom')
-                            <div class="text-danger message mt-2">{{ $message }}</div>
-                        @enderror
-                    </div>
-                    <div class="col-sm-3 mb-3">
-                        <label for="amount" class="form-label">Amount</label>
-                        <input type="text" class="form-control" id="amount" name="amount"
-                            placeholder="Adders Amount">
-                        @error('amount')
-                            <div class="text-danger message mt-2">{{ $message }}</div>
-                        @enderror
-                    </div>
-                    <div class="col-sm-3 mt-5">
-                        <button type="button" id="btnAdder" class="btn btn-primary"><i
-                                class="icofont-save me-2 fs-6"></i>Add</button>
-                    </div>
-                </div>
-                </hr>
-                <div class="table-responsive">
-                    <table id="adderTable" class="table table-hover operation-table">
-                        <thead>
-                            <tr>
-                                <th>No.</th>
-                                <th>Adder</th>
-                                <!-- <th>Sub Adders</th> -->
-                                <th>Unit</th>
-                                <th>Amount</th>
-                                <th>Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @foreach (old('uom', []) as $key => $oldUomId)
-                                @php
-                                    $oldAdderId = old("adders.$key");
-                                    $oldAmount = old("amount.$key");
-                                    $oldAdder = $adders->firstWhere('id', $oldAdderId);
-                                    $oldUom = $uoms->firstWhere('id', $oldUomId);
-                                    $index = $key + 1;
-                                @endphp
-                                @if ($oldAdder && $oldUom)
-                                    <tr id="row{{ $index }}">
-                                        <input type="hidden" value="{{ $oldAdderId }}" name="adders[]" />
-                                        <input type="hidden" value="{{ $oldUomId }}" name="uom[]" />
-                                        <input type="hidden" value="{{ $oldAmount }}" name="amount[]" />
-                                        <td>{{ $index }}</td>
-                                        <td>{{ $oldAdder->name }}</td>
-                                        <td>{{ $oldUom->name }}</td>
-                                        <td>{{ $oldAmount }}</td>
-                                        <td>
-                                            <i style='cursor: pointer;' class='icofont-trash text-danger'
-                                                onClick="deleteItem('{{ $index }}')"> Delete</i>
-                                        </td>
-                                    </tr>
-                                @endif
-                            @endforeach
-                        </tbody>
-                    </table>
-                </div>                <!-- Adders Area End -->
-                    </div>
-                </div>
-
-                <div class="card operation-card customer-section-card mb-3">
-                    <div class="card-header">
-                        <h4 class="card-title"><span class="section-icon"><i class="icofont-dollar"></i></span>Customer Financing</h4>
-                    </div>
-                    <div class="card-body">
-                        <div class="row g-3 mb-3">
-                    <div class="col-sm-3 mb-3">
-                        <label for="finance_option_id" class="form-label">Finance Option</label>
-                        <select class="form-select select2" aria-label="Default select Finance Option"
-                            id="finance_option_id" name="finance_option_id">
-                            <option value="">Select Finance Option</option>
-                            @foreach ($financeoptions as $financeOption)
-                                <option value="{{ $financeOption->id }}" {{ old('finance_option_id') == $financeOption->id ? 'selected' : '' }}>
-                                    {{ $financeOption->name }}
-                                </option>
-                            @endforeach
-                        </select>
-                        @error('finance_option_id')
-                            <div class="text-danger message mt-2">{{ $message }}</div>
-                        @enderror
-                    </div>
-                    <div class="col-sm-3 mb-3 loandiv">
-                        <label for="loan_term_id" class="form-label">Loan Term</label>
-                        <select class="form-select select2" aria-label="Default select Loan Term" id="loan_term_id"
-                            name="loan_term_id">
-                            <option value="">Select Loan Term</option>
-                        </select>
-                        @error('loan_term_id')
-                            <div class="text-danger message mt-2">{{ $message }}</div>
-                        @enderror
-                    </div>
-                    <div class="col-sm-3 mb-3 loandiv">
-                        <label for="loan_apr_id" class="form-label">Loan Apr</label>
-                        <select class="form-select select2" aria-label="Default select Loan Apr" id="loan_apr_id"
-                            name="loan_apr_id">
-                            <option value="">Select Loan Apr</option>
-                        </select>
-                        @error('loan_apr_id')
-                            <div class="text-danger message mt-2">{{ $message }}</div>
-                        @enderror
-                    </div>
-                    <div class="col-sm-3 mb-3">
-                        <label for="contract_amount" class="form-label">Contract Amount</label>
-                        <input type="text" class="form-control" id="contract_amount" name="contract_amount"
-                            placeholder="Contract Amount" onblur="dealerFee()" value="{{ old('contract_amount', 0) }}">
-                        @error('contract_amount')
-                            <div class="text-danger message mt-2">{{ $message }}</div>
-                        @enderror
-                    </div>
-                    <div class="col-sm-3 mb-3 prepaidPPADiv" style="display: none;">
-                        <label for="third_party_credit" class="form-label">Third Party Credit</label>
-                        <input type="text" class="form-control" id="third_party_credit" name="third_party_credit"
-                            placeholder="Third Party Credit" value="{{ old('third_party_credit', 0) }}">
-                        @error('third_party_credit')
-                            <div class="text-danger message mt-2">{{ $message }}</div>
-                        @enderror
-                    </div>
-                    <div class="col-sm-3 mb-3 prepaidPPADiv" style="display: none;">
-                        <label for="customer_portion" class="form-label">Customer Portion</label>
-                        <input readonly type="text" class="form-control" id="customer_portion" name="customer_portion"
-                            placeholder="Customer Portion" value="{{ old('customer_portion', 0) }}">
-                        @error('customer_portion')
-                            <div class="text-danger message mt-2">{{ $message }}</div>
-                        @enderror
-                    </div>
-                    <div class="col-sm-3 mb-3">
-                        <label for="redline_costs" class="form-label">Redline Costs</label>
-                        <input type="text" class="form-control" id="redline_costs" name="redline_costs"
-                            placeholder="Redline Costs" value="{{ old('redline_costs', 0) }}">
-                        @error('redline_costs')
-                            <div class="text-danger message mt-2">{{ $message }}</div>
-                        @enderror
-                    </div>
-                    <div class="col-sm-3 mb-3">
-                        <label for="adders" class="form-label">Adders</label>
-                        <input type="text" class="form-control" id="adders_amount" name="adders_amount"
-                            placeholder="Adders" value="{{ old('adders_amount', 0) }}">
-                        @error('adders')
-                            <div class="text-danger message mt-2">{{ $message }}</div>
-                        @enderror
-                    </div>
-                    <div class="col-sm-3 mb-3">
-                        <label for="commission" class="form-label">Commission</label>
-                        <input type="text" class="form-control" id="commission" name="commission"
-                            placeholder="Commission" value="{{ old('commission', 0) }}">
-                        @error('commission')
-                            <div class="text-danger message mt-2">{{ $message }}</div>
-                        @enderror
-                    </div>
-                    <div class="col-sm-3 mb-3">
-                        <label for="dealer_fee" class="form-label">Dealer Fee</label>
-                        <input readonly type="text" class="form-control" id="dealer_fee" name="dealer_fee"
-                            placeholder="Dealer Fee" value="{{ old('dealer_fee', 0) }}">
-                        @error('dealer_fee')
-                            <div class="text-danger message mt-2">{{ $message }}</div>
-                        @enderror
-                    </div>
-                    <div class="col-sm-3 mb-3">
-                        <label for="dealer_fee_amount" class="form-label">Dealer Fee Amount</label>
-                        <input type="text" class="form-control" id="dealer_fee_amount" name="dealer_fee_amount"
-                            placeholder="Dealer Fee Amount" value="{{ old('dealer_fee_amount', 0) }}">
-                        @error('dealer_fee_amount')
-                            <div class="text-danger message mt-2">{{ $message }}</div>
-                        @enderror
-                    </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="operation-actions">
-                    <button type="submit" class="btn btn-primary"><i class="icofont-save me-2 fs-6"></i>Create</button>
-                </div>
-            </form>
-</div>
 @endsection
 @section('scripts')
     <script>
@@ -606,7 +579,8 @@
                     $('#loan_term_id').empty();
                     $('#loan_term_id').append($('<option value="">Select Loan Term</soption>'));
                     $.each(response.terms, function(i, term) {
-                        $('#loan_term_id').append($('<option ' + (selectedLoanTermId == term.id ? 'selected' : '') + ' value="' + term.id + '">' +
+                        $('#loan_term_id').append($('<option ' + (selectedLoanTermId == term.id ?
+                                'selected' : '') + ' value="' + term.id + '">' +
                             term.year + '</option>'));
                     });
                     if (selectedLoanTermId) {
@@ -638,7 +612,8 @@
                     $('#loan_apr_id').empty();
                     $('#loan_apr_id').append($('<option value="">Select Loan Apr</soption>'));
                     $.each(response.aprs, function(i, apr) {
-                        $('#loan_apr_id').append($('<option ' + (selectedLoanAprId == apr.id ? 'selected' : '') + ' value="' + apr.id + '">' + (apr
+                        $('#loan_apr_id').append($('<option ' + (selectedLoanAprId == apr.id ?
+                            'selected' : '') + ' value="' + apr.id + '">' + (apr
                             .apr * 100).toFixed(2) + '%</option>'));
                     });
                 },
@@ -672,6 +647,7 @@
                 }
             })
         }
+
         function getRedlineCost(selectedModuleId = null, recalculate = true) {
             let panelQty = $("#panel_qty").val();
             let inverterType = $("#inverter_type_id").val();
@@ -698,7 +674,8 @@
                         $("#module_type_id").empty();
                         $('#module_type_id').append($('<option  value="">Select Module Type</option>'));
                         $.each(response.modules, function(i, user) {
-                            $('#module_type_id').append($('<option ' + (selectedModuleId == user.id ? 'selected' : '') + ' value="' + user.id + '">' + user
+                            $('#module_type_id').append($('<option ' + (selectedModuleId == user.id ?
+                                    'selected' : '') + ' value="' + user.id + '">' + user
                                 .name + '</option>'));
                         });
                     }
@@ -982,7 +959,8 @@
                     $('#sales_partner_user_id').append(
                         "<option value=''>Select Sales Person User</option> ");
                     $.each(response.users, function(i, user) {
-                        $('#sales_partner_user_id').append($('<option ' + (selectedUserId == user.id ? 'selected' : '') + ' value="' + user.id +
+                        $('#sales_partner_user_id').append($('<option ' + (selectedUserId == user.id ?
+                                'selected' : '') + ' value="' + user.id +
                             '">' + user.name + '</option>'));
                     });
                 },
@@ -1020,5 +998,3 @@
         });
     </script>
 @endsection
-
-
