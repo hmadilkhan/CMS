@@ -25,6 +25,7 @@
         }
 
         .premium-card .form-label {
+            display: block;
             font-weight: 600;
             color: #2d3748;
             margin-bottom: 8px;
@@ -49,6 +50,22 @@
             border-radius: 10px;
             height: 45px;
             padding: 5px;
+        }
+
+        .premium-card .select2-container {
+            display: block;
+            width: 100% !important;
+        }
+
+        .premium-card .select2-container--default .select2-selection--single .select2-selection__rendered {
+            line-height: 31px;
+            padding-left: 8px;
+            padding-right: 28px;
+        }
+
+        .premium-card .select2-container--default .select2-selection--single .select2-selection__arrow {
+            height: 43px;
+            right: 8px;
         }
 
         .premium-card .btn-primary {
