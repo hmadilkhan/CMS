@@ -24,6 +24,19 @@
             border-left: 5px solid #2d3748;
         }
 
+        .premium-card .card-body {
+            padding-bottom: 1.25rem !important;
+        }
+
+        .premium-card .premium-section:last-of-type {
+            margin-bottom: 0;
+        }
+
+        .premium-card form > .text-center:last-of-type {
+            margin-top: 1.25rem !important;
+            margin-bottom: 0;
+        }
+
         .premium-card .form-label {
             display: block;
             font-weight: 600;
