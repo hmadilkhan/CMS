@@ -1,326 +1,708 @@
 <!doctype html>
-<html class="no-js" lang="en" dir="ltr">
+<html lang="en">
 
 <head>
     <meta charset="utf-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=Edge">
-    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-    
-    <title>Solen Energy Construction - Signin</title>
-    <link rel="icon" href="{{asset('storage/favicon.ico')}}" type="image/x-icon">
-    <link rel="stylesheet" href="{{asset('assets/css/my-task.style.min.css')}}">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+
+    <title>Solen Energy Construction - Sign In</title>
+    <link rel="icon" href="{{ asset('storage/favicon.ico') }}" type="image/x-icon">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Manrope:wght@500;600;700&display=swap" rel="stylesheet">
+
     <style>
-        html, body {
-            height: 100vh;
-            margin: 0;
-            padding: 0;
-            overflow: hidden;
+        :root {
+            --background: #fffdf6;
+            --foreground: #342416;
+            --card: #ffffff;
+            --muted: #7c6f60;
+            --border: #eadfce;
+            --primary: #f07a24;
+            --primary-dark: #be4d18;
+            --secondary: #fff6e5;
+            --danger: #b42318;
+            --danger-bg: #fff1f0;
+            --shadow-elegant: 0 30px 80px -20px rgba(151, 76, 18, 0.35);
+            --shadow-glow: 0 0 60px rgba(245, 164, 42, 0.42);
+            --gradient-sun: linear-gradient(135deg, #f7c948 0%, #f07a24 48%, #b93f1d 100%);
+            --gradient-glow: radial-gradient(circle at 30% 20%, rgba(255, 201, 71, 0.44), transparent 58%);
+            --font-body: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            --font-display: Manrope, Inter, ui-sans-serif, system-ui, sans-serif;
         }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        html,
         body {
-            background: linear-gradient(135deg, #1a1a2e 0%, #0f0f1e 50%, #000000 100%);
-            position: relative;
+            min-height: 100%;
+            margin: 0;
         }
-        body::before {
-            content: '';
-            position: fixed;
-            width: 100%;
-            height: 100%;
-            background-image: 
-                radial-gradient(circle at 20% 50%, rgba(255, 165, 0, 0.1) 0%, transparent 50%),
-                radial-gradient(circle at 80% 80%, rgba(255, 107, 53, 0.1) 0%, transparent 50%);
-            animation: bgShift 10s ease-in-out infinite;
+
+        body {
+            background: var(--background);
+            color: var(--foreground);
+            font-family: var(--font-body);
+            font-weight: 400;
+            letter-spacing: 0;
+            text-rendering: geometricPrecision;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
         }
-        @keyframes bgShift {
-            0%, 100% { opacity: 0.5; }
-            50% { opacity: 1; }
+
+        a {
+            color: inherit;
         }
-        #mytask-layout {
-            height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-        .solar-bg {
-            background: linear-gradient(135deg, #FFA500 0%, #FF6B35 50%, #F7931E 100%);
-            position: relative;
-            overflow: hidden;
-            min-height: 550px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-        .solar-bg::after {
-            content: '';
-            position: absolute;
-            width: 300px;
-            height: 300px;
-            background: radial-gradient(circle, rgba(255,255,255,0.3) 0%, transparent 70%);
-            border-radius: 50%;
-            top: -100px;
-            right: -100px;
-            animation: glow 4s ease-in-out infinite;
-        }
-        @keyframes glow {
-            0%, 100% { transform: scale(1); opacity: 0.3; }
-            50% { transform: scale(1.2); opacity: 0.6; }
-        }
-        .solar-bg::before {
-            content: '';
-            position: absolute;
-            width: 200%;
-            height: 200%;
-            background: radial-gradient(circle, rgba(255,255,255,0.1) 1px, transparent 1px);
-            background-size: 50px 50px;
-            animation: moveGrid 20s linear infinite;
-        }
-        @keyframes moveGrid {
-            0% { transform: translate(0, 0); }
-            100% { transform: translate(50px, 50px); }
-        }
-        .solar-panel {
-            position: absolute;
-            width: 100px;
-            height: 100px;
-            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
-            border: 4px solid #FFA500;
-            border-radius: 8px;
-            animation: float 6s ease-in-out infinite;
-            opacity: 0.8;
-            box-shadow: 0 8px 20px rgba(0,0,0,0.4);
+
+        .login-shell {
             display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            grid-template-rows: repeat(3, 1fr);
-            gap: 3px;
-            padding: 6px;
+            min-height: 100vh;
+            width: 100%;
         }
-        .solar-panel::before {
-            content: '';
-            position: absolute;
-            inset: 6px;
-            background: 
-                repeating-linear-gradient(90deg, transparent, transparent 30px, rgba(255,165,0,0.3) 30px, rgba(255,165,0,0.3) 32px),
-                repeating-linear-gradient(0deg, transparent, transparent 30px, rgba(255,165,0,0.3) 30px, rgba(255,165,0,0.3) 32px);
-            border-radius: 4px;
+
+        .login-form-panel {
+            display: flex;
+            min-height: 100vh;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 26px 24px 30px;
         }
-        .solar-panel::after {
-            content: '';
-            position: absolute;
-            inset: 6px;
-            background: linear-gradient(135deg, rgba(255,255,255,0.1) 0%, transparent 50%, rgba(255,255,255,0.05) 100%);
-            border-radius: 4px;
+
+        .brand {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            text-decoration: none;
         }
-        .panel-1 { top: 10%; left: 10%; animation-delay: 0s; }
-        .panel-2 { top: 60%; left: 15%; animation-delay: 2s; }
-        .panel-3 { top: 30%; right: 20%; animation-delay: 4s; }
-        .panel-4 { bottom: 20%; right: 10%; animation-delay: 1s; }
-        @keyframes float {
-            0%, 100% { transform: translateY(0) rotate(0deg); }
-            50% { transform: translateY(-20px) rotate(5deg); }
-        }
-        .sun-icon {
-            width: 120px;
-            height: 120px;
-            background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%);
-            border-radius: 50%;
+
+        .brand-icon {
             position: relative;
-            animation: pulse 3s ease-in-out infinite;
-            box-shadow: 0 0 60px rgba(255, 215, 0, 0.6);
-        }
-        @keyframes pulse {
-            0%, 100% { transform: scale(1); box-shadow: 0 0 60px rgba(255, 215, 0, 0.6); }
-            50% { transform: scale(1.1); box-shadow: 0 0 80px rgba(255, 215, 0, 0.8); }
-        }
-        .login-card {
-            background: rgba(255, 255, 255, 0.98) !important;
-            backdrop-filter: blur(20px);
-            border-radius: 24px !important;
-            box-shadow: 0 25px 70px rgba(0,0,0,0.4), 0 0 0 1px rgba(255,165,0,0.1);
-            animation: slideIn 0.8s ease-out;
-            position: relative;
-        }
-        .login-card::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 4px;
-            background: linear-gradient(90deg, #FFA500, #FF6B35, #FFA500);
-            border-radius: 24px 24px 0 0;
-            background-size: 200% 100%;
-            animation: shimmer 3s linear infinite;
-        }
-        @keyframes shimmer {
-            0% { background-position: -200% 0; }
-            100% { background-position: 200% 0; }
-        }
-        @keyframes slideIn {
-            from { opacity: 0; transform: translateY(30px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-        .form-control {
-            border-radius: 12px;
-            border: 2px solid #e8e8e8;
-            transition: all 0.4s;
-            background: #fafafa;
-            padding: 12px 16px;
-        }
-        .form-control:focus {
-            border-color: #FFA500;
-            box-shadow: 0 0 0 4px rgba(255, 165, 0, 0.15), 0 4px 12px rgba(255, 165, 0, 0.2);
-            background: white;
-            transform: translateY(-2px);
-        }
-        .btn-solar {
-            background: linear-gradient(135deg, #FFA500 0%, #FF6B35 100%);
-            border: none;
-            border-radius: 12px;
-            padding: 14px;
-            font-weight: 700;
-            letter-spacing: 1px;
-            transition: all 0.4s;
-            box-shadow: 0 6px 20px rgba(255, 165, 0, 0.5);
-            position: relative;
+            display: grid;
+            height: 68px;
+            width: 68px;
+            place-items: center;
             overflow: hidden;
-        }
-        .btn-solar::before {
-            content: '';
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            width: 0;
-            height: 0;
+            border: 1px solid rgba(240, 122, 36, 0.18);
             border-radius: 50%;
-            background: rgba(255,255,255,0.3);
-            transform: translate(-50%, -50%);
-            transition: width 0.6s, height 0.6s;
+            background: #fff;
+            box-shadow: var(--shadow-glow);
+            color: #fff;
         }
-        .btn-solar:hover::before {
-            width: 300px;
-            height: 300px;
+
+        .brand-icon img {
+            display: block;
+            height: 92%;
+            width: 92%;
+            object-fit: contain;
         }
-        .btn-solar:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 10px 30px rgba(255, 165, 0, 0.7);
+
+        .brand-copy {
+            line-height: 1.08;
         }
-        .company-title {
-            background: linear-gradient(135deg, #FFA500 0%, #FF6B35 100%);
+
+        .brand-title {
+            display: block;
+            font-family: var(--font-display);
+            font-size: 14px;
+            font-weight: 600;
+            letter-spacing: 0;
+        }
+
+        .login-card {
+            width: 100%;
+            max-width: 448px;
+            margin: 22px auto 30px;
+        }
+
+        .login-title {
+            margin: 0;
+            font-family: var(--font-display);
+            font-size: clamp(40px, 8vw, 56px);
+            font-weight: 600;
+            line-height: 1.04;
+            letter-spacing: 0;
+        }
+
+        .gradient-text {
+            background: var(--gradient-sun);
+            background-clip: text;
+            color: transparent;
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
-            background-clip: text;
-            font-weight: 800;
-            animation: fadeIn 1s ease-in;
         }
-        @keyframes fadeIn {
-            from { opacity: 0; }
-            to { opacity: 1; }
+
+        .login-intro {
+            margin: 14px 0 0;
+            color: var(--muted);
+            font-size: 15px;
+            line-height: 1.6;
         }
-        .energy-particle {
+
+        .session-status {
+            margin-top: 22px;
+            border: 1px solid #bbf7d0;
+            border-radius: 12px;
+            background: #f0fdf4;
+            padding: 12px 14px;
+            color: #166534;
+            font-size: 13px;
+            font-weight: 500;
+        }
+
+        .error-box {
+            margin-top: 22px;
+            border: 1px solid #f9b4ab;
+            border-radius: 12px;
+            background: var(--danger-bg);
+            padding: 12px 14px;
+            color: var(--danger);
+            font-size: 13px;
+            line-height: 1.45;
+        }
+
+        .login-form {
+            display: grid;
+            gap: 16px;
+            margin-top: 26px;
+        }
+
+        .field-group {
+            display: grid;
+            gap: 7px;
+        }
+
+        .field-top {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+        }
+
+        .field-label {
+            color: rgba(52, 36, 22, 0.82);
+            font-size: 12px;
+            font-weight: 500;
+            letter-spacing: 0.01em;
+        }
+
+        .forgot-link {
+            color: var(--primary-dark);
+            font-size: 12px;
+            font-weight: 600;
+            text-decoration: none;
+        }
+
+        .forgot-link:hover {
+            text-decoration: underline;
+            text-underline-offset: 3px;
+        }
+
+        .input-wrap {
+            position: relative;
+        }
+
+        .input-icon {
+            pointer-events: none;
             position: absolute;
-            width: 4px;
-            height: 4px;
-            background: rgba(255,255,255,0.8);
-            border-radius: 50%;
-            animation: particle 8s linear infinite;
+            left: 14px;
+            top: 50%;
+            height: 17px;
+            width: 17px;
+            color: var(--muted);
+            transform: translateY(-50%);
         }
-        @keyframes particle {
-            0% { transform: translateY(0) translateX(0); opacity: 0; }
-            10% { opacity: 1; }
-            90% { opacity: 1; }
-            100% { transform: translateY(-600px) translateX(100px); opacity: 0; }
+
+        .form-input {
+            width: 100%;
+            height: 48px;
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            background: var(--card);
+            color: var(--foreground);
+            font: inherit;
+            font-size: 14px;
+            font-weight: 400;
+            outline: none;
+            padding: 0 14px 0 42px;
+            transition: border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
         }
-        .particle-1 { left: 20%; animation-delay: 0s; }
-        .particle-2 { left: 40%; animation-delay: 2s; }
-        .particle-3 { left: 60%; animation-delay: 4s; }
-        .particle-4 { left: 80%; animation-delay: 6s; }
-        @media (max-width: 991px) {
-            .solar-bg { min-height: 400px; }
-            .sun-icon { width: 80px; height: 80px; }
-            h1 { font-size: 1.8rem !important; }
+
+        .form-input.has-toggle {
+            padding-right: 48px;
+        }
+
+        .form-input::placeholder {
+            color: #a49686;
+        }
+
+        .form-input:focus {
+            border-color: var(--primary);
+            background: #fff;
+            box-shadow: 0 0 0 4px rgba(240, 122, 36, 0.13);
+        }
+
+        .form-input.is-invalid {
+            border-color: var(--danger);
+        }
+
+        .password-toggle {
+            position: absolute;
+            right: 8px;
+            top: 50%;
+            display: grid;
+            height: 34px;
+            width: 34px;
+            place-items: center;
+            border: 0;
+            border-radius: 10px;
+            background: transparent;
+            color: var(--muted);
+            cursor: pointer;
+            transform: translateY(-50%);
+        }
+
+        .password-toggle:hover,
+        .password-toggle:focus-visible {
+            background: #f8efe4;
+            outline: none;
+        }
+
+        .field-error {
+            color: var(--danger);
+            font-size: 12px;
+            line-height: 1.4;
+        }
+
+        .remember-row {
+            display: inline-flex;
+            align-items: center;
+            gap: 9px;
+            color: var(--muted);
+            cursor: pointer;
+            font-size: 12px;
+            line-height: 1.4;
+        }
+
+        .remember-row input {
+            height: 15px;
+            width: 15px;
+            margin: 0;
+            accent-color: var(--primary);
+        }
+
+        .submit-button {
+            position: relative;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 9px;
+            width: 100%;
+            height: 50px;
+            margin-top: 6px;
+            overflow: hidden;
+            border: 0;
+            border-radius: 14px;
+            background: var(--gradient-sun);
+            box-shadow: var(--shadow-elegant);
+            color: #fff;
+            cursor: pointer;
+            font-family: var(--font-display);
+            font-size: 14px;
+            font-weight: 600;
+            transition: box-shadow 0.2s ease, transform 0.2s ease;
+        }
+
+        .submit-button::before {
+            content: "";
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.32), transparent);
+            transform: translateX(-100%);
+            transition: transform 0.65s ease;
+        }
+
+        .submit-button:hover {
+            box-shadow: var(--shadow-glow);
+        }
+
+        .submit-button:hover::before {
+            transform: translateX(100%);
+        }
+
+        .submit-button:active {
+            transform: scale(0.99);
+        }
+
+        .submit-button span,
+        .submit-button svg {
+            position: relative;
+            z-index: 1;
+        }
+
+        .request-access {
+            margin-top: 28px;
+            color: var(--muted);
+            font-size: 14px;
+            text-align: center;
+        }
+
+        .request-access a {
+            color: var(--foreground);
+            font-weight: 600;
+            text-decoration: none;
+        }
+
+        .request-access a:hover {
+            text-decoration: underline;
+            text-underline-offset: 4px;
+        }
+
+        .login-footer {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            color: var(--muted);
+            font-size: 12px;
+        }
+
+        .footer-links {
+            display: inline-flex;
+            gap: 16px;
+        }
+
+        .footer-links a {
+            text-decoration: none;
+        }
+
+        .footer-links a:hover {
+            color: var(--foreground);
+        }
+
+        .visual-panel {
+            position: relative;
+            display: none;
+            min-height: 100vh;
+            overflow: hidden;
+        }
+
+        .visual-panel img {
+            position: absolute;
+            inset: 0;
+            height: 100%;
+            width: 100%;
+            object-fit: cover;
+        }
+
+        .image-overlay,
+        .glow-overlay {
+            position: absolute;
+            inset: 0;
+        }
+
+        .image-overlay {
+            background: linear-gradient(180deg, rgba(49, 31, 15, 0.18) 0%, rgba(35, 21, 11, 0.78) 100%);
+        }
+
+        .glow-overlay {
+            background: var(--gradient-glow);
+        }
+
+        .metric-pill {
+            position: absolute;
+            right: 32px;
+            top: 32px;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.18);
+            border-radius: 999px;
+            background: rgba(255, 255, 255, 0.12);
+            padding: 8px 12px;
+            color: #fff;
+            font-size: 12px;
+            font-weight: 700;
+            backdrop-filter: blur(14px);
+        }
+
+        .visual-content {
+            position: relative;
+            z-index: 1;
+            display: flex;
+            height: 100%;
+            min-height: 100vh;
+            flex-direction: column;
+            justify-content: flex-start;
+            padding: 78px 48px 48px;
+            color: #fff;
+        }
+
+        .visual-copy {
+            max-width: 438px;
+        }
+
+        .visual-copy h2 {
+            margin: 0;
+            font-family: var(--font-display);
+            font-size: 42px;
+            font-weight: 600;
+            line-height: 1.12;
+            letter-spacing: 0;
+        }
+
+        .visual-copy>p {
+            margin: 18px 0 0;
+            color: rgba(255, 255, 255, 0.76);
+            font-size: 16px;
+            line-height: 1.55;
+        }
+
+        .feature-list {
+            display: grid;
+            gap: 12px;
+            margin-top: 30px;
+        }
+
+        .feature-card {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            border-radius: 16px;
+            background: rgba(255, 255, 255, 0.07);
+            padding: 15px;
+            backdrop-filter: blur(14px);
+        }
+
+        .feature-icon {
+            display: grid;
+            height: 34px;
+            width: 34px;
+            flex: 0 0 34px;
+            place-items: center;
+            border-radius: 10px;
+            background: rgba(255, 255, 255, 0.16);
+        }
+
+        .feature-card strong {
+            display: block;
+            font-family: var(--font-display);
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        .feature-card span {
+            display: block;
+            margin-top: 4px;
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 12px;
+            line-height: 1.45;
+        }
+
+        @media (min-width: 1024px) {
+            .login-shell {
+                grid-template-columns: 1.05fr 1fr;
+            }
+
+            .login-form-panel {
+                padding: 28px 80px 34px;
+            }
+
+            .visual-panel {
+                display: block;
+            }
+        }
+
+        @media (max-width: 640px) {
+            .login-form-panel {
+                padding: 20px 20px 24px;
+            }
+
+            .login-card {
+                margin: 22px auto 28px;
+            }
+
+            .login-title {
+                font-size: 40px;
+            }
+
+            .login-footer {
+                align-items: flex-start;
+                flex-direction: column;
+            }
         }
     </style>
 </head>
 
 <body>
+    <main class="login-shell">
+        <section class="login-form-panel">
+            <header>
+                <a class="brand" href="{{ url('/') }}" aria-label="Solen Energy Construction">
+                    <span class="brand-icon" aria-hidden="true">
+                        <img src="{{ asset('assets/images/logo.png') }}" alt="">
+                    </span>
+                    <span class="brand-copy">
+                        <span class="brand-title">Solen Energy Co.</span>
+                    </span>
+                </a>
+            </header>
 
-<div id="mytask-layout">
-    <div class="main p-2 py-3 p-xl-5">
-        <div class="body d-flex p-0 p-xl-5">
-            <div class="container-xxl">
-                <div class="row g-4 align-items-center">
-                    <div class="col-lg-6 d-none d-lg-flex solar-bg rounded-4" style="position: relative;">
-                        <div class="energy-particle particle-1"></div>
-                        <div class="energy-particle particle-2"></div>
-                        <div class="energy-particle particle-3"></div>
-                        <div class="energy-particle particle-4"></div>
-                        <div class="solar-panel panel-1"></div>
-                        <div class="solar-panel panel-2"></div>
-                        <div class="solar-panel panel-3"></div>
-                        <div class="solar-panel panel-4"></div>
-                        <div class="text-center" style="position: relative; z-index: 10;">
-                            <div class="d-flex justify-content-center mb-4">
-                                <div class="sun-icon d-flex align-items-center justify-content-center">
-                                    <svg width="60" height="60" fill="white" viewBox="0 0 16 16">
-                                        <path d="M8 11a3 3 0 1 1 0-6 3 3 0 0 1 0 6zm0 1a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM8 0a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 0zm0 13a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 13zm8-5a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2a.5.5 0 0 1 .5.5zM3 8a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2A.5.5 0 0 1 3 8zm10.657-5.657a.5.5 0 0 1 0 .707l-1.414 1.415a.5.5 0 1 1-.707-.708l1.414-1.414a.5.5 0 0 1 .707 0zm-9.193 9.193a.5.5 0 0 1 0 .707L3.05 13.657a.5.5 0 0 1-.707-.707l1.414-1.414a.5.5 0 0 1 .707 0zm9.193 2.121a.5.5 0 0 1-.707 0l-1.414-1.414a.5.5 0 0 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .707zM4.464 4.465a.5.5 0 0 1-.707 0L2.343 3.05a.5.5 0 1 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .708z"/>
-                                    </svg>
-                                </div>
-                            </div>
-                            <h1 class="text-white fw-bold mb-3" style="font-size: 2.5rem; text-shadow: 2px 2px 4px rgba(0,0,0,0.3);">Solen Energy Co.</h1>
-                            <p class="text-white fs-5" style="text-shadow: 1px 1px 2px rgba(0,0,0,0.3);">Powering Tomorrow with Solar Innovation</p>
-                        </div>
+            <div class="login-card">
+                <h1 class="login-title">Welcome <span class="gradient-text">back</span></h1>
+                <p class="login-intro">Sign in to manage customers, projects, department tasks, service tickets, reports, and team updates from your Solen CRM workspace.</p>
+
+                @if (session('status'))
+                    <div class="session-status">{{ session('status') }}</div>
+                @endif
+
+                @if ($errors->any())
+                    <div class="error-box" role="alert">
+                        <strong>Unable to sign in.</strong> {{ $errors->first() }}
                     </div>
-                    <div class="col-lg-6 d-flex justify-content-center align-items-center">
-                        <div class="w-100 p-4 p-md-5 card login-card border-0" style="max-width: 450px;">
-                            <form class="row g-3" method="POST" action="{{ route('login') }}">
-                                @csrf
-                                <div class="col-12 text-center mb-3">
-                                    <h2 class="company-title mb-2">Welcome Back</h2>
-                                    <p class="text-muted">Sign in to your account</p>
-                                </div>
-                                @if ($errors->any())
-                                    <div class="col-12">
-                                        <div class="alert alert-danger alert-dismissible fade show" role="alert">
-                                            <strong>Error!</strong> {{ $errors->first() }}
-                                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                                        </div>
-                                    </div>
-                                @endif
-                                <div class="col-12">
-                                    <label class="form-label fw-semibold text-dark">Username</label>
-                                    <input type="text" name="username" class="form-control form-control-lg @error('username') is-invalid @enderror" placeholder="Enter your username" value="{{ old('username') }}" required>
-                                    @error('username')
-                                        <div class="invalid-feedback">{{ $message }}</div>
-                                    @enderror
-                                </div>
-                                <div class="col-12">
-                                    <div class="d-flex justify-content-between align-items-center mb-2">
-                                        <label class="form-label fw-semibold text-dark mb-0">Password</label>
-                                        <a href="{{url('forgot-password')}}" style="color: #FFA500; text-decoration: none; font-size: 0.9rem;">Forgot Password?</a>
-                                    </div>
-                                    <input type="password" name="password" class="form-control form-control-lg @error('password') is-invalid @enderror" placeholder="Enter your password" required>
-                                    @error('password')
-                                        <div class="invalid-feedback">{{ $message }}</div>
-                                    @enderror
-                                </div>
-                                <div class="col-12">
-                                    <div class="form-check">
-                                        <input class="form-check-input" type="checkbox" id="remember" name="remember">
-                                        <label class="form-check-label text-dark" for="remember">Remember me</label>
-                                    </div>
-                                </div>
-                                <div class="col-12 mt-4">
-                                    <button type="submit" class="btn btn-solar btn-lg w-100 text-white text-uppercase">Sign In</button>
-                                </div>
-                            </form>
+                @endif
+
+                <form class="login-form" method="POST" action="{{ route('login') }}">
+                    @csrf
+
+                    <div class="field-group">
+                        <label for="username" class="field-label">Username</label>
+                        <div class="input-wrap">
+                            <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                <path d="M20 21a8 8 0 0 0-16 0"></path>
+                                <circle cx="12" cy="7" r="4"></circle>
+                            </svg>
+                            <input id="username" name="username" type="text" value="{{ old('username') }}" autocomplete="username" placeholder="Enter your username" class="form-input @error('username') is-invalid @enderror" required autofocus>
+                        </div>
+                        @error('username')
+                            <div class="field-error">{{ $message }}</div>
+                        @enderror
+                    </div>
+
+                    <div class="field-group">
+                        <div class="field-top">
+                            <label for="password" class="field-label">Password</label>
+                            <a href="{{ route('password.request') }}" class="forgot-link">Forgot?</a>
+                        </div>
+                        <div class="input-wrap">
+                            <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                <rect x="3" y="11" width="18" height="11" rx="2"></rect>
+                                <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                            </svg>
+                            <input id="password" name="password" type="password" autocomplete="current-password" placeholder="Enter your password" class="form-input has-toggle @error('password') is-invalid @enderror" required>
+                            <button type="button" class="password-toggle" aria-label="Show password" aria-pressed="false" data-password-toggle>
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                    <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7z"></path>
+                                    <circle cx="12" cy="12" r="3"></circle>
+                                </svg>
+                            </button>
+                        </div>
+                        @error('password')
+                            <div class="field-error">{{ $message }}</div>
+                        @enderror
+                    </div>
+
+                    <label class="remember-row" for="remember">
+                        <input id="remember" name="remember" type="checkbox" @checked(old('remember'))>
+                        Keep me signed in
+                    </label>
+
+                    <button type="submit" class="submit-button">
+                        <span>Sign in to dashboard</span>
+                        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <path d="M5 12h14"></path>
+                            <path d="m13 5 7 7-7 7"></path>
+                        </svg>
+                    </button>
+                </form>
+
+                <p class="request-access">New to Solen CRM? <a href="mailto:engineering@solenenergyco.com">Request access</a></p>
+            </div>
+
+            <footer class="login-footer">
+                <p>&copy; {{ date('Y') }} Solen Energy Construction</p>
+                <div class="footer-links" aria-label="Footer links">
+                    <a href="mailto:info@solenenergyco.com">Support</a>
+                    <a href="https://solenenergyco.com">Website</a>
+                </div>
+            </footer>
+        </section>
+
+        <aside class="visual-panel" aria-label="Solar CRM overview">
+            <img src="{{ asset('assets/images/solar-hero-login.jpg') }}" alt="Solar farm at twilight">
+            <div class="image-overlay"></div>
+            <div class="glow-overlay"></div>
+
+            <div class="metric-pill">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <path d="M13 2 3 14h9l-1 8 10-12h-9z"></path>
+                </svg>
+                Solar CRM command center
+            </div>
+
+            <div class="visual-content">
+                <div class="visual-copy">
+                    <h2>Manage every solar project from lead to completion.</h2>
+                    <p>Solen CRM keeps customer records, project stages, department work, service tickets, and reporting connected in one reliable workspace.</p>
+
+                    <div class="feature-list">
+                        <div class="feature-card">
+                            <span class="feature-icon" aria-hidden="true">
+                                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M3 3v18h18"></path>
+                                    <path d="m7 14 4-4 4 4 5-5"></path>
+                                </svg>
+                            </span>
+                            <div>
+                                <strong>Project pipeline control</strong>
+                                <span>Track customer details, project status, finance options, and movement across every department.</span>
+                            </div>
+                        </div>
+
+                        <div class="feature-card">
+                            <span class="feature-icon" aria-hidden="true">
+                                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M11 20A7 7 0 0 1 4 13c0-3 2-6 7-9 5 3 7 6 7 9a7 7 0 0 1-7 7z"></path>
+                                </svg>
+                            </span>
+                            <div>
+                                <strong>Team and ticket coordination</strong>
+                                <span>Keep tasks, notes, service tickets, schedules, and follow-ups visible for the right teams.</span>
+                            </div>
+                        </div>
+
+                        <div class="feature-card">
+                            <span class="feature-icon" aria-hidden="true">
+                                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round">
+                                    <circle cx="12" cy="12" r="4"></circle>
+                                    <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"></path>
+                                </svg>
+                            </span>
+                            <div>
+                                <strong>Reports that guide decisions</strong>
+                                <span>Review forecasts, profitability, transactions, and operational progress without switching tools.</span>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
-        </div>
-    </div>
-</div>
+        </aside>
+    </main>
 
-<script src="{{asset('assets/bundles/libscripts.bundle.js')}}"></script>
+    <script>
+        document.querySelector('[data-password-toggle]')?.addEventListener('click', function () {
+            const input = document.getElementById('password');
+            const showing = input.type === 'text';
 
+            input.type = showing ? 'password' : 'text';
+            this.setAttribute('aria-pressed', String(!showing));
+            this.setAttribute('aria-label', showing ? 'Show password' : 'Hide password');
+        });
+    </script>
 </body>
+
 </html>
