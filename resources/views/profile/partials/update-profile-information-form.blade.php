@@ -1,13 +1,97 @@
 <div class="mb-4">
     <h5 class="mb-1">{{ __('Profile Information') }}</h5>
-    <p class="text-muted small mb-3">{{ __("Update your account's profile information and email address.") }}</p>
+    <p class="text-muted small mb-3">{{ __("Update your account's profile information, email address, and display image.") }}</p>
 </div>
 <form id="send-verification" method="post" action="{{ route('verification.send') }}">
     @csrf
 </form>
-<form method="post" action="{{ route('profile.update') }}" class="row g-3">
+@php
+    $profileImage = $user->image ? asset('storage/users/' . $user->image) : asset('assets/images/profile_av.png');
+@endphp
+<style>
+    .profile-image-panel {
+        display: flex;
+        align-items: center;
+        gap: 18px;
+        padding: 18px;
+        border: 1px solid #e5e7eb;
+        border-radius: 14px;
+        background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+        box-shadow: 0 8px 24px rgba(15, 23, 42, .05);
+    }
+
+    .profile-image-preview {
+        position: relative;
+        display: grid;
+        width: 104px;
+        height: 104px;
+        flex: 0 0 104px;
+        place-items: center;
+        overflow: hidden;
+        border: 4px solid #fff;
+        border-radius: 50%;
+        background: #f3f4f6;
+        box-shadow: 0 10px 26px rgba(15, 23, 42, .15);
+    }
+
+    .profile-image-preview img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+
+    .profile-image-badge {
+        position: absolute;
+        right: 0;
+        bottom: 4px;
+        display: grid;
+        width: 30px;
+        height: 30px;
+        place-items: center;
+        border: 2px solid #fff;
+        border-radius: 50%;
+        background: #0d6efd;
+        color: #fff;
+        box-shadow: 0 6px 14px rgba(13, 110, 253, .25);
+    }
+
+    .profile-image-help {
+        color: #6b7280;
+        font-size: 13px;
+        line-height: 1.45;
+    }
+
+    @media (max-width: 575px) {
+        .profile-image-panel {
+            align-items: flex-start;
+            flex-direction: column;
+        }
+    }
+</style>
+<form method="post" action="{{ route('profile.update') }}" class="row g-3" enctype="multipart/form-data">
     @csrf
     @method('patch')
+
+    <div class="col-12">
+        <div class="profile-image-panel">
+            <div class="profile-image-preview">
+                <img id="profileImagePreview" src="{{ $profileImage }}" alt="{{ $user->name }} profile image"
+                    onerror="this.onerror=null;this.src='{{ asset('assets/images/profile_av.png') }}';">
+                <span class="profile-image-badge" aria-hidden="true">
+                    <i class="icofont-camera"></i>
+                </span>
+            </div>
+            <div class="flex-fill">
+                <label for="profile_file" class="form-label mb-1">{{ __('Profile Image') }}</label>
+                <p class="profile-image-help mb-3">
+                    {{ __('Upload a clear JPG, PNG, or WebP image. Maximum size is 2MB.') }}
+                </p>
+                <input id="profile_file" name="file" type="file"
+                    class="form-control @error('file') is-invalid @enderror" accept="image/jpeg,image/png,image/webp">
+                <x-input-error class="mt-2" :messages="$errors->get('file')" />
+            </div>
+        </div>
+    </div>
 
     <div class="col-12">
         <label for="name" class="form-label">{{ __('Name') }}</label>
@@ -58,3 +142,16 @@
         @endif
     </div>
 </form>
+<script>
+    document.getElementById('profile_file')?.addEventListener('change', function(event) {
+        const [file] = event.target.files;
+        const preview = document.getElementById('profileImagePreview');
+
+        if (file && preview) {
+            preview.src = URL.createObjectURL(file);
+            preview.onload = function() {
+                URL.revokeObjectURL(preview.src);
+            };
+        }
+    });
+</script>
