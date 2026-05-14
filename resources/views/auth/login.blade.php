@@ -553,7 +553,7 @@
             </header>
 
             <div class="login-card">
-                <h1 class="login-title">Welcome <span class="gradient-text">back</span></h1>
+                <h1 class="login-title">welcome <span class="gradient-text">back</span></h1>
                 <p class="login-intro">Sign in to manage customers, projects, department tasks, service tickets, reports, and team updates from your Solen CRM workspace.</p>
 
                 @if (session('status'))
