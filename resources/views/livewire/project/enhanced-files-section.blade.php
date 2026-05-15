@@ -1,7 +1,7 @@
 <div>
     <style>
         .file-card {
-            background: #fff7ed;
+            background: var(--solen-cream);
             border-radius: 15px;
             overflow: hidden;
             box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
@@ -27,7 +27,7 @@
         .file-preview {
             width: 100%;
             height: 250px;
-            background: #fff7ed;
+            background: var(--solen-cream);
             display: flex;
             align-items: center;
             justify-content: center;
@@ -49,7 +49,7 @@
 
         .file-preview .file-icon {
             font-size: 80px;
-            color: #f07a24;
+            color: var(--solen-primary);
         }
 
         .file-type-icon {
@@ -62,18 +62,18 @@
         .file-type-icon span {
             font-size: 1.2rem;
             font-weight: 600;
-            color: #be4d18;
+            color: var(--solen-primary-dark);
             text-transform: uppercase;
         }
 
         .file-info {
             padding: 15px;
-            background: linear-gradient(135deg, #f7c948 0%, #f07a24 48%, #b93f1d 100%);
+            background: var(--solen-gradient);
             color: white;
         }
 
         .files-header {
-            background: linear-gradient(135deg, #f7c948 0%, #f07a24 48%, #b93f1d 100%);
+            background: var(--solen-gradient);
             color: white;
             padding: 1rem;
             border-radius: 8px;
@@ -100,7 +100,7 @@
         }
 
         .upload-btn {
-            background: linear-gradient(135deg, #f7c948 0%, #f07a24 48%, #b93f1d 100%);
+            background: var(--solen-gradient);
             border: none;
             color: white;
             padding: 12px 30px;
@@ -123,7 +123,7 @@
         }
 
         .modal-header {
-            background: linear-gradient(135deg, #f7c948 0%, #f07a24 48%, #b93f1d 100%);
+            background: var(--solen-gradient);
             color: white;
             border-radius: 20px 20px 0 0;
             padding: 20px 30px;
@@ -134,12 +134,12 @@
         }
 
         .form-control:focus {
-            border-color: #f07a24;
-            box-shadow: 0 0 0 0.2rem rgba(240, 122, 36, 0.18);
+            border-color: var(--solen-primary);
+            box-shadow: 0 0 0 0.2rem var(--solen-primary-border);
         }
 
         .btn-save {
-            background: linear-gradient(135deg, #f7c948 0%, #f07a24 48%, #b93f1d 100%);
+            background: var(--solen-gradient);
             border: none;
             color: white;
             padding: 10px 25px;
@@ -194,23 +194,23 @@
         }
 
         .premium-dropzone {
-            border: 3px dashed #f07a24;
+            border: 3px dashed var(--solen-primary);
             border-radius: 15px;
             padding: 50px 30px;
             text-align: center;
-            background: #fff7ed;
+            background: var(--solen-cream);
             cursor: pointer;
             transition: all 0.3s ease;
         }
 
         .premium-dropzone:hover {
-            border-color: #be4d18;
-            background: #ffedd5;
+            border-color: var(--solen-primary-dark);
+            background: var(--solen-cream-strong);
             transform: translateY(-2px);
         }
 
         .premium-dropzone.drag-over {
-            border-color: #be4d18;
+            border-color: var(--solen-primary-dark);
             background: #fed7aa;
         }
 
@@ -226,7 +226,7 @@
             border-radius: 10px;
             padding: 10px;
             text-align: center;
-            background: #fff7ed;
+            background: var(--solen-cream);
         }
 
         .preview-card img {
@@ -234,7 +234,7 @@
             height: 120px;
             object-fit: cover;
             border-radius: 8px;
-            background: #fff7ed;
+            background: var(--solen-cream);
         }
 
         .preview-icon {
@@ -243,7 +243,7 @@
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            color: #f07a24;
+            color: var(--solen-primary);
         }
 
         .preview-name {
@@ -287,7 +287,7 @@
         }
 
         .editable-title:focus {
-            outline: 2px solid #f07a24;
+            outline: 2px solid var(--solen-primary);
             background: rgba(255, 255, 255, 0.15);
             padding: 5px;
             border-radius: 5px;
@@ -295,7 +295,7 @@
 
         .premium-dropzone .text-primary,
         [wire\:loading] .text-primary {
-            color: #f07a24 !important;
+            color: var(--solen-primary) !important;
         }
     </style>
 

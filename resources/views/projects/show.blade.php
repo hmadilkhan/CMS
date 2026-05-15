@@ -55,7 +55,7 @@
         #project-show-page .bg-light,
         #project-show-page .list-group-item,
         #project-show-page .dropdown-menu {
-            background-color: #fff7ed !important;
+            background-color: var(--solen-cream) !important;
         }
 
         #project-show-page .modal .card,
@@ -339,9 +339,9 @@
         #project-show-page #communication #emailDiv .table,
         #project-show-page #communication #emailDiv .table td,
         #project-show-page #communication #emailDiv .table th {
-            background-color: #fff7ed !important;
-            border-color: rgba(240, 122, 36, 0.24) !important;
-            color: #78350f !important;
+            background-color: var(--solen-cream) !important;
+            border-color: var(--solen-primary-border-stronger) !important;
+            color: var(--solen-warm-text) !important;
         }
 
         #project-show-page #communication .tags-input {
@@ -360,7 +360,7 @@
 
         #project-show-page #communication .tags-input input {
             background: transparent !important;
-            color: #78350f !important;
+            color: var(--solen-warm-text) !important;
         }
 
         .tag {
@@ -374,7 +374,7 @@
         }
 
         #project-show-page #communication .tag {
-            background: linear-gradient(135deg, #f7c948 0%, #f07a24 48%, #b93f1d 100%) !important;
+            background: var(--solen-gradient) !important;
             color: #ffffff !important;
             border-radius: 999px;
         }
@@ -421,8 +421,8 @@
         }
 
         .project-tag-panel {
-            background: #f8fafc;
-            border: 1px solid #e2e8f0;
+            background: var(--solen-cream);
+            border: 0;
             border-radius: 14px;
             padding: 1rem 1.25rem;
             margin: -0.5rem 0 1rem;
@@ -456,7 +456,7 @@
 
         .project-tag-chip.inverter-tag {
             background: rgba(13, 148, 136, 0.12);
-            color: #115e59;
+            color: var(--solen-primary-deep);
         }
 
         .project-tag-chip.adder-tag {
@@ -496,7 +496,7 @@
         .project-department-tabs .nav-link {
             border: 0 !important;
             border-radius: 999px !important;
-            box-shadow: 0 8px 20px rgba(154, 52, 18, 0.08);
+            box-shadow: 0 8px 20px var(--solen-warm-shadow-soft);
         }
 
         .nav-tabs .nav-link {
@@ -514,7 +514,7 @@
         }
 
         .nav-tabs .nav-link.active {
-            background: linear-gradient(135deg, #f7c948 0%, #f07a24 48%, #b93f1d 100%);
+            background: var(--solen-gradient);
             color: white;
         }
 
@@ -534,12 +534,12 @@
 
         #project-show-page .nav-tabs .nav-link:hover,
         #project-show-page .nav-tabs .nav-link:focus {
-            background: rgba(240, 122, 36, 0.1);
-            color: #9a3412;
+            background: var(--solen-primary-soft);
+            color: var(--solen-warm-hover);
         }
 
         #project-show-page .nav-tabs .nav-link.active {
-            background: linear-gradient(135deg, #f7c948 0%, #f07a24 48%, #b93f1d 100%) !important;
+            background: var(--solen-gradient) !important;
             color: #ffffff !important;
         }
 
@@ -552,14 +552,14 @@
         }
 
         #project-show-page .project-primary-tabs .nav-link {
-            background: #fff7ed;
-            color: #78350f;
+            background: var(--solen-cream);
+            color: var(--solen-warm-text);
             min-width: 112px;
             text-align: center;
         }
 
         #project-show-page .project-department-tabs .nav-link {
-            background: #ffedd5;
+            background: var(--solen-cream-strong);
             color: #92400e;
             font-size: 0.88rem;
             padding: 0.6rem 1.15rem;
@@ -591,7 +591,7 @@
 
         #project-show-page .project-primary-tabs .nav-link.active,
         #project-show-page .project-department-tabs .nav-link.active {
-            box-shadow: 0 10px 22px rgba(240, 122, 36, 0.24);
+            box-shadow: 0 10px 22px var(--solen-primary-border-stronger);
             transform: translateY(-1px);
         }
 
@@ -608,10 +608,10 @@
             padding: 0.7rem 1.35rem;
             border-radius: 999px;
             background: rgba(255, 247, 237, 0.78);
-            color: #9a3412;
+            color: var(--solen-warm-hover);
             font-size: 1.05rem;
             font-weight: 800;
-            box-shadow: 0 8px 22px rgba(154, 52, 18, 0.08);
+            box-shadow: 0 8px 22px var(--solen-warm-shadow-soft);
         }
 
         .project-title-status {
@@ -620,7 +620,7 @@
             gap: 0.45rem;
             border: 0;
             background: transparent;
-            color: #78350f;
+            color: var(--solen-warm-text);
             font: inherit;
             font-weight: 800;
             text-transform: uppercase;
@@ -631,26 +631,61 @@
 
         .project-title-status:hover,
         .project-title-status:focus {
-            background: rgba(240, 122, 36, 0.1);
-            color: #9a3412;
+            background: var(--solen-primary-soft);
+            color: var(--solen-warm-hover);
             outline: none;
         }
 
         .project-title-status-menu {
-            border: 1px solid rgba(240, 122, 36, 0.18);
-            background: #fff7ed;
+            border: 1px solid var(--solen-primary-border);
+            background: var(--solen-cream);
             box-shadow: 0 16px 35px rgba(120, 53, 15, 0.12);
         }
 
         .project-title-status-menu .dropdown-item {
-            color: #78350f;
+            color: var(--solen-warm-text);
             font-weight: 600;
         }
 
         .project-title-status-menu .dropdown-item:hover,
         .project-title-status-menu .dropdown-item.active {
-            background: #ffedd5;
-            color: #9a3412;
+            background: var(--solen-cream-strong);
+            color: var(--solen-warm-hover);
+        }
+
+        .project-summary-header {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            width: 100%;
+            padding: 0.75rem 1rem;
+            text-align: center;
+        }
+
+        .project-days-badge {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 86px;
+            padding: 0.35rem 0.85rem;
+            border-radius: 999px;
+            background: var(--solen-cream-strong);
+            color: var(--solen-warm-text);
+            font-size: 0.95rem;
+            font-weight: 800;
+            box-shadow: 0 8px 18px var(--solen-warm-shadow-soft);
+        }
+
+        .project-summary-title {
+            margin: 0;
+            width: 100%;
+            color: var(--solen-warm-text);
+            font-size: 1.45rem;
+            font-weight: 800;
+            text-align: center;
+            text-transform: uppercase;
         }
 
         .project-assignee-control {
@@ -665,7 +700,7 @@
             gap: 0.45rem;
             border: 0;
             background: transparent;
-            color: #78350f;
+            color: var(--solen-warm-text);
             padding: 0.35rem 0.8rem;
             border-radius: 999px;
             box-shadow: none;
@@ -674,8 +709,8 @@
 
         .project-assignee-toggle:hover,
         .project-assignee-toggle:focus {
-            background: rgba(240, 122, 36, 0.1);
-            color: #9a3412;
+            background: var(--solen-primary-soft);
+            color: var(--solen-warm-hover);
             outline: none;
         }
 
@@ -698,20 +733,20 @@
             min-width: 260px;
             max-height: 280px;
             overflow-y: auto;
-            border: 1px solid rgba(240, 122, 36, 0.18);
-            background: #fff7ed;
+            border: 1px solid var(--solen-primary-border);
+            background: var(--solen-cream);
             box-shadow: 0 16px 35px rgba(120, 53, 15, 0.12);
         }
 
         .project-assignee-menu .dropdown-item {
-            color: #78350f;
+            color: var(--solen-warm-text);
             font-weight: 600;
         }
 
         .project-assignee-menu .dropdown-item:hover,
         .project-assignee-menu .dropdown-item.active {
-            background: #ffedd5;
-            color: #9a3412;
+            background: var(--solen-cream-strong);
+            color: var(--solen-warm-hover);
         }
 
         .btn-dark {
@@ -749,16 +784,16 @@
         #project-show-page .select2-container--default .select2-selection--single,
         #project-show-page .select2-container--default .select2-selection--multiple {
             min-height: 44px;
-            background-color: #fff7ed !important;
-            border: 1px solid rgba(240, 122, 36, 0.24) !important;
-            color: #78350f !important;
+            background-color: var(--solen-cream) !important;
+            border: 1px solid var(--solen-primary-border-stronger) !important;
+            color: var(--solen-warm-text) !important;
             box-shadow: none !important;
         }
 
         #project-show-page .form-control:disabled,
         #project-show-page .form-select:disabled,
         #project-show-page .form-control[readonly] {
-            background-color: #fff7ed !important;
+            background-color: var(--solen-cream) !important;
             opacity: 1;
         }
 
@@ -768,7 +803,7 @@
 
         #project-show-page .select2-container--default .select2-selection--single .select2-selection__rendered {
             line-height: 42px;
-            color: #78350f !important;
+            color: var(--solen-warm-text) !important;
             padding-left: 1rem;
         }
 
@@ -778,12 +813,12 @@
 
         #project-show-page .select2-dropdown,
         #project-show-page .select2-results__option {
-            background-color: #fff7ed;
-            color: #78350f;
+            background-color: var(--solen-cream);
+            color: var(--solen-warm-text);
         }
 
         #project-show-page .select2-container--default .select2-results__option--highlighted[aria-selected] {
-            background: linear-gradient(135deg, #f7c948 0%, #f07a24 48%, #b93f1d 100%);
+            background: var(--solen-gradient);
             color: #ffffff;
         }
 
@@ -805,23 +840,23 @@
 
         #project-show-page > .tab-content .table thead,
         #project-show-page > .tab-content .table thead th {
-            background: #fff7ed !important;
-            color: #78350f !important;
-            border-color: rgba(240, 122, 36, 0.22) !important;
+            background: var(--solen-cream) !important;
+            color: var(--solen-warm-text) !important;
+            border-color: var(--solen-primary-border-strong) !important;
         }
 
         #project-show-page #adderTable thead,
         #project-show-page #adderTable thead th {
-            background: #fff7ed !important;
-            color: #78350f !important;
-            border-color: rgba(240, 122, 36, 0.22) !important;
+            background: var(--solen-cream) !important;
+            color: var(--solen-warm-text) !important;
+            border-color: var(--solen-primary-border-strong) !important;
         }
 
         #project-show-page .account-transactions-table thead,
         #project-show-page .account-transactions-table thead th {
-            background: #fff7ed !important;
-            color: #78350f !important;
-            border-color: rgba(240, 122, 36, 0.22) !important;
+            background: var(--solen-cream) !important;
+            color: var(--solen-warm-text) !important;
+            border-color: var(--solen-primary-border-strong) !important;
         }
 
         .table tbody tr {
@@ -847,23 +882,23 @@
 
         /* Premium Modal Styles */
         #assign-notes .form-control:focus {
-            border-color: #f07a24;
-            box-shadow: 0 0 0 0.2rem rgba(240, 122, 36, 0.18);
+            border-color: var(--solen-primary);
+            box-shadow: 0 0 0 0.2rem var(--solen-primary-border);
         }
 
         #assign-notes .btn:hover {
             transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(240, 122, 36, 0.35);
+            box-shadow: 0 6px 20px var(--solen-primary-shadow);
         }
 
         #assign-notes .form-check-input:checked {
-            background-color: #78350f;
-            border-color: #78350f;
+            background-color: var(--solen-warm-text);
+            border-color: var(--solen-warm-text);
         }
 
         #assign-notes .form-check-input:focus {
-            border-color: #f07a24;
-            box-shadow: 0 0 0 0.2rem rgba(240, 122, 36, 0.18);
+            border-color: var(--solen-primary);
+            box-shadow: 0 0 0 0.2rem var(--solen-primary-border);
         }
     </style>
     <link rel="stylesheet" href="https://cdn.ckeditor.com/ckeditor5/42.0.0/ckeditor5.css">
@@ -881,28 +916,15 @@
                     <div class="card border-0 mb-4 no-bg">
                         @php
                             $currentAssignedName = optional($task->employee)->name ?? 'Unassigned';
+                            $projectAgeDays = empty($project->pto_approval_date)
+                                ? now()->diffInDays(Carbon\Carbon::parse($project->customer->sold_date))
+                                : Carbon\Carbon::parse($project->pto_approval_date)->diffInDays(
+                                    Carbon\Carbon::parse($project->customer->sold_date),
+                                );
                         @endphp
-                        <div
-                            class="card-header py-3 px-0 d-sm-flex align-items-center me-1 mt-1 w-sm-100  justify-content-between border-bottom">
-                            <div class="d-flex">
-                                <h6 class="mb-0 fs-6  font-monospace fw-bold mt-sm-0 px-3 py-3 text-center">
-                                    @if (empty($project->pto_approval_date))
-                                        {{ now()->diffInDays(Carbon\Carbon::parse($project->customer->sold_date)) }}
-                                    @else
-                                        {{ Carbon\Carbon::parse($project->pto_approval_date)->diffInDays(Carbon\Carbon::parse($project->customer->sold_date)) }}
-                                    @endif
-                                </h6>
-                                @if (auth()->user()->hasAnyRole(['Super Admin', 'Admin', 'Manager']))
-                                    <a class="me-1 mt-1 w-sm-100 d-none"><select class="form-select "
-                                            aria-label="Default Select Status" id="employee" name="employee">
-                                            <option value="">Select Employee</option>
-                                            @foreach ($employees as $employee)
-                                                <option value="{{ $employee->id }}">{{ $employee->name }}</option>
-                                            @endforeach
-                                        </select></a>
-                                @endif
-                            </div>
-                            <h3 class="fw-bold flex-fill mb-0 mt-sm-0 text-center fs-10 text-uppercase">
+                        <div class="card-header project-summary-header border-0">
+                            <div class="project-days-badge">{{ $projectAgeDays }} Days</div>
+                            <h3 class="project-summary-title">
                                 @if (auth()->user()->hasAnyRole(['Super Admin', 'Admin', 'Manager']))
                                     <div class="dropdown d-inline-block">
                                         <button class="project-title-status dropdown-toggle" type="button"
@@ -931,21 +953,6 @@
                                     {{ str_replace('-', ' ', $project->project_name) }}
                                 @endif
                             </h3>
-                            @if (auth()->user()->hasAnyRole(['Super Admin', 'Admin', 'Manager']))
-                                <a class="me-1 mt-1 w-sm-100 d-none"><select class="form-select "
-                                        aria-label="Default Select Status" id="status" name="status">
-                                        <option value="">Select Status</option>
-                                        <option {{ $task->status == 'In-Progress' ? 'selected' : '' }} value="In-Progress">
-                                            In-Progress</option>
-                                        <option {{ $task->status == 'Hold' ? 'selected' : '' }} value="Hold">
-                                            Hold</option>
-                                        <option {{ $task->status == 'Cancelled' ? 'selected' : '' }} value="Cancelled">
-                                            Cancelled
-                                        </option>
-                                    </select></a>
-                            @endif
-                            {{-- <a href="{{ route('projects.index') }}" class="btn btn-dark me-1 mt-1 w-sm-100"
-                                id="openemployee"><i class="icofont-arrow-left me-2 fs-6"></i>Back to List</a> --}}
                         </div>
                     </div>
 
@@ -1678,7 +1685,7 @@
                                     @foreach ($departments as $department)
                                         <div class="col-md-12">
                                             <div class="card border-0 mb-4 no-bg">
-                                                <div style="background-color: #fff7ed;"
+                                                <div style="background-color: var(--solen-cream);"
                                                     class="card-header py-3 px-0 d-sm-flex align-items-center   justify-content-between border-bottom border-top">
                                                     <h3 class=" fw-bold flex-fill mb-0 mt-sm-0 px-2">
                                                         {{ $department->name }}
@@ -2109,7 +2116,7 @@
         <div class="modal-content"
             style="border-radius: 20px; border: none; box-shadow: 0 10px 40px rgba(0,0,0,0.2);">
             <div class="modal-header"
-                style="background: linear-gradient(135deg, #f7c948 0%, #f07a24 48%, #b93f1d 100%); border-radius: 20px 20px 0 0; padding: 1.5rem; border: none;">
+                style="background: var(--solen-gradient); border-radius: 20px 20px 0 0; padding: 1.5rem; border: none;">
                 <h5 class="modal-title fw-bold text-white" id="createprojectlLabel">
                     <i class="icofont-ui-note me-2"></i>Assign Notes
                 </h5>
@@ -2124,12 +2131,12 @@
                 <div class="modal-body" style="padding: 2rem;">
                     <div class="row">
                         <div class="col-sm-12 mb-3">
-                            <label for="assignnotes" class="form-label fw-bold" style="color: #78350f;">
+                            <label for="assignnotes" class="form-label fw-bold" style="color: var(--solen-warm-text);">
                                 <i class="icofont-pencil-alt-2 me-2"></i>Assign Notes
                             </label>
                             <div class="position-relative">
                                 <textarea class="form-control" id="assignnotes" name="assignnotes" rows="4"
-                                    style="border-radius: 12px; border: 2px solid rgba(240, 122, 36, 0.22); padding: 1rem; transition: all 0.3s; background-color: #fff7ed; color: #78350f;"
+                                    style="border-radius: 12px; border: 2px solid var(--solen-primary-border-strong); padding: 1rem; transition: all 0.3s; background-color: var(--solen-cream); color: var(--solen-warm-text);"
                                     placeholder="Enter your notes here..."></textarea>
                             </div>
                         </div>
@@ -2140,24 +2147,24 @@
                                     name="follow_up"
                                     style="width: 20px; height: 20px; cursor: pointer; border-radius: 6px;">
                                 <label class="form-check-label fw-bold" for="followUpCheckbox"
-                                    style="color: #78350f; margin-left: 0.5rem; cursor: pointer;">
+                                    style="color: var(--solen-warm-text); margin-left: 0.5rem; cursor: pointer;">
                                     <i class="icofont-calendar me-2"></i>Set Follow-up Date
                                 </label>
                             </div>
                         </div>
 
                         <div class="col-sm-12 mb-3" id="followUpDateContainer" style="display: none;">
-                            <label for="followUpDate" class="form-label fw-bold" style="color: #78350f;">
+                            <label for="followUpDate" class="form-label fw-bold" style="color: var(--solen-warm-text);">
                                 <i class="icofont-clock-time me-2"></i>Follow-up Date
                             </label>
                             <input type="date" class="form-control" id="followUpDate" name="follow_up_date"
-                                style="border-radius: 12px; border: 2px solid rgba(240, 122, 36, 0.22); padding: 0.75rem; transition: all 0.3s; background-color: #fff7ed; color: #78350f;">
+                                style="border-radius: 12px; border: 2px solid var(--solen-primary-border-strong); padding: 0.75rem; transition: all 0.3s; background-color: var(--solen-cream); color: var(--solen-warm-text);">
                         </div>
 
 
                         <div class="col-sm-12 mb-3">
                             <button type="submit" class="btn w-100"
-                                style="background: linear-gradient(135deg, #f7c948 0%, #f07a24 48%, #b93f1d 100%); color: white; border: none; padding: 0.75rem 1.5rem; border-radius: 12px; font-weight: 600; transition: all 0.3s; box-shadow: 0 4px 15px rgba(240, 122, 36, 0.35);">
+                                style="background: var(--solen-gradient); color: white; border: none; padding: 0.75rem 1.5rem; border-radius: 12px; font-weight: 600; transition: all 0.3s; box-shadow: 0 4px 15px var(--solen-primary-shadow);">
                                 <i class="icofont-save me-2"></i>Save Assignment
                             </button>
                         </div>
@@ -2273,6 +2280,26 @@
     };
 </script> --}}
     @if (auth()->user()->hasAnyRole(['Super Admin', 'Admin', 'Manager']))
+        <div class="d-none">
+            <select id="employee" name="employee">
+                <option value="">Select Employee</option>
+                @foreach ($employees as $employee)
+                    <option value="{{ $employee->id }}">{{ $employee->name }}</option>
+                @endforeach
+            </select>
+            <select id="status" name="status">
+                <option value="">Select Status</option>
+                <option {{ $task->status == 'In-Progress' ? 'selected' : '' }} value="In-Progress">
+                    In-Progress
+                </option>
+                <option {{ $task->status == 'Hold' ? 'selected' : '' }} value="Hold">
+                    Hold
+                </option>
+                <option {{ $task->status == 'Cancelled' ? 'selected' : '' }} value="Cancelled">
+                    Cancelled
+                </option>
+            </select>
+        </div>
         <div class="d-flex justify-content-center mt-4 mb-3">
             <div class="dropdown project-assignee-control">
                 <button class="project-assignee-toggle dropdown-toggle" type="button"
@@ -2482,14 +2509,14 @@
                         title: 'Status Updated',
                         text: 'Project status has been updated successfully.',
                         icon: 'success',
-                        confirmButtonColor: '#f07a24'
+                        confirmButtonColor: 'var(--solen-primary)'
                     });
                 } else {
                     Swal.fire({
                         title: 'Update Failed',
                         text: 'Some error occurred while updating the status.',
                         icon: 'error',
-                        confirmButtonColor: '#f07a24'
+                        confirmButtonColor: 'var(--solen-primary)'
                     });
                 }
             },

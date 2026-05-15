@@ -1,22 +1,11 @@
-<style>
-    :root {
-        --solen-background: #fffdf6;
-        --solen-foreground: #342416;
-        --solen-card: #ffffff;
-        --solen-muted: #7c6f60;
-        --solen-border: #eadfce;
-        --solen-primary: #f07a24;
-        --solen-primary-dark: #be4d18;
-        --solen-secondary: #fff6e5;
-        --solen-gradient: linear-gradient(135deg, #f7c948 0%, #f07a24 48%, #b93f1d 100%);
-        --solen-shadow: 0 24px 60px -28px rgba(151, 76, 18, 0.45);
-    }
+@include('layouts.partials.solen-palette')
 
+<style>
     #mytask-layout.theme-indigo,
     [data-theme="dark"] #mytask-layout.theme-indigo,
     [data-theme="light"] #mytask-layout.theme-indigo {
-        --primary-color: #f07a24;
-        --secondary-color: #f7c948;
+        --primary-color: var(--solen-primary);
+        --secondary-color: var(--solen-gold);
         --primary-gradient: var(--solen-gradient);
         --body-color: var(--solen-background);
         --card-color: var(--solen-card);
@@ -125,7 +114,7 @@
     .premium-tabs .nav-link:hover,
     .nav-tabs .nav-link.active {
         background: var(--solen-gradient) !important;
-        border-color: rgba(240, 122, 36, 0.18) !important;
+        border-color: var(--solen-primary-border) !important;
         color: #ffffff !important;
     }
 
@@ -193,7 +182,7 @@
     [style*="#34495e"],
     [style*="#2d3748"],
     [style*="#1a202c"] {
-        border-color: rgba(240, 122, 36, 0.18) !important;
+        border-color: var(--solen-primary-border) !important;
     }
 
     [style*="background"][style*="#2c3e50"],

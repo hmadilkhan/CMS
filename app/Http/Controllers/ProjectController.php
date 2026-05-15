@@ -27,6 +27,7 @@ use App\Models\ProjectFollowUp;
 use App\Models\SubDepartment;
 use App\Models\Task;
 use App\Models\Tool;
+use App\Notifications\ProjectAssignedNotification;
 use App\Traits\MediaTrait;
 use Carbon\Carbon;
 use FPDF;
@@ -680,6 +681,12 @@ class ProjectController extends Controller
                     "status" => "In-Progress",
                     "user_id" => auth()->user()->id,
                 ]);
+
+                $assignedEmployee = Employee::with("user")->find($request->employee);
+                $project = Project::find($request->project_id);
+                if ($assignedEmployee?->user && $project) {
+                    $assignedEmployee->user->notify(new ProjectAssignedNotification($project, $newTask, auth()->user()->name));
+                }
             } else {
                 Task::where("id", $currentTask->id)->update(["status" => "Completed", "notes" => "New assign to notes added"]);
                 $newTask = Task::create([

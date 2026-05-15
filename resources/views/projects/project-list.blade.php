@@ -23,7 +23,7 @@
     }
 
     .project-header {
-        background: linear-gradient(135deg, #f7c948 0%, #f07a24 48%, #b93f1d 100%);
+        background: var(--solen-gradient);
         padding: 1rem;
         color: white;
     }
@@ -64,7 +64,7 @@
 
     .progress-modern .progress-bar {
         border-radius: 10px;
-        background: linear-gradient(90deg, #f7c948 0%, #f07a24 48%, #b93f1d 100%);
+        background: var(--solen-gradient-horizontal);
     }
 
     .notes-section {
@@ -77,7 +77,7 @@
     }
 
     .department-header {
-        background: linear-gradient(135deg, #f7c948 0%, #f07a24 48%, #b93f1d 100%);
+        background: var(--solen-gradient);
         border: 0;
         border-radius: 12px;
         padding: 1.25rem 1.5rem;
@@ -104,25 +104,25 @@
 
     .premium-filter {
         background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
-        border: 2px solid rgba(240, 122, 36, 0.22);
+        border: 2px solid var(--solen-primary-border-strong);
         border-radius: 8px;
         padding: 0.5rem 1rem;
         font-weight: 600;
-        color: #be4d18;
+        color: var(--solen-primary-dark);
         box-shadow: 0 2px 8px rgba(0,0,0,0.08);
         transition: all 0.3s ease;
         cursor: pointer;
     }
 
     .premium-filter:hover {
-        border-color: #f07a24;
+        border-color: var(--solen-primary);
         box-shadow: 0 4px 12px rgba(151, 76, 18, 0.18);
         transform: translateY(-1px);
     }
 
     .premium-filter:focus {
-        border-color: #f07a24;
-        box-shadow: 0 0 0 0.2rem rgba(240, 122, 36, 0.16);
+        border-color: var(--solen-primary);
+        box-shadow: 0 0 0 0.2rem var(--solen-primary-focus);
         outline: none;
     }
 
@@ -165,7 +165,7 @@
     }
 
     .no-results-message h5 {
-        color: #be4d18;
+        color: var(--solen-primary-dark);
         font-weight: 600;
         margin-bottom: 0.5rem;
     }
