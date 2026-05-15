@@ -11,23 +11,22 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Manrope:wght@500;600;700&display=swap" rel="stylesheet">
-    @include('layouts.partials.solen-palette')
 
     <style>
         :root {
-            --background: var(--solen-background);
-            --foreground: var(--solen-foreground);
-            --card: var(--solen-card);
-            --muted: var(--solen-muted);
-            --border: var(--solen-border);
-            --primary: var(--solen-primary);
-            --primary-dark: var(--solen-primary-dark);
+            --background: #fffdf6;
+            --foreground: #342416;
+            --card: #ffffff;
+            --muted: #7c6f60;
+            --border: #eadfce;
+            --primary: #f07a24;
+            --primary-dark: #be4d18;
             --secondary: #fff6e5;
             --danger: #b42318;
             --danger-bg: #fff1f0;
             --shadow-elegant: 0 30px 80px -20px rgba(151, 76, 18, 0.35);
             --shadow-glow: 0 0 60px rgba(245, 164, 42, 0.42);
-            --gradient-sun: var(--solen-gradient);
+            --gradient-sun: linear-gradient(135deg, #f7c948 0%, #f07a24 48%, #b93f1d 100%);
             --gradient-glow: radial-gradient(circle at 30% 20%, rgba(255, 201, 71, 0.44), transparent 58%);
             --font-body: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
             --font-display: Manrope, Inter, ui-sans-serif, system-ui, sans-serif;
@@ -86,7 +85,7 @@
             width: 68px;
             place-items: center;
             overflow: hidden;
-            border: 1px solid var(--solen-primary-border);
+            border: 1px solid rgba(240, 122, 36, 0.18);
             border-radius: 50%;
             background: #fff;
             box-shadow: var(--shadow-glow);
@@ -242,7 +241,7 @@
         .form-input:focus {
             border-color: var(--primary);
             background: #fff;
-            box-shadow: 0 0 0 4px var(--solen-primary-focus);
+            box-shadow: 0 0 0 4px rgba(240, 122, 36, 0.13);
         }
 
         .form-input.is-invalid {

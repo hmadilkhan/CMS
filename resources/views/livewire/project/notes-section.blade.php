@@ -1,20 +1,20 @@
 <div>
     <style>
         .notes-section {
-            background: var(--solen-cream);
+            background: #f8f9fa;
             border-radius: 12px;
             padding: 1.5rem;
             margin-bottom: 1.5rem;
         }
 
         .note-card {
-            background: var(--solen-cream);
+            background: white;
             border-radius: 8px;
             padding: 1rem;
             margin-bottom: 1rem;
             box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
             transition: all 0.3s ease;
-            border-left: 4px solid var(--solen-primary);
+            border-left: 4px solid #2c3e50;
         }
 
         .note-card:hover {
@@ -24,27 +24,23 @@
 
         .note-textarea {
             border-radius: 8px;
-            border: 2px solid var(--solen-primary-border-strong);
-            background: var(--solen-cream) !important;
-            color: var(--solen-warm-text);
+            border: 2px solid #e9ecef;
             transition: all 0.3s ease;
             font-size: 0.95rem;
         }
 
         .note-textarea:focus {
-            border-color: var(--solen-primary);
-            box-shadow: 0 0 0 0.2rem var(--solen-primary-focus);
+            border-color: #2c3e50;
+            box-shadow: 0 0 0 0.2rem rgba(44, 62, 80, 0.15);
         }
 
         .note-header {
-            background: var(--solen-gradient);
+            background: linear-gradient(135deg, #2c3e50 0%, #000000 100%);
             color: white;
-            padding: 1rem;
+            padding: 0.75rem 1rem;
             border-radius: 8px;
             margin-bottom: 1rem;
-            font-size: 1.25rem;
-            font-weight: 700;
-            box-shadow: 0 14px 32px -22px rgba(151, 76, 18, 0.7);
+            font-weight: 600;
         }
 
         .note-actions {
@@ -81,7 +77,7 @@
             font-size: 0.85rem;
             color: #6c757d;
             padding: 0.5rem 0;
-            border-top: 1px solid var(--solen-primary-border);
+            border-top: 1px solid #e9ecef;
             margin-top: 0.5rem;
         }
 
@@ -97,23 +93,20 @@
             border-radius: 8px;
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
             border: none;
-            background: var(--solen-cream) !important;
         }
 
         .suggestions-dropdown .list-group-item {
             border: none;
             padding: 0.75rem 1rem;
             transition: all 0.2s ease;
-            background: var(--solen-cream);
-            color: var(--solen-warm-text);
         }
 
         .suggestions-dropdown .list-group-item:hover {
-            background: var(--solen-cream-strong);
+            background: #f8f9fa;
         }
 
         .suggestions-dropdown .list-group-item.active {
-            background: var(--solen-gradient);
+            background: linear-gradient(135deg, #2c3e50 0%, #000000 100%);
         }
     </style>
     @can('Notes Section')

@@ -59,16 +59,6 @@ class User extends Authenticatable
         'password' => 'hashed',
     ];
 
-    /**
-     * Get the name of the unique identifier for the user.
-     *
-     * @return string
-     */
-    public function username()
-    {
-        return 'username';
-    }
-
     public function type()
     {
         return $this->belongsTo(UserType::class, "user_type_id", "id");

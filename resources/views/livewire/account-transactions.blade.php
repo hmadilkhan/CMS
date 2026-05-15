@@ -71,7 +71,7 @@
             </form>
         @endcan
         <div class="table-responsive">
-            <table class="table table-bordered table-hover align-middle account-transactions-table">
+            <table class="table table-bordered table-hover align-middle">
                 <thead class="table-light">
                     <tr>
                         <th>#</th>

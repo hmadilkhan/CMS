@@ -4,7 +4,7 @@
     <style>
         .search-box-wrapper {
             position: relative;
-            width: min(100%, 420px);
+            width: 500px;
         }
 
         .search-icon {
@@ -21,15 +21,14 @@
             padding: 12px 20px 12px 50px;
             height: 50px;
             border-radius: 8px;
-            border: 1px solid rgba(255, 255, 255, 0.28);
-            background: rgba(255, 255, 255, 0.94);
+            border: 2px solid #e9ecef;
             transition: all 0.3s ease;
-            box-shadow: 0 14px 28px -22px rgba(52, 36, 22, 0.7);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
         }
 
         .search-input:focus {
-            border-color: rgba(255, 255, 255, 0.86);
-            box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.2);
+            border-color: #2c3e50;
+            box-shadow: 0 4px 12px rgba(44, 62, 80, 0.15);
             outline: none;
         }
 
@@ -103,12 +102,6 @@
             box-shadow: 0 2px 8px rgba(255, 215, 0, 0.3);
         }
 
-        .project-filter-row {
-            display: flex;
-            justify-content: flex-end;
-            margin-bottom: 18px;
-        }
-
         .premium-lock-card h3 {
             color: #fff;
             text-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
@@ -138,29 +131,19 @@
             color: #000;
             font-weight: 600;
         }
-
-        @media (max-width: 767px) {
-            .search-box-wrapper {
-                width: 100%;
-            }
-
-            .project-filter-row {
-                justify-content: stretch;
-            }
-        }
     </style>
     <div class="container-xxxl">
         <div class="row align-items-center">
             <div class="border-0 mb-4">
-                <div class="project-filter-row">
-                    <div class="search-box-wrapper">
-                        <i class="icofont-search search-icon"></i>
-                        <input type="text" class="form-control search-input" id="search"
-                            placeholder="Search projects" />
-                    </div>
-                </div>
                 <div class="premium-lock-card">
-                    <div class="d-flex project-tab flex-wrap justify-content-center">
+                    <div class="lock-icon-wrapper">
+                        <i class="icofont-lock"></i>
+                    </div>
+                    <div class="d-flex align-items-center mb-3">
+                        <h3 class="fw-bold mb-0 me-3">Projects</h3>
+                        <span class="premium-badge">Active</span>
+                    </div>
+                    <div class="d-flex project-tab flex-wrap">
                         @if (count($departments) > 1)
                             <ul class="nav nav-tabs rounded prtab-set" role="tablist" style="cursor: pointer;">
                                 <li class="nav-item"><a class="nav-link active" data-bs-toggle="tab"
@@ -172,6 +155,15 @@
                                 @endforeach
                             </ul>
                         @endif
+                    </div>
+                </div>
+                <div class="row align-items-center justify-content-end py-3 px-0 flex-wrap">
+                    <div class="col-auto">
+                        <div class="search-box-wrapper">
+                            <i class="icofont-search search-icon"></i>
+                            <input type="text" class="form-control search-input" id="search"
+                                placeholder="Type to search / Enter to refresh" />
+                        </div>
                     </div>
                 </div>
 

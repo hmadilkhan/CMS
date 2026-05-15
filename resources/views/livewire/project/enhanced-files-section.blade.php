@@ -1,7 +1,7 @@
 <div>
     <style>
         .file-card {
-            background: var(--solen-cream);
+            background: white;
             border-radius: 15px;
             overflow: hidden;
             box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
@@ -27,7 +27,7 @@
         .file-preview {
             width: 100%;
             height: 250px;
-            background: var(--solen-cream);
+            background: #f8f9fa;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -49,7 +49,7 @@
 
         .file-preview .file-icon {
             font-size: 80px;
-            color: var(--solen-primary);
+            color: #667eea;
         }
 
         .file-type-icon {
@@ -62,25 +62,14 @@
         .file-type-icon span {
             font-size: 1.2rem;
             font-weight: 600;
-            color: var(--solen-primary-dark);
+            color: #667eea;
             text-transform: uppercase;
         }
 
         .file-info {
             padding: 15px;
-            background: var(--solen-gradient);
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
-        }
-
-        .files-header {
-            background: var(--solen-gradient);
-            color: white;
-            padding: 1rem;
-            border-radius: 8px;
-            margin-bottom: 1rem;
-            font-size: 1.25rem;
-            font-weight: 700;
-            box-shadow: 0 14px 32px -22px rgba(151, 76, 18, 0.7);
         }
 
         .file-header {
@@ -100,19 +89,19 @@
         }
 
         .upload-btn {
-            background: var(--solen-gradient);
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             border: none;
             color: white;
             padding: 12px 30px;
             border-radius: 25px;
             font-weight: 600;
-            box-shadow: 0 5px 15px rgba(151, 76, 18, 0.35);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
             transition: all 0.3s ease;
         }
 
         .upload-btn:hover {
             transform: translateY(-2px);
-            box-shadow: 0 8px 20px rgba(151, 76, 18, 0.45);
+            box-shadow: 0 8px 20px rgba(102, 126, 234, 0.6);
             color: white;
         }
 
@@ -123,7 +112,7 @@
         }
 
         .modal-header {
-            background: var(--solen-gradient);
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
             border-radius: 20px 20px 0 0;
             padding: 20px 30px;
@@ -134,12 +123,12 @@
         }
 
         .form-control:focus {
-            border-color: var(--solen-primary);
-            box-shadow: 0 0 0 0.2rem var(--solen-primary-border);
+            border-color: #667eea;
+            box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
         }
 
         .btn-save {
-            background: var(--solen-gradient);
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             border: none;
             color: white;
             padding: 10px 25px;
@@ -150,7 +139,7 @@
 
         .btn-save:hover {
             transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(151, 76, 18, 0.35);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
             color: white;
         }
 
@@ -194,24 +183,24 @@
         }
 
         .premium-dropzone {
-            border: 3px dashed var(--solen-primary);
+            border: 3px dashed #667eea;
             border-radius: 15px;
             padding: 50px 30px;
             text-align: center;
-            background: var(--solen-cream);
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.05) 0%, rgba(118, 75, 162, 0.05) 100%);
             cursor: pointer;
             transition: all 0.3s ease;
         }
 
         .premium-dropzone:hover {
-            border-color: var(--solen-primary-dark);
-            background: var(--solen-cream-strong);
+            border-color: #764ba2;
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
             transform: translateY(-2px);
         }
 
         .premium-dropzone.drag-over {
-            border-color: var(--solen-primary-dark);
-            background: #fed7aa;
+            border-color: #764ba2;
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.15) 0%, rgba(118, 75, 162, 0.15) 100%);
         }
 
         .preview-grid {
@@ -226,7 +215,7 @@
             border-radius: 10px;
             padding: 10px;
             text-align: center;
-            background: var(--solen-cream);
+            background: #f8f9fa;
         }
 
         .preview-card img {
@@ -234,7 +223,7 @@
             height: 120px;
             object-fit: cover;
             border-radius: 8px;
-            background: var(--solen-cream);
+            background: #f8f9fa;
         }
 
         .preview-icon {
@@ -243,7 +232,7 @@
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            color: var(--solen-primary);
+            color: #667eea;
         }
 
         .preview-name {
@@ -287,23 +276,14 @@
         }
 
         .editable-title:focus {
-            outline: 2px solid var(--solen-primary);
+            outline: 2px solid #667eea;
             background: rgba(255, 255, 255, 0.15);
             padding: 5px;
             border-radius: 5px;
         }
-
-        .premium-dropzone .text-primary,
-        [wire\:loading] .text-primary {
-            color: var(--solen-primary) !important;
-        }
     </style>
 
     @can('Files Section')
-        <div class="files-header">
-            <i class="icofont-files-stack me-2"></i>Files
-        </div>
-
         @php
             $showEditFields =
                 ($ghost == 'ghost' && $departmentId == 7) ||
