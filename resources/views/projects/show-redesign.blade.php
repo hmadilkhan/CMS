@@ -1570,7 +1570,7 @@
         }
 
         #project-show-page.project-workspace-redesign .sample-files-column .delete-icon {
-            top: 0.65rem;
+            top: 50%;
             right: 0.65rem;
             padding: 0;
             width: 1.65rem;
@@ -1581,6 +1581,7 @@
             background: rgba(69, 26, 3, 0.08);
             color: var(--workspace-ink-60);
             border-radius: 7px;
+            transform: translateY(-50%);
         }
 
         #project-show-page.project-workspace-redesign .sample-files-column .upload-btn {
