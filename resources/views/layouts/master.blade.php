@@ -17,6 +17,8 @@
     <link rel="stylesheet" href="{{ asset('assets/css/my-task.style.min.css') }}">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.3/css/select2.min.css" rel="stylesheet" />
 
+    @include('layouts.partials.solen-theme')
+
     @livewireStyles
 </head>
 
