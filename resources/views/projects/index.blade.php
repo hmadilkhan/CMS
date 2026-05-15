@@ -131,6 +131,52 @@
             color: #000;
             font-weight: 600;
         }
+
+        .department-tabs-card {
+            background: transparent !important;
+            box-shadow: none !important;
+            padding: 0;
+            overflow: visible;
+        }
+
+        .department-tabs-card::before {
+            display: none;
+        }
+
+        .department-tabs-card .nav-tabs {
+            /* background: var(--solen-cream) !important; */
+            border: 0;
+            gap: 0.5rem;
+            padding: 0.65rem;
+        }
+
+        .department-tabs-card .nav-link {
+            background: var(--solen-cream-strong);
+            color: var(--solen-warm-text) !important;
+            border: 0 !important;
+            border-radius: 999px;
+            font-weight: 700;
+        }
+
+        .department-tabs-card .nav-link:hover {
+            background: var(--solen-primary-soft);
+            color: var(--solen-warm-hover) !important;
+        }
+
+        .department-tabs-card .nav-link.active {
+            background: var(--solen-gradient) !important;
+            color: #ffffff !important;
+        }
+
+        @media (max-width: 767px) {
+            .search-box-wrapper {
+                width: 100%;
+            }
+
+            .project-filter-row {
+                justify-content: stretch;
+            }
+        }
     </style>
     <div class="container-xxxl">
         <div class="row align-items-center">
@@ -139,11 +185,9 @@
                     <div class="lock-icon-wrapper">
                         <i class="icofont-lock"></i>
                     </div>
-                    <div class="d-flex align-items-center mb-3">
-                        <h3 class="fw-bold mb-0 me-3">Projects</h3>
-                        <span class="premium-badge">Active</span>
-                    </div>
-                    <div class="d-flex project-tab flex-wrap">
+                </div>
+                <div class="premium-lock-card department-tabs-card">
+                    <div class="d-flex project-tab flex-wrap justify-content-center">
                         @if (count($departments) > 1)
                             <ul class="nav nav-tabs rounded prtab-set" role="tablist" style="cursor: pointer;">
                                 <li class="nav-item"><a class="nav-link active" data-bs-toggle="tab"

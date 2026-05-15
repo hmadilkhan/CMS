@@ -77,19 +77,28 @@
     }
 
     .department-header {
-        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
-        border-left: 4px solid #2c3e50;
-        border-radius: 8px;
-        padding: 1.25rem 1.5rem;
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        background: transparent;
+        border: 0;
+        border-radius: 12px;
+        padding: 0.6rem 1rem;
+        box-shadow: none;
         margin-bottom: 1.5rem;
     }
 
     .department-header h3 {
-        color: #2c3e50;
+        color: var(--solen-warm-text);
         font-size: 1.5rem;
         margin: 0;
-        letter-spacing: 0.5px;
+        letter-spacing: 0;
+        width: 100%;
+    }
+
+    .department-title-wrap {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.75rem;
+        flex-wrap: wrap;
     }
 
     .premium-filter {
@@ -117,14 +126,15 @@
     }
 
     .count-badge {
-        background: linear-gradient(135deg, #2c3e50 0%, #000000 100%);
-        color: white;
+        background: var(--solen-cream-strong);
+        border: 0;
+        color: var(--solen-warm-text);
         padding: 0.4rem 0.9rem;
         border-radius: 20px;
         font-size: 0.9rem;
         font-weight: 700;
-        margin-left: 0.75rem;
-        box-shadow: 0 2px 8px rgba(44,62,80,0.3);
+        margin-left: 0;
+        box-shadow: none;
         transition: all 0.3s ease;
     }
 
