@@ -160,6 +160,7 @@ Route::middleware('auth')->group(function () {
     Route::post('action-project-acceptance', [App\Http\Controllers\ProjectController::class, 'actionProjectAcceptance'])->name('action.project.acceptance');
     Route::post('toggle-adders-lock', [App\Http\Controllers\ProjectController::class, 'toggleAddersLock'])->name('toggle.adders.lock');
     Route::post('update-followup-status', [App\Http\Controllers\ProjectController::class, 'updateFollowUpStatus'])->name('followup.status.update');
+    Route::get('/projects/{project}/redesign', [App\Http\Controllers\ProjectController::class, 'show'])->name('projects.show-redesign');
     Route::get('/projects/{id}/{ghost?}', [App\Http\Controllers\ProjectController::class, 'show'])->name('projects.show');
 
     // SERVICE TICKETS

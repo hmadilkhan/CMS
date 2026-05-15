@@ -1,6 +1,6 @@
 <style>
     :root {
-        --solen-background: #fffdf6;
+        --solen-background: #ffffff;
         --solen-foreground: #342416;
         --solen-card: #ffffff;
         --solen-muted: #7c6f60;
@@ -11,9 +11,9 @@
         --solen-gold: #ffc18f;
         --solen-warm-text: #78350f;
         --solen-warm-hover: #9a3412;
-        --solen-cream: #fff7ed;
-        --solen-cream-strong: #ffedd5;
-        --solen-secondary: #fff6e5;
+        --solen-cream: #ffffff;
+        --solen-cream-strong: #ffffff;
+        --solen-secondary: #ffffff;
         --solen-gradient: linear-gradient(135deg, var(--solen-gold) 0%, var(--solen-primary) 56%, var(--solen-primary-deep) 100%);
         --solen-gradient-horizontal: linear-gradient(90deg, var(--solen-gold) 0%, var(--solen-primary) 56%, var(--solen-primary-deep) 100%);
         --solen-primary-soft: rgba(240, 122, 36, 0.1);

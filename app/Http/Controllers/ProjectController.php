@@ -203,7 +203,9 @@ class ProjectController extends Controller
         $serviceManagers = \App\Models\User::role('Service Manager')->get();
         $serviceTickets = \App\Models\ServiceTicket::with(['assignedUser'])->where('project_id', $project->id)->orderBy('created_at', 'desc')->get();
 
-        return view("projects.show", [
+        $view = $request->routeIs('projects.show-redesign') ? "projects.show-redesign" : "projects.show";
+
+        return view($view, [
             "project" => $project,
             "task" => $task,
             "backdepartments" => Department::where("id", "<", $task->department_id)->get(),
