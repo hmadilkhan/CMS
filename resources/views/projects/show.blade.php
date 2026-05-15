@@ -31,6 +31,39 @@
             pointer-events: auto;
         }
 
+        #project-show-page .card:not(.modal .card) {
+            background: transparent !important;
+            border: 0 !important;
+            border-radius: 0 !important;
+            box-shadow: none !important;
+            margin-bottom: 18px;
+        }
+
+        #project-show-page .card-body:not(.modal .card-body) {
+            background: transparent !important;
+            padding: 0 !important;
+        }
+
+        #project-show-page .card-header:not(.modal .card-header) {
+            border-radius: 10px !important;
+            margin-bottom: 14px;
+        }
+
+        #project-show-page,
+        #project-show-page .tab-content,
+        #project-show-page .tab-pane,
+        #project-show-page .bg-light,
+        #project-show-page .list-group-item,
+        #project-show-page .dropdown-menu {
+            background-color: #fff7ed !important;
+        }
+
+        #project-show-page .modal .card,
+        #project-show-page .modal .card-body,
+        #project-show-page .modal .card-header {
+            background: revert-layer;
+        }
+
         .chat-app .people-list {
             width: 280px;
             position: absolute;
@@ -295,11 +328,39 @@
             cursor: text;
         }
 
+        #project-show-page #communication .tags-input,
+        #project-show-page #communication .ck.ck-editor__main > .ck-editor__editable,
+        #project-show-page #communication .ck.ck-toolbar,
+        #project-show-page #communication #emailDiv,
+        #project-show-page #communication #emailDiv .card,
+        #project-show-page #communication #emailDiv .card-body,
+        #project-show-page #communication #emailDiv .card-header,
+        #project-show-page #communication #emailDiv .list-group-item,
+        #project-show-page #communication #emailDiv .table,
+        #project-show-page #communication #emailDiv .table td,
+        #project-show-page #communication #emailDiv .table th {
+            background-color: #fff7ed !important;
+            border-color: rgba(240, 122, 36, 0.24) !important;
+            color: #78350f !important;
+        }
+
+        #project-show-page #communication .tags-input {
+            min-height: 44px;
+            padding: 0.45rem 0.75rem;
+            border-radius: 10px;
+            align-items: center;
+        }
+
         .tags-input input {
             border: none;
             outline: none;
             flex-grow: 1;
             min-width: 150px;
+        }
+
+        #project-show-page #communication .tags-input input {
+            background: transparent !important;
+            color: #78350f !important;
         }
 
         .tag {
@@ -310,6 +371,12 @@
             border-radius: 3px;
             display: inline-flex;
             align-items: center;
+        }
+
+        #project-show-page #communication .tag {
+            background: linear-gradient(135deg, #f7c948 0%, #f07a24 48%, #b93f1d 100%) !important;
+            color: #ffffff !important;
+            border-radius: 999px;
         }
 
         .tag i {
@@ -405,6 +472,33 @@
             box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
         }
 
+        .project-primary-tabs,
+        .project-department-tabs {
+            align-items: center;
+            background: transparent !important;
+            border: 0 !important;
+            box-shadow: none !important;
+            gap: 0.55rem;
+        }
+
+        .project-primary-tabs {
+            margin-bottom: 0.5rem !important;
+            padding: 0.75rem !important;
+            border-radius: 14px !important;
+        }
+
+        .project-department-tabs {
+            padding: 0.8rem !important;
+            border-radius: 14px !important;
+        }
+
+        .project-primary-tabs .nav-link,
+        .project-department-tabs .nav-link {
+            border: 0 !important;
+            border-radius: 999px !important;
+            box-shadow: 0 8px 20px rgba(154, 52, 18, 0.08);
+        }
+
         .nav-tabs .nav-link {
             border: none;
             color: #6c757d;
@@ -420,8 +514,204 @@
         }
 
         .nav-tabs .nav-link.active {
-            background: linear-gradient(135deg, #2c3e50 0%, #000000 100%);
+            background: linear-gradient(135deg, #f7c948 0%, #f07a24 48%, #b93f1d 100%);
             color: white;
+        }
+
+        #project-show-page .nav-tabs {
+            background: transparent !important;
+            border: 0 !important;
+        }
+
+        #project-show-page .nav-tabs .nav-item,
+        #project-show-page .nav-tabs .nav-link,
+        #project-show-page .nav-tabs .nav-link:hover,
+        #project-show-page .nav-tabs .nav-link:focus,
+        #project-show-page .nav-tabs .nav-link.active {
+            border: 0 !important;
+            border-color: transparent !important;
+        }
+
+        #project-show-page .nav-tabs .nav-link:hover,
+        #project-show-page .nav-tabs .nav-link:focus {
+            background: rgba(240, 122, 36, 0.1);
+            color: #9a3412;
+        }
+
+        #project-show-page .nav-tabs .nav-link.active {
+            background: linear-gradient(135deg, #f7c948 0%, #f07a24 48%, #b93f1d 100%) !important;
+            color: #ffffff !important;
+        }
+
+        #project-show-page > .tab-content > .tab-pane:not(.active) {
+            display: none !important;
+        }
+
+        #project-show-page > .tab-content > .tab-pane.active {
+            display: block;
+        }
+
+        #project-show-page .project-primary-tabs .nav-link {
+            background: #fff7ed;
+            color: #78350f;
+            min-width: 112px;
+            text-align: center;
+        }
+
+        #project-show-page .project-department-tabs .nav-link {
+            background: #ffedd5;
+            color: #92400e;
+            font-size: 0.88rem;
+            padding: 0.6rem 1.15rem;
+        }
+
+        #project-show-page .project-department-tabs .nav-item.bg-success {
+            background: transparent !important;
+        }
+
+        #project-show-page .project-department-tabs .nav-item.bg-success .nav-link:not(.active) {
+            background: linear-gradient(135deg, #fde68a 0%, #fb923c 100%) !important;
+            color: #7c2d12 !important;
+            box-shadow: inset 0 0 0 1px rgba(194, 65, 12, 0.18), 0 8px 20px rgba(251, 146, 60, 0.16);
+        }
+
+        #project-show-page .project-department-tabs .nav-item.bg-success .nav-link:not(.active)::after {
+            content: "\2713";
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 1rem;
+            height: 1rem;
+            margin-left: 0.45rem;
+            border-radius: 50%;
+            background: rgba(124, 45, 18, 0.14);
+            font-size: 0.72rem;
+            font-weight: 800;
+        }
+
+        #project-show-page .project-primary-tabs .nav-link.active,
+        #project-show-page .project-department-tabs .nav-link.active {
+            box-shadow: 0 10px 22px rgba(240, 122, 36, 0.24);
+            transform: translateY(-1px);
+        }
+
+        .department-detail-heading {
+            margin: 0 auto 1.25rem;
+            text-align: center;
+        }
+
+        .department-detail-heading span {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            max-width: 100%;
+            padding: 0.7rem 1.35rem;
+            border-radius: 999px;
+            background: rgba(255, 247, 237, 0.78);
+            color: #9a3412;
+            font-size: 1.05rem;
+            font-weight: 800;
+            box-shadow: 0 8px 22px rgba(154, 52, 18, 0.08);
+        }
+
+        .project-title-status {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.45rem;
+            border: 0;
+            background: transparent;
+            color: #78350f;
+            font: inherit;
+            font-weight: 800;
+            text-transform: uppercase;
+            padding: 0.35rem 0.8rem;
+            border-radius: 999px;
+            transition: all 0.2s ease;
+        }
+
+        .project-title-status:hover,
+        .project-title-status:focus {
+            background: rgba(240, 122, 36, 0.1);
+            color: #9a3412;
+            outline: none;
+        }
+
+        .project-title-status-menu {
+            border: 1px solid rgba(240, 122, 36, 0.18);
+            background: #fff7ed;
+            box-shadow: 0 16px 35px rgba(120, 53, 15, 0.12);
+        }
+
+        .project-title-status-menu .dropdown-item {
+            color: #78350f;
+            font-weight: 600;
+        }
+
+        .project-title-status-menu .dropdown-item:hover,
+        .project-title-status-menu .dropdown-item.active {
+            background: #ffedd5;
+            color: #9a3412;
+        }
+
+        .project-assignee-control {
+            width: auto;
+            text-align: center;
+        }
+
+        .project-assignee-toggle {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.45rem;
+            border: 0;
+            background: transparent;
+            color: #78350f;
+            padding: 0.35rem 0.8rem;
+            border-radius: 999px;
+            box-shadow: none;
+            transition: all 0.2s ease;
+        }
+
+        .project-assignee-toggle:hover,
+        .project-assignee-toggle:focus {
+            background: rgba(240, 122, 36, 0.1);
+            color: #9a3412;
+            outline: none;
+        }
+
+        .project-assignee-label {
+            font: inherit;
+            font-weight: 800;
+            letter-spacing: 0;
+            text-transform: none;
+            color: inherit;
+        }
+
+        .project-assignee-name {
+            font: inherit;
+            font-weight: 800;
+            line-height: 1.2;
+            color: inherit;
+        }
+
+        .project-assignee-menu {
+            min-width: 260px;
+            max-height: 280px;
+            overflow-y: auto;
+            border: 1px solid rgba(240, 122, 36, 0.18);
+            background: #fff7ed;
+            box-shadow: 0 16px 35px rgba(120, 53, 15, 0.12);
+        }
+
+        .project-assignee-menu .dropdown-item {
+            color: #78350f;
+            font-weight: 600;
+        }
+
+        .project-assignee-menu .dropdown-item:hover,
+        .project-assignee-menu .dropdown-item.active {
+            background: #ffedd5;
+            color: #9a3412;
         }
 
         .btn-dark {
@@ -453,6 +743,50 @@
             transition: all 0.3s;
         }
 
+        #project-show-page .form-control,
+        #project-show-page .form-select,
+        #project-show-page textarea.form-control,
+        #project-show-page .select2-container--default .select2-selection--single,
+        #project-show-page .select2-container--default .select2-selection--multiple {
+            min-height: 44px;
+            background-color: #fff7ed !important;
+            border: 1px solid rgba(240, 122, 36, 0.24) !important;
+            color: #78350f !important;
+            box-shadow: none !important;
+        }
+
+        #project-show-page .form-control:disabled,
+        #project-show-page .form-select:disabled,
+        #project-show-page .form-control[readonly] {
+            background-color: #fff7ed !important;
+            opacity: 1;
+        }
+
+        #project-show-page .select2-container {
+            width: 100% !important;
+        }
+
+        #project-show-page .select2-container--default .select2-selection--single .select2-selection__rendered {
+            line-height: 42px;
+            color: #78350f !important;
+            padding-left: 1rem;
+        }
+
+        #project-show-page .select2-container--default .select2-selection--single .select2-selection__arrow {
+            height: 42px;
+        }
+
+        #project-show-page .select2-dropdown,
+        #project-show-page .select2-results__option {
+            background-color: #fff7ed;
+            color: #78350f;
+        }
+
+        #project-show-page .select2-container--default .select2-results__option--highlighted[aria-selected] {
+            background: linear-gradient(135deg, #f7c948 0%, #f07a24 48%, #b93f1d 100%);
+            color: #ffffff;
+        }
+
         .form-control:focus,
         .form-select:focus {
             border-color: #2c3e50;
@@ -467,6 +801,27 @@
         .table thead {
             background: linear-gradient(135deg, #2c3e50 0%, #000000 100%);
             color: white;
+        }
+
+        #project-show-page > .tab-content .table thead,
+        #project-show-page > .tab-content .table thead th {
+            background: #fff7ed !important;
+            color: #78350f !important;
+            border-color: rgba(240, 122, 36, 0.22) !important;
+        }
+
+        #project-show-page #adderTable thead,
+        #project-show-page #adderTable thead th {
+            background: #fff7ed !important;
+            color: #78350f !important;
+            border-color: rgba(240, 122, 36, 0.22) !important;
+        }
+
+        #project-show-page .account-transactions-table thead,
+        #project-show-page .account-transactions-table thead th {
+            background: #fff7ed !important;
+            color: #78350f !important;
+            border-color: rgba(240, 122, 36, 0.22) !important;
         }
 
         .table tbody tr {
@@ -492,26 +847,27 @@
 
         /* Premium Modal Styles */
         #assign-notes .form-control:focus {
-            border-color: #667eea;
-            box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+            border-color: #f07a24;
+            box-shadow: 0 0 0 0.2rem rgba(240, 122, 36, 0.18);
         }
 
         #assign-notes .btn:hover {
             transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.5);
+            box-shadow: 0 6px 20px rgba(240, 122, 36, 0.35);
         }
 
         #assign-notes .form-check-input:checked {
-            background-color: #667eea;
-            border-color: #667eea;
+            background-color: #78350f;
+            border-color: #78350f;
         }
 
         #assign-notes .form-check-input:focus {
-            border-color: #667eea;
-            box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+            border-color: #f07a24;
+            box-shadow: 0 0 0 0.2rem rgba(240, 122, 36, 0.18);
         }
     </style>
     <link rel="stylesheet" href="https://cdn.ckeditor.com/ckeditor5/42.0.0/ckeditor5.css">
+    <div id="project-show-page">
     <div class="card card-info">
         <div class="card-body">
             <div class="row clearfix">
@@ -523,6 +879,9 @@
                         </div>
                     @endif
                     <div class="card border-0 mb-4 no-bg">
+                        @php
+                            $currentAssignedName = optional($task->employee)->name ?? 'Unassigned';
+                        @endphp
                         <div
                             class="card-header py-3 px-0 d-sm-flex align-items-center me-1 mt-1 w-sm-100  justify-content-between border-bottom">
                             <div class="d-flex">
@@ -534,7 +893,7 @@
                                     @endif
                                 </h6>
                                 @if (auth()->user()->hasAnyRole(['Super Admin', 'Admin', 'Manager']))
-                                    <a class="me-1 mt-1 w-sm-100"><select class="form-select "
+                                    <a class="me-1 mt-1 w-sm-100 d-none"><select class="form-select "
                                             aria-label="Default Select Status" id="employee" name="employee">
                                             <option value="">Select Employee</option>
                                             @foreach ($employees as $employee)
@@ -543,11 +902,37 @@
                                         </select></a>
                                 @endif
                             </div>
-                            <h3 class=" fw-bold flex-fill mb-0 mt-sm-0 text-center fs-10 text-uppercase">
-                                {{ $project->project_name }}
+                            <h3 class="fw-bold flex-fill mb-0 mt-sm-0 text-center fs-10 text-uppercase">
+                                @if (auth()->user()->hasAnyRole(['Super Admin', 'Admin', 'Manager']))
+                                    <div class="dropdown d-inline-block">
+                                        <button class="project-title-status dropdown-toggle" type="button"
+                                            data-bs-toggle="dropdown" aria-expanded="false">
+                                            {{ str_replace('-', ' ', $project->project_name) }}
+                                        </button>
+                                        <ul class="dropdown-menu project-title-status-menu">
+                                            <li>
+                                                <button type="button"
+                                                    class="dropdown-item project-status-option {{ $task->status == 'In-Progress' ? 'active' : '' }}"
+                                                    data-status="In-Progress">In-Progress</button>
+                                            </li>
+                                            <li>
+                                                <button type="button"
+                                                    class="dropdown-item project-status-option {{ $task->status == 'Hold' ? 'active' : '' }}"
+                                                    data-status="Hold">Hold</button>
+                                            </li>
+                                            <li>
+                                                <button type="button"
+                                                    class="dropdown-item project-status-option {{ $task->status == 'Cancelled' ? 'active' : '' }}"
+                                                    data-status="Cancelled">Cancelled</button>
+                                            </li>
+                                        </ul>
+                                    </div>
+                                @else
+                                    {{ str_replace('-', ' ', $project->project_name) }}
+                                @endif
                             </h3>
                             @if (auth()->user()->hasAnyRole(['Super Admin', 'Admin', 'Manager']))
-                                <a class="me-1 mt-1 w-sm-100"><select class="form-select "
+                                <a class="me-1 mt-1 w-sm-100 d-none"><select class="form-select "
                                         aria-label="Default Select Status" id="status" name="status">
                                         <option value="">Select Status</option>
                                         <option {{ $task->status == 'In-Progress' ? 'selected' : '' }} value="In-Progress">
@@ -559,8 +944,8 @@
                                         </option>
                                     </select></a>
                             @endif
-                            <a href="{{ route('projects.index') }}" class="btn btn-dark me-1 mt-1 w-sm-100"
-                                id="openemployee"><i class="icofont-arrow-left me-2 fs-6"></i>Back to List</a>
+                            {{-- <a href="{{ route('projects.index') }}" class="btn btn-dark me-1 mt-1 w-sm-100"
+                                id="openemployee"><i class="icofont-arrow-left me-2 fs-6"></i>Back to List</a> --}}
                         </div>
                     </div>
 
@@ -591,7 +976,7 @@
                         <nav class="navbar navbar-expand-lg ">
                             <div class="container-fluid">
                                 <div class="collapse navbar-collapse">
-                                    <ul class="nav nav-tabs tab-body-header rounded ms-3 prtab-set w-sm-100"
+                                    <ul class="nav nav-tabs project-department-tabs tab-body-header rounded ms-3 prtab-set w-sm-100"
                                         style="overflow: visible !important;">
                                         @foreach ($departments as $department)
                                             @php
@@ -673,34 +1058,30 @@
             </div>
         </div>
     </div>
-    <div class="row clearfix mt-2">
+    <div class="row clearfix mt-2 mb-2">
         <div class="col-md-12">
-            <div class="card">
-                <div class="card-body">
-                    <ul class="nav nav-tabs px-3 border-bottom-0" role="tablist">
-                        <li class="nav-item"><a class="nav-link active" data-bs-toggle="tab" href="#default"
-                                role="tab">Project</a></li>
-                        <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#customer"
-                                role="tab">Customer</a></li>
-                        @can('View Financial Details')
-                            <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#financial"
-                                    role="tab">Financial</a></li>
-                        @endcan
-                        @can('View Tickets')
-                            <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#tickets"
-                                    role="tab">Tickets</a></li>
-                        @endcan
-                        <li class="nav-item"><a
-                                class="nav-link {{ $project->viewed_emails_count > 0 ? 'blink-dot' : '' }}"
-                                data-bs-toggle="tab" href="#communication" role="tab">Communication</a></li>
-                        @can('Project History')
-                            <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#history"
-                                    role="tab">Project
-                                    History</a></li>
-                        @endcan
-                    </ul>
-                </div>
-            </div>
+            <ul class="nav nav-tabs project-primary-tabs px-3 border-bottom-0 justify-content-center flex-wrap" role="tablist">
+                <li class="nav-item"><a class="nav-link active" data-bs-toggle="tab" href="#default"
+                        role="tab">Project</a></li>
+                <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#customer"
+                        role="tab">Customer</a></li>
+                @can('View Financial Details')
+                    <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#financial"
+                            role="tab">Financial</a></li>
+                @endcan
+                @can('View Tickets')
+                    <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#tickets"
+                            role="tab">Tickets</a></li>
+                @endcan
+                <li class="nav-item"><a
+                        class="nav-link {{ $project->viewed_emails_count > 0 ? 'blink-dot' : '' }}"
+                        data-bs-toggle="tab" href="#communication" role="tab">Communication</a></li>
+                @can('Project History')
+                    <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#history"
+                            role="tab">Project
+                            History</a></li>
+                @endcan
+            </ul>
         </div>
     </div>
 
@@ -708,101 +1089,101 @@
     <div class="tab-content">
         <div class="tab-pane fade show active" id="default" role="tabpanel">
 
-            <ul class="nav nav-tabs px-3 border-bottom-0" role="tablist">
-                <li class="nav-item"><a class="nav-link active" data-bs-toggle="tab" href="#actionmenu"
-                        role="tab">Action Menu</a></li>
-                @can('Department Tools')
-                    <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#departmenttools"
-                            role="tab">Department Tools</a></li>
-                @endcan
-            </ul>
-            <div class="tab-content">
-                <div class="tab-pane fade show active" id="actionmenu" role="tabpanel">
-                    <div class="card card-info mt-2">
-                        <div class="card-body">
-                            <div class="row clearfix">
-                                <div class="col-md-12">
+            <div class="card card-info mt-2">
+                <div class="card-body">
+                    <div class="row clearfix">
+                                {{-- <div class="col-md-12">
                                     <div class="card border-0 mb-4 no-bg">
                                         <div
                                             class="card-header py-3 px-0 d-sm-flex align-items-center bg-light text-center  justify-content-between border-bottom">
                                             <h3 class=" fw-bold flex-fill mb-0 mt-sm-0">Project Notes </h3>
                                         </div>
                                     </div>
-                                </div>
-                                @foreach ($departments as $department)
-                                    <div class="col-md-12">
-                                        <div class="card border-0 mb-4 bg-light text-center">
-                                            <div
-                                                class="card-header py-3 px-0 d-sm-flex align-items-center  justify-content-between border-bottom border-top">
-                                                <h3 class=" fw-bold flex-fill mb-0 mt-sm-0 px-2">{{ $department->name }}
-                                                </h3>
-                                            </div>
-                                        </div>
-                                    </div>
+                                </div> --}}
+                                <div class="col-md-12">
                                     @php
-                                        $filtered_collection = $project->departmentnotes
-                                            ->filter(function ($item) use ($department) {
-                                                return $item->department_id == $department->id;
-                                            })
-                                            ->values();
-
-                                        $files = $project->files
-                                            ->filter(function ($item) use ($department) {
-                                                return $item->department_id == $department->id;
-                                            })
-                                            ->values();
-
+                                        $activeDepartmentId = $departments->contains('id', $project->department_id)
+                                            ? $project->department_id
+                                            : optional($departments->first())->id;
                                     @endphp
+                                    <ul class="nav nav-tabs project-department-tabs tab-body-header rounded justify-content-center mb-4"
+                                        id="departmentDetailTabs" role="tablist">
+                                        @foreach ($departments as $department)
+                                            @php
+                                                $isCurrentDepartment = $department->id == $activeDepartmentId;
+                                            @endphp
+                                            <li class="nav-item" role="presentation">
+                                                <button class="nav-link {{ $isCurrentDepartment ? 'active' : '' }}"
+                                                    id="department-detail-tab-{{ $department->id }}"
+                                                    data-bs-toggle="tab"
+                                                    data-bs-target="#department-detail-{{ $department->id }}"
+                                                    type="button"
+                                                    role="tab"
+                                                    aria-controls="department-detail-{{ $department->id }}"
+                                                    aria-selected="{{ $isCurrentDepartment ? 'true' : 'false' }}">
+                                                    {{ $department->name }}
+                                                </button>
+                                            </li>
+                                        @endforeach
+                                    </ul>
 
-                                    <div class="col-sm-6 mb-3">
-                                        @livewire('project.notes-section', ['projectId' => $project->id, 'taskId' => $task->id, 'departmentId' => $department->id, 'projectDepartmentId' => $project->department_id, 'ghost' => $ghost,'viewSource' => 'crm'], key($project->id))
-                                        @livewire('project.project-fields', ['project' => $project, 'taskId' => $task->id, 'departmentId' => $department->id, 'projectDepartmentId' => $project->department_id, 'ghost' => $ghost,'viewSource' => 'crm'], key($project->id))
-                                    </div>
+                                    <div class="tab-content" id="departmentDetailTabsContent">
+                                        @foreach ($departments as $department)
+                                            @php
+                                                $isCurrentDepartment = $department->id == $activeDepartmentId;
+                                            @endphp
+                                            <div class="tab-pane fade {{ $isCurrentDepartment ? 'show active' : '' }}"
+                                                id="department-detail-{{ $department->id }}"
+                                                role="tabpanel"
+                                                aria-labelledby="department-detail-tab-{{ $department->id }}">
+                                                {{-- <div class="department-detail-heading">
+                                                    <span>{{ $department->name }}</span>
+                                                </div> --}}
 
-                                    <div class="col-sm-6 mb-3">
-                                        @livewire('project.enhanced-files-section', ['projectId' => $project->id, 'taskId' => $task->id, 'departmentId' => $department->id, 'projectDepartmentId' => $project->department_id, 'ghost' => $ghost,'viewSource' => 'crm'], key('enhanced-' . $department->id))
-                                    </div>
-                                @endforeach
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div class="tab-pane fade" id="departmenttools" role="tabpanel">
-                    <div class=" mt-2">
-                        <div class="card-body">
-                            @can('Department Tools')
-                                <div class="col-md-4">
-                                    <div class="card">
-                                        <div class="card-body">
-                                            <div class="col-sm-12 py-3 px-5">
-                                                <div class="card-header px-0 d-sm-flex align-items-center   border-bottom">
-                                                    <h5 class=" fw-bold flex-fill mb-0 mt-sm-0">Department Tools</h5>
+                                                <div class="row clearfix">
+                                                    <div class="col-sm-6 mb-3">
+                                                        @livewire('project.notes-section', ['projectId' => $project->id, 'taskId' => $task->id, 'departmentId' => $department->id, 'projectDepartmentId' => $project->department_id, 'ghost' => $ghost,'viewSource' => 'crm'], key('notes-' . $department->id))
+                                                        @livewire('project.project-fields', ['project' => $project, 'taskId' => $task->id, 'departmentId' => $department->id, 'projectDepartmentId' => $project->department_id, 'ghost' => $ghost,'viewSource' => 'crm'], key('fields-' . $department->id))
+                                                    </div>
+
+                                                    <div class="col-sm-6 mb-3">
+                                                        @livewire('project.enhanced-files-section', ['projectId' => $project->id, 'taskId' => $task->id, 'departmentId' => $department->id, 'projectDepartmentId' => $project->department_id, 'ghost' => $ghost,'viewSource' => 'crm'], key('enhanced-' . $department->id))
+                                                        @if ($isCurrentDepartment)
+                                                            @can('Department Tools')
+                                                                <div class="card border-0 mt-4">
+                                                                    <div class="card-header px-3 py-3 d-flex align-items-center border-bottom">
+                                                                        <h5 class="fw-bold flex-fill mb-0">
+                                                                            <i class="icofont-tools-alt-2 me-2"></i>Department Tools
+                                                                        </h5>
+                                                                    </div>
+                                                                    <div class="card-body">
+                                                                        @if (!empty($tools) && count($tools))
+                                                                            <ul class="list-group list-group-custom">
+                                                                                @foreach ($tools as $tool)
+                                                                                    <li class="list-group-item light-primary-bg">
+                                                                                        <a target="_blank"
+                                                                                            href="{{ asset('storage/tools/' . $tool->file) }}"
+                                                                                            class="ml-3">{{ $tool->name }}</a>
+                                                                                    </li>
+                                                                                @endforeach
+                                                                            </ul>
+                                                                        @else
+                                                                            <div>No Tools found.</div>
+                                                                        @endif
+                                                                    </div>
+                                                                </div>
+                                                            @endcan
+                                                        @endif
+                                                    </div>
                                                 </div>
-                                                <div class="row flex flex-column g-3 mb-3">
-                                                    <ul class="list-group list-group-custom">
-                                                        @if (!empty($tools))
-                                                            @foreach ($tools as $tool)
-                                                                <li class="list-group-item light-primary-bg"><a
-                                                                        target="_blank"
-                                                                        href="{{ asset('storage/tools/' . $tool->file) }}"
-                                                                        class="ml-3">{{ $tool->name }}</a></li>
-                                                            @endforeach
-                                                        @else
-                                                            <div>No Tools found.</div>
-                                                        @endcan
-                                                </ul>
                                             </div>
-                                        </div>
+                                        @endforeach
                                     </div>
                                 </div>
-                            </div>
-                        @endcan
                     </div>
-                </div>
             </div>
         </div>
     </div>
-
     <div class="tab-pane fade" id="customer" role="tabpanel">
         <div class="card mt-1">
             <div class="card-header">
@@ -1108,7 +1489,7 @@
                             @endif
                             <div class="row g-4 mb-3" id="addersForm"
                                 style="{{ $isAddersLocked ? 'pointer-events: none; opacity: 0.6;' : '' }}">
-                                <div class="col-sm-3 mt-5">
+                                <div class="col-sm-2 mt-5">
                                     <div class="col-sm-12 mb-1">
                                         <label for="adders" class="form-label">Adders</label><br />
                                         <select style="width: 100%;" class="form-select select2"
@@ -1123,7 +1504,7 @@
                                         </select>
                                     </div>
                                 </div>
-                                <div class="col-sm-3 mt-5">
+                                <div class="col-sm-2 mt-5">
                                     <label for="uom" class="form-label">UOM</label><br />
                                     <select style="width: 100%;" class="form-control select2"
                                         aria-label="Default select UOM" id="uom"
@@ -1297,7 +1678,7 @@
                                     @foreach ($departments as $department)
                                         <div class="col-md-12">
                                             <div class="card border-0 mb-4 no-bg">
-                                                <div style="background-color: #E5E4E2;"
+                                                <div style="background-color: #fff7ed;"
                                                     class="card-header py-3 px-0 d-sm-flex align-items-center   justify-content-between border-bottom border-top">
                                                     <h3 class=" fw-bold flex-fill mb-0 mt-sm-0 px-2">
                                                         {{ $department->name }}
@@ -1728,7 +2109,7 @@
         <div class="modal-content"
             style="border-radius: 20px; border: none; box-shadow: 0 10px 40px rgba(0,0,0,0.2);">
             <div class="modal-header"
-                style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 20px 20px 0 0; padding: 1.5rem; border: none;">
+                style="background: linear-gradient(135deg, #f7c948 0%, #f07a24 48%, #b93f1d 100%); border-radius: 20px 20px 0 0; padding: 1.5rem; border: none;">
                 <h5 class="modal-title fw-bold text-white" id="createprojectlLabel">
                     <i class="icofont-ui-note me-2"></i>Assign Notes
                 </h5>
@@ -1743,12 +2124,12 @@
                 <div class="modal-body" style="padding: 2rem;">
                     <div class="row">
                         <div class="col-sm-12 mb-3">
-                            <label for="assignnotes" class="form-label fw-bold" style="color: #667eea;">
+                            <label for="assignnotes" class="form-label fw-bold" style="color: #78350f;">
                                 <i class="icofont-pencil-alt-2 me-2"></i>Assign Notes
                             </label>
                             <div class="position-relative">
                                 <textarea class="form-control" id="assignnotes" name="assignnotes" rows="4"
-                                    style="border-radius: 12px; border: 2px solid #e9ecef; padding: 1rem; transition: all 0.3s;"
+                                    style="border-radius: 12px; border: 2px solid rgba(240, 122, 36, 0.22); padding: 1rem; transition: all 0.3s; background-color: #fff7ed; color: #78350f;"
                                     placeholder="Enter your notes here..."></textarea>
                             </div>
                         </div>
@@ -1759,24 +2140,24 @@
                                     name="follow_up"
                                     style="width: 20px; height: 20px; cursor: pointer; border-radius: 6px;">
                                 <label class="form-check-label fw-bold" for="followUpCheckbox"
-                                    style="color: #667eea; margin-left: 0.5rem; cursor: pointer;">
+                                    style="color: #78350f; margin-left: 0.5rem; cursor: pointer;">
                                     <i class="icofont-calendar me-2"></i>Set Follow-up Date
                                 </label>
                             </div>
                         </div>
 
                         <div class="col-sm-12 mb-3" id="followUpDateContainer" style="display: none;">
-                            <label for="followUpDate" class="form-label fw-bold" style="color: #667eea;">
+                            <label for="followUpDate" class="form-label fw-bold" style="color: #78350f;">
                                 <i class="icofont-clock-time me-2"></i>Follow-up Date
                             </label>
                             <input type="date" class="form-control" id="followUpDate" name="follow_up_date"
-                                style="border-radius: 12px; border: 2px solid #e9ecef; padding: 0.75rem; transition: all 0.3s;">
+                                style="border-radius: 12px; border: 2px solid rgba(240, 122, 36, 0.22); padding: 0.75rem; transition: all 0.3s; background-color: #fff7ed; color: #78350f;">
                         </div>
 
 
                         <div class="col-sm-12 mb-3">
                             <button type="submit" class="btn w-100"
-                                style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; padding: 0.75rem 1.5rem; border-radius: 12px; font-weight: 600; transition: all 0.3s; box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);">
+                                style="background: linear-gradient(135deg, #f7c948 0%, #f07a24 48%, #b93f1d 100%); color: white; border: none; padding: 0.75rem 1.5rem; border-radius: 12px; font-weight: 600; transition: all 0.3s; box-shadow: 0 4px 15px rgba(240, 122, 36, 0.35);">
                                 <i class="icofont-save me-2"></i>Save Assignment
                             </button>
                         </div>
@@ -1891,6 +2272,32 @@
         }
     };
 </script> --}}
+    @if (auth()->user()->hasAnyRole(['Super Admin', 'Admin', 'Manager']))
+        <div class="d-flex justify-content-center mt-4 mb-3">
+            <div class="dropdown project-assignee-control">
+                <button class="project-assignee-toggle dropdown-toggle" type="button"
+                    data-bs-toggle="dropdown" aria-expanded="false">
+                    <span class="project-assignee-label">Currently Assigned To :</span>
+                    <span class="project-assignee-name" id="currentAssignedEmployeeName">
+                        {{ $currentAssignedName }}
+                    </span>
+                </button>
+                <ul class="dropdown-menu project-assignee-menu">
+                    @foreach ($employees as $employee)
+                        <li>
+                            <button type="button"
+                                class="dropdown-item project-employee-option {{ $task->employee_id == $employee->id ? 'active' : '' }}"
+                                data-employee-id="{{ $employee->id }}"
+                                data-employee-name="{{ $employee->name }}">
+                                {{ $employee->name }}
+                            </button>
+                        </li>
+                    @endforeach
+                </ul>
+            </div>
+        </div>
+    @endif
+    </div>
 @endsection
 @section('scripts')
 <script>
@@ -2071,15 +2478,44 @@
             },
             success: function(response) {
                 if (response.status == 200) {
-                    alert("Status Updated");
+                    Swal.fire({
+                        title: 'Status Updated',
+                        text: 'Project status has been updated successfully.',
+                        icon: 'success',
+                        confirmButtonColor: '#f07a24'
+                    });
                 } else {
-                    alert("Some error occurred!");
+                    Swal.fire({
+                        title: 'Update Failed',
+                        text: 'Some error occurred while updating the status.',
+                        icon: 'error',
+                        confirmButtonColor: '#f07a24'
+                    });
                 }
             },
             error: function(error) {
                 console.log(error);
             }
         })
+    });
+
+    $(".project-status-option").click(function() {
+        let selectedStatus = $(this).data("status");
+        $("#status").val(selectedStatus).trigger("change");
+        $(".project-status-option").removeClass("active");
+        $(this).addClass("active");
+    });
+
+    let pendingAssignedEmployeeId = '';
+    let pendingAssignedEmployeeName = '';
+    let currentProjectTaskId = "{{ $task->id }}";
+    let currentProjectSubDepartmentId = "{{ $task->sub_department_id }}";
+
+    $(".project-employee-option").click(function() {
+        let selectedEmployeeId = $(this).data("employee-id");
+        pendingAssignedEmployeeId = selectedEmployeeId;
+        pendingAssignedEmployeeName = $(this).data("employee-name");
+        $("#employee").val(selectedEmployeeId).trigger("change");
     });
 
     $("#employee").change(function() {
@@ -2107,8 +2543,8 @@
             _token: "{{ csrf_token() }}",
             employee: $("#employee").val(),
             project_id: "{{ $project->id }}",
-            task_id: "{{ $task->id }}",
-            sub_department_id: "{{ $task->sub_department_id }}",
+            task_id: currentProjectTaskId,
+            sub_department_id: currentProjectSubDepartmentId,
             department_id: "{{ $project->department_id }}",
             notes: $("#assignnotes").val(),
             follow_up: $("#followUpCheckbox").is(':checked') ? 1 : 0,
@@ -2133,6 +2569,17 @@
                     $("#followUpCheckbox").prop('checked', false);
                     $("#followUpDate").val('');
                     $("#followUpDateContainer").hide();
+                    if (pendingAssignedEmployeeName) {
+                        $("#currentAssignedEmployeeName").text(pendingAssignedEmployeeName);
+                        $(".project-employee-option").removeClass("active");
+                        $('.project-employee-option[data-employee-id="' + pendingAssignedEmployeeId + '"]').addClass("active");
+                    }
+                    if (response.task_id) {
+                        currentProjectTaskId = response.task_id;
+                    }
+                    if (response.sub_department_id) {
+                        currentProjectSubDepartmentId = response.sub_department_id;
+                    }
                     $("#employee").val('').change();
                 } else {
                     Swal.fire({

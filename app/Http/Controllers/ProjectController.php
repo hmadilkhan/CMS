@@ -185,7 +185,11 @@ class ProjectController extends Controller
                 $alertClass = "warning";
             }
         }
-        $task = Task::whereIn("status", ["In-Progress", "Hold", "Cancelled"])->where("project_id", $project->id)->first();
+        $task = Task::with("employee")
+            ->whereIn("status", ["In-Progress", "Hold", "Cancelled"])
+            ->where("project_id", $project->id)
+            ->latest("id")
+            ->first();
         $departments = Department::whereIn("id", Task::where("project_id", $project->id)->whereNotIn("department_id", Department::where("id", ">", $task->department_id)->take(1)->pluck("id"))->where("id", "!=", 9)->groupBy("department_id")->orderBy("department_id")->pluck("department_id"))->get();
         $fwdDepartments =  array_merge($departments->toArray(), Department::where("id", ">", $task->department_id)->take(1)->get()->toArray());
         $fwdIds = collect($fwdDepartments)->pluck("id");
@@ -653,25 +657,36 @@ class ProjectController extends Controller
 
         DB::beginTransaction();
         try {
+            $activeStatuses = ["In-Progress", "Hold", "Cancelled"];
+            $currentTask = Task::where("id", $request->task_id)
+                ->where("project_id", $request->project_id)
+                ->first();
+
+            if (!$currentTask || !in_array($currentTask->status, $activeStatuses)) {
+                $currentTask = Task::where("project_id", $request->project_id)
+                    ->whereIn("status", $activeStatuses)
+                    ->latest("id")
+                    ->firstOrFail();
+            }
+
             if ($request->employee != "") {
-                Task::where("id", $request->task_id)->update(["status" => "Completed", "notes" => "Task Assigned to Employee"]);
-                Task::create([
+                Task::where("id", $currentTask->id)->update(["status" => "Completed", "notes" => "Task Assigned to Employee"]);
+                $newTask = Task::create([
                     "project_id" => $request->project_id,
                     "employee_id" => $request->employee,
-                    "department_id" => $request->department_id,
-                    "sub_department_id" => $request->sub_department_id,
+                    "department_id" => $currentTask->department_id,
+                    "sub_department_id" => $currentTask->sub_department_id,
                     "assign_to_notes" => $request->notes,
                     "status" => "In-Progress",
                     "user_id" => auth()->user()->id,
                 ]);
             } else {
-                Task::where("id", $request->task_id)->update(["status" => "Completed", "notes" => "New assign to notes added"]);
-                $task = Task::findOrFail($request->task_id);
-                Task::create([
-                    "project_id" => $task->project_id,
-                    "employee_id" => $task->employee_id,
-                    "department_id" => $task->department_id,
-                    "sub_department_id" => $task->sub_department_id,
+                Task::where("id", $currentTask->id)->update(["status" => "Completed", "notes" => "New assign to notes added"]);
+                $newTask = Task::create([
+                    "project_id" => $currentTask->project_id,
+                    "employee_id" => $currentTask->employee_id,
+                    "department_id" => $currentTask->department_id,
+                    "sub_department_id" => $currentTask->sub_department_id,
                     "assign_to_notes" => $request->notes,
                     "status" => "In-Progress",
                     "user_id" => auth()->user()->id,
@@ -693,10 +708,10 @@ class ProjectController extends Controller
                 // Create new follow-up
                 ProjectFollowUp::create([
                     'project_id' => $request->project_id,
-                    'employee_id' => $request->employee ?: Task::findOrFail($request->task_id)->employee_id,
+                    'employee_id' => $request->employee ?: $currentTask->employee_id,
                     'created_by' => auth()->id(),
-                    'department_id' => $request->department_id,
-                    'sub_department_id' => $request->sub_department_id,
+                    'department_id' => $currentTask->department_id,
+                    'sub_department_id' => $currentTask->sub_department_id,
                     'follow_up_date' => $request->follow_up_date,
                     'notes' => $request->notes ?? 'Follow-up scheduled',
                     'status' => 'Pending'
@@ -704,7 +719,13 @@ class ProjectController extends Controller
             }
             
             DB::commit();
-            return response()->json(["status" => 200, "message" => "Employee assigned successfully"]);
+            return response()->json([
+                "status" => 200,
+                "message" => "Employee assigned successfully",
+                "task_id" => $newTask->id,
+                "department_id" => $newTask->department_id,
+                "sub_department_id" => $newTask->sub_department_id,
+            ]);
             // return redirect()->route("projects.show", $request->project_id);
         } catch (\Throwable $th) {
             DB::rollBack();
@@ -762,7 +783,13 @@ class ProjectController extends Controller
             $query->whereIn("department_id", EmployeeDepartment::whereIn("employee_id", Employee::where("user_id", auth()->user()->id)->pluck("id"))->pluck("department_id"));
             $subdepartmentsQuery->whereIn("department_id", EmployeeDepartment::whereIn("employee_id", Employee::where("user_id", auth()->user()->id)->pluck("id"))->pluck("department_id"));
         } else if (auth()->user()->getRoleNames()[0] == "Employee") {
-            $query->whereIn("id", Task::whereIn("employee_id", Employee::where("user_id", auth()->user()->id)->pluck("id"))->whereIn("status", ["In-Progress", "Hold", "Cancelled"])->pluck("project_id"));
+            $latestActiveTaskIds = Task::selectRaw("MAX(id)")
+                ->whereIn("status", ["In-Progress", "Hold", "Cancelled"])
+                ->groupBy("project_id");
+
+            $query->whereIn("id", Task::whereIn("id", $latestActiveTaskIds)
+                ->whereIn("employee_id", Employee::where("user_id", auth()->user()->id)->pluck("id"))
+                ->pluck("project_id"));
             $subdepartmentsQuery->whereIn("department_id", EmployeeDepartment::whereIn("employee_id", Employee::where("user_id", auth()->user()->id)->pluck("id"))->pluck("department_id"));
         }
         if ($request->id != "" && $request->id != "all") {
@@ -917,7 +944,7 @@ class ProjectController extends Controller
     {
         $request->project_id = Crypt::decrypt($request->project_id);
         $project = Project::where('code', $request->project_id)->first();
-        $task = Task::whereIn("status", ["In-Progress", "Hold"])->where("project_id", $project->id)->first();
+        $task = Task::whereIn("status", ["In-Progress", "Hold"])->where("project_id", $project->id)->latest("id")->first();
         $departments = Department::whereIn("id", Task::where("project_id", $project->id)->whereNotIn("department_id", Department::where("id", ">", $task->department_id)->take(1)->pluck("id"))->groupBy("department_id")->orderBy("department_id")->pluck("department_id"))->get();
         $fwdDepartments =  array_merge($departments->toArray(), Department::where("id", ">", $task->department_id)->take(1)->get()->toArray());
         $departments = Department::whereIn("id", Task::where("project_id", $project->id)->whereNotIn("department_id", Department::where("id", ">", $task->department_id)->take(1)->pluck("id"))->where("id", "!=", 9)->groupBy("department_id")->orderBy("department_id")->pluck("department_id"))->get();

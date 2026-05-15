@@ -23,7 +23,7 @@
     }
 
     .project-header {
-        background: linear-gradient(135deg, #2c3e50 0%, #000000 100%);
+        background: linear-gradient(135deg, #f7c948 0%, #f07a24 48%, #b93f1d 100%);
         padding: 1rem;
         color: white;
     }
@@ -64,7 +64,7 @@
 
     .progress-modern .progress-bar {
         border-radius: 10px;
-        background: linear-gradient(90deg, #2c3e50 0%, #000000 100%);
+        background: linear-gradient(90deg, #f7c948 0%, #f07a24 48%, #b93f1d 100%);
     }
 
     .notes-section {
@@ -77,55 +77,75 @@
     }
 
     .department-header {
-        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
-        border-left: 4px solid #2c3e50;
-        border-radius: 8px;
+        background: linear-gradient(135deg, #f7c948 0%, #f07a24 48%, #b93f1d 100%);
+        border: 0;
+        border-radius: 12px;
         padding: 1.25rem 1.5rem;
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        box-shadow: 0 18px 44px -28px rgba(151, 76, 18, 0.6);
         margin-bottom: 1.5rem;
+        text-align: center;
     }
 
     .department-header h3 {
-        color: #2c3e50;
+        color: #fff;
         font-size: 1.5rem;
         margin: 0;
         letter-spacing: 0.5px;
+        width: 100%;
+    }
+
+    .department-title-wrap {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.75rem;
+        flex-wrap: wrap;
     }
 
     .premium-filter {
         background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
-        border: 2px solid #e9ecef;
+        border: 2px solid rgba(240, 122, 36, 0.22);
         border-radius: 8px;
         padding: 0.5rem 1rem;
         font-weight: 600;
-        color: #2c3e50;
+        color: #be4d18;
         box-shadow: 0 2px 8px rgba(0,0,0,0.08);
         transition: all 0.3s ease;
         cursor: pointer;
     }
 
     .premium-filter:hover {
-        border-color: #2c3e50;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        border-color: #f07a24;
+        box-shadow: 0 4px 12px rgba(151, 76, 18, 0.18);
         transform: translateY(-1px);
     }
 
     .premium-filter:focus {
-        border-color: #2c3e50;
-        box-shadow: 0 0 0 0.2rem rgba(44,62,80,0.15);
+        border-color: #f07a24;
+        box-shadow: 0 0 0 0.2rem rgba(240, 122, 36, 0.16);
         outline: none;
     }
 
     .count-badge {
-        background: linear-gradient(135deg, #2c3e50 0%, #000000 100%);
-        color: white;
+        background: rgba(255, 255, 255, 0.22);
+        border: 1px solid rgba(255, 255, 255, 0.34);
+        color: #fff;
         padding: 0.4rem 0.9rem;
         border-radius: 20px;
         font-size: 0.9rem;
         font-weight: 700;
-        margin-left: 0.75rem;
-        box-shadow: 0 2px 8px rgba(44,62,80,0.3);
+        margin-left: 0;
+        box-shadow: 0 10px 24px -18px rgba(52, 36, 22, 0.6);
         transition: all 0.3s ease;
+    }
+
+    .count-badge::after {
+        content: " projects";
+        font-size: 0.72rem;
+        font-weight: 600;
+        opacity: 0.86;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
     }
 
     .no-results-message {
@@ -145,7 +165,7 @@
     }
 
     .no-results-message h5 {
-        color: #2c3e50;
+        color: #be4d18;
         font-weight: 600;
         margin-bottom: 0.5rem;
     }
@@ -166,6 +186,18 @@
         color: inherit;
         text-decoration: none;
     }
+
+    @media (max-width: 991px) {
+        .department-header {
+            padding: 1rem;
+        }
+
+        .department-header .premium-filter {
+            position: static !important;
+            width: 100% !important;
+            margin: 1rem 0 0 !important;
+        }
+    }
 </style>
 @if ($value == 'all')
     @foreach ($departments as $department)
@@ -179,8 +211,10 @@
         <div class="container-fluid py-2">
             <div class="department-header">
                 <h3 class="fw-bold">
-                    <i class="icofont-tasks me-2"></i>{{ $department->name }}
+                    <span class="department-title-wrap">
+                    <span><i class="icofont-tasks me-2"></i>{{ $department->name }}</span>
                     <span class="count-badge">{{ count($collections) }}</span>
+                    </span>
                 </h3>
             </div>
             <div class="d-flex flex-row flex-nowrap overflow-auto" style="padding: 0.5rem 0; margin-top: -0.5rem;">
@@ -214,7 +248,7 @@
                                                 alt="" class="rounded-circle flex-shrink-0"
                                                 style="width: 45px; height: 45px; object-fit: cover; border: 3px solid rgba(255,255,255,0.3);">
                                             <h5 class="mb-0 fw-bold ms-3 text-white text-truncate"
-                                                style="max-width: 150px;">{{ $project->project_name }}</h5>
+                                                style="max-width: 150px;">{{ str_replace('-', ' ', $project->project_name) }}</h5>
                                         </div>
                                         <div class="d-flex align-items-center ms-2 flex-shrink-0">
                                             <span class="days-badge">
@@ -308,25 +342,27 @@
                 ->values();
         @endphp
         <div class="container-fluid py-2">
-            <div class="department-header d-flex justify-content-between align-items-center">
+            <div class="department-header d-flex justify-content-center align-items-center position-relative">
                 <h3 class="fw-bold mb-0">
-                    <i class="icofont-tasks me-2"></i>{{ $subdepartment->name }}
+                    <span class="department-title-wrap">
+                    <span><i class="icofont-tasks me-2"></i>{{ $subdepartment->name }}</span>
                     <span class="count-badge" id="count-{{ $subdepartment->id }}">{{ count($collections) }}</span>
+                    </span>
                 </h3>
                 @if (in_array($subdepartment->id, [9,10]))
-                    <select class="premium-filter" style="width: 220px;" onchange="filterPermitting(this.value, {{ $subdepartment->id }})">
+                    <select class="premium-filter position-absolute end-0 me-4" style="width: 220px;" onchange="filterPermitting(this.value, {{ $subdepartment->id }})">
                         <option value="all">🔍 All Projects {{$subdepartment->id}}</option>
                         <option value="submitted">✅ Submitted</option>
                         <option value="not_submitted">⏳ Not Submitted</option>
                     </select>
                 @elseif (in_array($subdepartment->id, [18]))
-                    <select class="premium-filter" style="width: 220px;" onchange="filterPTO(this.value, {{ $subdepartment->id }})">
+                    <select class="premium-filter position-absolute end-0 me-4" style="width: 220px;" onchange="filterPTO(this.value, {{ $subdepartment->id }})">
                         <option value="all">🔍 All Projects</option>
                         <option value="submitted">✅ Submitted</option>
                         <option value="not_submitted">⏳ Not Submitted</option>
                     </select>
                 @elseif (in_array($subdepartment->department_id, [5]))
-                    <select class="premium-filter" style="width: 220px;" onchange="filterFinanceOption(this.value, {{ $subdepartment->id }})">
+                    <select class="premium-filter position-absolute end-0 me-4" style="width: 220px;" onchange="filterFinanceOption(this.value, {{ $subdepartment->id }})">
                         <option value="all">🔍 All Options</option>
                         @foreach ($financeOptions as $option)
                             <option value="{{ $option->id }}">{{ $option->name }}</option>
@@ -374,7 +410,7 @@
                                                     alt="" class="rounded-circle flex-shrink-0"
                                                     style="width: 45px; height: 45px; object-fit: cover; border: 3px solid rgba(255,255,255,0.3);">
                                                 <h5 class="mb-0 fw-bold ms-3 text-white text-truncate"
-                                                    style="max-width: 150px;">{{ $project->project_name }}</h5>
+                                                    style="max-width: 150px;">{{ str_replace('-', ' ', $project->project_name) }}</h5>
                                             </div>
                                             <div class="d-flex align-items-center ms-2 flex-shrink-0">
                                                 <span class="days-badge">
@@ -479,7 +515,7 @@
                                                         alt="" class="rounded-circle flex-shrink-0"
                                                         style="width: 45px; height: 45px; object-fit: cover; border: 3px solid rgba(255,255,255,0.3);">
                                                     <h5 class="mb-0 fw-bold ms-3 text-white text-truncate"
-                                                        style="max-width: 150px;">{{ $project->project_name }}</h5>
+                                                        style="max-width: 150px;">{{ str_replace('-', ' ', $project->project_name) }}</h5>
                                                 </div>
                                                 <div class="d-flex align-items-center ms-2 flex-shrink-0">
                                                     <span class="days-badge">

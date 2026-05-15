@@ -29,7 +29,13 @@ class ProjectService
                 $query->where("sales_partner_id", auth()->user()->sales_partner_id);
             });
         } else if (auth()->user()->getRoleNames()[0] == "Employee") {
-            $query->whereIn("id", Task::whereIn("employee_id", Employee::where("user_id", auth()->user()->id)->pluck("id"))->whereIn("status",["In-Progress","Hold","Cancelled"])->pluck("project_id"));
+            $latestActiveTaskIds = Task::selectRaw("MAX(id)")
+                ->whereIn("status", ["In-Progress", "Hold", "Cancelled"])
+                ->groupBy("project_id");
+
+            $query->whereIn("id", Task::whereIn("id", $latestActiveTaskIds)
+                ->whereIn("employee_id", Employee::where("user_id", auth()->user()->id)->pluck("id"))
+                ->pluck("project_id"));
         }
         if ($request->id != "" && $request->id != "all") {
             $query->where("department_id", $request->id);

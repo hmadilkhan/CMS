@@ -1,20 +1,20 @@
 <div>
     <style>
         .notes-section {
-            background: #f8f9fa;
+            background: #fff7ed;
             border-radius: 12px;
             padding: 1.5rem;
             margin-bottom: 1.5rem;
         }
 
         .note-card {
-            background: white;
+            background: #fff7ed;
             border-radius: 8px;
             padding: 1rem;
             margin-bottom: 1rem;
             box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
             transition: all 0.3s ease;
-            border-left: 4px solid #2c3e50;
+            border-left: 4px solid #f07a24;
         }
 
         .note-card:hover {
@@ -24,23 +24,27 @@
 
         .note-textarea {
             border-radius: 8px;
-            border: 2px solid #e9ecef;
+            border: 2px solid rgba(240, 122, 36, 0.22);
+            background: #fff7ed !important;
+            color: #78350f;
             transition: all 0.3s ease;
             font-size: 0.95rem;
         }
 
         .note-textarea:focus {
-            border-color: #2c3e50;
-            box-shadow: 0 0 0 0.2rem rgba(44, 62, 80, 0.15);
+            border-color: #f07a24;
+            box-shadow: 0 0 0 0.2rem rgba(240, 122, 36, 0.15);
         }
 
         .note-header {
-            background: linear-gradient(135deg, #2c3e50 0%, #000000 100%);
+            background: linear-gradient(135deg, #f7c948 0%, #f07a24 48%, #b93f1d 100%);
             color: white;
-            padding: 0.75rem 1rem;
+            padding: 1rem;
             border-radius: 8px;
             margin-bottom: 1rem;
-            font-weight: 600;
+            font-size: 1.25rem;
+            font-weight: 700;
+            box-shadow: 0 14px 32px -22px rgba(151, 76, 18, 0.7);
         }
 
         .note-actions {
@@ -77,7 +81,7 @@
             font-size: 0.85rem;
             color: #6c757d;
             padding: 0.5rem 0;
-            border-top: 1px solid #e9ecef;
+            border-top: 1px solid rgba(240, 122, 36, 0.18);
             margin-top: 0.5rem;
         }
 
@@ -93,20 +97,23 @@
             border-radius: 8px;
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
             border: none;
+            background: #fff7ed !important;
         }
 
         .suggestions-dropdown .list-group-item {
             border: none;
             padding: 0.75rem 1rem;
             transition: all 0.2s ease;
+            background: #fff7ed;
+            color: #78350f;
         }
 
         .suggestions-dropdown .list-group-item:hover {
-            background: #f8f9fa;
+            background: #ffedd5;
         }
 
         .suggestions-dropdown .list-group-item.active {
-            background: linear-gradient(135deg, #2c3e50 0%, #000000 100%);
+            background: linear-gradient(135deg, #f7c948 0%, #f07a24 48%, #b93f1d 100%);
         }
     </style>
     @can('Notes Section')

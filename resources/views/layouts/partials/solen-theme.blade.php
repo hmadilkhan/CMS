@@ -32,15 +32,14 @@
         --color-900: #342416;
     }
 
+    html,
     body {
         background: var(--solen-background) !important;
         color: var(--solen-foreground);
     }
 
     #mytask-layout {
-        background:
-            radial-gradient(circle at top left, rgba(247, 201, 72, 0.2), transparent 34%),
-            var(--solen-background) !important;
+        background: var(--solen-background) !important;
         min-height: 100vh;
     }
 
@@ -48,6 +47,9 @@
     [data-theme="dark"] .sidebar,
     [data-theme="light"] .sidebar {
         background: var(--solen-gradient) !important;
+        background-clip: padding-box;
+        border: 0 !important;
+        outline: 0 !important;
         box-shadow: var(--solen-shadow);
     }
 
@@ -81,7 +83,11 @@
         background: transparent !important;
     }
 
-    .header .navbar,
+    .main,
+    .main .body {
+        background-color: var(--solen-background) !important;
+    }
+
     .card,
     .dropdown-menu,
     .modal-content {
@@ -90,10 +96,17 @@
         box-shadow: 0 18px 48px -34px rgba(52, 36, 22, 0.45);
     }
 
+    .header .navbar {
+        background-color: var(--solen-background) !important;
+        border-color: var(--solen-border) !important;
+        box-shadow: none !important;
+    }
+
     .card .card-header,
     .modal-header,
     .premium-header,
     .premium-modal-header,
+    .premium-lock-card,
     .premium-filter-card,
     .premium-card-header,
     .premium-table thead,
@@ -121,6 +134,8 @@
     }
 
     .premium-header h1,
+    .premium-lock-card,
+    .premium-lock-card *,
     .premium-filter-card h5,
     .premium-card-header,
     .premium-card-header *,
