@@ -1,6 +1,9 @@
 @extends('layouts.master')
 @section('title', $project->project_name)
 @section('content')
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
     <style>
         body {
             /* background: linear-gradient(135deg, #d7d9da 0%, #e1dede 100%); */
@@ -935,9 +938,6 @@
         }
 
         #project-show-page.project-workspace-redesign > .card:first-child {
-            position: sticky;
-            top: 0;
-            z-index: 9;
             border-bottom: 1px solid var(--workspace-line) !important;
             background: rgba(255, 248, 238, 0.92) !important;
             backdrop-filter: blur(12px);
@@ -956,16 +956,23 @@
 
         #project-show-page.project-workspace-redesign .project-summary-header {
             align-items: flex-start;
-            gap: 0.6rem;
+            gap: 0.55rem;
             padding: 0 0 1.5rem;
             border-radius: 0 !important;
             text-align: left;
         }
 
-        #project-show-page.project-workspace-redesign .project-days-badge {
+        #project-show-page.project-workspace-redesign .project-stage-meta {
             order: 2;
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 0.75rem;
+        }
+
+        #project-show-page.project-workspace-redesign .project-days-badge {
             min-width: 0;
-            padding: 0.35rem 0.65rem;
+            padding: 0.32rem 0.62rem;
             background: rgba(69, 26, 3, 0.06);
             color: var(--workspace-ink-60);
             border-radius: 6px;
@@ -976,12 +983,35 @@
             text-transform: uppercase;
         }
 
+        #project-show-page.project-workspace-redesign .project-current-stage {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.35rem;
+            border: 0;
+            background: transparent;
+            color: var(--workspace-amber);
+            padding: 0;
+            font-size: 0.78rem;
+            font-weight: 600;
+            line-height: 1.2;
+        }
+
+        #project-show-page.project-workspace-redesign .project-current-stage::after {
+            content: "";
+            width: 0;
+            height: 0;
+            border-left: 4px solid transparent;
+            border-right: 4px solid transparent;
+            border-top: 5px solid currentColor;
+            transform: translateY(1px);
+        }
+
         #project-show-page.project-workspace-redesign .project-summary-title {
             order: 1;
             max-width: 48rem;
             color: var(--workspace-ink);
             font-size: clamp(2rem, 4vw, 3.75rem);
-            font-weight: 700;
+            font-weight: 600;
             line-height: 0.95;
             letter-spacing: 0;
             text-align: left;
@@ -992,6 +1022,7 @@
             color: var(--workspace-ink);
             padding: 0;
             border-radius: 0;
+            font-weight: 600;
             text-transform: none;
         }
 
@@ -1054,16 +1085,51 @@
         #project-show-page.project-workspace-redesign .project-department-tabs.prtab-set .nav-link {
             min-height: 72px;
             display: flex;
+            flex-direction: column;
             align-items: center;
             justify-content: center;
+            gap: 0.4rem;
             padding: 1rem 0.75rem !important;
             border-radius: 0 !important;
             background: var(--workspace-cream) !important;
             box-shadow: none !important;
             color: var(--workspace-ink-40) !important;
-            font-size: 0.78rem;
-            font-weight: 700;
             text-align: center;
+        }
+
+        #project-show-page.project-workspace-redesign .department-pipeline-title {
+            display: block;
+            color: var(--workspace-ink-40);
+            font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+            font-size: 0.58rem;
+            font-weight: 500;
+            letter-spacing: 0.06em;
+            line-height: 1.1;
+            text-transform: uppercase;
+        }
+
+        #project-show-page.project-workspace-redesign .department-pipeline-status {
+            display: block;
+            color: rgba(69, 26, 3, 0.2);
+            font-size: 0.75rem;
+            font-weight: 500;
+            line-height: 1.1;
+        }
+
+        #project-show-page.project-workspace-redesign .project-department-tabs.prtab-set .nav-item.bg-success .nav-link:not(.active)::after {
+            content: none !important;
+            display: none !important;
+        }
+
+        #project-show-page.project-workspace-redesign .project-department-tabs.prtab-set .nav-item.bg-success .nav-link:not(.active) {
+            background: var(--workspace-cream) !important;
+            color: var(--workspace-ink-40) !important;
+            box-shadow: none !important;
+        }
+
+        #project-show-page.project-workspace-redesign .project-department-tabs.prtab-set .nav-item.bg-success .department-pipeline-status {
+            color: var(--workspace-ink);
+            font-weight: 600;
         }
 
         #project-show-page.project-workspace-redesign .project-department-tabs.prtab-set .nav-link.active {
@@ -1071,6 +1137,64 @@
             color: var(--workspace-ink) !important;
             box-shadow: inset 0 0 0 1px rgba(245, 158, 11, 0.25) !important;
             transform: none;
+        }
+
+        #project-show-page.project-workspace-redesign .project-department-tabs.prtab-set .nav-link.active .department-pipeline-title {
+            color: var(--workspace-amber);
+        }
+
+        #project-show-page.project-workspace-redesign .project-department-tabs.prtab-set .nav-link.active .department-pipeline-status {
+            color: var(--workspace-ink);
+            font-weight: 600;
+        }
+
+        #project-show-page.project-workspace-redesign #departmentDetailTabs {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+            gap: 1px;
+            width: 100%;
+            margin: 0 0 2rem !important;
+            padding: 1px !important;
+            overflow: hidden !important;
+            background: var(--workspace-line) !important;
+            border: 1px solid var(--workspace-line) !important;
+            border-radius: 14px !important;
+            box-shadow: none !important;
+        }
+
+        #project-show-page.project-workspace-redesign #departmentDetailTabs .nav-item,
+        #project-show-page.project-workspace-redesign #departmentDetailTabs .nav-link {
+            width: 100%;
+        }
+
+        #project-show-page.project-workspace-redesign #departmentDetailTabs .nav-link {
+            min-height: 64px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 1rem 0.75rem !important;
+            border-radius: 0 !important;
+            background: var(--workspace-cream) !important;
+            box-shadow: none !important;
+            color: var(--workspace-ink-40) !important;
+            text-align: center;
+        }
+
+        #project-show-page.project-workspace-redesign #departmentDetailTabs .nav-link.active {
+            background: var(--workspace-soft) !important;
+            color: var(--workspace-amber) !important;
+            box-shadow: inset 0 0 0 1px rgba(245, 158, 11, 0.25) !important;
+            transform: none;
+        }
+
+        #project-show-page.project-workspace-redesign .department-detail-tab-title {
+            color: inherit;
+            font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+            font-size: 0.72rem;
+            font-weight: 500;
+            letter-spacing: 0.04em;
+            line-height: 1.2;
+            text-transform: uppercase;
         }
 
         #project-show-page.project-workspace-redesign > .row.clearfix.mt-2.mb-2 {
@@ -1081,28 +1205,49 @@
 
         #project-show-page.project-workspace-redesign .project-primary-tabs {
             justify-content: flex-start !important;
-            gap: 2rem;
+            gap: 2.25rem;
             margin: 0 !important;
             padding: 0 !important;
             border-bottom: 1px solid var(--workspace-line) !important;
             border-radius: 0 !important;
+            box-shadow: none !important;
+            flex-wrap: nowrap !important;
+            overflow-x: auto;
+            overflow-y: hidden;
+            scrollbar-width: thin;
+        }
+
+        #project-show-page.project-workspace-redesign .project-primary-tabs .nav-item {
+            flex: 0 0 auto;
         }
 
         #project-show-page.project-workspace-redesign .project-primary-tabs .nav-link {
             min-width: 0;
-            padding: 0 0 1rem !important;
+            padding: 0 0 1.05rem !important;
             border-radius: 0 !important;
             background: transparent !important;
             box-shadow: none !important;
-            color: var(--workspace-ink-40);
-            font-size: 0.92rem;
-            font-weight: 700;
+            color: var(--workspace-ink-40) !important;
+            font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            font-size: 1rem;
+            font-weight: 500;
+            line-height: 1.2;
+            border-bottom: 2px solid transparent !important;
+            transition: color 0.2s ease, border-color 0.2s ease;
+            white-space: nowrap;
+        }
+
+        #project-show-page.project-workspace-redesign .project-primary-tabs .nav-link:hover,
+        #project-show-page.project-workspace-redesign .project-primary-tabs .nav-link:focus {
+            background: transparent !important;
+            color: var(--workspace-ink-60) !important;
         }
 
         #project-show-page.project-workspace-redesign .project-primary-tabs .nav-link.active {
             border-bottom: 2px solid var(--workspace-amber) !important;
             color: var(--workspace-ink) !important;
             transform: none;
+            font-weight: 500;
         }
 
         #project-show-page.project-workspace-redesign > .tab-content {
@@ -1168,7 +1313,6 @@
 
         @media (max-width: 768px) {
             #project-show-page.project-workspace-redesign > .card:first-child {
-                position: relative;
                 padding: 1.25rem 1rem;
             }
 
@@ -1198,6 +1342,7 @@
                     <div class="card border-0 mb-4 no-bg">
                         @php
                             $currentAssignedName = optional($task->employee)->name ?? 'Unassigned';
+                            $currentDepartmentName = optional($project->department)->name ?? optional($task->department)->name ?? 'Current Department';
                             $projectAgeDays = empty($project->pto_approval_date)
                                 ? now()->diffInDays(Carbon\Carbon::parse($project->customer->sold_date))
                                 : Carbon\Carbon::parse($project->pto_approval_date)->diffInDays(
@@ -1205,7 +1350,6 @@
                                 );
                         @endphp
                         <div class="card-header project-summary-header border-0">
-                            <div class="project-days-badge">{{ $projectAgeDays }} Days</div>
                             <h3 class="project-summary-title">
                                 @if (auth()->user()->hasAnyRole(['Super Admin', 'Admin', 'Manager']))
                                     <div class="dropdown d-inline-block">
@@ -1235,6 +1379,10 @@
                                     {{ str_replace('-', ' ', $project->project_name) }}
                                 @endif
                             </h3>
+                            <div class="project-stage-meta">
+                                <span class="project-days-badge">{{ $projectAgeDays }} Days in progress</span>
+                                <span class="project-current-stage">{{ $currentDepartmentName }} Stage</span>
+                            </div>
                         </div>
                     </div>
 
@@ -1284,12 +1432,19 @@
                                                         })
                                                         ->values();
                                                 }
+                                                $departmentProgressStatus = $department->id < $project->department_id
+                                                    ? 'Completed'
+                                                    : ($department->id == $project->department_id
+                                                        ? 'In Progress'
+                                                        : 'Pending');
+                                                $departmentStepLabel = str_pad($loop->iteration, 2, '0', STR_PAD_LEFT) . ' ' . $department->name;
                                             @endphp
                                             @if ($department->id < $project->department_id)
                                                 <li class="nav-item dropdown bg-success">
                                                     <a class="nav-link dropdown-toggle  text-white" id="navbarDropdown"
                                                         role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                                                        {{ $department->name }}
+                                                        <span class="department-pipeline-title">{{ $departmentStepLabel }}</span>
+                                                        <span class="department-pipeline-status">{{ $departmentProgressStatus }}</span>
                                                     </a>
                                                     @if (count($filtered_collection) > 0)
                                                         <ul class="dropdown-menu" aria-labelledby="navbarDropdown">
@@ -1306,7 +1461,8 @@
                                                     <a class="nav-link dropdown-toggle active text-white"
                                                         id="navbarDropdown" role="button" data-bs-toggle="dropdown"
                                                         aria-expanded="false">
-                                                        {{ $department->name }}
+                                                        <span class="department-pipeline-title">{{ $departmentStepLabel }}</span>
+                                                        <span class="department-pipeline-status">{{ $departmentProgressStatus }}</span>
                                                     </a>
                                                     @if (count($filtered_collection) > 0)
                                                         <ul class="dropdown-menu" aria-labelledby="navbarDropdown">
@@ -1322,7 +1478,8 @@
                                                 <li class="nav-item dropdown">
                                                     <a class="nav-link dropdown-toggle " id="navbarDropdown" role="button"
                                                         data-bs-toggle="dropdown" aria-expanded="false">
-                                                        {{ $department->name }}
+                                                        <span class="department-pipeline-title">{{ $departmentStepLabel }}</span>
+                                                        <span class="department-pipeline-status">{{ $departmentProgressStatus }}</span>
                                                     </a>
                                                     @if (count($filtered_collection) > 0)
                                                         <ul class="dropdown-menu" aria-labelledby="navbarDropdown">
@@ -1400,6 +1557,7 @@
                                         @foreach ($departments as $department)
                                             @php
                                                 $isCurrentDepartment = $department->id == $activeDepartmentId;
+                                                $departmentDetailStepLabel = str_pad($loop->iteration, 2, '0', STR_PAD_LEFT) . ' ' . $department->name;
                                             @endphp
                                             <li class="nav-item" role="presentation">
                                                 <button class="nav-link {{ $isCurrentDepartment ? 'active' : '' }}"
@@ -1410,7 +1568,7 @@
                                                     role="tab"
                                                     aria-controls="department-detail-{{ $department->id }}"
                                                     aria-selected="{{ $isCurrentDepartment ? 'true' : 'false' }}">
-                                                    {{ $department->name }}
+                                                    <span class="department-detail-tab-title">{{ $departmentDetailStepLabel }}</span>
                                                 </button>
                                             </li>
                                         @endforeach

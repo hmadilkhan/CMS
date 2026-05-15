@@ -11,6 +11,7 @@
 
     .project-card {
         transition: all 0.3s ease;
+        border: 1px solid var(--solen-primary-border-stronger) !important;
         border-radius: 12px;
         overflow: hidden;
         box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
@@ -23,17 +24,31 @@
     }
 
     .project-header {
-        background: var(--solen-gradient);
+        background: #ffffff;
+        border-bottom: 1px solid var(--solen-primary-border);
         padding: 1rem;
-        color: white;
+        color: rgba(69, 26, 3, 0.4);
+    }
+
+    .project-header .text-white {
+        color: rgba(69, 26, 3, 0.55) !important;
+    }
+
+    .project-header img {
+        border-color: var(--solen-primary-border-stronger) !important;
     }
 
     .days-badge {
-        background: rgba(255, 255, 255, 0.2);
+        background: rgba(245, 158, 11, 0.1);
         backdrop-filter: blur(10px);
+        color: rgba(69, 26, 3, 0.6);
         padding: 0.4rem 0.8rem;
         border-radius: 20px;
         font-weight: 600;
+    }
+
+    .project-header .icofont-email {
+        color: var(--solen-primary-dark) !important;
     }
 
     .info-row {
