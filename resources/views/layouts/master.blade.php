@@ -25,9 +25,9 @@
             --body-color: var(--solen-background);
             --card-color: var(--solen-card);
             --border-color: var(--solen-border);
-            --color-100: #fff8ec;
-            --color-200: #fff1dc;
-            --color-300: #f5e5cf;
+            --color-100: #ffffff;
+            --color-200: #ffffff;
+            --color-300: #ffffff;
             --color-400: #cdbda8;
             --color-500: #a49686;
             --color-600: #7c6f60;
@@ -42,9 +42,7 @@
         }
 
         #mytask-layout {
-            background:
-                radial-gradient(circle at top left, rgba(247, 201, 72, 0.2), transparent 34%),
-                var(--solen-background);
+            background: #ffffff !important;
             min-height: 100vh;
         }
 
@@ -84,8 +82,11 @@
             background-color: rgba(255, 255, 255, 0.7);
         }
 
-        .main {
-            background: transparent;
+        .main,
+        .main .body,
+        .body,
+        .bg-light {
+            background: #ffffff !important;
         }
 
         .header .navbar,
@@ -170,6 +171,42 @@
             <div class="body d-flex py-3">
                 @yield('content')
             </div>
+            <style id="crm-white-background-override">
+                :root,
+                #mytask-layout.theme-indigo {
+                    --body-color: #ffffff;
+                    --bs-body-bg: #ffffff;
+                    --bs-light: #ffffff;
+                    --bs-light-rgb: 255, 255, 255;
+                    --color-100: #ffffff;
+                    --color-200: #ffffff;
+                    --color-300: #ffffff;
+                    --solen-background: #ffffff;
+                    --solen-cream: #ffffff;
+                    --solen-cream-strong: #ffffff;
+                    --solen-secondary: #ffffff;
+                }
+
+                html,
+                body,
+                #mytask-layout,
+                #mytask-layout.theme-indigo,
+                #mytask-layout .main,
+                #mytask-layout .body,
+                #mytask-layout .tab-content,
+                #mytask-layout .tab-pane,
+                #mytask-layout .container,
+                #mytask-layout .container-fluid,
+                #mytask-layout .row.bg-light,
+                #mytask-layout .bg-light,
+                #mytask-layout .table-light,
+                #mytask-layout .list-group-item,
+                #mytask-layout .dropdown-menu,
+                #mytask-layout .modal-body {
+                    background-color: #ffffff !important;
+                    background-image: none !important;
+                }
+            </style>
         </div>
     </div>
 

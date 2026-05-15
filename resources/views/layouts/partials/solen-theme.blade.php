@@ -10,9 +10,9 @@
         --body-color: var(--solen-background);
         --card-color: var(--solen-card);
         --border-color: var(--solen-border);
-        --color-100: #fff8ec;
-        --color-200: #fff1dc;
-        --color-300: #f5e5cf;
+        --color-100: #ffffff;
+        --color-200: #ffffff;
+        --color-300: #ffffff;
         --color-400: #cdbda8;
         --color-500: #a49686;
         --color-600: #7c6f60;
@@ -69,12 +69,14 @@
     }
 
     .main {
-        background: transparent !important;
+        background: #ffffff !important;
     }
 
     .main,
-    .main .body {
-        background-color: var(--solen-background) !important;
+    .main .body,
+    .body,
+    .bg-light {
+        background-color: #ffffff !important;
     }
 
     .card,

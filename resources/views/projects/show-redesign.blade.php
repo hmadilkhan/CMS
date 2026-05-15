@@ -58,7 +58,7 @@
         #project-show-page .bg-light,
         #project-show-page .list-group-item,
         #project-show-page .dropdown-menu {
-            background-color: var(--solen-cream) !important;
+            background-color: #ffffff !important;
         }
 
         #project-show-page .modal .card,
@@ -342,7 +342,7 @@
         #project-show-page #communication #emailDiv .table,
         #project-show-page #communication #emailDiv .table td,
         #project-show-page #communication #emailDiv .table th {
-            background-color: var(--solen-cream) !important;
+            background-color: #ffffff !important;
             border-color: var(--solen-primary-border-stronger) !important;
             color: var(--solen-warm-text) !important;
         }
@@ -424,7 +424,7 @@
         }
 
         .project-tag-panel {
-            background: var(--solen-cream);
+            background: #ffffff;
             border: 0;
             border-radius: 14px;
             padding: 1rem 1.25rem;
@@ -555,14 +555,14 @@
         }
 
         #project-show-page .project-primary-tabs .nav-link {
-            background: var(--solen-cream);
+            background: #ffffff;
             color: var(--solen-warm-text);
             min-width: 112px;
             text-align: center;
         }
 
         #project-show-page .project-department-tabs .nav-link {
-            background: var(--solen-cream-strong);
+            background: #ffffff;
             color: #92400e;
             font-size: 0.88rem;
             padding: 0.6rem 1.15rem;
@@ -641,7 +641,7 @@
 
         .project-title-status-menu {
             border: 1px solid var(--solen-primary-border);
-            background: var(--solen-cream);
+            background: #ffffff;
             box-shadow: 0 16px 35px rgba(120, 53, 15, 0.12);
         }
 
@@ -652,7 +652,7 @@
 
         .project-title-status-menu .dropdown-item:hover,
         .project-title-status-menu .dropdown-item.active {
-            background: var(--solen-cream-strong);
+            background: #ffffff;
             color: var(--solen-warm-hover);
         }
 
@@ -674,7 +674,7 @@
             min-width: 86px;
             padding: 0.35rem 0.85rem;
             border-radius: 999px;
-            background: var(--solen-cream-strong);
+            background: #ffffff;
             color: var(--solen-warm-text);
             font-size: 0.95rem;
             font-weight: 800;
@@ -737,7 +737,7 @@
             max-height: 280px;
             overflow-y: auto;
             border: 1px solid var(--solen-primary-border);
-            background: var(--solen-cream);
+            background: #ffffff;
             box-shadow: 0 16px 35px rgba(120, 53, 15, 0.12);
         }
 
@@ -748,7 +748,7 @@
 
         .project-assignee-menu .dropdown-item:hover,
         .project-assignee-menu .dropdown-item.active {
-            background: var(--solen-cream-strong);
+            background: #ffffff;
             color: var(--solen-warm-hover);
         }
 
@@ -787,7 +787,7 @@
         #project-show-page .select2-container--default .select2-selection--single,
         #project-show-page .select2-container--default .select2-selection--multiple {
             min-height: 44px;
-            background-color: var(--solen-cream) !important;
+            background-color: #ffffff !important;
             border: 1px solid var(--solen-primary-border-stronger) !important;
             color: var(--solen-warm-text) !important;
             box-shadow: none !important;
@@ -796,7 +796,7 @@
         #project-show-page .form-control:disabled,
         #project-show-page .form-select:disabled,
         #project-show-page .form-control[readonly] {
-            background-color: var(--solen-cream) !important;
+            background-color: #ffffff !important;
             opacity: 1;
         }
 
@@ -816,7 +816,7 @@
 
         #project-show-page .select2-dropdown,
         #project-show-page .select2-results__option {
-            background-color: var(--solen-cream);
+            background-color: #ffffff;
             color: var(--solen-warm-text);
         }
 
@@ -843,21 +843,21 @@
 
         #project-show-page > .tab-content .table thead,
         #project-show-page > .tab-content .table thead th {
-            background: var(--solen-cream) !important;
+            background: #ffffff !important;
             color: var(--solen-warm-text) !important;
             border-color: var(--solen-primary-border-strong) !important;
         }
 
         #project-show-page #adderTable thead,
         #project-show-page #adderTable thead th {
-            background: var(--solen-cream) !important;
+            background: #ffffff !important;
             color: var(--solen-warm-text) !important;
             border-color: var(--solen-primary-border-strong) !important;
         }
 
         #project-show-page .account-transactions-table thead,
         #project-show-page .account-transactions-table thead th {
-            background: var(--solen-cream) !important;
+            background: #ffffff !important;
             color: var(--solen-warm-text) !important;
             border-color: var(--solen-primary-border-strong) !important;
         }
@@ -906,7 +906,7 @@
 
         /* Project detail redesign based on project-detail-sample.html */
         :root {
-            --workspace-cream: #fff8ee;
+            --workspace-cream: #ffffff;
             --workspace-amber: #f59e0b;
             --workspace-ink: #451a03;
             --workspace-ink-60: rgba(69, 26, 3, 0.6);
@@ -933,13 +933,13 @@
             position: fixed;
             inset: 0;
             pointer-events: none;
-            background: radial-gradient(circle at 12% 0%, rgba(245, 158, 11, 0.12), transparent 28%);
+            background: transparent;
             z-index: -1;
         }
 
         #project-show-page.project-workspace-redesign > .card:first-child {
             border-bottom: 1px solid var(--workspace-line) !important;
-            background: rgba(255, 248, 238, 0.92) !important;
+            background: #ffffff !important;
             backdrop-filter: blur(12px);
             margin-bottom: 0 !important;
             padding: 2rem clamp(1rem, 4vw, 2.5rem) 1.5rem;
@@ -1250,6 +1250,52 @@
             font-weight: 500;
         }
 
+        #project-show-page.project-workspace-redesign .project-secondary-tabs {
+            justify-content: flex-start !important;
+            gap: 1.5rem;
+            margin: 0 0 1.5rem !important;
+            padding: 0 !important;
+            border-bottom: 1px solid var(--workspace-line) !important;
+            border-radius: 0 !important;
+            box-shadow: none !important;
+            flex-wrap: nowrap !important;
+            overflow-x: auto;
+            overflow-y: hidden;
+            scrollbar-width: thin;
+        }
+
+        #project-show-page.project-workspace-redesign .project-secondary-tabs .nav-item {
+            flex: 0 0 auto;
+        }
+
+        #project-show-page.project-workspace-redesign .project-secondary-tabs .nav-link {
+            min-width: 0;
+            padding: 0 0 0.85rem !important;
+            border-radius: 0 !important;
+            background: transparent !important;
+            box-shadow: none !important;
+            color: var(--workspace-ink-40) !important;
+            font-size: 0.95rem;
+            font-weight: 500;
+            line-height: 1.2;
+            border-bottom: 2px solid transparent !important;
+            transition: color 0.2s ease, border-color 0.2s ease;
+            white-space: nowrap;
+        }
+
+        #project-show-page.project-workspace-redesign .project-secondary-tabs .nav-link:hover,
+        #project-show-page.project-workspace-redesign .project-secondary-tabs .nav-link:focus {
+            background: transparent !important;
+            color: var(--workspace-ink-60) !important;
+        }
+
+        #project-show-page.project-workspace-redesign .project-secondary-tabs .nav-link.active {
+            border-bottom-color: var(--workspace-amber) !important;
+            color: var(--workspace-ink) !important;
+            transform: none;
+            font-weight: 500;
+        }
+
         #project-show-page.project-workspace-redesign > .tab-content {
             max-width: 1320px;
             margin: 0 auto;
@@ -1345,6 +1391,216 @@
             margin-bottom: 1.5rem;
         }
 
+        #project-show-page.project-workspace-redesign .sample-activity-grid {
+            align-items: flex-start;
+            row-gap: 2.5rem;
+        }
+
+        #project-show-page.project-workspace-redesign .sample-notes-column,
+        #project-show-page.project-workspace-redesign .sample-files-column {
+            min-width: 0;
+        }
+
+        #project-show-page.project-workspace-redesign .sample-notes-column .note-header,
+        #project-show-page.project-workspace-redesign .sample-files-column .files-header {
+            min-height: 0;
+            margin: 0 0 1rem;
+            padding: 0;
+            border: 0 !important;
+            background: transparent !important;
+            color: var(--workspace-ink-40) !important;
+            font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            font-size: 0.86rem;
+            font-weight: 700;
+            letter-spacing: 0.12em;
+            line-height: 1.2;
+            text-transform: uppercase;
+            box-shadow: none !important;
+        }
+
+        #project-show-page.project-workspace-redesign .sample-notes-column .note-header i,
+        #project-show-page.project-workspace-redesign .sample-files-column .files-header i {
+            display: none;
+        }
+
+        #project-show-page.project-workspace-redesign .sample-notes-column .notes-section {
+            min-height: 260px;
+            margin: 0 0 1.75rem;
+            padding: 1.25rem;
+            background: #ffffff !important;
+            border: 1px solid var(--workspace-line);
+            border-radius: 12px;
+        }
+
+        #project-show-page.project-workspace-redesign .sample-notes-column .note-textarea {
+            min-height: 120px;
+            padding: 0;
+            background: transparent !important;
+            border: 0 !important;
+            box-shadow: none !important;
+            color: var(--workspace-ink);
+            resize: vertical;
+        }
+
+        #project-show-page.project-workspace-redesign .sample-notes-column .note-card {
+            margin: 0 0 1px;
+            padding: 1.25rem;
+            background: #ffffff !important;
+            border: 1px solid var(--workspace-line);
+            border-left: 0;
+            border-radius: 0;
+            box-shadow: none;
+            transform: none;
+        }
+
+        #project-show-page.project-workspace-redesign .sample-notes-column .note-card:first-of-type {
+            border-radius: 12px 12px 0 0;
+        }
+
+        #project-show-page.project-workspace-redesign .sample-notes-column .note-card:last-child {
+            border-radius: 0 0 12px 12px;
+        }
+
+        #project-show-page.project-workspace-redesign .sample-notes-column .note-card:hover {
+            box-shadow: none;
+            transform: none;
+        }
+
+        #project-show-page.project-workspace-redesign .sample-notes-column .note-meta {
+            margin-top: 1rem;
+            padding-top: 0.75rem;
+            border-color: var(--workspace-line);
+            color: var(--workspace-ink-40);
+            font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+            font-size: 0.68rem;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+        }
+
+        #project-show-page.project-workspace-redesign .sample-notes-column .note-icon {
+            width: 30px;
+            height: 30px;
+            border-radius: 8px;
+        }
+
+        #project-show-page.project-workspace-redesign .sample-files-column .files-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 1px;
+            margin-top: 0;
+            overflow: hidden;
+            background: var(--workspace-line);
+            border: 1px solid var(--workspace-line);
+            border-radius: 12px;
+        }
+
+        #project-show-page.project-workspace-redesign .sample-files-column .file-card {
+            min-height: 72px;
+            display: grid;
+            grid-template-columns: 2.5rem minmax(0, 1fr);
+            align-items: center;
+            gap: 0.85rem;
+            padding: 1rem;
+            background: #ffffff !important;
+            border-radius: 0;
+            box-shadow: none;
+            overflow: visible;
+            transform: none;
+        }
+
+        #project-show-page.project-workspace-redesign .sample-files-column .file-card:hover {
+            box-shadow: none;
+            transform: none;
+        }
+
+        #project-show-page.project-workspace-redesign .sample-files-column .file-preview {
+            width: 2rem;
+            height: 2rem;
+            border-radius: 7px;
+            background: var(--workspace-soft) !important;
+            overflow: hidden;
+        }
+
+        #project-show-page.project-workspace-redesign .sample-files-column .file-preview img,
+        #project-show-page.project-workspace-redesign .sample-files-column .file-preview iframe {
+            display: none;
+        }
+
+        #project-show-page.project-workspace-redesign .sample-files-column .file-preview::before {
+            content: "\ef1a";
+            font-family: IcoFont;
+            color: var(--workspace-amber);
+            font-size: 1rem;
+            line-height: 1;
+        }
+
+        #project-show-page.project-workspace-redesign .sample-files-column .file-preview .file-type-icon {
+            display: none;
+        }
+
+        #project-show-page.project-workspace-redesign .sample-files-column .file-info {
+            min-width: 0;
+            padding: 0;
+            background: transparent !important;
+            color: var(--workspace-ink);
+        }
+
+        #project-show-page.project-workspace-redesign .sample-files-column .file-header {
+            margin: 0 0 0.25rem;
+            color: var(--workspace-ink);
+            font-size: 0.9rem;
+            font-weight: 600;
+            line-height: 1.2;
+        }
+
+        #project-show-page.project-workspace-redesign .sample-files-column .file-name {
+            color: var(--workspace-ink-40);
+            font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+            font-size: 0.62rem;
+            font-weight: 500;
+            letter-spacing: 0.04em;
+            line-height: 1.2;
+            text-transform: uppercase;
+        }
+
+        #project-show-page.project-workspace-redesign .sample-files-column .file-name a {
+            color: var(--workspace-ink-40) !important;
+        }
+
+        #project-show-page.project-workspace-redesign .sample-files-column .delete-icon {
+            top: 0.65rem;
+            right: 0.65rem;
+            padding: 0;
+            width: 1.65rem;
+            height: 1.65rem;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(69, 26, 3, 0.08);
+            color: var(--workspace-ink-60);
+            border-radius: 7px;
+        }
+
+        #project-show-page.project-workspace-redesign .sample-files-column .upload-btn {
+            margin-bottom: 1rem;
+            padding: 0;
+            background: transparent !important;
+            color: var(--workspace-amber) !important;
+            border-radius: 0;
+            box-shadow: none;
+            font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+            font-size: 0.7rem;
+            font-weight: 600;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+        }
+
+        #project-show-page.project-workspace-redesign .sample-files-column .no-files {
+            background: #ffffff;
+            color: var(--workspace-ink-40);
+            font-size: 0.9rem;
+        }
+
         @media (max-width: 768px) {
             #project-show-page.project-workspace-redesign > .card:first-child {
                 padding: 1.25rem 1rem;
@@ -1358,6 +1614,20 @@
 
             #project-show-page.project-workspace-redesign .project-primary-tabs .nav-link {
                 white-space: nowrap;
+            }
+
+            #project-show-page.project-workspace-redesign .project-secondary-tabs {
+                gap: 1.1rem;
+            }
+
+            #project-show-page.project-workspace-redesign .project-secondary-tabs .nav-link {
+                font-size: 0.86rem;
+            }
+
+            #project-show-page.project-workspace-redesign .sample-notes-column .note-meta {
+                align-items: flex-start !important;
+                flex-direction: column;
+                gap: 0.35rem;
             }
         }
     </style>
@@ -1621,8 +1891,8 @@
                                                     <span>{{ $department->name }}</span>
                                                 </div> --}}
 
-                                                <div class="row clearfix">
-                                                    <div class="col-sm-6 mb-3">
+                                                <div class="row clearfix sample-activity-grid">
+                                                    <div class="col-lg-8 col-md-12 mb-3 sample-notes-column">
                                                         @livewire('project.notes-section', ['projectId' => $project->id, 'taskId' => $task->id, 'departmentId' => $department->id, 'projectDepartmentId' => $project->department_id, 'ghost' => $ghost,'viewSource' => 'crm'], key('notes-' . $department->id))
                                                         <div class="project-section-panel">
                                                             <div class="project-section-header">
@@ -1632,7 +1902,7 @@
                                                         </div>
                                                     </div>
 
-                                                    <div class="col-sm-6 mb-3">
+                                                    <div class="col-lg-4 col-md-12 mb-3 sample-files-column">
                                                         @livewire('project.enhanced-files-section', ['projectId' => $project->id, 'taskId' => $task->id, 'departmentId' => $department->id, 'projectDepartmentId' => $project->department_id, 'ghost' => $ghost,'viewSource' => 'crm'], key('enhanced-' . $department->id))
                                                         @if ($isCurrentDepartment)
                                                             @can('Department Tools')
@@ -2071,7 +2341,7 @@
     <div class="tab-pane fade" id="communication" role="tabpanel">
         <div class="card mt-1">
             <div class="card-body">
-                <ul class="nav nav-tabs px-3 border-bottom-0" role="tablist">
+                <ul class="nav nav-tabs project-secondary-tabs" role="tablist">
                     {{-- <li class="nav-item"><a class="nav-link active" data-bs-toggle="tab" href="#calls"
                             role="tab">Calls</a></li> --}}
                     <li class="nav-item"><a class="nav-link active" data-bs-toggle="tab" href="#emails"
@@ -2164,7 +2434,7 @@
                                     @foreach ($departments as $department)
                                         <div class="col-md-12">
                                             <div class="card border-0 mb-4 no-bg">
-                                                <div style="background-color: var(--solen-cream);"
+                                                <div style="background-color: #ffffff;"
                                                     class="card-header py-3 px-0 d-sm-flex align-items-center   justify-content-between border-bottom border-top">
                                                     <h3 class=" fw-bold flex-fill mb-0 mt-sm-0 px-2">
                                                         {{ $department->name }}
@@ -2403,7 +2673,7 @@
 
     <div class="tab-pane fade" id="history" role="tabpanel">
 
-        <ul class="nav nav-tabs px-3 border-bottom-0" role="tablist">
+        <ul class="nav nav-tabs project-secondary-tabs" role="tablist">
             @can('Project Interaction')
                 <li class="nav-item"><a class="nav-link active" data-bs-toggle="tab" href="#interaction"
                         role="tab">Interaction</a></li>
@@ -2615,7 +2885,7 @@
                             </label>
                             <div class="position-relative">
                                 <textarea class="form-control" id="assignnotes" name="assignnotes" rows="4"
-                                    style="border-radius: 12px; border: 2px solid var(--solen-primary-border-strong); padding: 1rem; transition: all 0.3s; background-color: var(--solen-cream); color: var(--solen-warm-text);"
+                                    style="border-radius: 12px; border: 2px solid var(--solen-primary-border-strong); padding: 1rem; transition: all 0.3s; background-color: #ffffff; color: var(--solen-warm-text);"
                                     placeholder="Enter your notes here..."></textarea>
                             </div>
                         </div>
@@ -2637,7 +2907,7 @@
                                 <i class="icofont-clock-time me-2"></i>Follow-up Date
                             </label>
                             <input type="date" class="form-control" id="followUpDate" name="follow_up_date"
-                                style="border-radius: 12px; border: 2px solid var(--solen-primary-border-strong); padding: 0.75rem; transition: all 0.3s; background-color: var(--solen-cream); color: var(--solen-warm-text);">
+                                style="border-radius: 12px; border: 2px solid var(--solen-primary-border-strong); padding: 0.75rem; transition: all 0.3s; background-color: #ffffff; color: var(--solen-warm-text);">
                         </div>
 
 

@@ -181,7 +181,7 @@
 
         .files-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
             gap: 20px;
             margin-top: 20px;
         }
@@ -297,6 +297,82 @@
         [wire\:loading] .text-primary {
             color: var(--solen-primary) !important;
         }
+
+        @media (max-width: 767px) {
+            .files-grid,
+            .preview-grid {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+                gap: 12px;
+            }
+
+            .file-preview {
+                height: 140px;
+            }
+
+            .file-info {
+                padding: 10px;
+            }
+
+            .file-header {
+                font-size: 0.85rem;
+                margin-bottom: 6px;
+            }
+
+            .file-name {
+                font-size: 0.75rem;
+                gap: 5px;
+            }
+
+            .file-preview .file-icon {
+                font-size: 48px;
+            }
+
+            .file-type-icon {
+                gap: 8px;
+            }
+
+            .file-type-icon span {
+                font-size: 0.78rem;
+            }
+
+            .delete-icon {
+                top: 6px;
+                right: 6px;
+                padding: 5px 7px;
+                font-size: 0.78rem;
+            }
+
+            .preview-card {
+                padding: 8px;
+            }
+
+            .preview-card img,
+            .preview-icon {
+                height: 105px;
+            }
+
+            .preview-name {
+                font-size: 0.72rem;
+                line-height: 1.25;
+                word-break: break-word;
+            }
+        }
+
+        @media (max-width: 420px) {
+            .files-grid,
+            .preview-grid {
+                gap: 10px;
+            }
+
+            .file-preview {
+                height: 118px;
+            }
+
+            .preview-card img,
+            .preview-icon {
+                height: 92px;
+            }
+        }
     </style>
 
     @can('Files Section')
@@ -397,16 +473,26 @@
                         <button type="button" class="btn-close btn-close-white" wire:click="closeModal"></button>
                     </div>
                     <div class="modal-body">
+                        @php
+                            $fileInputId = 'fileInput-' . $this->getId();
+                        @endphp
                         <div class="premium-dropzone" ondrop="handleDrop(event)" ondragover="handleDragOver(event)"
-                            ondragleave="handleDragLeave(event)" onclick="document.getElementById('fileInput').click()">
+                            ondragleave="handleDragLeave(event)"
+                            onclick="document.getElementById('{{ $fileInputId }}')?.click()">
                             <i class="icofont-cloud-upload display-3 text-primary mb-3"></i>
                             <h5 class="fw-bold mb-2">Drop files here or click to browse</h5>
                             <p class="text-muted mb-0">Supports: PDF, JPG, PNG, HEIC, DXF, DOCX, DWG (Max 50MB)</p>
-                            <input type="file" id="fileInput" wire:model="files" multiple
-                                accept=".pdf,.jpg,.jpeg,.png,.heic,.dxf,.docx,.dwg" style="display: none;">
+                            <input type="file" id="{{ $fileInputId }}" wire:model="files" multiple
+                                accept=".pdf,.jpg,.jpeg,.png,.heic,.dxf,.docx,.dwg" style="display: none;"
+                                onchange="return validateProjectFiles(event)">
                         </div>
 
+                        <div class="alert alert-danger mt-3 d-none" data-file-upload-error></div>
+
                         @error('files.*')
+                            <div class="alert alert-danger mt-3">{{ $message }}</div>
+                        @enderror
+                        @error('files')
                             <div class="alert alert-danger mt-3">{{ $message }}</div>
                         @enderror
 
@@ -463,26 +549,66 @@
         function handleDragOver(e) {
             e.preventDefault();
             e.stopPropagation();
-            e.currentTarget.classList.add('dragover');
+            e.currentTarget.classList.add('drag-over');
         }
 
         function handleDragLeave(e) {
             e.preventDefault();
             e.stopPropagation();
-            e.currentTarget.classList.remove('dragover');
+            e.currentTarget.classList.remove('drag-over');
         }
 
         function handleDrop(e) {
             e.preventDefault();
             e.stopPropagation();
-            e.currentTarget.classList.remove('dragover');
+            e.currentTarget.classList.remove('drag-over');
 
             const files = e.dataTransfer.files;
-            const fileInput = document.getElementById('fileInput');
+            const fileInput = e.currentTarget.querySelector('input[type="file"]');
+            if (!fileInput) {
+                return;
+            }
             fileInput.files = files;
+            if (!validateProjectFiles({
+                    target: fileInput
+                })) {
+                return;
+            }
             fileInput.dispatchEvent(new Event('change', {
                 bubbles: true
             }));
+        }
+
+        function validateProjectFiles(e) {
+            const input = e.target;
+            const files = Array.from(input.files || []);
+            const maxSize = 50 * 1024 * 1024;
+            const allowedExtensions = ['pdf', 'jpg', 'jpeg', 'png', 'heic', 'dxf', 'docx', 'dwg'];
+            const errorBox = input.closest('.modal-body')?.querySelector('[data-file-upload-error]');
+
+            const error = files.find(file => {
+                const extension = file.name.split('.').pop().toLowerCase();
+                return file.size > maxSize || !allowedExtensions.includes(extension);
+            });
+
+            if (!error) {
+                errorBox?.classList.add('d-none');
+                if (errorBox) {
+                    errorBox.textContent = '';
+                }
+                return true;
+            }
+
+            if (errorBox) {
+                const extension = error.name.split('.').pop().toLowerCase();
+                errorBox.textContent = error.size > maxSize ?
+                    `${error.name} is larger than 50MB.` :
+                    `${extension.toUpperCase()} files are not supported.`;
+                errorBox.classList.remove('d-none');
+            }
+
+            input.value = '';
+            return false;
         }
     </script>
 
@@ -535,8 +661,16 @@
             e.currentTarget.classList.remove('drag-over');
 
             const files = e.dataTransfer.files;
-            const input = document.getElementById('fileInput');
+            const input = e.currentTarget.querySelector('input[type="file"]');
+            if (!input) {
+                return;
+            }
             input.files = files;
+            if (!validateProjectFiles({
+                    target: input
+                })) {
+                return;
+            }
             input.dispatchEvent(new Event('change', {
                 bubbles: true
             }));

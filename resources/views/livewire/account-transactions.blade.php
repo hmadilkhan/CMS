@@ -1,4 +1,42 @@
 <div class="card mt-4">
+    <style>
+        .account-transactions-table th,
+        .account-transactions-table td {
+            vertical-align: middle;
+        }
+
+        .account-transactions-table .transaction-actions {
+            width: 150px;
+            min-width: 150px;
+        }
+
+        .transaction-action-group {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            white-space: nowrap;
+        }
+
+        .transaction-action-btn {
+            min-width: 34px;
+            height: 34px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0;
+            border-radius: 8px !important;
+            line-height: 1;
+        }
+
+        .transaction-delete-confirm {
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+            margin-top: 0.55rem;
+            white-space: nowrap;
+            font-size: 0.78rem;
+        }
+    </style>
     <div class="card-header">
         <h3 class=" fw-bold flex-fill mb-0 mt-sm-0" data-bs-toggle="collapse" aria-expanded="false"
             aria-controls="adderTable">Account Transactions</h3>
@@ -83,7 +121,7 @@
                         <th>Date</th>
                         <th>Details</th>
                         @can('Account Transactions Edit')
-                            <th>Actions</th>
+                            <th class="transaction-actions text-center">Actions</th>
                         @endcan
                     </tr>
                 </thead>
@@ -99,13 +137,19 @@
                             <td>{{ date('d M Y',strtotime($transaction->transaction_date)) }}</td>
                             <td>{{ $transaction->transaction_details }}</td>
                             @can('Account Transactions Edit')
-                                <td>
-                                    <button class="btn btn-sm btn-info"
-                                        wire:click="edit({{ $transaction->id }})">Edit</button>
-                                    <button class="btn btn-sm btn-danger"
-                                        wire:click="confirmDelete({{ $transaction->id }})">Delete</button>
+                                <td class="transaction-actions text-center">
+                                    <div class="transaction-action-group">
+                                        <button class="btn btn-sm btn-info transaction-action-btn" title="Edit"
+                                            wire:click="edit({{ $transaction->id }})">
+                                            <i class="icofont-edit"></i>
+                                        </button>
+                                        <button class="btn btn-sm btn-danger transaction-action-btn" title="Delete"
+                                            wire:click="confirmDelete({{ $transaction->id }})">
+                                            <i class="icofont-trash"></i>
+                                        </button>
+                                    </div>
                                     @if ($confirmingDeleteId === $transaction->id)
-                                        <div class="mt-2">
+                                        <div class="transaction-delete-confirm">
                                             <span>Are you sure?</span>
                                             <button class="btn btn-sm btn-danger"
                                                 wire:click="delete({{ $transaction->id }})">Yes</button>
@@ -118,7 +162,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="6" class="text-center">No transactions found.</td>
+                            <td colspan="@can('Account Transactions Edit') 9 @else 8 @endcan" class="text-center">No transactions found.</td>
                         </tr>
                     @endforelse
                 </tbody>

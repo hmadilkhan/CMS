@@ -65,26 +65,39 @@ class EnhancedFilesSection extends Component
     public function updatedFiles()
     {
         $this->validate();
+        $this->uploadedFiles = [];
+
         foreach ($this->files as $file) {
             $ext = strtolower($file->getClientOriginalExtension());
             $isImage = in_array($ext, ['jpg', 'jpeg', 'png', 'heic']);
+            $isPreviewable = in_array($ext, ['jpg', 'jpeg', 'png']);
+            $preview = null;
+
+            if ($isPreviewable) {
+                try {
+                    $preview = $file->temporaryUrl();
+                } catch (\Throwable $e) {
+                    $preview = null;
+                }
+            }
             
             $this->uploadedFiles[] = [
-                'file' => $file,
                 'name' => $file->getClientOriginalName(),
                 'size' => $file->getSize(),
                 'extension' => $ext,
                 'isImage' => $isImage,
-                'preview' => $isImage ? $file->temporaryUrl() : null
+                'preview' => $preview
             ];
         }
-        $this->reset('files');
     }
 
     public function removePreview($index)
     {
         unset($this->uploadedFiles[$index]);
+        unset($this->files[$index]);
+
         $this->uploadedFiles = array_values($this->uploadedFiles);
+        $this->files = array_values($this->files);
     }
 
     public function save()
@@ -97,10 +110,10 @@ class EnhancedFilesSection extends Component
         $username = auth()->user()->name;
         $project = Project::findOrFail($this->projectId);
 
-        foreach ($this->uploadedFiles as $uploadedFile) {
-            $originalName = str_replace(' ', '_', $uploadedFile['file']->getClientOriginalName());
+        foreach ($this->files as $file) {
+            $originalName = str_replace(' ', '_', $file->getClientOriginalName());
             $timestampedName = time() . '_' . $originalName;
-            $imageName = $uploadedFile['file']->storeAs('projects', $timestampedName, 'public');
+            $imageName = $file->storeAs('projects', $timestampedName, 'public');
             $imageName = basename($imageName);
 
             ProjectFile::create([
