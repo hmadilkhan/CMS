@@ -4,7 +4,7 @@
     <style>
         .search-box-wrapper {
             position: relative;
-            width: 500px;
+            width: min(100%, 420px);
         }
 
         .search-icon {
@@ -21,14 +21,15 @@
             padding: 12px 20px 12px 50px;
             height: 50px;
             border-radius: 8px;
-            border: 2px solid #e9ecef;
+            border: 1px solid rgba(255, 255, 255, 0.28);
+            background: rgba(255, 255, 255, 0.94);
             transition: all 0.3s ease;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+            box-shadow: 0 14px 28px -22px rgba(52, 36, 22, 0.7);
         }
 
         .search-input:focus {
-            border-color: #2c3e50;
-            box-shadow: 0 4px 12px rgba(44, 62, 80, 0.15);
+            border-color: rgba(255, 255, 255, 0.86);
+            box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.2);
             outline: none;
         }
 
@@ -100,6 +101,12 @@
             text-transform: uppercase;
             letter-spacing: 1px;
             box-shadow: 0 2px 8px rgba(255, 215, 0, 0.3);
+        }
+
+        .project-filter-row {
+            display: flex;
+            justify-content: flex-end;
+            margin-bottom: 18px;
         }
 
         .premium-lock-card h3 {
@@ -181,9 +188,11 @@
     <div class="container-xxxl">
         <div class="row align-items-center">
             <div class="border-0 mb-4">
-                <div class="premium-lock-card">
-                    <div class="lock-icon-wrapper">
-                        <i class="icofont-lock"></i>
+                <div class="project-filter-row">
+                    <div class="search-box-wrapper">
+                        <i class="icofont-search search-icon"></i>
+                        <input type="text" class="form-control search-input" id="search"
+                            placeholder="Search projects" />
                     </div>
                 </div>
                 <div class="premium-lock-card department-tabs-card">
@@ -199,15 +208,6 @@
                                 @endforeach
                             </ul>
                         @endif
-                    </div>
-                </div>
-                <div class="row align-items-center justify-content-end py-3 px-0 flex-wrap">
-                    <div class="col-auto">
-                        <div class="search-box-wrapper">
-                            <i class="icofont-search search-icon"></i>
-                            <input type="text" class="form-control search-input" id="search"
-                                placeholder="Type to search / Enter to refresh" />
-                        </div>
                     </div>
                 </div>
 

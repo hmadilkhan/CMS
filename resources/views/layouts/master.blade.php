@@ -17,6 +17,139 @@
     <link rel="stylesheet" href="{{ asset('assets/css/my-task.style.min.css') }}">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.3/css/select2.min.css" rel="stylesheet" />
 
+    <style>
+        #mytask-layout.theme-indigo {
+            --primary-color: var(--solen-primary);
+            --secondary-color: var(--solen-gold);
+            --primary-gradient: var(--solen-gradient);
+            --body-color: var(--solen-background);
+            --card-color: var(--solen-card);
+            --border-color: var(--solen-border);
+            --color-100: #fff8ec;
+            --color-200: #fff1dc;
+            --color-300: #f5e5cf;
+            --color-400: #cdbda8;
+            --color-500: #a49686;
+            --color-600: #7c6f60;
+            --color-700: #5c4632;
+            --color-800: #3f2e20;
+            --color-900: #342416;
+        }
+
+        body {
+            background: var(--solen-background);
+            color: var(--solen-foreground);
+        }
+
+        #mytask-layout {
+            background:
+                radial-gradient(circle at top left, rgba(247, 201, 72, 0.2), transparent 34%),
+                var(--solen-background);
+            min-height: 100vh;
+        }
+
+        .sidebar {
+            background: var(--solen-gradient) !important;
+            box-shadow: var(--solen-shadow);
+        }
+
+        .sidebar.sidebar-mini .menu-list .sub-menu,
+        .sidebar.sidebar-mini .menu-list .m-link:hover span {
+            background: var(--solen-gradient) !important;
+        }
+
+        .sidebar .brand-icon .logo-icon {
+            background: rgba(255, 255, 255, 0.96);
+            border-radius: 50%;
+            box-shadow: 0 0 42px rgba(255, 246, 229, 0.46);
+        }
+
+        .sidebar .menu-list .m-link,
+        .sidebar .menu-list .ms-link,
+        .sidebar .form-switch label,
+        .sidebar .sidebar-title {
+            color: rgba(255, 255, 255, 0.88) !important;
+        }
+
+        .sidebar .menu-list .m-link:hover,
+        .sidebar .menu-list .m-link.active,
+        .sidebar .menu-list .ms-link:hover,
+        .sidebar .menu-list .ms-link.active {
+            background: rgba(255, 255, 255, 0.18);
+            color: #ffffff !important;
+        }
+
+        .sidebar .menu-list .sub-menu::before,
+        .sidebar .menu-list li[aria-expanded="true"] .sub-menu:before {
+            background-color: rgba(255, 255, 255, 0.7);
+        }
+
+        .main {
+            background: transparent;
+        }
+
+        .header .navbar,
+        .card,
+        .dropdown-menu,
+        .modal-content {
+            background-color: var(--solen-card) !important;
+            border-color: var(--solen-border) !important;
+            box-shadow: 0 18px 48px -34px rgba(52, 36, 22, 0.45);
+        }
+
+        .card .card-header,
+        .modal-header,
+        .premium-header,
+        .premium-modal-header,
+        .bg-dark,
+        .bg-gradient-primary {
+            background: var(--solen-gradient) !important;
+            border-color: var(--solen-primary-border) !important;
+            color: #ffffff !important;
+        }
+
+        .table,
+        .form-control,
+        .form-select,
+        .select2-container--default .select2-selection--single,
+        .select2-container--default .select2-selection--multiple {
+            border-color: var(--solen-border) !important;
+            color: var(--solen-foreground);
+        }
+
+        .table-light,
+        .table-hover > tbody > tr:hover > * {
+            background-color: var(--solen-secondary) !important;
+            color: var(--solen-foreground) !important;
+        }
+
+        .btn-primary,
+        .btn-dark,
+        .btn-success,
+        .page-item.active .page-link {
+            background: var(--solen-gradient) !important;
+            border-color: transparent !important;
+            color: #ffffff !important;
+            box-shadow: 0 12px 30px -18px rgba(151, 76, 18, 0.55);
+        }
+
+        a,
+        .page-link,
+        .text-primary {
+            color: var(--solen-primary-dark) !important;
+        }
+
+        .btn-primary a,
+        .btn-dark a,
+        .btn-success a,
+        .sidebar a,
+        .card-header a,
+        .premium-header a,
+        .premium-modal-header a {
+            color: inherit !important;
+        }
+    </style>
+
     @include('layouts.partials.solen-theme')
 
     @livewireStyles
