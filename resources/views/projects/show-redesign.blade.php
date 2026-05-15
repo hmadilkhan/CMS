@@ -1500,11 +1500,12 @@
             grid-template-columns: 2.5rem minmax(0, 1fr);
             align-items: center;
             gap: 0.85rem;
-            padding: 1rem;
+            padding: 1rem 3.35rem 1rem 1rem;
             background: #ffffff !important;
             border-radius: 0;
             box-shadow: none;
             overflow: visible;
+            position: relative;
             transform: none;
         }
 
@@ -1519,6 +1520,7 @@
             border-radius: 7px;
             background: var(--workspace-soft) !important;
             overflow: hidden;
+            position: static;
         }
 
         #project-show-page.project-workspace-redesign .sample-files-column .file-preview img,
