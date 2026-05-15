@@ -23,9 +23,13 @@
     //     projectList('all');
     // })
     
-    $("#search").keypress(function(){
-        projectList('all');
-    })
+    let projectSearchTimer;
+    $("#search").on("input", function() {
+        clearTimeout(projectSearchTimer);
+        projectSearchTimer = setTimeout(function() {
+            projectList('all');
+        }, 250);
+    });
 
 
 

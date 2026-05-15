@@ -27,11 +27,11 @@
         background: #ffffff;
         border-bottom: 1px solid var(--solen-primary-border);
         padding: 1rem;
-        color: rgba(69, 26, 3, 0.4);
+        color: var(--solen-warm-text);
     }
 
     .project-header .text-white {
-        color: rgba(69, 26, 3, 0.55) !important;
+        color: var(--solen-warm-text) !important;
     }
 
     .project-header img {
@@ -41,7 +41,7 @@
     .days-badge {
         background: rgba(245, 158, 11, 0.1);
         backdrop-filter: blur(10px);
-        color: rgba(69, 26, 3, 0.6);
+        color: var(--solen-warm-text);
         padding: 0.4rem 0.8rem;
         border-radius: 20px;
         font-weight: 600;

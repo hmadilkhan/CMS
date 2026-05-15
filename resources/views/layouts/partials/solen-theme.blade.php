@@ -35,16 +35,16 @@
     .sidebar,
     [data-theme="dark"] .sidebar,
     [data-theme="light"] .sidebar {
-        background: var(--solen-gradient) !important;
+        background: linear-gradient(180deg, #111111 0%, #050505 100%) !important;
         background-clip: padding-box;
         border: 0 !important;
         outline: 0 !important;
-        box-shadow: var(--solen-shadow);
+        box-shadow: 0 24px 60px -28px rgba(0, 0, 0, 0.75);
     }
 
     .sidebar.sidebar-mini .menu-list .sub-menu,
     .sidebar.sidebar-mini .menu-list .m-link:hover span {
-        background: var(--solen-gradient) !important;
+        background: linear-gradient(180deg, #111111 0%, #050505 100%) !important;
     }
 
     .sidebar .brand-icon .logo-icon {

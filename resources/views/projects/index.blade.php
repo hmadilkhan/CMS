@@ -4,7 +4,7 @@
     <style>
         .search-box-wrapper {
             position: relative;
-            width: min(100%, 420px);
+            width: min(100%, 560px);
         }
 
         .search-icon {
@@ -20,16 +20,16 @@
         .search-input {
             padding: 12px 20px 12px 50px;
             height: 50px;
-            border-radius: 8px;
-            border: 1px solid rgba(255, 255, 255, 0.28);
-            background: rgba(255, 255, 255, 0.94);
+            border-radius: 999px;
+            border: 1px solid var(--solen-primary-border-stronger);
+            background: #ffffff;
             transition: all 0.3s ease;
-            box-shadow: 0 14px 28px -22px rgba(52, 36, 22, 0.7);
+            box-shadow: 0 14px 28px -24px rgba(52, 36, 22, 0.35);
         }
 
         .search-input:focus {
-            border-color: rgba(255, 255, 255, 0.86);
-            box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.2);
+            border-color: var(--solen-primary);
+            box-shadow: 0 0 0 4px var(--solen-primary-focus);
             outline: none;
         }
 
@@ -105,8 +105,8 @@
 
         .project-filter-row {
             display: flex;
-            justify-content: flex-end;
-            margin-bottom: 18px;
+            justify-content: center;
+            margin-bottom: 22px;
         }
 
         .premium-lock-card h3 {
@@ -192,7 +192,7 @@
                     <div class="search-box-wrapper">
                         <i class="icofont-search search-icon"></i>
                         <input type="text" class="form-control search-input" id="search"
-                            placeholder="Search projects" />
+                            placeholder="Search by project, email, phone, or address" />
                     </div>
                 </div>
                 <div class="premium-lock-card department-tabs-card">

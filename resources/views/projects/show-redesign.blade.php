@@ -1311,6 +1311,40 @@
             color: var(--workspace-ink);
         }
 
+        #project-show-page.project-workspace-redesign .note-header,
+        #project-show-page.project-workspace-redesign .files-header,
+        #project-show-page.project-workspace-redesign .project-section-header {
+            display: flex;
+            align-items: center;
+            min-height: 58px;
+            margin: 0 0 1rem;
+            padding: 1rem 1.15rem;
+            background: transparent !important;
+            color: var(--workspace-ink) !important;
+            border-bottom: 1px solid var(--workspace-line) !important;
+            border-radius: 0 !important;
+            box-shadow: none !important;
+            font-size: 1rem;
+            font-weight: 700;
+            line-height: 1.2;
+        }
+
+        #project-show-page.project-workspace-redesign .note-header i,
+        #project-show-page.project-workspace-redesign .files-header i,
+        #project-show-page.project-workspace-redesign .project-section-header i {
+            color: var(--workspace-amber);
+        }
+
+        #project-show-page.project-workspace-redesign .notes-section {
+            padding: 0 0 1.25rem;
+            background: transparent !important;
+            border-radius: 0;
+        }
+
+        #project-show-page.project-workspace-redesign .project-section-panel {
+            margin-bottom: 1.5rem;
+        }
+
         @media (max-width: 768px) {
             #project-show-page.project-workspace-redesign > .card:first-child {
                 padding: 1.25rem 1rem;
@@ -1590,7 +1624,12 @@
                                                 <div class="row clearfix">
                                                     <div class="col-sm-6 mb-3">
                                                         @livewire('project.notes-section', ['projectId' => $project->id, 'taskId' => $task->id, 'departmentId' => $department->id, 'projectDepartmentId' => $project->department_id, 'ghost' => $ghost,'viewSource' => 'crm'], key('notes-' . $department->id))
-                                                        @livewire('project.project-fields', ['project' => $project, 'taskId' => $task->id, 'departmentId' => $department->id, 'projectDepartmentId' => $project->department_id, 'ghost' => $ghost,'viewSource' => 'crm'], key('fields-' . $department->id))
+                                                        <div class="project-section-panel">
+                                                            <div class="project-section-header">
+                                                                <i class="icofont-list me-2"></i>Department Fields
+                                                            </div>
+                                                            @livewire('project.project-fields', ['project' => $project, 'taskId' => $task->id, 'departmentId' => $department->id, 'projectDepartmentId' => $project->department_id, 'ghost' => $ghost,'viewSource' => 'crm'], key('fields-' . $department->id))
+                                                        </div>
                                                     </div>
 
                                                     <div class="col-sm-6 mb-3">

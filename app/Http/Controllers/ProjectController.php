@@ -806,9 +806,20 @@ class ProjectController extends Controller
             $subdepartmentsQuery->where("department_id", $request->id);
         }
         if ($request->search != "") {
-            $query->whereHas('customer', function ($q) use ($request) {
-                $q->where('first_name', 'like', '%' . $request->search . '%')->orWhere('last_name', 'like', '%' . $request->search . '%')
-                    ->orWhere('street', 'like', '%' . $request->search . '%');
+            $search = '%' . $request->search . '%';
+            $query->where(function ($projectQuery) use ($search) {
+                $projectQuery->where('project_name', 'like', $search)
+                    ->orWhere('code', 'like', $search)
+                    ->orWhereHas('customer', function ($q) use ($search) {
+                        $q->where('first_name', 'like', $search)
+                            ->orWhere('last_name', 'like', $search)
+                            ->orWhere('email', 'like', $search)
+                            ->orWhere('phone', 'like', $search)
+                            ->orWhere('street', 'like', $search)
+                            ->orWhere('city', 'like', $search)
+                            ->orWhere('state', 'like', $search)
+                            ->orWhere('zipcode', 'like', $search);
+                    });
             });
         }
         if ($request->id == "all") {
