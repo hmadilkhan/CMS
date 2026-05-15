@@ -77,20 +77,20 @@
     }
 
     .department-header {
-        background: var(--solen-gradient);
+        background: transparent;
         border: 0;
         border-radius: 12px;
-        padding: 1.25rem 1.5rem;
-        box-shadow: 0 18px 44px -28px rgba(151, 76, 18, 0.6);
+        padding: 0.6rem 1rem;
+        box-shadow: none;
         margin-bottom: 1.5rem;
         text-align: center;
     }
 
     .department-header h3 {
-        color: #fff;
+        color: var(--solen-warm-text);
         font-size: 1.5rem;
         margin: 0;
-        letter-spacing: 0.5px;
+        letter-spacing: 0;
         width: 100%;
     }
 
@@ -127,15 +127,15 @@
     }
 
     .count-badge {
-        background: rgba(255, 255, 255, 0.22);
-        border: 1px solid rgba(255, 255, 255, 0.34);
-        color: #fff;
+        background: var(--solen-cream-strong);
+        border: 0;
+        color: var(--solen-warm-text);
         padding: 0.4rem 0.9rem;
         border-radius: 20px;
         font-size: 0.9rem;
         font-weight: 700;
         margin-left: 0;
-        box-shadow: 0 10px 24px -18px rgba(52, 36, 22, 0.6);
+        box-shadow: none;
         transition: all 0.3s ease;
     }
 
