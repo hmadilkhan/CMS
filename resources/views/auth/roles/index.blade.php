@@ -13,7 +13,9 @@
     @endif
 
     @include('operations.partials.index-styles')
+    @include('auth.partials.user-management-styles')
 
+    <div class="user-management-page">
     <div class="operation-page-header">
         <div>
             <h1 class="operation-page-title">Roles</h1>
@@ -123,6 +125,7 @@
                 </div>
             </div>
         </div>
+    </div>
     </div>
 @endsection
 @section('scripts')

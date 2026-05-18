@@ -213,6 +213,10 @@ class DatabaseSeeder extends Seeder
         ]);
         \App\Models\ProjectDepartmentField::create([
             "department_id" => 1,
+            "field_name" => 'ahj',
+        ]);
+        \App\Models\ProjectDepartmentField::create([
+            "department_id" => 1,
             "field_name" => 'hoa_phone_number',
         ]);
         // 2

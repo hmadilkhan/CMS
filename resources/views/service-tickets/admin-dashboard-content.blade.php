@@ -1,37 +1,42 @@
 <style>
     .premium-card {
         background: #fff;
-        border-radius: 16px;
-        box-shadow: 0 8px 30px rgba(0,0,0,0.1);
-        border: none;
+        border-radius: 8px;
+        box-shadow: none;
+        border: 1px solid #e5e7eb;
         overflow: hidden;
     }
     .premium-card-header {
-        background: linear-gradient(135deg, #2c3e50 0%, #000000 100%);
-        color: #fff;
-        padding: 1.5rem 2rem;
+        background: #ffffff !important;
+        color: #050505 !important;
+        padding: 1rem 1.25rem;
         border: none;
+        border-bottom: 1px solid #e5e7eb;
+    }
+    .premium-card-header h3,
+    .premium-card-header i {
+        color: #050505 !important;
     }
     .premium-table thead {
-        background: linear-gradient(135deg, #2c3e50 0%, #000000 100%);
+        background: #f8fafc !important;
     }
     .premium-table thead th {
-        color: #fff;
+        color: #050505 !important;
         font-weight: 600;
         text-transform: uppercase;
         font-size: 0.85rem;
-        letter-spacing: 0.5px;
-        padding: 1.2rem 1rem;
-        border: none;
+        letter-spacing: 0;
+        padding: 1rem;
+        border-bottom: 1px solid #e5e7eb;
     }
     .premium-table tbody tr {
         transition: all 0.3s ease;
         border-bottom: 1px solid #f0f0f0;
     }
     .premium-table tbody tr:hover {
-        background: linear-gradient(90deg, #f8f9fa 0%, #ffffff 100%);
-        transform: scale(1.01);
-        box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+        background: #f8fafc;
+        transform: none;
+        box-shadow: none;
     }
     .premium-table tbody td {
         padding: 1.2rem 1rem;
@@ -43,16 +48,48 @@
         font-weight: 600;
         font-size: 0.8rem;
         text-transform: uppercase;
-        letter-spacing: 0.5px;
+        letter-spacing: 0;
+    }
+    .ticket-badge-high {
+        background: #fee2e2 !important;
+        color: #991b1b !important;
+    }
+    .ticket-badge-medium,
+    .ticket-badge-pending-time {
+        background: #eff6ff !important;
+        color: #F19828 !important;
+    }
+    .ticket-badge-low {
+        background: #ecfeff !important;
+        color: #0e7490 !important;
+    }
+    .ticket-badge-status {
+        background: #f1f5f9 !important;
+        color: #475569 !important;
+    }
+    .ticket-comment-badge {
+        background: #050505 !important;
+        color: #ffffff !important;
+    }
+    .admin-ticket-modal-header {
+        background: #ffffff !important;
+        color: #050505 !important;
+        border: none;
+        border-bottom: 1px solid #e5e7eb;
+        border-radius: 16px 16px 0 0;
+    }
+    .admin-ticket-modal-header .modal-title,
+    .admin-ticket-modal-header i {
+        color: #050505 !important;
     }
     .project-link {
-        color: #2c3e50;
+        color: #1d4ed8;
         font-weight: 600;
         text-decoration: none;
         transition: all 0.3s ease;
     }
     .project-link:hover {
-        color: #000;
+        color: #050505;
         text-decoration: underline;
     }
 </style>
@@ -67,59 +104,74 @@
 
 <style>
     .premium-widget {
-        background: linear-gradient(135deg, #2c3e50 0%, #000000 100%);
-        border-radius: 16px;
-        padding: 2rem;
+        background: #ffffff !important;
+        border-radius: 12px;
+        padding: 1.5rem;
         position: relative;
         overflow: hidden;
         transition: all 0.3s ease;
-        box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+        box-shadow: none !important;
+        border: 1px solid #e5e7eb !important;
     }
     .premium-widget:hover {
-        transform: translateY(-5px);
-        box-shadow: 0 12px 35px rgba(0,0,0,0.25);
+        transform: translateY(-2px);
+        border-color: #cbd5e1 !important;
+        box-shadow: 0 8px 18px rgba(15, 23, 42, 0.06) !important;
     }
     .premium-widget::before {
-        content: '';
+        content: none;
         position: absolute;
         top: 0;
         right: 0;
         width: 100px;
         height: 100px;
-        background: rgba(255,255,255,0.05);
+        background: transparent;
         border-radius: 50%;
         transform: translate(30%, -30%);
     }
     .widget-icon {
         width: 56px;
         height: 56px;
-        background: rgba(255,255,255,0.1);
-        backdrop-filter: blur(10px);
+        background: #eff6ff !important;
+        border: 1px solid #dbeafe;
+        backdrop-filter: none;
         border-radius: 12px;
         display: flex;
         align-items: center;
         justify-content: center;
         font-size: 24px;
-        color: #fff;
+        color: #e47b11 !important;
         margin-bottom: 1rem;
+    }
+    .premium-widget .widget-icon i {
+        color: #F19828 !important;
     }
     .widget-value {
         font-size: 2.5rem;
         font-weight: 800;
-        color: #fff;
+        color: #050505 !important;
         margin: 0;
         line-height: 1;
     }
     .widget-label {
-        color: rgba(255,255,255,0.8);
+        color: #64748b !important;
         font-size: 0.9rem;
         font-weight: 600;
         text-transform: uppercase;
-        letter-spacing: 1px;
+        letter-spacing: 0;
         margin-top: 0.5rem;
     }
-    .widget-pending { background: linear-gradient(135deg, #f39c12 0%, #e67e22 100%); }
-    .widget-high { background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%); }
+    .widget-pending,
+    .widget-high {
+        background: #ffffff !important;
+    }
+    .widget-pending .widget-icon {
+        color: #F19828 !important;
+    }
+    .widget-high .widget-icon {
+        color: #F19828 !important;
+        border-color: #fecaca;
+    }
 </style>
 
 <div class="row mb-4">
@@ -182,22 +234,22 @@
                                     <td>{{ $ticket->creator->name ?? 'N/A' }}</td>
                                     <td>
                                         <span class="premium-badge 
-                                            @if($ticket->priority == 'High') bg-danger
-                                            @elseif($ticket->priority == 'Medium') bg-warning text-dark
-                                            @else bg-info
+                                            @if($ticket->priority == 'High') ticket-badge-high
+                                            @elseif($ticket->priority == 'Medium') ticket-badge-medium
+                                            @else ticket-badge-low
                                             @endif">
                                             {{ $ticket->priority }}
                                         </span>
                                     </td>
                                     <td>
-                                        <span class="premium-badge {{ $ticket->status == 'Resolved' ? 'bg-success' : 'bg-secondary' }}">
+                                        <span class="premium-badge {{ $ticket->status == 'Resolved' ? 'bg-success' : 'ticket-badge-status' }}">
                                             <i class="icofont-{{ $ticket->status == 'Resolved' ? 'check' : 'clock-time' }} me-1"></i>{{ $ticket->status }}
                                         </span>
                                     </td>
                                     <td>
                                         {{ $ticket->notes }}
                                         @if($ticket->comments_count > 0)
-                                            <span class="badge bg-dark ms-2" title="Comments">
+                                            <span class="badge ticket-comment-badge ms-2" title="Comments">
                                                 <i class="icofont-comment"></i> {{ $ticket->comments_count }}
                                             </span>
                                         @endif
@@ -205,7 +257,7 @@
                                     <td><i class="icofont-ui-calendar me-2"></i>{{ $ticket->created_at->format('M d, Y H:i') }}</td>
                                     <td>
                                         @if($ticket->status == 'Pending')
-                                            <span class="badge bg-warning text-dark">{{ $ticket->created_at->diffForHumans() }}</span>
+                                            <span class="badge ticket-badge-pending-time">{{ $ticket->created_at->diffForHumans() }}</span>
                                         @else
                                             <span class="text-muted">-</span>
                                         @endif
@@ -236,9 +288,9 @@
 <div class="modal fade" id="adminTicketModal" tabindex="-1">
     <div class="modal-dialog modal-lg modal-dialog-centered">
         <div class="modal-content" style="border-radius: 16px; border: none; box-shadow: 0 10px 40px rgba(0,0,0,0.2);">
-            <div class="modal-header" style="background: linear-gradient(135deg, #2c3e50 0%, #000000 100%); color: #fff; border: none; border-radius: 16px 16px 0 0;">
+            <div class="modal-header admin-ticket-modal-header">
                 <h5 class="modal-title fw-bold"><i class="icofont-ticket me-2"></i>Ticket Details</h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body" style="padding: 2rem;">
                 <div id="adminTicketDetails"></div>

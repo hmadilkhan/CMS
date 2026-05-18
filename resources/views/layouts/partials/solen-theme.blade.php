@@ -60,12 +60,26 @@
         color: rgba(255, 255, 255, 0.9) !important;
     }
 
+    .sidebar a:hover {
+        text-decoration: none;
+        color: #F19828 !important;
+    }
+
     .sidebar .menu-list .m-link:hover,
     .sidebar .menu-list .m-link.active,
+    .sidebar .menu-list .m-link.show,
     .sidebar .menu-list .ms-link:hover,
     .sidebar .menu-list .ms-link.active {
-        background: rgba(255, 255, 255, 0.18) !important;
-        color: #ffffff !important;
+        background: transparent !important;
+        color: #F19828 !important;
+    }
+
+    .sidebar .menu-list .m-link:hover *,
+    .sidebar .menu-list .m-link.active *,
+    .sidebar .menu-list .m-link.show *,
+    .sidebar .menu-list .ms-link:hover *,
+    .sidebar .menu-list .ms-link.active * {
+        color: #F19828 !important;
     }
 
     .main {

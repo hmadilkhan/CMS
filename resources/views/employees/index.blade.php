@@ -1,13 +1,16 @@
 @extends("layouts.master")
 @section('title', 'Employees')
 @section('content')
+@include('auth.partials.user-management-styles')
 <div class="body d-flex py-lg-3 py-md-2">
-    <div class="container-xxl">
+    <div class="container-xxl user-management-page">
+        <div class="user-management-heading">
+            <h1><i class="icofont-users-alt-4 me-2"></i>Employees</h1>
+        </div>
         <div class="row clearfix">
             <div class="col-md-12">
-                <div class="card border-0 mb-4 no-bg">
-                    <div class="card-header py-3 px-0 d-sm-flex align-items-center  justify-content-between border-bottom">
-                        <h3 class=" fw-bold flex-fill mb-0 mt-sm-0">Employee</h3>
+                <div class="mb-4">
+                    <div class="d-sm-flex align-items-center justify-content-center gap-2 flex-wrap">
                         <button type="button" class="btn btn-dark me-1 mt-1 w-sm-100" id="openemployee"><i class="icofont-plus-circle me-2 fs-6"></i>Add Employee</button>
                         <div class="dropdown">
                             <button class="btn btn-primary dropdown-toggle mt-1  w-sm-100" type="button" id="dropdownMenuButton2" data-bs-toggle="dropdown" aria-expanded="false">
@@ -54,7 +57,7 @@
                             <td>{{ $employee->user->getRoleNames()[0] }}</td>
                             <td class="text-center">
                                 <a style="cursor: pointer;" data-toggle="tooltip" title="Edit" onclick="edit('{{ $employee->id }}')">
-                                    <i class="icofont-pencil text-warning fs-4"></i></a>
+                                    <i class="icofont-pencil text-primary fs-4"></i></a>
                                 <a style="cursor: pointer;" data-toggle="tooltip" title="Delete" class="ml-2" onclick="deleteEmployee('{{ $employee->id }}')">
                                     <i class="icofont-trash text-danger fs-4"></i></a>
                             </td>

@@ -467,6 +467,11 @@
             color: #1d4ed8;
         }
 
+        .project-tag-chip.pto-greenlight-tag {
+            background: rgba(22, 163, 74, 0.12);
+            color: #15803d;
+        }
+
         .nav-tabs {
             border: none;
             background: white;
@@ -689,6 +694,29 @@
             font-weight: 800;
             text-align: center;
             text-transform: uppercase;
+        }
+
+        .project-summary-main {
+            width: 100%;
+        }
+
+        .project-customer-address {
+            margin: 0;
+            color: var(--solen-warm-text);
+            font-size: 1.1rem;
+            font-weight: 700;
+            line-height: 1.35;
+        }
+
+        .project-customer-contact {
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 0.5rem 1.4rem;
+            margin-top: 0.35rem;
+            color: var(--solen-muted);
+            font-size: 0.94rem;
+            font-weight: 600;
         }
 
         .project-assignee-control {
@@ -920,12 +948,14 @@
         }
 
         #project-show-page.project-workspace-redesign {
+            --workspace-gutter: clamp(0.25rem, 0.7vw, 0.65rem);
             width: 100%;
             margin: -1rem 0 0;
             padding-bottom: 3rem;
             background: var(--workspace-cream) !important;
             color: var(--workspace-ink);
             font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            overflow-x: clip;
         }
 
         #project-show-page.project-workspace-redesign::before {
@@ -942,13 +972,13 @@
             background: #ffffff !important;
             backdrop-filter: blur(12px);
             margin-bottom: 0 !important;
-            padding: 2rem clamp(1rem, 4vw, 2.5rem) 1.5rem;
+            padding: 1.5rem var(--workspace-gutter) 1.25rem;
         }
 
         #project-show-page.project-workspace-redesign > .card:first-child::after {
             content: "";
             display: block;
-            width: min(100%, 1320px);
+            width: 100%;
             height: 1px;
             margin: 1.5rem auto 0;
             background: var(--workspace-line);
@@ -957,26 +987,33 @@
         #project-show-page.project-workspace-redesign > .card:first-child .card-body,
         #project-show-page.project-workspace-redesign > .card:first-child .row,
         #project-show-page.project-workspace-redesign > .card:first-child .col-md-12 {
-            max-width: 1320px;
+            max-width: none;
             margin-left: auto;
             margin-right: auto;
             width: 100%;
         }
 
         #project-show-page.project-workspace-redesign .project-summary-header {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) auto;
             align-items: flex-start;
-            gap: 0.55rem;
+            gap: 1rem 1.5rem;
             padding: 0 0 1.5rem;
             border-radius: 0 !important;
             text-align: left;
         }
 
+        #project-show-page.project-workspace-redesign .project-summary-main {
+            min-width: 0;
+        }
+
         #project-show-page.project-workspace-redesign .project-stage-meta {
-            order: 2;
+            justify-self: end;
             display: flex;
-            align-items: center;
-            flex-wrap: wrap;
-            gap: 0.75rem;
+            flex-direction: column;
+            align-items: flex-end;
+            gap: 0.55rem;
+            text-align: right;
         }
 
         #project-show-page.project-workspace-redesign .project-days-badge {
@@ -1051,21 +1088,43 @@
             color: var(--workspace-ink-40);
         }
 
+        #project-show-page.project-workspace-redesign .project-stage-meta .project-assignee-name {
+            color: #1d4ed8;
+        }
+
+        #project-show-page.project-workspace-redesign .project-stage-meta .project-assignee-toggle::after {
+            color: #1d4ed8;
+            border-top-color: #1d4ed8;
+        }
+
         #project-show-page.project-workspace-redesign .project-stage-meta .project-assignee-menu {
             min-width: 220px;
             font-size: 0.86rem;
         }
 
         #project-show-page.project-workspace-redesign .project-summary-title {
-            order: 1;
             max-width: 48rem;
             color: var(--workspace-ink);
-            font-size: clamp(2rem, 4vw, 3.75rem);
+            font-size: clamp(2rem, 4vw, 3rem);
             font-weight: 600;
             line-height: 0.95;
             letter-spacing: 0;
             text-align: left;
             text-transform: none;
+        }
+
+        #project-show-page.project-workspace-redesign .project-customer-address {
+            max-width: 56rem;
+            margin-top: 0.55rem;
+            color: var(--workspace-ink);
+            font-size: clamp(1rem, 1.4vw, 1.22rem);
+            font-weight: 600;
+            line-height: 1.35;
+        }
+
+        #project-show-page.project-workspace-redesign .project-customer-contact {
+            color: var(--workspace-ink-60);
+            font-size: 0.9rem;
         }
 
         #project-show-page.project-workspace-redesign .project-title-status {
@@ -1083,14 +1142,22 @@
         }
 
         #project-show-page.project-workspace-redesign .project-tag-panel {
-            max-width: 1320px;
+            max-width: none;
             margin: -0.5rem auto 1.5rem;
-            padding: 0;
+            padding: 0 var(--workspace-gutter);
             background: transparent;
         }
 
-        #project-show-page.project-workspace-redesign .project-tag-list {
+        #project-show-page.project-workspace-redesign .project-tag-list.is-right {
+            justify-content: flex-end;
+        }
+
+        #project-show-page.project-workspace-redesign .project-tag-list.is-left {
             justify-content: flex-start;
+        }
+
+        #project-show-page.project-workspace-redesign .project-tag-list + .project-tag-list {
+            margin-top: 0.55rem;
         }
 
         #project-show-page.project-workspace-redesign .project-tag-chip {
@@ -1100,10 +1167,25 @@
             font-size: 0.76rem;
         }
 
+        #project-show-page.project-workspace-redesign .project-tag-chip.project-info-tag {
+            background: rgba(37, 99, 235, 0.1) !important;
+            border: 1px solid rgba(37, 99, 235, 0.18);
+            color: #1d4ed8 !important;
+        }
+
         #project-show-page.project-workspace-redesign .project-tag-chip.adder-tag {
             background: rgba(37, 99, 235, 0.1) !important;
             border: 1px solid rgba(37, 99, 235, 0.18);
             color: #1d4ed8 !important;
+        }
+
+        #project-show-page.project-workspace-redesign .project-stage-meta .pto-greenlight-tag {
+            align-self: flex-end;
+            border-radius: 6px;
+            background: rgba(22, 163, 74, 0.1) !important;
+            border: 1px solid rgba(22, 163, 74, 0.18);
+            color: #15803d !important;
+            font-size: 0.76rem;
         }
 
         #project-show-page.project-workspace-redesign .navbar,
@@ -1115,14 +1197,14 @@
         }
 
         #project-show-page.project-workspace-redesign > .card:first-child .d-flex.justify-content-center {
-            max-width: 1320px;
+            max-width: none;
             margin: 0 auto;
             justify-content: stretch !important;
         }
 
         #project-show-page.project-workspace-redesign .project-department-tabs.prtab-set {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+            display: flex;
+            flex-wrap: nowrap !important;
             gap: 1px;
             width: 100%;
             margin: 0 !important;
@@ -1136,16 +1218,21 @@
         #project-show-page.project-workspace-redesign .project-department-tabs.prtab-set .nav-item,
         #project-show-page.project-workspace-redesign .project-department-tabs.prtab-set .nav-link {
             width: 100%;
+            min-width: 0;
+        }
+
+        #project-show-page.project-workspace-redesign .project-department-tabs.prtab-set .nav-item {
+            flex: 1 1 0;
         }
 
         #project-show-page.project-workspace-redesign .project-department-tabs.prtab-set .nav-link {
-            min-height: 72px;
+            min-height: 58px;
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            gap: 0.4rem;
-            padding: 1rem 0.75rem !important;
+            gap: 0.32rem;
+            padding: 0.65rem 0.35rem !important;
             border-radius: 0 !important;
             background: var(--workspace-cream) !important;
             box-shadow: none !important;
@@ -1157,19 +1244,27 @@
             display: block;
             color: var(--workspace-ink-40);
             font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-            font-size: 0.58rem;
+            font-size: 0.52rem;
             font-weight: 500;
-            letter-spacing: 0.06em;
+            letter-spacing: 0.04em;
             line-height: 1.1;
             text-transform: uppercase;
+            max-width: 100%;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
         }
 
         #project-show-page.project-workspace-redesign .department-pipeline-status {
             display: block;
             color: rgba(69, 26, 3, 0.2);
-            font-size: 0.75rem;
+            font-size: 0.68rem;
             font-weight: 500;
             line-height: 1.1;
+            max-width: 100%;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
         }
 
         #project-show-page.project-workspace-redesign .project-department-tabs.prtab-set .nav-item.bg-success .nav-link:not(.active)::after {
@@ -1205,8 +1300,8 @@
         }
 
         #project-show-page.project-workspace-redesign #departmentDetailTabs {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+            display: flex;
+            flex-wrap: nowrap !important;
             gap: 1px;
             width: 100%;
             margin: 0 0 2rem !important;
@@ -1221,14 +1316,19 @@
         #project-show-page.project-workspace-redesign #departmentDetailTabs .nav-item,
         #project-show-page.project-workspace-redesign #departmentDetailTabs .nav-link {
             width: 100%;
+            min-width: 0;
+        }
+
+        #project-show-page.project-workspace-redesign #departmentDetailTabs .nav-item {
+            flex: 1 1 0;
         }
 
         #project-show-page.project-workspace-redesign #departmentDetailTabs .nav-link {
-            min-height: 64px;
+            min-height: 54px;
             display: flex;
             align-items: center;
             justify-content: center;
-            padding: 1rem 0.75rem !important;
+            padding: 0.65rem 0.35rem !important;
             border-radius: 0 !important;
             background: var(--workspace-cream) !important;
             box-shadow: none !important;
@@ -1246,22 +1346,52 @@
         #project-show-page.project-workspace-redesign .department-detail-tab-title {
             color: inherit;
             font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-            font-size: 0.72rem;
+            font-size: 0.58rem;
             font-weight: 500;
-            letter-spacing: 0.04em;
+            letter-spacing: 0.03em;
             line-height: 1.2;
             text-transform: uppercase;
+            max-width: 100%;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
         }
 
         #project-show-page.project-workspace-redesign > .row.clearfix.mt-2.mb-2 {
-            max-width: 1320px;
+            max-width: none;
             margin: 2rem auto 1.75rem !important;
-            padding: 0 clamp(1rem, 4vw, 2.5rem);
+            padding: 0 var(--workspace-gutter);
+        }
+
+        #project-show-page.project-workspace-redesign .project-content-shell {
+            max-width: none;
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) minmax(240px, 16vw);
+            gap: 0.75rem;
+            align-items: flex-start;
+            margin: 1.5rem auto 1.75rem;
+            padding: 0 var(--workspace-gutter);
+        }
+
+        #project-show-page.project-workspace-redesign .project-content-main {
+            min-width: 0;
+        }
+
+        #project-show-page.project-workspace-redesign .project-content-main > .row.clearfix.mt-2.mb-2 {
+            max-width: none;
+            margin: 0 0 1.75rem !important;
+            padding: 0;
+        }
+
+        #project-show-page.project-workspace-redesign .project-details-rail {
+            min-width: 0;
+            position: sticky;
+            top: 1rem;
         }
 
         #project-show-page.project-workspace-redesign .project-primary-tabs {
             justify-content: flex-start !important;
-            gap: 2.25rem;
+            gap: clamp(0.8rem, 1.8vw, 1.35rem);
             margin: 0 !important;
             padding: 0 !important;
             border-bottom: 1px solid var(--workspace-line) !important;
@@ -1300,7 +1430,7 @@
         }
 
         #project-show-page.project-workspace-redesign .project-primary-tabs .nav-link.active {
-            border-bottom: 2px solid var(--workspace-amber) !important;
+            border-bottom: 2px solid #1d4ed8 !important;
             color: var(--workspace-ink) !important;
             transform: none;
             font-weight: 500;
@@ -1353,9 +1483,9 @@
         }
 
         #project-show-page.project-workspace-redesign > .tab-content {
-            max-width: 1320px;
+            max-width: none;
             margin: 0 auto;
-            padding: 0 clamp(1rem, 4vw, 2.5rem);
+            padding: 0 var(--workspace-gutter);
         }
 
         #project-show-page.project-workspace-redesign .card:not(.modal .card) {
@@ -1458,7 +1588,8 @@
         }
 
         #project-show-page.project-workspace-redesign .sample-notes-column .note-header,
-        #project-show-page.project-workspace-redesign .sample-files-column .files-header {
+        #project-show-page.project-workspace-redesign .sample-files-column .files-header,
+        #project-show-page.project-workspace-redesign .project-details-rail .files-header {
             min-height: 0;
             margin: 0 0 1rem;
             padding: 0;
@@ -1475,7 +1606,8 @@
         }
 
         #project-show-page.project-workspace-redesign .sample-notes-column .note-header i,
-        #project-show-page.project-workspace-redesign .sample-files-column .files-header i {
+        #project-show-page.project-workspace-redesign .sample-files-column .files-header i,
+        #project-show-page.project-workspace-redesign .project-details-rail .files-header i {
             display: none;
         }
 
@@ -1625,6 +1757,57 @@
             color: var(--workspace-ink-40) !important;
         }
 
+        #project-show-page.project-workspace-redesign .project-detail-list {
+            display: flex;
+            flex-direction: column;
+            gap: 1px;
+            overflow: hidden;
+            background: var(--workspace-line);
+            border: 1px solid var(--workspace-line);
+            border-radius: 12px;
+        }
+
+        #project-show-page.project-workspace-redesign .project-detail-item {
+            min-height: 68px;
+            display: grid;
+            grid-template-columns: 2.5rem minmax(0, 1fr);
+            align-items: center;
+            gap: 0.85rem;
+            padding: 1rem;
+            background: #ffffff;
+        }
+
+        #project-show-page.project-workspace-redesign .project-detail-icon {
+            width: 2rem;
+            height: 2rem;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 7px;
+            background: var(--workspace-soft);
+            color: #1d4ed8;
+            font-size: 1rem;
+        }
+
+        #project-show-page.project-workspace-redesign .project-detail-label {
+            margin-bottom: 0.25rem;
+            color: var(--workspace-ink-40);
+            font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+            font-size: 0.62rem;
+            font-weight: 500;
+            letter-spacing: 0.04em;
+            line-height: 1.2;
+            text-transform: uppercase;
+        }
+
+        #project-show-page.project-workspace-redesign .project-detail-value {
+            color: var(--workspace-ink);
+            font-size: 0.9rem;
+            font-weight: 600;
+            line-height: 1.25;
+            overflow-wrap: anywhere;
+        }
+
         #project-show-page.project-workspace-redesign .sample-files-column .delete-icon {
             top: 50%;
             right: 0.65rem;
@@ -1665,6 +1848,33 @@
                 padding: 1.25rem 1rem;
             }
 
+            #project-show-page.project-workspace-redesign .project-summary-header {
+                grid-template-columns: 1fr;
+            }
+
+            #project-show-page.project-workspace-redesign .project-content-shell {
+                grid-template-columns: 1fr;
+                gap: 1.5rem;
+            }
+
+            #project-show-page.project-workspace-redesign .project-details-rail {
+                position: static;
+            }
+
+            #project-show-page.project-workspace-redesign .project-stage-meta {
+                justify-self: start;
+                align-items: flex-start;
+                text-align: left;
+            }
+
+            #project-show-page.project-workspace-redesign .project-stage-meta .pto-greenlight-tag {
+                align-self: flex-start;
+            }
+
+            #project-show-page.project-workspace-redesign .project-customer-contact {
+                gap: 0.35rem 1rem;
+            }
+
             #project-show-page.project-workspace-redesign .project-primary-tabs {
                 gap: 1rem;
                 overflow-x: auto;
@@ -1696,12 +1906,12 @@
         <div class="card-body">
             <div class="row clearfix">
                 <div class="col-md-12">
-                    @if ($alertStatus)
+                    {{-- @if ($alertStatus)
                         <div class="alert alert-{{ $alertClass }} alert-dismissible fade show" role="alert">
                             {{ $message }}
                             <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
                         </div>
-                    @endif
+                    @endif --}}
                     <div class="card border-0 mb-4 no-bg">
                         @php
                             $currentAssignedName = optional($task->employee)->name ?? 'Unassigned';
@@ -1710,37 +1920,61 @@
                                 : Carbon\Carbon::parse($project->pto_approval_date)->diffInDays(
                                     Carbon\Carbon::parse($project->customer->sold_date),
                                 );
+                            $customerAddressParts = array_filter([
+                                $project->customer->street,
+                                $project->customer->city,
+                                $project->customer->state,
+                                $project->customer->zipcode,
+                            ]);
+                            $customerAddress = implode(', ', $customerAddressParts);
+                            $isPtoGreenlightApproved =
+                                $alertStatus &&
+                                ($alertClass ?? null) === 'success' &&
+                                ($message ?? null) === 'PTO Greenlight approved';
                         @endphp
                         <div class="card-header project-summary-header border-0">
-                            <h3 class="project-summary-title">
-                                @if (auth()->user()->hasAnyRole(['Super Admin', 'Admin', 'Manager']))
-                                    <div class="dropdown d-inline-block">
-                                        <button class="project-title-status dropdown-toggle" type="button"
-                                            data-bs-toggle="dropdown" aria-expanded="false">
-                                            {{ str_replace('-', ' ', $project->project_name) }}
-                                        </button>
-                                        <ul class="dropdown-menu project-title-status-menu">
-                                            <li>
-                                                <button type="button"
-                                                    class="dropdown-item project-status-option {{ $task->status == 'In-Progress' ? 'active' : '' }}"
-                                                    data-status="In-Progress">In-Progress</button>
-                                            </li>
-                                            <li>
-                                                <button type="button"
-                                                    class="dropdown-item project-status-option {{ $task->status == 'Hold' ? 'active' : '' }}"
-                                                    data-status="Hold">Hold</button>
-                                            </li>
-                                            <li>
-                                                <button type="button"
-                                                    class="dropdown-item project-status-option {{ $task->status == 'Cancelled' ? 'active' : '' }}"
-                                                    data-status="Cancelled">Cancelled</button>
-                                            </li>
-                                        </ul>
-                                    </div>
-                                @else
-                                    {{ str_replace('-', ' ', $project->project_name) }}
+                            <div class="project-summary-main">
+                                <h3 class="project-summary-title">
+                                    @if (auth()->user()->hasAnyRole(['Super Admin', 'Admin', 'Manager']))
+                                        <div class="dropdown d-inline-block">
+                                            <button class="project-title-status" type="button"
+                                                data-bs-toggle="dropdown" aria-expanded="false">
+                                                {{ str_replace('-', ' ', $project->project_name) }}
+                                            </button>
+                                            <ul class="dropdown-menu project-title-status-menu">
+                                                <li>
+                                                    <button type="button"
+                                                        class="dropdown-item project-status-option {{ $task->status == 'In-Progress' ? 'active' : '' }}"
+                                                        data-status="In-Progress">In-Progress</button>
+                                                </li>
+                                                <li>
+                                                    <button type="button"
+                                                        class="dropdown-item project-status-option {{ $task->status == 'Hold' ? 'active' : '' }}"
+                                                        data-status="Hold">Hold</button>
+                                                </li>
+                                                <li>
+                                                    <button type="button"
+                                                        class="dropdown-item project-status-option {{ $task->status == 'Cancelled' ? 'active' : '' }}"
+                                                        data-status="Cancelled">Cancelled</button>
+                                                </li>
+                                            </ul>
+                                        </div>
+                                    @else
+                                        {{ str_replace('-', ' ', $project->project_name) }}
+                                    @endif
+                                </h3>
+                                @if ($customerAddress)
+                                    <p class="project-customer-address">{{ $customerAddress }}</p>
                                 @endif
-                            </h3>
+                                <div class="project-customer-contact">
+                                    @if ($project->customer->phone)
+                                        <span>{{ $project->customer->phone }}</span>
+                                    @endif
+                                    @if ($project->customer->email)
+                                        <span>{{ $project->customer->email }}</span>
+                                    @endif
+                                </div>
+                            </div>
                             <div class="project-stage-meta">
                                 <span class="project-days-badge">{{ $projectAgeDays }} Days in progress</span>
                                 @if (auth()->user()->hasAnyRole(['Super Admin', 'Admin', 'Manager']))
@@ -1768,6 +2002,9 @@
                                 @else
                                     <span class="project-current-stage">Assigned: {{ $currentAssignedName }}</span>
                                 @endif
+                                @if ($isPtoGreenlightApproved)
+                                    <span class="project-tag-chip pto-greenlight-tag">PTO Greenlight Approved</span>
+                                @endif
                             </div>
                         </div>
                     </div>
@@ -1779,19 +2016,42 @@
                             ->filter()
                             ->unique()
                             ->values();
+                        $projectHeaderTags = collect();
+
+                        if (!empty($project->utility_company)) {
+                            $projectHeaderTags->push($project->utility_company);
+                        }
+
+                        if ($project->hoa == 'yes') {
+                            $projectHeaderTags->push('HOA');
+                        }
+
+                        if (!empty($project->ahj)) {
+                            $projectHeaderTags->push($project->ahj);
+                        }
                     @endphp
 
-                    @if (count($inverterTags) || count($adderTags))
+                    @if (count($inverterTags) || count($adderTags) || $projectHeaderTags->isNotEmpty())
                         <div class="project-tag-panel">
-                            <div class="project-tag-list">
-                                @foreach ($inverterTags as $tag)
-                                    <span class="project-tag-chip inverter-tag">{{ $tag }}</span>
-                                @endforeach
+                            @if (count($inverterTags) || count($adderTags))
+                                <div class="project-tag-list is-right">
+                                    @foreach ($inverterTags as $tag)
+                                        <span class="project-tag-chip inverter-tag">{{ $tag }}</span>
+                                    @endforeach
 
-                                @foreach ($adderTags as $tag)
-                                    <span class="project-tag-chip adder-tag">{{ $tag }}</span>
-                                @endforeach
-                            </div>
+                                    @foreach ($adderTags as $tag)
+                                        <span class="project-tag-chip adder-tag">{{ $tag }}</span>
+                                    @endforeach
+                                </div>
+                            @endif
+
+                            @if ($projectHeaderTags->isNotEmpty())
+                                <div class="project-tag-list is-left">
+                                    @foreach ($projectHeaderTags as $tag)
+                                        <span class="project-tag-chip project-info-tag">{{ $tag }}</span>
+                                    @endforeach
+                                </div>
+                            @endif
                         </div>
                     @endif
 
@@ -1890,13 +2150,77 @@
             </div>
         </div>
     </div>
+    @php
+        $projectDetailItems = [
+            [
+                'icon' => 'icofont-briefcase',
+                'label' => 'Sales Partner',
+                'value' => optional($project->customer->salespartner)->name ?? '-',
+            ],
+            [
+                'icon' => 'icofont-user-alt-3',
+                'label' => 'Sales Person',
+                'value' => optional($project->salesPartnerUser)->name ?? '-',
+            ],
+            [
+                'icon' => 'icofont-calendar',
+                'label' => 'Sold Date',
+                'value' => $project->customer->sold_date
+                    ? \Carbon\Carbon::parse($project->customer->sold_date)->format('m/d/Y')
+                    : '-',
+            ],
+            [
+                'icon' => 'icofont-sun',
+                'label' => 'System Size',
+                'value' => $project->customer->module_value ?: '-',
+            ],
+            [
+                'icon' => 'icofont-solar-panel',
+                'label' => 'Module Type',
+                'value' => optional($project->customer->module)->name ?? '-',
+            ],
+            [
+                'icon' => 'icofont-energy-solar',
+                'label' => 'Inverter Type',
+                'value' => optional($project->customer->inverter)->name ?? '-',
+            ],
+            [
+                'icon' => 'icofont-layout',
+                'label' => 'Panel Qty',
+                'value' => $project->customer->panel_qty ?: '-',
+            ],
+            [
+                'icon' => 'icofont-dashboard-web',
+                'label' => 'Inverter Qty',
+                'value' => $project->customer->inverter_qty ?: '-',
+            ],
+            [
+                'icon' => 'icofont-chart-line',
+                'label' => 'Sold Production',
+                'value' => $project->customer->sold_production_value ?: '-',
+            ],
+            [
+                'icon' => 'icofont-globe',
+                'label' => 'Preferred Language',
+                'value' => $project->customer->preferred_language ?: '-',
+            ],
+            [
+                'icon' => 'icofont-credit-card',
+                'label' => 'Finance',
+                'value' => optional(optional($project->customer->finances)->finance)->name ?? '-',
+            ],
+        ];
+    @endphp
+
+    <div class="project-content-shell">
+        <div class="project-content-main">
     <div class="row clearfix mt-2 mb-2">
         <div class="col-md-12">
             <ul class="nav nav-tabs project-primary-tabs px-3 border-bottom-0 justify-content-center flex-wrap" role="tablist">
                 <li class="nav-item"><a class="nav-link active" data-bs-toggle="tab" href="#default"
                         role="tab">Project Activity</a></li>
-                <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#customer"
-                        role="tab">Customer</a></li>
+                {{-- <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#customer"
+                        role="tab">Customer</a></li> --}}
                 @can('View Financial Details')
                     <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#financial"
                             role="tab">Financial Ledger</a></li>
@@ -2022,7 +2346,7 @@
             </div>
         </div>
     </div>
-    <div class="tab-pane fade" id="customer" role="tabpanel">
+    {{-- <div class="tab-pane fade" id="customer" role="tabpanel">
         <div class="card mt-1">
             <div class="card-header">
                 <div class="card-header py-3 px-0 d-sm-flex align-items-center  justify-content-between border-bottom">
@@ -2191,7 +2515,7 @@
                 </div>
             </div>
         </div>
-    </div>
+    </div> --}}
 
     <div class="tab-pane fade" id="financial" role="tabpanel">
         <div class="card mt-1">
@@ -2896,6 +3220,28 @@
     </div>
 
 </div>
+        </div>
+        <aside class="project-details-rail">
+            <div class="project-section-panel">
+                <div class="files-header">
+                    <i class="icofont-info-circle me-2"></i>Project Details
+                </div>
+                <div class="project-detail-list">
+                    @foreach ($projectDetailItems as $detail)
+                        <div class="project-detail-item">
+                            <span class="project-detail-icon">
+                                <i class="{{ $detail['icon'] }}"></i>
+                            </span>
+                            <div>
+                                <div class="project-detail-label">{{ $detail['label'] }}</div>
+                                <div class="project-detail-value">{{ $detail['value'] }}</div>
+                            </div>
+                        </div>
+                    @endforeach
+                </div>
+            </div>
+        </aside>
+    </div>
 
 
 <div class="modal fade" id="createemail" tabindex="-1" aria-hidden="true">

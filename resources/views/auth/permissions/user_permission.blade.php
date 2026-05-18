@@ -1,6 +1,11 @@
 @extends('layouts.master')
 @section('title', 'User Permissions')
 @section('content')
+    @include('auth.partials.user-management-styles')
+    <div class="user-management-page">
+    <div class="user-management-heading">
+        <h1><i class="icofont-user-suited me-2"></i>User Permissions</h1>
+    </div>
     <div class="card mt-3">
         <div class="card-header">
             <h4 class="card-title w-100">
@@ -108,6 +113,7 @@
                 </tbody>
             </table>
         </div>
+    </div>
     </div>
 @endsection
 @section('scripts')

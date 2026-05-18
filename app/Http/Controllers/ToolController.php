@@ -41,7 +41,7 @@ class ToolController extends Controller
             'name' => ['required', 'string', 'max:255', Rule::unique('tools', 'name')->where('department_id', $request->department_id)->whereNull('deleted_at')],
             'department_id' => ['required', 'exists:departments,id'],
             'description' => ['nullable', 'string', 'max:255'],
-            'file' => ['required', 'file', 'max:5120'],
+            'file' => ['required', 'file', 'max:409600'],
         ], [
             'name.unique' => 'The record already exists.',
         ]);

@@ -48,6 +48,13 @@
                         <div class="text-danger message mt-2">{{ $message }}</div>
                     @enderror
                 </div>
+                <div class="col-sm-4 mb-3 ">
+                    <label for="ahj" class="form-label" id="requiredfiles">AHJ</label>
+                    <input class="form-control" type="text" id="ahj" name="ahj" wire:model="ahj">
+                    @error('ahj')
+                        <div id="ahj_message" class="text-danger message mt-2">{{ $message }}</div>
+                    @enderror
+                </div>
                 @if ($hoa == 'yes')
                     <div class="col-sm-4 mb-3" id="hoa_select">
                         <label for="hoa_phone_number" class="form-label" id="requiredfiles">Phone Number Field</label>

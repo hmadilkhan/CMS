@@ -2,30 +2,32 @@
 <div class="row g-4">
     <style>
         .premium-widget-card {
-            background: linear-gradient(135deg, #2c3e50 0%, #000000 100%);
-            border-radius: 16px;
-            padding: 24px;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
-            border: 1px solid rgba(255, 255, 255, 0.1);
+            background: #ffffff !important;
+            border-radius: 12px;
+            padding: 22px;
+            box-shadow: none !important;
+            border: 1px solid #e5e7eb !important;
             transition: all 0.3s ease;
             position: relative;
             overflow: hidden;
             margin-bottom: 16px;
         }
         .premium-widget-card::before {
-            content: '';
+            content: none;
             position: absolute;
             top: 0;
             left: 0;
             right: 0;
             bottom: 0;
-            background: linear-gradient(135deg, rgba(255, 255, 255, 0.05) 0%, transparent 100%);
+            background: transparent;
             opacity: 0;
             transition: opacity 0.3s ease;
         }
         .premium-widget-card:hover {
-            transform: translateY(-4px);
-            box-shadow: 0 12px 48px rgba(0, 0, 0, 0.4);
+            background: #ffffff !important;
+            transform: translateY(-2px);
+            border-color: #cbd5e1 !important;
+            box-shadow: 0 8px 18px rgba(15, 23, 42, 0.06) !important;
         }
         .premium-widget-card:hover::before {
             opacity: 1;
@@ -34,8 +36,8 @@
             width: 56px;
             height: 56px;
             border-radius: 12px;
-            background: rgba(255, 255, 255, 0.1);
-            backdrop-filter: blur(10px);
+            background: #ffffff !important;
+            border: 1px solid #dbeafe !important;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -43,29 +45,33 @@
             transition: all 0.3s ease;
         }
         .premium-widget-card:hover .widget-icon-wrapper {
-            background: rgba(255, 255, 255, 0.15);
+            background: #ffffff !important;
+            border-color: #bfdbfe !important;
             transform: scale(1.05);
         }
-        .widget-icon-wrapper i {
-            font-size: 28px;
-            color: #ffffff;
+        .premium-widget-card .widget-icon-wrapper i {
+            font-size: 28px !important;
+            color: #1d4ed8 !important;
+            line-height: 1;
         }
-        .widget-content {
+        .premium-widget-card .widget-content {
             flex: 1;
         }
-        .widget-label {
-            font-size: 14px;
-            font-weight: 500;
-            color: rgba(255, 255, 255, 0.7);
+        .premium-widget-card .widget-label {
+            font-size: 14px !important;
+            font-weight: 600 !important;
+            color: #64748b !important;
             margin-bottom: 8px;
-            letter-spacing: 0.5px;
+            letter-spacing: 0;
+            line-height: 1.2;
             text-transform: uppercase;
         }
-        .widget-value {
-            font-size: 28px;
-            font-weight: 700;
-            color: #ffffff;
-            letter-spacing: -0.5px;
+        .premium-widget-card .widget-value {
+            font-size: 28px !important;
+            font-weight: 700 !important;
+            color: #050505 !important;
+            letter-spacing: 0;
+            line-height: 1.15;
         }
     </style>
     <div class="col-md-12">

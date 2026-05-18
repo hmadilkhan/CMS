@@ -23,6 +23,7 @@ class EditFields extends Component
     public $utility_company;
     public $ntp_approval_date;
     public $hoa;
+    public $ahj;
     public $hoa_phone_number;
 
     // SECOND DEPARTMENT
@@ -85,6 +86,7 @@ class EditFields extends Component
         $this->utility_company = $this->project->utility_company;
         $this->ntp_approval_date = $this->project->ntp_approval_date;
         $this->hoa = $this->project->hoa;
+        $this->ahj = $this->project->ahj;
         $this->hoa_phone_number = $this->project->hoa_phone_number;
 
         // SECOND DEPARTMENT
@@ -275,6 +277,7 @@ class EditFields extends Component
                 "utility_company" => $this->utility_company,
                 "ntp_approval_date" => $this->ntp_approval_date,
                 "hoa" => $this->hoa,
+                "ahj" => $this->ahj,
                 "hoa_phone_number" => $this->hoa_phone_number,
             ]);
         }

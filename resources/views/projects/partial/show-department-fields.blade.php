@@ -12,6 +12,10 @@
         <label for="hoa" class="form-label">HOA</label>
         <input disabled class="form-control" type="text" value="{{$project->hoa}}">
     </div>
+    <div class="col-sm-6 mb-3">
+        <label for="ahj" class="form-label">AHJ</label>
+        <input disabled class="form-control" type="text" value="{{$project->ahj}}">
+    </div>
     @if($project->hoa == "yes")
     <div class="col-sm-6 mb-3" id="hoa_select">
         <label for="hoa_phone_number" class="form-label">Phone Number Field</label>

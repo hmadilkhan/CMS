@@ -1,140 +1,168 @@
 <div>
     <style>
-        .premium-tabs .nav-link {
+        .admin-dashboard-page {
+            color: #050505;
+        }
+
+        .admin-dashboard-page .premium-tabs {
+            gap: 1.5rem;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        .admin-dashboard-page .premium-tabs .nav-link {
             border: none;
-            color: #6c757d;
+            color: #050505 !important;
             font-weight: 600;
-            padding: 1rem 2rem;
-            border-radius: 12px 12px 0 0;
+            padding: 0 0 0.85rem;
+            border-radius: 0;
             transition: all 0.3s ease;
-            background: #f8f9fa;
-            margin-right: 0.5rem;
+            background: transparent !important;
+            margin-right: 0;
+            border-bottom: 2px solid transparent;
         }
-        .premium-tabs .nav-link:hover {
-            background: #e9ecef;
-            color: #2c3e50;
+        .admin-dashboard-page .premium-tabs .nav-link:hover {
+            background: transparent !important;
+            color: #050505 !important;
         }
-        .premium-tabs .nav-link.active {
-            background: linear-gradient(135deg, #2c3e50 0%, #000000 100%);
-            color: white;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        .admin-dashboard-page .premium-tabs .nav-link.active {
+            background: transparent !important;
+            color: #F19828 !important;
+            box-shadow: none !important;
+            border-bottom-color: #F19828;
         }
-        .premium-header {
-            background: linear-gradient(135deg, #2c3e50 0%, #000000 100%);
-            padding: 2rem;
-            border-radius: 16px;
-            margin-bottom: 2rem;
-            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
-            position: relative;
-            overflow: hidden;
+        .admin-dashboard-page .premium-header {
+            background: transparent !important;
+            padding: 0 0 1rem;
+            border-radius: 0;
+            margin-bottom: 1.5rem;
+            box-shadow: none !important;
+            border-bottom: 1px solid #e5e7eb;
+            text-align: center;
         }
-        .premium-header::before {
-            content: '';
-            position: absolute;
-            top: -50%;
-            right: -10%;
-            width: 300px;
-            height: 300px;
-            background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
-            border-radius: 50%;
+        .admin-dashboard-page .premium-header::before {
+            content: none;
         }
-        .premium-header h1 {
-            color: #fff;
-            font-size: 2rem;
+        .admin-dashboard-page .premium-header h1 {
+            color: #050505 !important;
+            font-size: 1.65rem;
             font-weight: 700;
             margin: 0;
-            text-shadow: 0 2px 10px rgba(0,0,0,0.3);
+            text-shadow: none;
         }
-        .dashboard-widget {
+        .admin-dashboard-page .dashboard-widget {
             height: 100%;
         }
-        .dashboard-widget .card {
-            border-radius: 16px;
-            border: none;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+        .admin-dashboard-page .dashboard-widget .card {
+            border-radius: 8px;
+            border: 1px solid #e5e7eb !important;
+            box-shadow: none !important;
             transition: all 0.3s ease;
             height: 100%;
+            background: #ffffff !important;
         }
-        .dashboard-widget .card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 8px 30px rgba(0,0,0,0.15);
+        .admin-dashboard-page .dashboard-widget .card:hover {
+            transform: none;
+            box-shadow: 0 8px 22px rgba(5,5,5,0.06) !important;
         }
-        .dashboard-widget .card-header {
-            background: linear-gradient(135deg, #2c3e50 0%, #000000 100%);
-            color: white;
-            border-radius: 16px 16px 0 0 !important;
-            padding: 1.25rem 1.5rem;
-            border: none;
+        .admin-dashboard-page .dashboard-widget .card-header {
+            background: #ffffff !important;
+            color: #050505 !important;
+            border-radius: 8px 8px 0 0 !important;
+            padding: 1rem 1.25rem;
+            border-bottom: 1px solid #e5e7eb !important;
         }
-        .dashboard-widget .card-title {
+        .admin-dashboard-page .dashboard-widget .card-header *,
+        .admin-dashboard-page .dashboard-widget .card-title,
+        .admin-dashboard-page .dashboard-widget h1,
+        .admin-dashboard-page .dashboard-widget h2,
+        .admin-dashboard-page .dashboard-widget h3,
+        .admin-dashboard-page .dashboard-widget h4,
+        .admin-dashboard-page .dashboard-widget h5,
+        .admin-dashboard-page .dashboard-widget h6 {
+            color: #050505 !important;
+        }
+        .admin-dashboard-page .dashboard-widget .card-title {
             font-weight: 700;
             font-size: 1.1rem;
             margin: 0;
         }
-        .dashboard-widget .card-body {
-            padding: 1.5rem;
+        .admin-dashboard-page .dashboard-widget .card-body {
+            padding: 1.25rem;
         }
-        .premium-filter-card {
-            background: linear-gradient(135deg, #2c3e50 0%, #000000 100%);
-            border-radius: 16px;
-            padding: 1.5rem 2rem;
-            box-shadow: 0 8px 30px rgba(0,0,0,0.2);
-            border: none;
+        .admin-dashboard-page .premium-filter-card {
+            background: #ffffff !important;
+            border-radius: 8px;
+            padding: 1rem 1.25rem;
+            box-shadow: none !important;
+            border: 1px solid #e5e7eb;
         }
-        .premium-filter-card h5 {
-            color: white;
+        .admin-dashboard-page .premium-filter-card h5 {
+            color: #050505 !important;
             font-weight: 700;
             margin: 0;
-            font-size: 1.2rem;
+            font-size: 1rem;
         }
-        .filter-input-group {
-            background: rgba(255,255,255,0.1);
-            backdrop-filter: blur(10px);
-            padding: 0.75rem 1.25rem;
-            border-radius: 12px;
-            border: 2px solid rgba(255,255,255,0.2);
+        .admin-dashboard-page .filter-input-group {
+            background: #f8fafc;
+            backdrop-filter: none;
+            padding: 0.55rem 0.75rem;
+            border-radius: 8px;
+            border: 1px solid #e5e7eb;
             transition: all 0.3s ease;
         }
-        .filter-input-group:hover {
-            background: rgba(255,255,255,0.15);
-            border-color: rgba(255,255,255,0.3);
+        .admin-dashboard-page .filter-input-group:hover {
+            background: #ffffff;
+            border-color: #cbd5e1;
         }
-        .filter-input-group label {
-            color: rgba(255,255,255,0.9);
+        .admin-dashboard-page .filter-input-group label {
+            color: #475569;
             font-weight: 600;
             margin: 0;
             font-size: 0.9rem;
         }
-        .filter-input-group input {
+        .admin-dashboard-page .filter-input-group input {
             background: white;
-            border: none;
-            border-radius: 8px;
+            border: 1px solid #e5e7eb;
+            border-radius: 6px;
             padding: 0.5rem 0.75rem;
             font-weight: 500;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            box-shadow: none;
         }
-        .filter-input-group input:focus {
+        .admin-dashboard-page .filter-input-group input:focus {
             outline: none;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+            border-color: #1d4ed8;
+            box-shadow: 0 0 0 0.15rem rgba(29,78,216,0.12);
         }
-        .premium-apply-btn {
-            background: white;
-            color: #2c3e50;
+        .admin-dashboard-page .premium-apply-btn {
+            background: #050505 !important;
+            color: #ffffff !important;
             border: none;
-            padding: 0.75rem 2rem;
-            border-radius: 10px;
+            padding: 0.65rem 1.25rem;
+            border-radius: 8px;
             font-weight: 700;
             transition: all 0.3s ease;
-            box-shadow: 0 4px 15px rgba(255,255,255,0.3);
+            box-shadow: none;
         }
-        .premium-apply-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(255,255,255,0.4);
-            background: #f8f9fa;
-            color: #000;
+        .admin-dashboard-page .premium-apply-btn:hover {
+            transform: none;
+            box-shadow: none;
+            background: #1d4ed8 !important;
+            color: #ffffff !important;
+        }
+
+        .admin-dashboard-page .badge.bg-danger {
+            background: #1d4ed8 !important;
+        }
+
+        @media (max-width: 991px) {
+            .admin-dashboard-page .premium-filter-card .d-flex,
+            .admin-dashboard-page .premium-filter-card form {
+                align-items: stretch !important;
+                flex-direction: column;
+            }
         }
     </style>
-    <div class="container-xxl">
+    <div class="container-xxl admin-dashboard-page">
         <div class="premium-header">
             <h1><i class="icofont-dashboard me-3"></i>Admin Dashboard</h1>
         </div>

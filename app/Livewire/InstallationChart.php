@@ -70,16 +70,16 @@ class InstallationChart extends Component
             'labels' => $labels,
             'data' => $data,
             'colors' => [
-                '#4e73df',
-                '#1cc88a',
-                '#36b9cc',
-                '#f6c23e',
-                '#e74a3b',
-                '#5a5c69',
-                '#858796',
-                '#6f42c1',
-                '#20c9a6',
-                '#f8f9fc'
+                '#1d4ed8',
+                '#0f766e',
+                '#0284c7',
+                '#334155',
+                '#64748b',
+                '#2563eb',
+                '#0891b2',
+                '#475569',
+                '#0e7490',
+                '#94a3b8'
             ]
         ];
         $this->dispatch('refreshInstallationChart');

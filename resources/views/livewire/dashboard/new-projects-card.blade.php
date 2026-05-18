@@ -1,41 +1,42 @@
 <style>
     .premium-projects-card {
-        background: linear-gradient(135deg, #2c3e50 0%, #000000 100%);
-        border-radius: 16px;
-        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
-        border: 1px solid rgba(255, 255, 255, 0.1);
+        background: #ffffff !important;
+        border-radius: 12px;
+        box-shadow: none !important;
+        border: 1px solid #e5e7eb !important;
         overflow: hidden;
         transition: all 0.3s ease;
     }
     .premium-projects-card:hover {
-        box-shadow: 0 12px 48px rgba(0, 0, 0, 0.4);
+        background: #ffffff !important;
+        border-color: #cbd5e1 !important;
+        box-shadow: 0 8px 18px rgba(15, 23, 42, 0.06) !important;
     }
     .premium-projects-header {
-        padding: 24px;
-        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-        background: rgba(255, 255, 255, 0.05);
+        padding: 20px 22px;
+        border-bottom: 1px solid #e5e7eb;
+        background: #ffffff !important;
     }
     .premium-projects-title {
         font-size: 18px;
-        font-weight: 600;
-        color: #ffffff;
+        font-weight: 700;
+        color: #050505 !important;
         margin-bottom: 4px;
-        letter-spacing: 0.3px;
+        letter-spacing: 0;
     }
     .premium-projects-subtitle {
         font-size: 13px;
-        color: rgba(255, 255, 255, 0.6);
+        color: #64748b !important;
         margin: 0;
     }
     .premium-badge {
-        background: rgba(255, 255, 255, 0.15);
-        backdrop-filter: blur(10px);
-        color: #ffffff;
+        background: #eff6ff !important;
+        color: #1d4ed8 !important;
         padding: 8px 16px;
         border-radius: 20px;
-        font-weight: 600;
+        font-weight: 700;
         font-size: 16px;
-        border: 1px solid rgba(255, 255, 255, 0.2);
+        border: 1px solid #bfdbfe;
     }
     .premium-projects-list {
         max-height: 300px;
@@ -46,23 +47,23 @@
         width: 6px;
     }
     .premium-projects-list::-webkit-scrollbar-track {
-        background: rgba(255, 255, 255, 0.05);
+        background: #f8fafc;
     }
     .premium-projects-list::-webkit-scrollbar-thumb {
-        background: rgba(255, 255, 255, 0.2);
+        background: #cbd5e1;
         border-radius: 3px;
     }
     .premium-projects-list::-webkit-scrollbar-thumb:hover {
-        background: rgba(255, 255, 255, 0.3);
+        background: #94a3b8;
     }
     .premium-project-item {
-        padding: 16px 24px;
-        border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        padding: 16px 22px;
+        border-bottom: 1px solid #f1f5f9;
         transition: all 0.2s ease;
         cursor: pointer;
     }
     .premium-project-item:hover {
-        /* background: rgba(255, 255, 255, 0.05); */
+        background: #f8fafc !important;
     }
     .premium-project-item:last-child {
         border-bottom: none;
@@ -70,46 +71,46 @@
     .premium-partner-name {
         font-size: 15px;
         font-weight: 600;
-        color: #ffffff;
+        color: #050505 !important;
         margin-bottom: 4px;
     }
     .premium-project-count {
         font-size: 12px;
-        color: rgba(255, 255, 255, 0.6);
+        color: #64748b !important;
     }
     .premium-count-badge {
-        background: rgba(255, 255, 255, 0.1);
-        color: #ffffff;
+        background: #ffffff !important;
+        color: #1d4ed8 !important;
         padding: 6px 12px;
         border-radius: 12px;
         font-weight: 600;
         font-size: 14px;
+        border: 1px solid #dbeafe;
     }
     .premium-projects-footer {
-        padding: 20px 24px;
-        background: rgba(255, 255, 255, 0.08);
-        border-top: 1px solid rgba(255, 255, 255, 0.1);
+        padding: 18px 22px;
+        background: #ffffff !important;
+        border-top: 1px solid #e5e7eb;
     }
     .premium-revenue-label {
         font-size: 16px;
-        font-weight: 600;
-        color: #ffffff;
+        font-weight: 700;
+        color: #050505 !important;
         margin: 0;
     }
     .premium-revenue-badge {
-        background: rgba(255, 255, 255, 0.15);
-        backdrop-filter: blur(10px);
-        color: #ffffff;
+        background: #050505 !important;
+        color: #ffffff !important;
         padding: 10px 20px;
         border-radius: 20px;
         font-weight: 700;
         font-size: 18px;
-        border: 1px solid rgba(255, 255, 255, 0.2);
+        border: 1px solid #050505;
     }
     .premium-empty-state {
         padding: 40px 24px;
         text-align: center;
-        color: rgba(255, 255, 255, 0.5);
+        color: #64748b !important;
         font-size: 14px;
     }
 </style>

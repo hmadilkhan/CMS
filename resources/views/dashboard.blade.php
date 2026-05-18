@@ -3,24 +3,57 @@
 <style>
     .dashboard-tabs .nav-link {
         border: none;
-        color: #6c757d;
+        color: #050505 !important;
         font-weight: 600;
-        padding: 1rem 2rem;
-        border-radius: 12px 12px 0 0;
+        padding: 0 0 0.85rem;
+        border-radius: 0;
         transition: all 0.3s ease;
-        background: #f8f9fa;
-        margin-right: 0.5rem;
+        background: transparent !important;
+        margin-right: 1.5rem;
+        border-bottom: 2px solid transparent;
+    }
+    .employee-dashboard-page .dashboard-tabs .nav-link,
+    .employee-dashboard-page .dashboard-tabs .nav-link *,
+    .employee-dashboard-page .dashboard-tabs .nav-link:not(.active),
+    .employee-dashboard-page .dashboard-tabs .nav-link:not(.active) * {
+        color: #050505 !important;
     }
     .dashboard-tabs .nav-link:hover {
-        background: #e9ecef;
-        color: #2c3e50;
+        background: transparent !important;
+        color: #050505 !important;
     }
     .dashboard-tabs .nav-link.active {
-        background: linear-gradient(135deg, #2c3e50 0%, #000000 100%);
-        color: white;
+        background: transparent !important;
+        color: #F19828 !important;
+        border-bottom-color: #F19828;
+        box-shadow: none !important;
+    }
+    .employee-dashboard-page .dashboard-tabs .nav-link.active,
+    .employee-dashboard-page .dashboard-tabs .nav-link.active * {
+        color: #F19828 !important;
+    }
+    .dashboard-tabs {
+        border-bottom: 1px solid #e5e7eb;
+    }
+    .employee-dashboard-page .card {
+        border: 1px solid #e5e7eb !important;
+        border-radius: 8px;
+        box-shadow: none !important;
+    }
+    .employee-dashboard-page .card-header {
+        background: #ffffff !important;
+        border-bottom: 1px solid #e5e7eb !important;
+        color: #050505 !important;
+    }
+    .employee-dashboard-page .card-header *,
+    .employee-dashboard-page .card-title {
+        color: #050505 !important;
+    }
+    .employee-dashboard-page .badge.bg-danger {
+        background: #1d4ed8 !important;
     }
 </style>
-<div class="container-xxl">
+<div class="container-xxl employee-dashboard-page">
     <div class="row mb-4">
         <div class="col-12">
             <ul class="nav nav-tabs dashboard-tabs" role="tablist">
@@ -297,7 +330,7 @@ $(document).ready(function() {
 </script>
 <style>
 .bg-gradient-primary {
-    background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+    background: #ffffff !important;
 }
 .hover-underline:hover {
     text-decoration: underline !important;
@@ -316,8 +349,8 @@ $(document).ready(function() {
     border: 1px solid #e3e6f0;
 }
 .form-select-sm:focus {
-    border-color: #2c3e50;
-    box-shadow: 0 0 0 0.2rem rgba(44, 62, 80, 0.25);
+    border-color: #1d4ed8;
+    box-shadow: 0 0 0 0.2rem rgba(29, 78, 216, 0.12);
 }
 </style>
 @endsection

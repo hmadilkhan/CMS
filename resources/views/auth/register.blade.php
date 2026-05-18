@@ -108,6 +108,12 @@
     font-size: 0.8rem;
 }
 </style>
+@include('auth.partials.user-management-styles')
+
+<div class="user-management-page">
+    <div class="user-management-heading">
+        <h1><i class="icofont-users-alt-4 me-2"></i>Users</h1>
+    </div>
 
     <div class="card premium-card">
         <div class="card-header premium-header">
@@ -371,6 +377,7 @@
             </div>
         </div>
     </div>
+</div>
 @endsection
 
 @section('scripts')

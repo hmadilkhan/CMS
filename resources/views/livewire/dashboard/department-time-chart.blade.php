@@ -1,6 +1,6 @@
 <div wire:ignore>
-    <div class="card shadow-sm h-100">
-        <div class="card-header bg-white border-0">
+    <div class="card h-100">
+        <div class="card-header bg-white border-bottom">
             <h5 class="card-title mb-0">Department Time Distribution</h5>
         </div>
         <div class="card-body">

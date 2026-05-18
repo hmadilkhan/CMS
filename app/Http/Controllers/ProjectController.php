@@ -207,7 +207,7 @@ class ProjectController extends Controller
         $serviceManagers = \App\Models\User::role('Service Manager')->get();
         $serviceTickets = \App\Models\ServiceTicket::with(['assignedUser'])->where('project_id', $project->id)->orderBy('created_at', 'desc')->get();
 
-        $view = $request->routeIs('projects.show-redesign') ? "projects.show-redesign" : "projects.show";
+        $view =  "projects.show-redesign" ;//$request->routeIs('projects.show-redesign') ? "projects.show-redesign" : "projects.show";
 
         return view($view, [
             "project" => $project,
@@ -312,6 +312,7 @@ class ProjectController extends Controller
                 'utility_company' => 'required_if:forward,2',
                 'ntp_approval_date' => 'required_if:forward,2',
                 'hoa' => 'required_if:forward,2',
+                'ahj' => 'required_if:forward,2',
                 'hoa_phone_number' => Rule::requiredIf(function () use ($request) {
                     return $request->forward == 2 && !$request->hoa == "yes";
                 }),
@@ -377,6 +378,7 @@ class ProjectController extends Controller
                     "utility_company" => $request->utility_company,
                     "ntp_approval_date" => $request->ntp_approval_date,
                     "hoa" => $request->hoa,
+                    "ahj" => $request->ahj,
                     "hoa_phone_number" => $request->hoa_phone_number,
                 ]);
             }

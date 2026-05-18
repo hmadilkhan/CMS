@@ -1,4 +1,18 @@
 <style>
+    .project-list-zoom-shell {
+        width: 111.111%;
+        transform: scale(0.9);
+        transform-origin: top left;
+    }
+
+    @supports (zoom: 0.9) {
+        .project-list-zoom-shell {
+            width: 100%;
+            transform: none;
+            zoom: 0.9;
+        }
+    }
+
     .blink {
         animation: blinker 1s linear infinite;
     }
@@ -102,7 +116,7 @@
     }
 
     .department-header h3 {
-        color: var(--solen-warm-text);
+        color: #050505;
         font-size: 1.5rem;
         margin: 0;
         letter-spacing: 0;
@@ -144,7 +158,7 @@
     .count-badge {
         background: var(--solen-cream-strong);
         border: 0;
-        color: var(--solen-warm-text);
+        color: #050505;
         padding: 0.4rem 0.9rem;
         border-radius: 20px;
         font-size: 0.9rem;
@@ -214,6 +228,7 @@
         }
     }
 </style>
+<div class="project-list-zoom-shell">
 @if ($value == 'all')
     @foreach ($departments as $department)
         @php
@@ -262,8 +277,8 @@
                                             <img src="{{ $project->customer->salespartner->image != '' ? asset('storage/salespartners/' . $project->customer->salespartner->image) : asset('assets/images/profile_av.png') }}"
                                                 alt="" class="rounded-circle flex-shrink-0"
                                                 style="width: 45px; height: 45px; object-fit: cover; border: 3px solid rgba(255,255,255,0.3);">
-                                            <h5 class="mb-0 fw-bold ms-3 text-white text-truncate"
-                                                style="max-width: 150px;">{{ str_replace('-', ' ', $project->project_name) }}</h5>
+                                            <h5 class="mb-0 fw-bold ms-3 text-truncate"
+                                                style="max-width: 150px; color: #050505;">{{ str_replace('-', ' ', $project->project_name) }}</h5>
                                         </div>
                                         <div class="d-flex align-items-center ms-2 flex-shrink-0">
                                             <span class="days-badge">
@@ -620,6 +635,7 @@
         </div>
     @endforeach
 @endif
+</div>
 <!-- Create task-->
 <div class="modal fade" id="createtask" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered modal-md modal-dialog-scrollable">
