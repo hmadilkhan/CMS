@@ -28,6 +28,7 @@ use App\Models\SubDepartment;
 use App\Models\Task;
 use App\Models\Tool;
 use App\Notifications\ProjectAssignedNotification;
+use App\Services\ProjectAssignmentService;
 use App\Traits\MediaTrait;
 use Carbon\Carbon;
 use FPDF;
@@ -116,13 +117,16 @@ class ProjectController extends Controller
                     "sub_department_id" => $subdepartment->id,
                 ]
             ));
-            Task::create([
+            $assignedEmployee = app(ProjectAssignmentService::class)->employeeForDepartment(1)
+                ?? Employee::with('user')->find($request->assigntask);
+            $task = Task::create([
                 "project_id" => $project->id,
-                "employee_id" => $request->assigntask,
+                "employee_id" => $assignedEmployee?->id ?? $request->assigntask,
                 "department_id" => 1,
                 "sub_department_id" => $subdepartment->id,
                 "user_id" => auth()->user()->id,
             ]);
+            app(ProjectAssignmentService::class)->notifyAssignedEmployee($assignedEmployee, $project, $task);
             DB::commit();
             return response()->json(["status" => 200, "messsage" => "Project created successfully"]);
         } catch (\Throwable $th) {
@@ -347,7 +351,7 @@ class ProjectController extends Controller
                 $project->save();
                 $task = Task::findOrFail($request->taskid);
                 Task::where("id", $request->taskid)->update(["status" => "Completed", "notes" => $request->notes]);
-                Task::create([
+                $newTask = Task::create([
                     "project_id" => $request->id,
                     "employee_id" => $task->employee_id,
                     "department_id" => $request->forward,
@@ -356,6 +360,11 @@ class ProjectController extends Controller
                     "status" => "In-Progress",
                     "user_id" => auth()->user()->id,
                 ]);
+                app(ProjectAssignmentService::class)->notifyAssignedEmployee(
+                    Employee::with('user')->find($task->employee_id),
+                    $project,
+                    $newTask
+                );
                 DB::commit();
                 return redirect()->route("projects.index");
             }
@@ -429,18 +438,24 @@ class ProjectController extends Controller
                 ]);
             }
 
+            $targetDepartmentId = ($request->stage == "forward" ? $request->forward : $request->back);
             Project::where("id", $request->id)->update($updateItems);
-            $emp =  Employee::with("department")->whereHas("department", function ($query) use ($request) {
-                $query->whereIn("department_id", [($request->stage == "forward" ? $request->forward : $request->back)]);
-            })->first();
+            $emp = app(ProjectAssignmentService::class)->employeeForDepartment($targetDepartmentId);
+
+            if (!$emp) {
+                throw new \RuntimeException("No employee assignment found for this department.");
+            }
+
             Task::where("id", $request->taskid)->update(["status" => "Completed", "notes" => $request->notes]);
-            Task::create([
+            $newTask = Task::create([
                 "project_id" => $request->id,
                 "employee_id" => $emp->id,
-                "department_id" => ($request->stage == "forward" ? $request->forward : $request->back),
+                "department_id" => $targetDepartmentId,
                 "sub_department_id" => $request->sub_department,
                 "user_id" => auth()->user()->id,
             ]);
+            $project->refresh();
+            app(ProjectAssignmentService::class)->notifyAssignedEmployee($emp, $project, $newTask);
             DB::commit();
             return redirect()->route("projects.index");
         } catch (\Throwable $th) {
@@ -559,27 +574,21 @@ class ProjectController extends Controller
                 "sub_department_id" => $request->subDepartmentId,
             ]);
             
-            // Assign Project to Manager of that Department
-            $emp = Employee::whereHas("department", function ($query) use ($request) {
-                $query->where("department_id", $request->departmentId);
-            })->whereHas("user.roles", function ($query) {
-                $query->where("roles.name", "Manager");
-            })->first();
+            $emp = app(ProjectAssignmentService::class)->employeeForDepartment((int) $request->departmentId);
 
-            // If not manager found, assign to any employee in that department
             if (!$emp) {
-                $emp = Employee::whereHas("department", function ($query) use ($request) {
-                    $query->where("department_id", $request->departmentId);
-                })->first();
+                throw new \RuntimeException("No employee assignment found for this department.");
             }
+
             Task::where("id", $request->taskId)->update(["status" => "Completed", "notes" => $request->notes]);
-            Task::create([
+            $newTask = Task::create([
                 "project_id" => $request->projectId,
                 "employee_id" => $emp->id,
                 "department_id" => $request->departmentId,
                 "sub_department_id" => $request->subDepartmentId,
                 "user_id" => auth()->user()->id,
             ]);
+            app(ProjectAssignmentService::class)->notifyAssignedEmployee($emp, $project, $newTask);
             // Log the custom message
             $oldLane = Department::findOrFail($currentDepartmentId);
             $newLane = Department::findOrFail($request->departmentId);
@@ -779,6 +788,7 @@ class ProjectController extends Controller
         $query->withCount(['emails as viewed_emails_count' => function ($query) {
             $query->where('is_view', 1);
         }]);
+        $query->where("department_id", "!=", 9);
         $subdepartmentsQuery = SubDepartment::with("department");
         if (in_array("Sales Manager", auth()->user()->getRoleNames()->toArray())) {
             $query->whereHas("customer", function ($q) {

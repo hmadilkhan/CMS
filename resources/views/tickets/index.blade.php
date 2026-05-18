@@ -1,6 +1,84 @@
 @extends("layouts.master")
 @section('title', 'Customers')
 @section('content')
+@php
+    $activeTicketTab = request('tab') === 'complete' || request()->has('completed_page') ? 'complete' : 'pending';
+@endphp
+<style>
+    .ticket-table {
+        table-layout: fixed !important;
+        min-width: 1120px;
+        width: 100% !important;
+        margin-bottom: 0;
+    }
+
+    .ticket-table-wrap {
+        width: 100%;
+        overflow-x: auto;
+        overflow-y: hidden;
+    }
+
+    .ticket-table th,
+    .ticket-table td {
+        vertical-align: top;
+        white-space: normal !important;
+        overflow: hidden;
+        box-sizing: border-box;
+    }
+
+    .ticket-table .ticket-no-column {
+        width: 58px;
+    }
+
+    .ticket-table .ticket-name-column {
+        width: 135px;
+    }
+
+    .ticket-table .ticket-email-column {
+        width: 190px;
+    }
+
+    .ticket-table .ticket-phone-column {
+        width: 120px;
+    }
+
+    .ticket-table .ticket-address-column {
+        width: 240px;
+    }
+
+    .ticket-table .ticket-message-column {
+        width: 220px;
+    }
+
+    .ticket-table .ticket-date-column {
+        width: 105px;
+    }
+
+    .ticket-table .ticket-status-column {
+        width: 95px;
+    }
+
+    .ticket-table .ticket-actions-column {
+        width: 82px;
+    }
+
+    .ticket-table .ticket-address,
+    .ticket-table .ticket-message {
+        white-space: normal !important;
+        overflow-wrap: anywhere;
+        word-break: break-word;
+        line-height: 1.35;
+    }
+
+    .ticket-table .ticket-cell-content {
+        display: block;
+        width: 100%;
+        max-height: 4.2rem;
+        overflow-x: hidden;
+        overflow-y: auto;
+        white-space: normal !important;
+    }
+</style>
 <div class="body d-flex py-lg-3 py-md-2">
     <div class="container-xxl">
 
@@ -19,42 +97,48 @@
                 <div class="card">
                     <div class="card-body">
                         <ul class="nav nav-tabs px-3 border-bottom-0" role="tablist">
-                            <li class="nav-item"><a class="nav-link active" data-bs-toggle="tab" href="#pending" role="tab">Pending</a></li>
-                            <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#complete" role="tab">Completed</a></li>
+                            <li class="nav-item"><a class="nav-link {{ $activeTicketTab === 'pending' ? 'active' : '' }}" data-bs-toggle="tab" href="#pending" role="tab">Pending</a></li>
+                            <li class="nav-item"><a class="nav-link {{ $activeTicketTab === 'complete' ? 'active' : '' }}" data-bs-toggle="tab" href="#complete" role="tab">Completed</a></li>
                         </ul>
                     </div>
                 </div>
             </div>
         </div>
         <div class="tab-content">
-            <div class="tab-pane fade show active" id="pending" role="tabpanel">
+            <div class="tab-pane fade {{ $activeTicketTab === 'pending' ? 'show active' : '' }}" id="pending" role="tabpanel">
                 <div class="card mt-3">
                     <div class="card-body">
-                        <table id="example1" class="table table-bordered table-striped datatable">
+                        <div class="ticket-table-wrap">
+                        <table id="pendingTicketsTable" class="table table-bordered table-striped ticket-table">
                             <thead>
                                 <tr>
-                                    <th>No.</th>
-                                    <th>Name</th>
-                                    <th>Email</th>
-                                    <th>Phone</th>
-                                    <th>Address</th>
-                                    <th>Message</th>
-                                    <th>Status</th>
-                                    <th>Actions</th>
+                                    <th class="ticket-no-column">No.</th>
+                                    <th class="ticket-name-column">Name</th>
+                                    <th class="ticket-email-column">Email</th>
+                                    <th class="ticket-phone-column">Phone</th>
+                                    <th class="ticket-address-column">Address</th>
+                                    <th class="ticket-message-column">Message</th>
+                                    <th class="ticket-date-column">Date</th>
+                                    <th class="ticket-status-column">Status</th>
+                                    <th class="ticket-actions-column">Actions</th>
                                 </tr>
                             </thead>
                             <tbody>
-                                @foreach ($tickets as $key => $ticket)
-                                @if($ticket->status == "Pending")
+                                @forelse ($pendingTickets as $ticket)
                                 <tr>
-                                    <td>{{ ++$key }}</td>
-                                    <td>{{ $ticket->name }}</td>
-                                    <td>{{ $ticket->email }}</td>
-                                    <td>{{ $ticket->phone }}</td>
-                                    <td>{{ $ticket->address }}</td>
-                                    <td>{{ $ticket->message }}</td>
-                                    <td>{{ $ticket->status }}</td>
-                                    <td class="text-center">
+                                    <td class="ticket-no-column">{{ $pendingTickets->firstItem() + $loop->index }}</td>
+                                    <td class="ticket-name-column">{{ $ticket->name }}</td>
+                                    <td class="ticket-email-column">{{ $ticket->email }}</td>
+                                    <td class="ticket-phone-column">{{ $ticket->phone }}</td>
+                                    <td class="ticket-address">
+                                        <span class="ticket-cell-content">{{ $ticket->address }}</span>
+                                    </td>
+                                    <td class="ticket-message">
+                                        <span class="ticket-cell-content">{{ $ticket->message }}</span>
+                                    </td>
+                                    <td class="ticket-date-column">{{ $ticket->created_at ? $ticket->created_at->format('M d, Y') : '-' }}</td>
+                                    <td class="ticket-status-column">{{ $ticket->status }}</td>
+                                    <td class="ticket-actions-column text-center">
                                         @can("Change Ticket Status")
                                         <a style="cursor: pointer;" data-toggle="tooltip" title="Edit" onclick="deleteCustomerModal('{{$ticket->id}}')">
                                             <i class="icofont-pencil text-warning fs-4"></i>
@@ -62,41 +146,54 @@
                                         @endcan
                                     </td>
                                 </tr>
-                                @endif
-                                @endforeach
+                                @empty
+                                <tr>
+                                    <td colspan="9" class="text-center py-4">No pending tickets found.</td>
+                                </tr>
+                                @endforelse
                             </tbody>
                         </table>
+                        </div>
+                        <div class="mt-3">
+                            {{ $pendingTickets->links() }}
+                        </div>
                     </div>
                 </div> <!-- ROW END -->
             </div>
-            <div class="tab-pane fade show active" id="complete" role="tabpanel">
+            <div class="tab-pane fade {{ $activeTicketTab === 'complete' ? 'show active' : '' }}" id="complete" role="tabpanel">
                 <div class="card mt-3">
                     <div class="card-body">
-                        <table id="example1" class="table table-bordered table-striped datatable">
+                        <div class="ticket-table-wrap">
+                        <table id="completedTicketsTable" class="table table-bordered table-striped ticket-table">
                             <thead>
                                 <tr>
-                                    <th>No.</th>
-                                    <th>Name</th>
-                                    <th>Email</th>
-                                    <th>Phone</th>
-                                    <th>Address</th>
-                                    <th>Message</th>
-                                    <th>Status</th>
-                                    <th>Actions</th>
+                                    <th class="ticket-no-column">No.</th>
+                                    <th class="ticket-name-column">Name</th>
+                                    <th class="ticket-email-column">Email</th>
+                                    <th class="ticket-phone-column">Phone</th>
+                                    <th class="ticket-address-column">Address</th>
+                                    <th class="ticket-message-column">Message</th>
+                                    <th class="ticket-date-column">Date</th>
+                                    <th class="ticket-status-column">Status</th>
+                                    <th class="ticket-actions-column">Actions</th>
                                 </tr>
                             </thead>
                             <tbody>
-                                @foreach ($tickets as $key => $ticket)
-                                @if($ticket->status == "Done")
+                                @forelse ($completedTickets as $ticket)
                                 <tr>
-                                    <td>{{ ++$key }}</td>
-                                    <td>{{ $ticket->name }}</td>
-                                    <td>{{ $ticket->email }}</td>
-                                    <td>{{ $ticket->phone }}</td>
-                                    <td>{{ $ticket->address }}</td>
-                                    <td>{{ $ticket->message }}</td>
-                                    <td>{{ $ticket->status }}</td>
-                                    <td class="text-center">
+                                    <td class="ticket-no-column">{{ $completedTickets->firstItem() + $loop->index }}</td>
+                                    <td class="ticket-name-column">{{ $ticket->name }}</td>
+                                    <td class="ticket-email-column">{{ $ticket->email }}</td>
+                                    <td class="ticket-phone-column">{{ $ticket->phone }}</td>
+                                    <td class="ticket-address">
+                                        <span class="ticket-cell-content">{{ $ticket->address }}</span>
+                                    </td>
+                                    <td class="ticket-message">
+                                        <span class="ticket-cell-content">{{ $ticket->message }}</span>
+                                    </td>
+                                    <td class="ticket-date-column">{{ $ticket->created_at ? $ticket->created_at->format('M d, Y') : '-' }}</td>
+                                    <td class="ticket-status-column">{{ $ticket->status }}</td>
+                                    <td class="ticket-actions-column text-center">
                                         @can("Change Ticket Status")
                                         <a style="cursor: pointer;" data-toggle="tooltip" title="Edit" onclick="deleteCustomerModal('{{$ticket->id}}')">
                                             <i class="icofont-pencil text-warning fs-4"></i>
@@ -104,10 +201,17 @@
                                         @endcan
                                     </td>
                                 </tr>
-                                @endif
-                                @endforeach
+                                @empty
+                                <tr>
+                                    <td colspan="9" class="text-center py-4">No completed tickets found.</td>
+                                </tr>
+                                @endforelse
                             </tbody>
                         </table>
+                        </div>
+                        <div class="mt-3">
+                            {{ $completedTickets->links() }}
+                        </div>
                     </div>
                 </div> <!-- ROW END -->
             </div>

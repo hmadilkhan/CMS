@@ -11,6 +11,7 @@ use App\Models\BatteryType;
 use App\Models\Customer;
 use App\Models\CustomerAdder;
 use App\Models\CustomerFinance;
+use App\Models\Employee;
 use App\Models\FinanceOption;
 use App\Models\InverterType;
 use App\Models\InverterTypeRate;
@@ -24,6 +25,7 @@ use App\Models\SubContractor;
 use App\Models\SubDepartment;
 use App\Models\Task;
 use App\Models\User;
+use App\Services\ProjectAssignmentService;
 use App\Traits\MediaTrait;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -315,12 +317,15 @@ class CustomerController extends Controller
                 ->causedBy(auth()->user()) // Log who did the action
                 ->setEvent("update")
                 ->log("{$username} created the project.");
-            Task::create([
+
+            $assignedEmployee = app(ProjectAssignmentService::class)->employeeForDepartment(1) ?? Employee::with('user')->find(1);
+            $task = Task::create([
                 "project_id" => $project->id,
-                "employee_id" => 1,
+                "employee_id" => $assignedEmployee?->id ?? 1,
                 "department_id" => 1,
                 "sub_department_id" => $subdepartment->id,
             ]);
+            app(ProjectAssignmentService::class)->notifyAssignedEmployee($assignedEmployee, $project, $task);
             DB::commit();
             return redirect()->route("customers.index");
         } catch (\Throwable $th) {

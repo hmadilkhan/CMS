@@ -13,8 +13,15 @@ class NewTicketController extends Controller
     public function index()
     {
         Artisan::call('get:leads');
-        return view("tickets.index",[
-            "tickets" => ModelsNewTicket::all(),
+        return view("tickets.index", [
+            "pendingTickets" => ModelsNewTicket::where("status", "Pending")
+                ->latest()
+                ->paginate(10, ["*"], "pending_page")
+                ->appends(["tab" => "pending"]),
+            "completedTickets" => ModelsNewTicket::where("status", "Done")
+                ->latest()
+                ->paginate(10, ["*"], "completed_page")
+                ->appends(["tab" => "complete"]),
         ]);
     }
     public function store(Request $request)
@@ -23,7 +30,6 @@ class NewTicketController extends Controller
             "form_name" => "required",
             "form_email" => "required",
             "form_subject" => "required",
-            "form_phone" => "required",
             "form_phone" => "required",
         ]);
         try {

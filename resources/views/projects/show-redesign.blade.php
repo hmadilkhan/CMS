@@ -938,11 +938,20 @@
         }
 
         #project-show-page.project-workspace-redesign > .card:first-child {
-            border-bottom: 1px solid var(--workspace-line) !important;
+            border-bottom: 0 !important;
             background: #ffffff !important;
             backdrop-filter: blur(12px);
             margin-bottom: 0 !important;
             padding: 2rem clamp(1rem, 4vw, 2.5rem) 1.5rem;
+        }
+
+        #project-show-page.project-workspace-redesign > .card:first-child::after {
+            content: "";
+            display: block;
+            width: min(100%, 1320px);
+            height: 1px;
+            margin: 1.5rem auto 0;
+            background: var(--workspace-line);
         }
 
         #project-show-page.project-workspace-redesign > .card:first-child .card-body,
@@ -1006,6 +1015,47 @@
             transform: translateY(1px);
         }
 
+        #project-show-page.project-workspace-redesign .project-stage-meta .project-assignee-control {
+            width: auto;
+            text-align: left;
+        }
+
+        #project-show-page.project-workspace-redesign .project-stage-meta .project-assignee-toggle {
+            gap: 0.32rem;
+            min-height: 0;
+            padding: 0;
+            background: transparent !important;
+            border: 0;
+            color: var(--workspace-amber);
+            font-size: 0.78rem;
+            font-weight: 600;
+            line-height: 1.2;
+            box-shadow: none;
+        }
+
+        #project-show-page.project-workspace-redesign .project-stage-meta .project-assignee-toggle:hover,
+        #project-show-page.project-workspace-redesign .project-stage-meta .project-assignee-toggle:focus {
+            background: transparent !important;
+            color: var(--workspace-ink);
+            transform: none;
+        }
+
+        #project-show-page.project-workspace-redesign .project-stage-meta .project-assignee-label,
+        #project-show-page.project-workspace-redesign .project-stage-meta .project-assignee-name {
+            font-size: inherit;
+            font-weight: inherit;
+            line-height: inherit;
+        }
+
+        #project-show-page.project-workspace-redesign .project-stage-meta .project-assignee-label {
+            color: var(--workspace-ink-40);
+        }
+
+        #project-show-page.project-workspace-redesign .project-stage-meta .project-assignee-menu {
+            min-width: 220px;
+            font-size: 0.86rem;
+        }
+
         #project-show-page.project-workspace-redesign .project-summary-title {
             order: 1;
             max-width: 48rem;
@@ -1048,6 +1098,12 @@
             background: var(--workspace-soft) !important;
             color: var(--workspace-ink) !important;
             font-size: 0.76rem;
+        }
+
+        #project-show-page.project-workspace-redesign .project-tag-chip.adder-tag {
+            background: rgba(37, 99, 235, 0.1) !important;
+            border: 1px solid rgba(37, 99, 235, 0.18);
+            color: #1d4ed8 !important;
         }
 
         #project-show-page.project-workspace-redesign .navbar,
@@ -1649,7 +1705,6 @@
                     <div class="card border-0 mb-4 no-bg">
                         @php
                             $currentAssignedName = optional($task->employee)->name ?? 'Unassigned';
-                            $currentDepartmentName = optional($project->department)->name ?? optional($task->department)->name ?? 'Current Department';
                             $projectAgeDays = empty($project->pto_approval_date)
                                 ? now()->diffInDays(Carbon\Carbon::parse($project->customer->sold_date))
                                 : Carbon\Carbon::parse($project->pto_approval_date)->diffInDays(
@@ -1688,7 +1743,31 @@
                             </h3>
                             <div class="project-stage-meta">
                                 <span class="project-days-badge">{{ $projectAgeDays }} Days in progress</span>
-                                <span class="project-current-stage">{{ $currentDepartmentName }} Stage</span>
+                                @if (auth()->user()->hasAnyRole(['Super Admin', 'Admin', 'Manager']))
+                                    <div class="dropdown project-assignee-control">
+                                        <button class="project-assignee-toggle dropdown-toggle" type="button"
+                                            data-bs-toggle="dropdown" aria-expanded="false">
+                                            <span class="project-assignee-label">Assigned:</span>
+                                            <span class="project-assignee-name" id="currentAssignedEmployeeName">
+                                                {{ $currentAssignedName }}
+                                            </span>
+                                        </button>
+                                        <ul class="dropdown-menu project-assignee-menu">
+                                            @foreach ($employees as $employee)
+                                                <li>
+                                                    <button type="button"
+                                                        class="dropdown-item project-employee-option {{ $task->employee_id == $employee->id ? 'active' : '' }}"
+                                                        data-employee-id="{{ $employee->id }}"
+                                                        data-employee-name="{{ $employee->name }}">
+                                                        {{ $employee->name }}
+                                                    </button>
+                                                </li>
+                                            @endforeach
+                                        </ul>
+                                    </div>
+                                @else
+                                    <span class="project-current-stage">Assigned: {{ $currentAssignedName }}</span>
+                                @endif
                             </div>
                         </div>
                     </div>
@@ -3051,29 +3130,6 @@
                     Cancelled
                 </option>
             </select>
-        </div>
-        <div class="d-flex justify-content-center mt-4 mb-3">
-            <div class="dropdown project-assignee-control">
-                <button class="project-assignee-toggle dropdown-toggle" type="button"
-                    data-bs-toggle="dropdown" aria-expanded="false">
-                    <span class="project-assignee-label">Currently Assigned To :</span>
-                    <span class="project-assignee-name" id="currentAssignedEmployeeName">
-                        {{ $currentAssignedName }}
-                    </span>
-                </button>
-                <ul class="dropdown-menu project-assignee-menu">
-                    @foreach ($employees as $employee)
-                        <li>
-                            <button type="button"
-                                class="dropdown-item project-employee-option {{ $task->employee_id == $employee->id ? 'active' : '' }}"
-                                data-employee-id="{{ $employee->id }}"
-                                data-employee-name="{{ $employee->name }}">
-                                {{ $employee->name }}
-                            </button>
-                        </li>
-                    @endforeach
-                </ul>
-            </div>
         </div>
     @endif
     </div>

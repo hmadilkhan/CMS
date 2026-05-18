@@ -2,6 +2,7 @@
 
 namespace App\Livewire;
 
+use App\Models\ProjectFollowUp;
 use Livewire\Attributes\Title;
 use Livewire\Component;
 use Carbon\Carbon;
@@ -41,6 +42,18 @@ class AdminDashboard extends Component
     
     public function render()
     {
-        return view('livewire.admin-dashboard');
+        $followUps = collect();
+
+        if (!empty(auth()->user()->employee)) {
+            $followUps = ProjectFollowUp::with(['project.customer', 'employee'])
+                ->where('employee_id', auth()->user()->employee->id)
+                ->where('status', '!=', 'Resolved')
+                ->orderBy('follow_up_date', 'asc')
+                ->get();
+        }
+
+        return view('livewire.admin-dashboard', [
+            'followUps' => $followUps,
+        ]);
     }
 }

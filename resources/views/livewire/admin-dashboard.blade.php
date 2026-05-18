@@ -148,6 +148,14 @@
                         </a>
                     </li>
                     <li class="nav-item">
+                        <a class="nav-link" data-bs-toggle="tab" href="#follow-ups-tab" role="tab">
+                            <i class="icofont-calendar me-2"></i>Follow Ups
+                            @if(count($followUps) > 0)
+                                <span class="badge bg-danger ms-1">{{ count($followUps) }}</span>
+                            @endif
+                        </a>
+                    </li>
+                    <li class="nav-item">
                         <a class="nav-link" data-bs-toggle="tab" href="#service-tickets-tab" role="tab">
                             <i class="icofont-ticket me-2"></i>Service Tickets
                         </a>
@@ -216,9 +224,114 @@
                 </div>
             </div>
 
+            <div class="tab-pane fade" id="follow-ups-tab" role="tabpanel">
+                <div class="dashboard-widget">
+                    <div class="card mb-3 shadow-sm">
+                        <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                            <div class="info-header">
+                                <h6 class="mb-0 fw-bold">
+                                    <i class="icofont-calendar me-2"></i>Follow Up Tasks
+                                </h6>
+                            </div>
+                            <span class="badge bg-light text-primary rounded-pill">{{ count($followUps) }}</span>
+                        </div>
+                        <div class="card-body p-0">
+                            @if(count($followUps) > 0)
+                                <div class="table-responsive">
+                                    <table class="table table-hover align-middle mb-0" style="width:100%">
+                                        <thead class="table-light">
+                                            <tr>
+                                                <th class="border-0 fw-semibold text-muted">Project</th>
+                                                <th class="border-0 fw-semibold text-muted">Notes</th>
+                                                <th class="border-0 fw-semibold text-muted">Follow Up Date</th>
+                                                <th class="border-0 fw-semibold text-muted">Status</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            @foreach ($followUps as $followUp)
+                                                <tr class="border-bottom">
+                                                    <td class="py-3">
+                                                        <a href="{{ route('projects.show', $followUp->project->id) }}"
+                                                           class="text-decoration-none fw-semibold text-primary hover-underline">
+                                                            {{ $followUp->project->project_name }}
+                                                        </a>
+                                                        <div class="small text-muted mt-1">
+                                                            {{ optional($followUp->project->customer)->first_name }}
+                                                            {{ optional($followUp->project->customer)->last_name }}
+                                                        </div>
+                                                    </td>
+                                                    <td class="py-3">
+                                                        <div class="text-truncate" style="max-width: 240px;" title="{{ $followUp->notes }}">
+                                                            {{ $followUp->notes }}
+                                                        </div>
+                                                    </td>
+                                                    <td class="py-3">
+                                                        <div class="d-flex align-items-center">
+                                                            <i class="icofont-calendar text-muted me-2"></i>
+                                                            <span class="{{ \Carbon\Carbon::parse($followUp->follow_up_date)->isPast() ? 'text-danger fw-semibold' : 'text-dark' }}">
+                                                                {{ \Carbon\Carbon::parse($followUp->follow_up_date)->format('M d, Y') }}
+                                                            </span>
+                                                        </div>
+                                                        @if(\Carbon\Carbon::parse($followUp->follow_up_date)->isToday())
+                                                            <small class="text-warning">Due Today</small>
+                                                        @elseif(\Carbon\Carbon::parse($followUp->follow_up_date)->isPast())
+                                                            <small class="text-danger">Overdue</small>
+                                                        @endif
+                                                    </td>
+                                                    <td class="py-3">
+                                                        <select class="form-select form-select-sm admin-followup-status-select"
+                                                                data-followup-id="{{ $followUp->id }}"
+                                                                style="width: auto; min-width: 100px;">
+                                                            <option value="Pending" selected>Pending</option>
+                                                            <option value="Resolved">Resolved</option>
+                                                        </select>
+                                                    </td>
+                                                </tr>
+                                            @endforeach
+                                        </tbody>
+                                    </table>
+                                </div>
+                            @else
+                                <div class="text-center py-5">
+                                    <i class="icofont-calendar text-muted" style="font-size: 3rem;"></i>
+                                    <h6 class="text-muted mt-3">No follow-up tasks scheduled</h6>
+                                    <p class="text-muted small">Follow-up tasks assigned to you will appear here.</p>
+                                </div>
+                            @endif
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <div class="tab-pane fade" id="service-tickets-tab" role="tabpanel">
                 @include('service-tickets.admin-dashboard-content')
             </div>
         </div>
     </div>
+
+    <script>
+        $(document).off('change', '.admin-followup-status-select').on('change', '.admin-followup-status-select', function() {
+            const selectElement = $(this);
+            const newStatus = selectElement.val();
+
+            $.ajax({
+                url: '{{ route("followup.status.update") }}',
+                method: 'POST',
+                data: {
+                    _token: '{{ csrf_token() }}',
+                    followup_id: selectElement.data('followup-id'),
+                    status: newStatus
+                },
+                success: function(response) {
+                    if (response.status === 200 && newStatus === 'Resolved') {
+                        location.reload();
+                    }
+                },
+                error: function() {
+                    selectElement.val('Pending');
+                    Swal.fire('Error!', 'Failed to update follow-up status.', 'error');
+                }
+            });
+        });
+    </script>
 </div>
