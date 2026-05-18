@@ -104,7 +104,7 @@
                             <td class="text-center">
                                 <a style="cursor: pointer;" data-toggle="tooltip" title="Edit"
                                     href="{{ url('role-permission') . '/' . $rolepermission->id }}">
-                                    <i class="icofont-pencil text-warning"></i></a>
+                                    <i class="icofont-pencil text-primary"></i></a>
                                 <a style="cursor: pointer;" data-toggle="tooltip" title="Delete" class="ml-2"
                                     onclick="deleteRolePermission('{{ $rolepermission->id }}')">
                                     <i class="icofont-trash text-danger"></i></a>

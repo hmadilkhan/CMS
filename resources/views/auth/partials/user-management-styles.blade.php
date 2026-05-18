@@ -128,12 +128,6 @@
         box-shadow: none !important;
     }
 
-    .user-management-page .text-warning,
-    .user-management-page .action-icon.text-warning,
-    .user-management-page .text-warning i {
-        color: #1d4ed8 !important;
-    }
-
     .user-management-page .form-control:focus,
     .user-management-page .form-select:focus {
         border-color: #1d4ed8 !important;

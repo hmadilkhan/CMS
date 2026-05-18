@@ -90,7 +90,7 @@
                             <td class="text-center">
                                 <a class="action-link" data-toggle="tooltip" title="Edit"
                                     href="{{ route('role', $list->id) }}">
-                                    <i class="icofont-pencil text-warning"></i>
+                                    <i class="icofont-pencil text-primary"></i>
                                 </a>
                                 <a class="action-link ml-2" data-toggle="tooltip" title="Delete"
                                     onclick="deleteRoleModal('{{ $list->id }}')">

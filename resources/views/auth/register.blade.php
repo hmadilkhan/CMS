@@ -4,13 +4,13 @@
 <style>
 .premium-card {
     border: none;
-    border-radius: 16px;
-    box-shadow: 0 4px 20px rgba(0,0,0,0.08);
-    overflow: hidden;
+    border-radius: 0;
+    box-shadow: none;
+    overflow: visible;
 }
 .premium-header {
-    background: linear-gradient(135deg, #2c3e50 0%, #000000 100%);
-    color: white;
+    background: transparent;
+    color: #050505;
     padding: 1.25rem 1.5rem;
     border: none;
 }
@@ -38,11 +38,11 @@
     height: auto;
 }
 .form-control:focus, .form-select:focus {
-    border-color: #2c3e50;
-    box-shadow: 0 0 0 0.2rem rgba(44, 62, 80, 0.15);
+    border-color: #1d4ed8;
+    box-shadow: 0 0 0 0.2rem rgba(29, 78, 216, 0.12);
 }
 .btn-premium {
-    background: linear-gradient(135deg, #2c3e50 0%, #000000 100%);
+    background: #050505;
     border: none;
     padding: 0.6rem 1.5rem;
     border-radius: 8px;
@@ -75,13 +75,13 @@
     margin-bottom: 0;
 }
 .table-premium thead {
-    background: linear-gradient(135deg, #2c3e50 0%, #000000 100%);
+    background: #f8fafc;
 }
 .table-premium thead th {
     border: none;
     padding: 0.75rem;
     font-weight: 600;
-    color: white;
+    color: #050505;
     font-size: 0.9rem;
 }
 .table-premium tbody td {
@@ -338,7 +338,7 @@
                             <td>{{ $user->type->name }}</td>
                             <td>{{ implode(',', $user->getRoleNames()->toArray()) }}</td>
                             <td class="text-center">
-                                <a href="{{ url('register') . '/' . $user->id }}" class="action-icon text-warning me-2" data-bs-toggle="tooltip" title="Edit">
+                                <a href="{{ url('register') . '/' . $user->id }}" class="action-icon text-primary me-2" data-bs-toggle="tooltip" title="Edit">
                                     <i class="icofont-pencil"></i>
                                 </a>
                                 <a onclick="deleteUser('{{ $user->id }}')" class="action-icon text-danger me-2" style="cursor: pointer;" data-bs-toggle="tooltip" title="Delete">
