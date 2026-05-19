@@ -22,6 +22,7 @@ use App\Models\Project;
 use App\Models\ProjectAcceptance;
 use App\Models\ProjectAddersLock;
 use App\Models\ProjectCallLog;
+use App\Models\ProjectDesignDetail;
 use App\Models\ProjectFile;
 use App\Models\ProjectFollowUp;
 use App\Models\SubDepartment;
@@ -751,6 +752,153 @@ class ProjectController extends Controller
             // return $th->getMessage();
             return response()->json(["status" => 500, "message" => "Error: " . $th->getMessage()]);
             // return redirect()->route("projects.show", $request->project_id)->with("error", $th->getMessage());
+        }
+    }
+
+    public function storeDesignDetails(Request $request)
+    {
+        $validated = $request->validate([
+            'project_id' => 'required|exists:projects,id',
+            'task_id' => 'nullable|exists:tasks,id',
+            'employee_id' => 'required|exists:employees,id',
+            'name' => 'nullable|string|max:255',
+            'phone' => 'nullable|string|max:255',
+            'address' => 'nullable|string',
+            'ahj' => 'nullable|string|max:255',
+            'roof_area' => 'nullable|string|max:255',
+            'mod' => 'nullable|string|max:255',
+            'array_area' => 'nullable|string|max:255',
+            'inv' => 'nullable|string|max:255',
+            'utility_meter' => 'nullable|string|max:255',
+            'kw_rating' => 'nullable|string|max:255',
+            'ac_cec' => 'nullable|string|max:255',
+            'apn' => 'nullable|string|max:255',
+            'stories' => 'nullable|string|max:255',
+            'roof_type' => 'nullable|string|max:255',
+            'rafter' => 'nullable|string|max:255',
+            'slope' => 'nullable|string|max:255',
+            'msp' => 'nullable|string|max:255',
+            'array_azi' => 'nullable|string|max:255',
+            'design_notes' => 'nullable|string',
+            'assign_notes' => 'nullable|string',
+            'follow_up' => 'nullable|boolean',
+            'follow_up_date' => 'nullable|required_if:follow_up,1|date',
+        ]);
+
+        $project = Project::with('department')->findOrFail($validated['project_id']);
+
+        if (!auth()->user()->hasAnyRole(['Super Admin', 'Manager'])) {
+            return response()->json(['status' => 403, 'message' => 'You are not allowed to generate design details.'], 403);
+        }
+
+        if (strcasecmp(optional($project->department)->name ?? '', 'Engineering') !== 0) {
+            return response()->json(['status' => 422, 'message' => 'Design details can only be generated in Engineering.'], 422);
+        }
+
+        DB::beginTransaction();
+        try {
+            $activeStatuses = ['In-Progress', 'Hold', 'Cancelled'];
+            $currentTask = Task::where('id', $request->task_id)
+                ->where('project_id', $project->id)
+                ->first();
+
+            if (!$currentTask || !in_array($currentTask->status, $activeStatuses)) {
+                $currentTask = Task::where('project_id', $project->id)
+                    ->whereIn('status', $activeStatuses)
+                    ->latest('id')
+                    ->firstOrFail();
+            }
+
+            $designDetail = ProjectDesignDetail::create([
+                'project_id' => $project->id,
+                'task_id' => $currentTask->id,
+                'employee_id' => $validated['employee_id'],
+                'created_by' => auth()->id(),
+                'department_id' => $currentTask->department_id,
+                'sub_department_id' => $currentTask->sub_department_id,
+                'name' => $validated['name'] ?? null,
+                'phone' => $validated['phone'] ?? null,
+                'address' => $validated['address'] ?? null,
+                'ahj' => $validated['ahj'] ?? null,
+                'roof_area' => $validated['roof_area'] ?? null,
+                'mod' => $validated['mod'] ?? null,
+                'array_area' => $validated['array_area'] ?? null,
+                'inv' => $validated['inv'] ?? null,
+                'utility_meter' => $validated['utility_meter'] ?? null,
+                'kw_rating' => $validated['kw_rating'] ?? null,
+                'ac_cec' => $validated['ac_cec'] ?? null,
+                'apn' => $validated['apn'] ?? null,
+                'stories' => $validated['stories'] ?? null,
+                'roof_type' => $validated['roof_type'] ?? null,
+                'rafter' => $validated['rafter'] ?? null,
+                'slope' => $validated['slope'] ?? null,
+                'msp' => $validated['msp'] ?? null,
+                'array_azi' => $validated['array_azi'] ?? null,
+                'design_notes' => $validated['design_notes'] ?? null,
+                'assign_notes' => $validated['assign_notes'] ?? null,
+                'follow_up' => (bool) ($validated['follow_up'] ?? false),
+                'follow_up_date' => $validated['follow_up_date'] ?? null,
+            ]);
+
+            Task::where('id', $currentTask->id)->update([
+                'status' => 'Completed',
+                'notes' => 'Design details generated',
+            ]);
+
+            $newTask = Task::create([
+                'project_id' => $project->id,
+                'employee_id' => $validated['employee_id'],
+                'department_id' => $currentTask->department_id,
+                'sub_department_id' => $currentTask->sub_department_id,
+                'assign_to_notes' => $validated['assign_notes'] ?? null,
+                'status' => 'In-Progress',
+                'user_id' => auth()->id(),
+            ]);
+
+            $assignedEmployee = Employee::with('user')->find($validated['employee_id']);
+            app(ProjectAssignmentService::class)->notifyAssignedEmployee($assignedEmployee, $project, $newTask);
+
+            if (!empty($validated['follow_up']) && !empty($validated['follow_up_date'])) {
+                ProjectFollowUp::where('project_id', $project->id)
+                    ->where('department_id', $currentTask->department_id)
+                    ->where('sub_department_id', $currentTask->sub_department_id)
+                    ->where('status', 'Pending')
+                    ->update([
+                        'status' => 'Resolved',
+                        'resolved_date' => now(),
+                    ]);
+
+                ProjectFollowUp::create([
+                    'project_id' => $project->id,
+                    'employee_id' => $validated['employee_id'],
+                    'created_by' => auth()->id(),
+                    'department_id' => $currentTask->department_id,
+                    'sub_department_id' => $currentTask->sub_department_id,
+                    'follow_up_date' => $validated['follow_up_date'],
+                    'notes' => $validated['assign_notes'] ?? 'Design details follow-up scheduled',
+                    'status' => 'Pending',
+                ]);
+            }
+
+            activity('project')
+                ->performedOn($project)
+                ->causedBy(auth()->user())
+                ->setEvent('created')
+                ->withProperties(['project_design_detail_id' => $designDetail->id])
+                ->log(auth()->user()->name . ' generated design details.');
+
+            DB::commit();
+
+            return response()->json([
+                'status' => 200,
+                'message' => 'Design details generated successfully',
+                'task_id' => $newTask->id,
+                'department_id' => $newTask->department_id,
+                'sub_department_id' => $newTask->sub_department_id,
+            ]);
+        } catch (\Throwable $th) {
+            DB::rollBack();
+            return response()->json(['status' => 500, 'message' => 'Error: ' . $th->getMessage()], 500);
         }
     }
 

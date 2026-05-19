@@ -1867,6 +1867,35 @@
             font-size: 0.9rem;
         }
 
+        #generateDesignDetailsModal .modal-dialog {
+            max-height: calc(100vh - 1rem);
+        }
+
+        #generateDesignDetailsModal .modal-content {
+            max-height: calc(100vh - 1rem);
+            overflow: hidden;
+        }
+
+        #generateDesignDetailsModal .modal-body {
+            max-height: calc(100vh - 12rem);
+            overflow-y: auto;
+        }
+
+        #generateDesignDetailsModal .modal-footer {
+            flex-shrink: 0;
+            background: #ffffff;
+        }
+
+        #generateDesignDetailsModal .modal-footer .btn {
+            min-height: 32px;
+            padding: 0.25rem 0.5rem !important;
+            border-radius: 0.2rem !important;
+            font-size: 0.875rem;
+            line-height: 1.5;
+            box-shadow: none !important;
+            transform: none !important;
+        }
+
         @media (max-width: 768px) {
             #project-show-page.project-workspace-redesign > .card:first-child {
                 padding: 1.25rem 1rem;
@@ -2333,6 +2362,20 @@
                                                             <div class="department-fields-frame">
                                                                 @livewire('project.project-fields', ['project' => $project, 'taskId' => $task->id, 'departmentId' => $department->id, 'projectDepartmentId' => $project->department_id, 'ghost' => $ghost,'viewSource' => 'crm'], key('fields-' . $department->id))
                                                             </div>
+                                                            @php
+                                                                $canGenerateDesignDetails =
+                                                                    auth()->user()->hasAnyRole(['Super Admin', 'Manager']) &&
+                                                                    $isCurrentDepartment &&
+                                                                    strcasecmp(optional($project->department)->name ?? '', 'Engineering') === 0;
+                                                            @endphp
+                                                            @if ($canGenerateDesignDetails)
+                                                                <div class="mt-3 text-end">
+                                                                    <button type="button" class="btn btn-primary" data-bs-toggle="modal"
+                                                                        data-bs-target="#generateDesignDetailsModal">
+                                                                        <i class="icofont-paper me-2"></i>Generate Design Details
+                                                                    </button>
+                                                                </div>
+                                                            @endif
                                                         </div>
                                                     </div>
 
@@ -3380,6 +3423,158 @@
     </div>
 </div>
 <!-- Modal  Delete Folder/ File-->
+@if (auth()->user()->hasAnyRole(['Super Admin', 'Manager']) && strcasecmp(optional($project->department)->name ?? '', 'Engineering') === 0)
+    @php
+        $designCustomerName = trim(($project->customer->first_name ?? '') . ' ' . ($project->customer->last_name ?? ''));
+    @endphp
+    <div class="modal fade" id="generateDesignDetailsModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-xl modal-dialog-scrollable">
+            <div class="modal-content"
+                style="border-radius: 20px; border: none; box-shadow: 0 10px 40px rgba(0,0,0,0.2);">
+                <div class="modal-header"
+                    style="background: var(--solen-gradient); border-radius: 20px 20px 0 0; padding: 1.5rem; border: none;">
+                    <h5 class="modal-title fw-bold text-white">
+                        <i class="icofont-paper me-2"></i>Generate Design Details
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
+                        aria-label="Close"></button>
+                </div>
+                <form id="generateDesignDetailsForm" method="POST">
+                    @csrf
+                    <input type="hidden" name="project_id" value="{{ $project->id }}">
+                    <input type="hidden" name="task_id" id="designDetailsTaskId" value="{{ $task->id }}">
+                    <div class="modal-body" style="padding: 2rem;">
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold">Name</label>
+                                <input type="text" class="form-control" name="name" value="{{ $designCustomerName }}">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold">Phone</label>
+                                <input type="text" class="form-control" name="phone" value="{{ $project->customer->phone }}">
+                            </div>
+                            <div class="col-md-12">
+                                <label class="form-label fw-bold">Address</label>
+                                <input type="text" class="form-control" name="address" value="{{ $customerAddress }}">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold">AHJ</label>
+                                <input type="text" class="form-control" name="ahj" value="{{ $project->ahj }}">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold">Roof Area</label>
+                                <input type="text" class="form-control" name="roof_area">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold">MOD</label>
+                                <input type="text" class="form-control" name="mod"
+                                    value="{{ optional($project->customer->module)->name }}">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold">Array Area</label>
+                                <input type="text" class="form-control" name="array_area">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold">INV</label>
+                                <input type="text" class="form-control" name="inv"
+                                    value="{{ optional($project->customer->inverter)->name }}">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold">M. #/Utility</label>
+                                <input type="text" class="form-control" name="utility_meter">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold">kW Rating</label>
+                                <input type="text" class="form-control" name="kw_rating"
+                                    value="{{ $project->customer->module_value }}">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold">AC-CEC</label>
+                                <input type="text" class="form-control" name="ac_cec">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold">APN</label>
+                                <input type="text" class="form-control" name="apn">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold">Stories</label>
+                                <input type="text" class="form-control" name="stories">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold">Roof Type</label>
+                                <input type="text" class="form-control" name="roof_type">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold">Rafter</label>
+                                <input type="text" class="form-control" name="rafter">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold">Slope</label>
+                                <input type="text" class="form-control" name="slope">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold">MSP</label>
+                                <input type="text" class="form-control" name="msp">
+                            </div>
+                            <div class="col-md-12">
+                                <label class="form-label fw-bold">Array AZI</label>
+                                <input type="text" class="form-control" name="array_azi">
+                            </div>
+                            <div class="col-md-12">
+                                <label class="form-label fw-bold">Notes</label>
+                                <textarea class="form-control" name="design_notes" rows="3"></textarea>
+                            </div>
+                            <div class="col-md-12">
+                                <label class="form-label fw-bold" style="color: var(--solen-warm-text);">
+                                    <i class="icofont-pencil-alt-2 me-2"></i>Assign Notes
+                                </label>
+                                <textarea class="form-control" id="designAssignNotes" name="assign_notes" rows="4"
+                                    style="border-radius: 12px; border: 2px solid var(--solen-primary-border-strong); padding: 1rem; transition: all 0.3s; background-color: #ffffff; color: var(--solen-warm-text);"
+                                    placeholder="Enter assignment notes here..."></textarea>
+                            </div>
+                            <div class="col-md-12">
+                                <div class="form-check" style="padding-left: 2rem;">
+                                    <input class="form-check-input" type="checkbox" id="designFollowUpCheckbox"
+                                        name="follow_up" value="1"
+                                        style="width: 20px; height: 20px; cursor: pointer; border-radius: 6px;">
+                                    <label class="form-check-label fw-bold" for="designFollowUpCheckbox"
+                                        style="color: var(--solen-warm-text); margin-left: 0.5rem; cursor: pointer;">
+                                        <i class="icofont-calendar me-2"></i>Set Follow-up Date
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="col-md-12" id="designFollowUpDateContainer" style="display: none;">
+                                <label class="form-label fw-bold" style="color: var(--solen-warm-text);">
+                                    <i class="icofont-clock-time me-2"></i>Follow-up Date
+                                </label>
+                                <input type="date" class="form-control" id="designFollowUpDate" name="follow_up_date"
+                                    style="border-radius: 12px; border: 2px solid var(--solen-primary-border-strong); padding: 0.75rem; transition: all 0.3s; background-color: #ffffff; color: var(--solen-warm-text);">
+                            </div>
+                            <div class="col-md-12">
+                                <label class="form-label fw-bold" style="color: var(--solen-warm-text);">
+                                    <i class="icofont-user-alt-3 me-2"></i>Assign Employee
+                                </label>
+                                <select class="form-select" id="designEmployeeId" name="employee_id" required>
+                                    <option value="">Select Employee</option>
+                                    @foreach ($employees as $employee)
+                                        <option value="{{ $employee->id }}">{{ $employee->name }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer" style="border: 0; padding: 0 2rem 2rem;">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-primary btn-sm" id="generateDesignDetailsSubmitBtn">
+                            <i class="icofont-save me-2"></i>Generate Design Details
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+@endif
+
 <div class="modal fade" id="deletefile" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered modal-md modal-dialog-scrollable">
         <input type="hidden" id="deleteId" />
@@ -3834,6 +4029,100 @@
             }
         })
     })
+
+    $("#designFollowUpCheckbox").change(function() {
+        if ($(this).is(':checked')) {
+            $("#designFollowUpDateContainer").slideDown(300);
+            $("#designFollowUpDate").attr('required', true);
+        } else {
+            $("#designFollowUpDateContainer").slideUp(300);
+            $("#designFollowUpDate").attr('required', false).val('');
+        }
+    });
+
+    $("#generateDesignDetailsForm").submit(function(e) {
+        e.preventDefault();
+
+        if (!$("#designEmployeeId").val()) {
+            Swal.fire({
+                icon: 'warning',
+                title: 'Employee Required',
+                text: 'Please select an employee before generating design details.',
+            });
+            return false;
+        }
+
+        if ($("#designFollowUpCheckbox").is(':checked') && !$("#designFollowUpDate").val()) {
+            Swal.fire({
+                icon: 'warning',
+                title: 'Follow-up Date Required',
+                text: 'Please select a follow-up date.',
+            });
+            return false;
+        }
+
+        const $designButton = $("#generateDesignDetailsSubmitBtn");
+        const designButtonHtml = $designButton.html();
+
+        if ($designButton.prop("disabled")) {
+            return false;
+        }
+
+        $("#designDetailsTaskId").val(currentProjectTaskId);
+        $designButton.prop("disabled", true).html('<i class="icofont-spinner-alt-4 me-2"></i>Generating...');
+
+        $.ajax({
+            method: "POST",
+            url: "{{ route('projects.design-details') }}",
+            data: $(this).serialize(),
+            success: function(response) {
+                if (response.status == 200) {
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Success!',
+                        text: response.message,
+                        showConfirmButton: false,
+                        timer: 1500
+                    });
+                    $("#generateDesignDetailsModal").modal("hide");
+                    $("#designAssignNotes").val('');
+                    $("#designFollowUpCheckbox").prop('checked', false);
+                    $("#designFollowUpDate").val('');
+                    $("#designFollowUpDateContainer").hide();
+                    if (response.task_id) {
+                        currentProjectTaskId = response.task_id;
+                    }
+                    if (response.sub_department_id) {
+                        currentProjectSubDepartmentId = response.sub_department_id;
+                    }
+                    const selectedEmployeeId = $("#designEmployeeId").val();
+                    const selectedEmployeeName = $("#designEmployeeId option:selected").text();
+                    if (selectedEmployeeId) {
+                        $("#currentAssignedEmployeeName").text(selectedEmployeeName);
+                        $(".project-employee-option").removeClass("active");
+                        $('.project-employee-option[data-employee-id="' + selectedEmployeeId + '"]').addClass("active");
+                    }
+                    $("#designEmployeeId").val('');
+                } else {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error!',
+                        text: response.message || 'Some error occurred!',
+                    });
+                }
+            },
+            error: function(error) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error!',
+                    text: error.responseJSON?.message || 'Failed to generate design details',
+                });
+            },
+            complete: function() {
+                $designButton.prop("disabled", false).html(designButtonHtml);
+            }
+        });
+    });
 
     function getSubDepartments(id) {
         if (id != "") {

@@ -150,6 +150,7 @@ Route::middleware('auth')->group(function () {
     Route::post('save-project-files', [App\Http\Controllers\ProjectController::class, 'saveProjectFiles'])->name('projects.files');
     Route::post('projects-adders', [App\Http\Controllers\ProjectController::class, 'projectAdders'])->name('projects.adders');
     Route::post('projects-assign-to-employee', [App\Http\Controllers\ProjectController::class, 'assignTaskToEmployee'])->name('projects.assign');
+    Route::post('projects-design-details', [App\Http\Controllers\ProjectController::class, 'storeDesignDetails'])->name('projects.design-details');
     Route::post('projects-status', [App\Http\Controllers\ProjectController::class, 'projectStatus'])->name('projects.status');
     Route::get('projects-list', [App\Http\Controllers\ProjectController::class, 'getProjects'])->name('projects');
     Route::post('get-departments-fields', [App\Http\Controllers\ProjectController::class, 'getDepartmentFields'])->name('get.departments.fields');
