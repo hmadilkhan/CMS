@@ -2,12 +2,12 @@
 
 namespace App\Livewire\Project;
 
+use App\Jobs\SendRawEmailJob;
 use App\Models\DepartmentNote;
 use App\Models\Employee;
 use App\Models\NotesMention;
 use App\Models\Project;
 use App\Models\User;
-use Illuminate\Support\Facades\Mail;
 use Livewire\Component;
 use Illuminate\Support\Facades\Notification;
 use App\Notifications\NoteMentionedNotification;
@@ -85,11 +85,12 @@ class NotesSection extends Component
                 }
                 // $employee->user->notify(new NoteMentionedNotification($project, $cleanNote, auth()->user()));
                 // Notification::send($employee->user, new NoteMentionedNotification($project, $cleanNote, auth()->user()));
-                if ($employee->user && $employee->user->email_preference == 1) {
-                    Mail::raw($message, function ($message) use ($employee, $project) {
-                        $message->to($employee->email)
-                            ->subject('New Project Notes Mention - (' . $project->project_name . ') - (' . $project->department->name . ')');
-                    });
+                if ($employee->user && $employee->user->email_preference == 1 && !empty($employee->user->email)) {
+                    SendRawEmailJob::dispatch(
+                        $employee->user->email,
+                        'New Project Notes Mention - (' . $project->project_name . ') - (' . $project->department->name . ')',
+                        $message
+                    )->afterCommit();
                 }
             }
 
@@ -168,11 +169,12 @@ class NotesSection extends Component
                 } catch (\Exception $e) {
                     Log::error('Notification send failed in updateNote: ' . $e->getMessage());
                 }
-                if ($employee->user && $employee->user->email_preference == 1) {
-                    Mail::raw($message, function ($message) use ($employee, $project) {
-                        $message->to($employee->email)
-                            ->subject('Updated Project Notes Mention - (' . $project->project_name . ') - (' . $project->department->name . ')');
-                    });
+                if ($employee->user && $employee->user->email_preference == 1 && !empty($employee->user->email)) {
+                    SendRawEmailJob::dispatch(
+                        $employee->user->email,
+                        'Updated Project Notes Mention - (' . $project->project_name . ') - (' . $project->department->name . ')',
+                        $message
+                    )->afterCommit();
                 }
             }
 

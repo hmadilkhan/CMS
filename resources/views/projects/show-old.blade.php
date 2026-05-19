@@ -1,9 +1,6 @@
 @extends('layouts.master')
 @section('title', $project->project_name)
 @section('content')
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
     <style>
         body {
             /* background: linear-gradient(135deg, #d7d9da 0%, #e1dede 100%); */
@@ -58,7 +55,7 @@
         #project-show-page .bg-light,
         #project-show-page .list-group-item,
         #project-show-page .dropdown-menu {
-            background-color: #ffffff !important;
+            background-color: var(--solen-cream) !important;
         }
 
         #project-show-page .modal .card,
@@ -342,7 +339,7 @@
         #project-show-page #communication #emailDiv .table,
         #project-show-page #communication #emailDiv .table td,
         #project-show-page #communication #emailDiv .table th {
-            background-color: #ffffff !important;
+            background-color: var(--solen-cream) !important;
             border-color: var(--solen-primary-border-stronger) !important;
             color: var(--solen-warm-text) !important;
         }
@@ -424,7 +421,7 @@
         }
 
         .project-tag-panel {
-            background: #ffffff;
+            background: var(--solen-cream);
             border: 0;
             border-radius: 14px;
             padding: 1rem 1.25rem;
@@ -465,11 +462,6 @@
         .project-tag-chip.adder-tag {
             background: rgba(37, 99, 235, 0.12);
             color: #1d4ed8;
-        }
-
-        .project-tag-chip.pto-greenlight-tag {
-            background: rgba(22, 163, 74, 0.12);
-            color: #15803d;
         }
 
         .nav-tabs {
@@ -560,14 +552,14 @@
         }
 
         #project-show-page .project-primary-tabs .nav-link {
-            background: #ffffff;
+            background: var(--solen-cream);
             color: var(--solen-warm-text);
             min-width: 112px;
             text-align: center;
         }
 
         #project-show-page .project-department-tabs .nav-link {
-            background: #ffffff;
+            background: var(--solen-cream-strong);
             color: #92400e;
             font-size: 0.88rem;
             padding: 0.6rem 1.15rem;
@@ -646,7 +638,7 @@
 
         .project-title-status-menu {
             border: 1px solid var(--solen-primary-border);
-            background: #ffffff;
+            background: var(--solen-cream);
             box-shadow: 0 16px 35px rgba(120, 53, 15, 0.12);
         }
 
@@ -657,7 +649,7 @@
 
         .project-title-status-menu .dropdown-item:hover,
         .project-title-status-menu .dropdown-item.active {
-            background: #ffffff;
+            background: var(--solen-cream-strong);
             color: var(--solen-warm-hover);
         }
 
@@ -679,7 +671,7 @@
             min-width: 86px;
             padding: 0.35rem 0.85rem;
             border-radius: 999px;
-            background: #ffffff;
+            background: var(--solen-cream-strong);
             color: var(--solen-warm-text);
             font-size: 0.95rem;
             font-weight: 800;
@@ -694,29 +686,6 @@
             font-weight: 800;
             text-align: center;
             text-transform: uppercase;
-        }
-
-        .project-summary-main {
-            width: 100%;
-        }
-
-        .project-customer-address {
-            margin: 0;
-            color: var(--solen-warm-text);
-            font-size: 1.1rem;
-            font-weight: 700;
-            line-height: 1.35;
-        }
-
-        .project-customer-contact {
-            display: flex;
-            align-items: center;
-            flex-wrap: wrap;
-            gap: 0.5rem 1.4rem;
-            margin-top: 0.35rem;
-            color: var(--solen-muted);
-            font-size: 0.94rem;
-            font-weight: 600;
         }
 
         .project-assignee-control {
@@ -765,7 +734,7 @@
             max-height: 280px;
             overflow-y: auto;
             border: 1px solid var(--solen-primary-border);
-            background: #ffffff;
+            background: var(--solen-cream);
             box-shadow: 0 16px 35px rgba(120, 53, 15, 0.12);
         }
 
@@ -776,7 +745,7 @@
 
         .project-assignee-menu .dropdown-item:hover,
         .project-assignee-menu .dropdown-item.active {
-            background: #ffffff;
+            background: var(--solen-cream-strong);
             color: var(--solen-warm-hover);
         }
 
@@ -815,7 +784,7 @@
         #project-show-page .select2-container--default .select2-selection--single,
         #project-show-page .select2-container--default .select2-selection--multiple {
             min-height: 44px;
-            background-color: #ffffff !important;
+            background-color: var(--solen-cream) !important;
             border: 1px solid var(--solen-primary-border-stronger) !important;
             color: var(--solen-warm-text) !important;
             box-shadow: none !important;
@@ -824,7 +793,7 @@
         #project-show-page .form-control:disabled,
         #project-show-page .form-select:disabled,
         #project-show-page .form-control[readonly] {
-            background-color: #ffffff !important;
+            background-color: var(--solen-cream) !important;
             opacity: 1;
         }
 
@@ -844,7 +813,7 @@
 
         #project-show-page .select2-dropdown,
         #project-show-page .select2-results__option {
-            background-color: #ffffff;
+            background-color: var(--solen-cream);
             color: var(--solen-warm-text);
         }
 
@@ -871,21 +840,21 @@
 
         #project-show-page > .tab-content .table thead,
         #project-show-page > .tab-content .table thead th {
-            background: #ffffff !important;
+            background: var(--solen-cream) !important;
             color: var(--solen-warm-text) !important;
             border-color: var(--solen-primary-border-strong) !important;
         }
 
         #project-show-page #adderTable thead,
         #project-show-page #adderTable thead th {
-            background: #ffffff !important;
+            background: var(--solen-cream) !important;
             color: var(--solen-warm-text) !important;
             border-color: var(--solen-primary-border-strong) !important;
         }
 
         #project-show-page .account-transactions-table thead,
         #project-show-page .account-transactions-table thead th {
-            background: #ffffff !important;
+            background: var(--solen-cream) !important;
             color: var(--solen-warm-text) !important;
             border-color: var(--solen-primary-border-strong) !important;
         }
@@ -931,1004 +900,19 @@
             border-color: var(--solen-primary);
             box-shadow: 0 0 0 0.2rem var(--solen-primary-border);
         }
-
-        /* Project detail redesign based on project-detail-sample.html */
-        :root {
-            --workspace-cream: #ffffff;
-            --workspace-amber: #f59e0b;
-            --workspace-ink: #451a03;
-            --workspace-ink-60: rgba(69, 26, 3, 0.6);
-            --workspace-ink-40: rgba(69, 26, 3, 0.4);
-            --workspace-line: rgba(69, 26, 3, 0.08);
-            --workspace-soft: rgba(245, 158, 11, 0.1);
-        }
-
-        .body:has(#project-show-page.project-workspace-redesign) {
-            padding-top: 0 !important;
-        }
-
-        #project-show-page.project-workspace-redesign {
-            --workspace-gutter: clamp(0.25rem, 0.7vw, 0.65rem);
-            width: 100%;
-            margin: -1rem 0 0;
-            padding-bottom: 3rem;
-            background: var(--workspace-cream) !important;
-            color: var(--workspace-ink);
-            font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-            overflow-x: clip;
-        }
-
-        #project-show-page.project-workspace-redesign::before {
-            content: "";
-            position: fixed;
-            inset: 0;
-            pointer-events: none;
-            background: transparent;
-            z-index: -1;
-        }
-
-        #project-show-page.project-workspace-redesign > .card:first-child {
-            border-bottom: 0 !important;
-            background: #ffffff !important;
-            backdrop-filter: blur(12px);
-            margin-bottom: 0 !important;
-            padding: 1.5rem var(--workspace-gutter) 1.25rem;
-        }
-
-        #project-show-page.project-workspace-redesign > .card:first-child::after {
-            content: "";
-            display: block;
-            width: 100%;
-            height: 1px;
-            margin: 1.5rem auto 0;
-            background: var(--workspace-line);
-        }
-
-        #project-show-page.project-workspace-redesign > .card:first-child .card-body,
-        #project-show-page.project-workspace-redesign > .card:first-child .row,
-        #project-show-page.project-workspace-redesign > .card:first-child .col-md-12 {
-            max-width: none;
-            margin-left: auto;
-            margin-right: auto;
-            width: 100%;
-        }
-
-        #project-show-page.project-workspace-redesign .project-summary-header {
-            display: grid;
-            grid-template-columns: minmax(0, 1fr) auto;
-            align-items: flex-start;
-            gap: 1rem 1.5rem;
-            padding: 0 0 1.5rem;
-            border-radius: 0 !important;
-            text-align: left;
-        }
-
-        #project-show-page.project-workspace-redesign .project-summary-main {
-            min-width: 0;
-        }
-
-        #project-show-page.project-workspace-redesign .project-stage-meta {
-            justify-self: end;
-            display: flex;
-            flex-direction: column;
-            align-items: flex-end;
-            gap: 0.55rem;
-            text-align: right;
-        }
-
-        #project-show-page.project-workspace-redesign .project-days-badge {
-            min-width: 0;
-            padding: 0.32rem 0.62rem;
-            background: rgba(69, 26, 3, 0.06);
-            color: var(--workspace-ink-60);
-            border-radius: 6px;
-            box-shadow: none;
-            font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-            font-size: 0.72rem;
-            font-weight: 600;
-            text-transform: uppercase;
-        }
-
-        #project-show-page.project-workspace-redesign .project-current-stage {
-            display: inline-flex;
-            align-items: center;
-            gap: 0.35rem;
-            border: 0;
-            background: transparent;
-            color: var(--workspace-amber);
-            padding: 0;
-            font-size: 0.78rem;
-            font-weight: 600;
-            line-height: 1.2;
-        }
-
-        #project-show-page.project-workspace-redesign .project-current-stage::after {
-            content: "";
-            width: 0;
-            height: 0;
-            border-left: 4px solid transparent;
-            border-right: 4px solid transparent;
-            border-top: 5px solid currentColor;
-            transform: translateY(1px);
-        }
-
-        #project-show-page.project-workspace-redesign .project-stage-meta .project-assignee-control {
-            width: auto;
-            text-align: left;
-        }
-
-        #project-show-page.project-workspace-redesign .project-stage-meta .project-assignee-toggle {
-            gap: 0.32rem;
-            min-height: 0;
-            padding: 0;
-            background: transparent !important;
-            border: 0;
-            color: var(--workspace-amber);
-            font-size: 0.78rem;
-            font-weight: 600;
-            line-height: 1.2;
-            box-shadow: none;
-        }
-
-        #project-show-page.project-workspace-redesign .project-stage-meta .project-assignee-toggle:hover,
-        #project-show-page.project-workspace-redesign .project-stage-meta .project-assignee-toggle:focus {
-            background: transparent !important;
-            color: var(--workspace-ink);
-            transform: none;
-        }
-
-        #project-show-page.project-workspace-redesign .project-stage-meta .project-assignee-label,
-        #project-show-page.project-workspace-redesign .project-stage-meta .project-assignee-name {
-            font-size: inherit;
-            font-weight: inherit;
-            line-height: inherit;
-        }
-
-        #project-show-page.project-workspace-redesign .project-stage-meta .project-assignee-label {
-            color: var(--workspace-ink-40);
-        }
-
-        #project-show-page.project-workspace-redesign .project-stage-meta .project-assignee-name {
-            color: #1d4ed8;
-        }
-
-        #project-show-page.project-workspace-redesign .project-stage-meta .project-assignee-toggle::after {
-            color: #1d4ed8;
-            border-top-color: #1d4ed8;
-        }
-
-        #project-show-page.project-workspace-redesign .project-stage-meta .project-assignee-menu {
-            min-width: 220px;
-            font-size: 0.86rem;
-        }
-
-        #project-show-page.project-workspace-redesign .project-summary-title {
-            max-width: 48rem;
-            color: var(--workspace-ink);
-            font-size: clamp(2rem, 4vw, 3rem);
-            font-weight: 600;
-            line-height: 0.95;
-            letter-spacing: 0;
-            text-align: left;
-            text-transform: none;
-        }
-
-        #project-show-page.project-workspace-redesign .project-customer-address {
-            max-width: 56rem;
-            margin-top: 0.55rem;
-            color: var(--workspace-ink);
-            font-size: clamp(1rem, 1.4vw, 1.22rem);
-            font-weight: 600;
-            line-height: 1.35;
-        }
-
-        #project-show-page.project-workspace-redesign .project-customer-contact {
-            color: var(--workspace-ink-60);
-            font-size: 0.9rem;
-        }
-
-        #project-show-page.project-workspace-redesign .project-title-status {
-            color: var(--workspace-ink);
-            padding: 0;
-            border-radius: 0;
-            font-weight: 600;
-            text-transform: none;
-        }
-
-        #project-show-page.project-workspace-redesign .project-title-status:hover,
-        #project-show-page.project-workspace-redesign .project-title-status:focus {
-            background: transparent;
-            color: var(--workspace-amber);
-        }
-
-        #project-show-page.project-workspace-redesign .project-tag-panel {
-            max-width: none;
-            margin: -0.5rem auto 1.5rem;
-            padding: 0 var(--workspace-gutter);
-            background: transparent;
-        }
-
-        #project-show-page.project-workspace-redesign .project-tag-list.is-right {
-            justify-content: flex-end;
-        }
-
-        #project-show-page.project-workspace-redesign .project-tag-list.is-left {
-            justify-content: flex-start;
-        }
-
-        #project-show-page.project-workspace-redesign .project-tag-row {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 0.75rem;
-            width: 100%;
-        }
-
-        #project-show-page.project-workspace-redesign .project-tag-row .project-tag-list {
-            flex: 1 1 0;
-            min-width: 0;
-        }
-
-        #project-show-page.project-workspace-redesign .project-tag-row .project-tag-list + .project-tag-list {
-            margin-top: 0;
-        }
-
-        #project-show-page.project-workspace-redesign .project-tag-list + .project-tag-list {
-            margin-top: 0.55rem;
-        }
-
-        #project-show-page.project-workspace-redesign .project-tag-chip {
-            border-radius: 6px;
-            background: var(--workspace-soft) !important;
-            color: var(--workspace-ink) !important;
-            font-size: 0.76rem;
-        }
-
-        #project-show-page.project-workspace-redesign .project-tag-chip.project-info-tag {
-            background: rgba(37, 99, 235, 0.1) !important;
-            border: 1px solid rgba(37, 99, 235, 0.18);
-            color: #1d4ed8 !important;
-        }
-
-        #project-show-page.project-workspace-redesign .project-tag-chip.adder-tag {
-            background: rgba(37, 99, 235, 0.1) !important;
-            border: 1px solid rgba(37, 99, 235, 0.18);
-            color: #1d4ed8 !important;
-        }
-
-        #project-show-page.project-workspace-redesign .project-stage-meta .pto-greenlight-tag {
-            align-self: flex-end;
-            border-radius: 6px;
-            background: rgba(22, 163, 74, 0.1) !important;
-            border: 1px solid rgba(22, 163, 74, 0.18);
-            color: #15803d !important;
-            font-size: 0.76rem;
-        }
-
-        #project-show-page.project-workspace-redesign .navbar,
-        #project-show-page.project-workspace-redesign .navbar .container-fluid,
-        #project-show-page.project-workspace-redesign .navbar-collapse {
-            width: 100%;
-            display: block !important;
-            padding: 0;
-        }
-
-        #project-show-page.project-workspace-redesign > .card:first-child .d-flex.justify-content-center {
-            max-width: none;
-            margin: 0 auto;
-            justify-content: stretch !important;
-        }
-
-        #project-show-page.project-workspace-redesign .project-department-tabs.prtab-set {
-            display: flex;
-            flex-wrap: nowrap !important;
-            gap: 1px;
-            width: 100%;
-            margin: 0 !important;
-            padding: 1px !important;
-            overflow: hidden !important;
-            background: var(--workspace-line) !important;
-            border: 1px solid var(--workspace-line) !important;
-            border-radius: 14px !important;
-        }
-
-        #project-show-page.project-workspace-redesign .project-department-tabs.prtab-set .nav-item,
-        #project-show-page.project-workspace-redesign .project-department-tabs.prtab-set .nav-link {
-            width: 100%;
-            min-width: 0;
-        }
-
-        #project-show-page.project-workspace-redesign .project-department-tabs.prtab-set .nav-item {
-            flex: 1 1 0;
-        }
-
-        #project-show-page.project-workspace-redesign .project-department-tabs.prtab-set .nav-link {
-            min-height: 58px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            gap: 0.32rem;
-            padding: 0.65rem 0.35rem !important;
-            border-radius: 0 !important;
-            background: var(--workspace-cream) !important;
-            box-shadow: none !important;
-            color: var(--workspace-ink-40) !important;
-            text-align: center;
-        }
-
-        #project-show-page.project-workspace-redesign .department-pipeline-title {
-            display: block;
-            color: var(--workspace-ink-40);
-            font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-            font-size: 0.52rem;
-            font-weight: 500;
-            letter-spacing: 0.04em;
-            line-height: 1.1;
-            text-transform: uppercase;
-            max-width: 100%;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            white-space: nowrap;
-        }
-
-        #project-show-page.project-workspace-redesign .department-pipeline-status {
-            display: block;
-            color: rgba(69, 26, 3, 0.2);
-            font-size: 0.68rem;
-            font-weight: 500;
-            line-height: 1.1;
-            max-width: 100%;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            white-space: nowrap;
-        }
-
-        #project-show-page.project-workspace-redesign .project-department-tabs.prtab-set .nav-item.bg-success .nav-link:not(.active)::after {
-            content: none !important;
-            display: none !important;
-        }
-
-        #project-show-page.project-workspace-redesign .project-department-tabs.prtab-set .nav-item.bg-success .nav-link:not(.active) {
-            background: var(--workspace-cream) !important;
-            color: var(--workspace-ink-40) !important;
-            box-shadow: none !important;
-        }
-
-        #project-show-page.project-workspace-redesign .project-department-tabs.prtab-set .nav-item.bg-success .department-pipeline-status {
-            color: var(--workspace-ink);
-            font-weight: 600;
-        }
-
-        #project-show-page.project-workspace-redesign .project-department-tabs.prtab-set .nav-link.active {
-            background: var(--workspace-soft) !important;
-            color: var(--workspace-ink) !important;
-            box-shadow: inset 0 0 0 1px rgba(245, 158, 11, 0.25) !important;
-            transform: none;
-        }
-
-        #project-show-page.project-workspace-redesign .project-department-tabs.prtab-set .nav-link.active .department-pipeline-title {
-            color: var(--workspace-amber);
-        }
-
-        #project-show-page.project-workspace-redesign .project-department-tabs.prtab-set .nav-link.active .department-pipeline-status {
-            color: var(--workspace-ink);
-            font-weight: 600;
-        }
-
-        #project-show-page.project-workspace-redesign #departmentDetailTabs {
-            display: flex;
-            flex-wrap: nowrap !important;
-            gap: 1px;
-            width: 100%;
-            margin: 0 0 2rem !important;
-            padding: 1px !important;
-            overflow: hidden !important;
-            background: var(--workspace-line) !important;
-            border: 1px solid var(--workspace-line) !important;
-            border-radius: 14px !important;
-            box-shadow: none !important;
-        }
-
-        #project-show-page.project-workspace-redesign #departmentDetailTabs .nav-item,
-        #project-show-page.project-workspace-redesign #departmentDetailTabs .nav-link {
-            width: 100%;
-            min-width: 0;
-        }
-
-        #project-show-page.project-workspace-redesign #departmentDetailTabs .nav-item {
-            flex: 1 1 0;
-        }
-
-        #project-show-page.project-workspace-redesign #departmentDetailTabs .nav-link {
-            min-height: 54px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 0.65rem 0.35rem !important;
-            border-radius: 0 !important;
-            background: var(--workspace-cream) !important;
-            box-shadow: none !important;
-            color: var(--workspace-ink-40) !important;
-            text-align: center;
-        }
-
-        #project-show-page.project-workspace-redesign #departmentDetailTabs .nav-link.active {
-            background: var(--workspace-soft) !important;
-            color: var(--workspace-amber) !important;
-            box-shadow: inset 0 0 0 1px rgba(245, 158, 11, 0.25) !important;
-            transform: none;
-        }
-
-        #project-show-page.project-workspace-redesign .department-detail-tab-title {
-            color: inherit;
-            font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-            font-size: 0.58rem;
-            font-weight: 500;
-            letter-spacing: 0.03em;
-            line-height: 1.2;
-            text-transform: uppercase;
-            max-width: 100%;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            white-space: nowrap;
-        }
-
-        #project-show-page.project-workspace-redesign > .row.clearfix.mt-2.mb-2 {
-            max-width: none;
-            margin: 2rem auto 1.75rem !important;
-            padding: 0 var(--workspace-gutter);
-        }
-
-        #project-show-page.project-workspace-redesign .project-content-shell {
-            max-width: none;
-            display: grid;
-            grid-template-columns: minmax(0, 1fr) minmax(240px, 16vw);
-            gap: 0.75rem;
-            align-items: flex-start;
-            margin: 1.5rem auto 1.75rem;
-            padding: 0 var(--workspace-gutter);
-        }
-
-        #project-show-page.project-workspace-redesign .project-content-main {
-            min-width: 0;
-        }
-
-        #project-show-page.project-workspace-redesign .project-content-main > .row.clearfix.mt-2.mb-2 {
-            max-width: none;
-            margin: 0 0 1.75rem !important;
-            padding: 0;
-        }
-
-        #project-show-page.project-workspace-redesign .project-details-rail {
-            min-width: 0;
-            position: sticky;
-            top: 1rem;
-        }
-
-        #project-show-page.project-workspace-redesign .project-primary-tabs {
-            justify-content: flex-start !important;
-            gap: clamp(0.8rem, 1.8vw, 1.35rem);
-            margin: 0 !important;
-            padding: 0 !important;
-            border-bottom: 1px solid var(--workspace-line) !important;
-            border-radius: 0 !important;
-            box-shadow: none !important;
-            flex-wrap: nowrap !important;
-            overflow-x: auto;
-            overflow-y: hidden;
-            scrollbar-width: thin;
-        }
-
-        #project-show-page.project-workspace-redesign .project-primary-tabs .nav-item {
-            flex: 0 0 auto;
-        }
-
-        #project-show-page.project-workspace-redesign .project-primary-tabs .nav-link {
-            min-width: 0;
-            padding: 0 0 1.05rem !important;
-            border-radius: 0 !important;
-            background: transparent !important;
-            box-shadow: none !important;
-            color: var(--workspace-ink-40) !important;
-            font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-            font-size: 1rem;
-            font-weight: 500;
-            line-height: 1.2;
-            border-bottom: 2px solid transparent !important;
-            transition: color 0.2s ease, border-color 0.2s ease;
-            white-space: nowrap;
-        }
-
-        #project-show-page.project-workspace-redesign .project-primary-tabs .nav-link:hover,
-        #project-show-page.project-workspace-redesign .project-primary-tabs .nav-link:focus {
-            background: transparent !important;
-            color: var(--workspace-ink-60) !important;
-        }
-
-        #project-show-page.project-workspace-redesign .project-primary-tabs .nav-link.active {
-            border-bottom: 2px solid #1d4ed8 !important;
-            color: var(--workspace-ink) !important;
-            transform: none;
-            font-weight: 500;
-        }
-
-        #project-show-page.project-workspace-redesign .project-secondary-tabs {
-            justify-content: flex-start !important;
-            gap: 1.5rem;
-            margin: 0 0 1.5rem !important;
-            padding: 0 !important;
-            border-bottom: 1px solid var(--workspace-line) !important;
-            border-radius: 0 !important;
-            box-shadow: none !important;
-            flex-wrap: nowrap !important;
-            overflow-x: auto;
-            overflow-y: hidden;
-            scrollbar-width: thin;
-        }
-
-        #project-show-page.project-workspace-redesign .project-secondary-tabs .nav-item {
-            flex: 0 0 auto;
-        }
-
-        #project-show-page.project-workspace-redesign .project-secondary-tabs .nav-link {
-            min-width: 0;
-            padding: 0 0 0.85rem !important;
-            border-radius: 0 !important;
-            background: transparent !important;
-            box-shadow: none !important;
-            color: var(--workspace-ink-40) !important;
-            font-size: 0.95rem;
-            font-weight: 500;
-            line-height: 1.2;
-            border-bottom: 2px solid transparent !important;
-            transition: color 0.2s ease, border-color 0.2s ease;
-            white-space: nowrap;
-        }
-
-        #project-show-page.project-workspace-redesign .project-secondary-tabs .nav-link:hover,
-        #project-show-page.project-workspace-redesign .project-secondary-tabs .nav-link:focus {
-            background: transparent !important;
-            color: var(--workspace-ink-60) !important;
-        }
-
-        #project-show-page.project-workspace-redesign .project-secondary-tabs .nav-link.active {
-            border-bottom-color: var(--workspace-amber) !important;
-            color: var(--workspace-ink) !important;
-            transform: none;
-            font-weight: 500;
-        }
-
-        #project-show-page.project-workspace-redesign > .tab-content {
-            max-width: none;
-            margin: 0 auto;
-            padding: 0 var(--workspace-gutter);
-        }
-
-        #project-show-page.project-workspace-redesign .card:not(.modal .card) {
-            background: transparent !important;
-            box-shadow: none !important;
-        }
-
-        #project-show-page.project-workspace-redesign .card-header:not(.modal .card-header) {
-            background: transparent !important;
-            color: var(--workspace-ink) !important;
-            border-bottom: 1px solid var(--workspace-line) !important;
-            border-radius: 0 !important;
-        }
-
-        #project-show-page.project-workspace-redesign h3,
-        #project-show-page.project-workspace-redesign h4,
-        #project-show-page.project-workspace-redesign h5 {
-            color: var(--workspace-ink);
-        }
-
-        #project-show-page.project-workspace-redesign .form-control,
-        #project-show-page.project-workspace-redesign .form-select,
-        #project-show-page.project-workspace-redesign .select2-container--default .select2-selection--single,
-        #project-show-page.project-workspace-redesign .select2-container--default .select2-selection--multiple,
-        #project-show-page.project-workspace-redesign .tags-input {
-            background: transparent !important;
-            border: 1px solid var(--workspace-line) !important;
-            color: var(--workspace-ink) !important;
-            border-radius: 8px;
-        }
-
-        #project-show-page.project-workspace-redesign .table {
-            color: var(--workspace-ink);
-            border-color: var(--workspace-line);
-        }
-
-        #project-show-page.project-workspace-redesign .table thead,
-        #project-show-page.project-workspace-redesign .table thead th {
-            background: var(--workspace-soft) !important;
-            color: var(--workspace-ink) !important;
-            border-color: var(--workspace-line) !important;
-        }
-
-        #project-show-page.project-workspace-redesign .btn-dark,
-        #project-show-page.project-workspace-redesign .btn-primary,
-        #project-show-page.project-workspace-redesign .btn-success {
-            background: var(--workspace-amber) !important;
-            border-color: var(--workspace-amber) !important;
-            color: var(--workspace-cream) !important;
-            border-radius: 8px;
-            box-shadow: none;
-        }
-
-        #project-show-page.project-workspace-redesign .project-assignee-toggle {
-            color: var(--workspace-ink);
-        }
-
-        #project-show-page.project-workspace-redesign .note-header,
-        #project-show-page.project-workspace-redesign .files-header,
-        #project-show-page.project-workspace-redesign .project-section-header {
-            display: flex;
-            align-items: center;
-            min-height: 58px;
-            margin: 0 0 1rem;
-            padding: 1rem 1.15rem;
-            background: transparent !important;
-            color: var(--workspace-ink) !important;
-            border-bottom: 1px solid var(--workspace-line) !important;
-            border-radius: 0 !important;
-            box-shadow: none !important;
-            font-size: 1rem;
-            font-weight: 700;
-            line-height: 1.2;
-        }
-
-        #project-show-page.project-workspace-redesign .note-header i,
-        #project-show-page.project-workspace-redesign .files-header i,
-        #project-show-page.project-workspace-redesign .project-section-header i {
-            color: var(--workspace-amber);
-        }
-
-        #project-show-page.project-workspace-redesign .notes-section {
-            padding: 0 0 1.25rem;
-            background: transparent !important;
-            border-radius: 0;
-        }
-
-        #project-show-page.project-workspace-redesign .project-section-panel {
-            margin-bottom: 1.5rem;
-        }
-
-        #project-show-page.project-workspace-redesign .sample-activity-grid {
-            align-items: flex-start;
-            row-gap: 2.5rem;
-        }
-
-        #project-show-page.project-workspace-redesign .sample-notes-column,
-        #project-show-page.project-workspace-redesign .sample-files-column {
-            min-width: 0;
-        }
-
-        #project-show-page.project-workspace-redesign .sample-notes-column .note-header,
-        #project-show-page.project-workspace-redesign .sample-files-column .files-header,
-        #project-show-page.project-workspace-redesign .project-details-rail .files-header {
-            min-height: 0;
-            margin: 0 0 1rem;
-            padding: 0;
-            border: 0 !important;
-            background: transparent !important;
-            color: var(--workspace-ink-40) !important;
-            font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-            font-size: 0.86rem;
-            font-weight: 700;
-            letter-spacing: 0.12em;
-            line-height: 1.2;
-            text-transform: uppercase;
-            box-shadow: none !important;
-        }
-
-        #project-show-page.project-workspace-redesign .sample-notes-column .note-header i,
-        #project-show-page.project-workspace-redesign .sample-files-column .files-header i,
-        #project-show-page.project-workspace-redesign .project-details-rail .files-header i {
-            display: none;
-        }
-
-        #project-show-page.project-workspace-redesign .sample-notes-column .notes-section {
-            min-height: 260px;
-            margin: 0 0 1.75rem;
-            padding: 1.25rem;
-            background: #ffffff !important;
-            border: 1px solid var(--workspace-line);
-            border-radius: 12px;
-        }
-
-        #project-show-page.project-workspace-redesign .sample-notes-column .note-textarea {
-            min-height: 120px;
-            padding: 0;
-            background: transparent !important;
-            border: 0 !important;
-            box-shadow: none !important;
-            color: var(--workspace-ink);
-            resize: vertical;
-        }
-
-        #project-show-page.project-workspace-redesign .sample-notes-column .note-card {
-            margin: 0 0 1px;
-            padding: 1.25rem;
-            background: #ffffff !important;
-            border: 1px solid var(--workspace-line);
-            border-left: 0;
-            border-radius: 0;
-            box-shadow: none;
-            transform: none;
-        }
-
-        #project-show-page.project-workspace-redesign .sample-notes-column .note-card:first-of-type {
-            border-radius: 12px 12px 0 0;
-        }
-
-        #project-show-page.project-workspace-redesign .sample-notes-column .note-card:last-child {
-            border-radius: 0 0 12px 12px;
-        }
-
-        #project-show-page.project-workspace-redesign .sample-notes-column .note-card:hover {
-            box-shadow: none;
-            transform: none;
-        }
-
-        #project-show-page.project-workspace-redesign .sample-notes-column .note-meta {
-            margin-top: 1rem;
-            padding-top: 0.75rem;
-            border-color: var(--workspace-line);
-            color: var(--workspace-ink-40);
-            font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-            font-size: 0.68rem;
-            letter-spacing: 0.04em;
-            text-transform: uppercase;
-        }
-
-        #project-show-page.project-workspace-redesign .sample-notes-column .note-icon {
-            width: 30px;
-            height: 30px;
-            border-radius: 8px;
-        }
-
-        #project-show-page.project-workspace-redesign .sample-files-column .files-grid {
-            display: flex;
-            flex-direction: column;
-            gap: 1px;
-            margin-top: 0;
-            overflow: hidden;
-            background: var(--workspace-line);
-            border: 1px solid var(--workspace-line);
-            border-radius: 12px;
-        }
-
-        #project-show-page.project-workspace-redesign .sample-files-column .file-card {
-            min-height: 72px;
-            display: grid;
-            grid-template-columns: 2.5rem minmax(0, 1fr);
-            align-items: center;
-            gap: 0.85rem;
-            padding: 1rem 3.35rem 1rem 1rem;
-            background: #ffffff !important;
-            border-radius: 0;
-            box-shadow: none;
-            overflow: visible;
-            position: relative;
-            transform: none;
-        }
-
-        #project-show-page.project-workspace-redesign .sample-files-column .file-card:hover {
-            box-shadow: none;
-            transform: none;
-        }
-
-        #project-show-page.project-workspace-redesign .sample-files-column .file-preview {
-            width: 2rem;
-            height: 2rem;
-            border-radius: 7px;
-            background: var(--workspace-soft) !important;
-            overflow: hidden;
-            position: static;
-        }
-
-        #project-show-page.project-workspace-redesign .sample-files-column .file-preview img,
-        #project-show-page.project-workspace-redesign .sample-files-column .file-preview iframe {
-            display: none;
-        }
-
-        #project-show-page.project-workspace-redesign .sample-files-column .file-preview::before {
-            content: "\ef1a";
-            font-family: IcoFont;
-            color: var(--workspace-amber);
-            font-size: 1rem;
-            line-height: 1;
-        }
-
-        #project-show-page.project-workspace-redesign .sample-files-column .file-preview .file-type-icon {
-            display: none;
-        }
-
-        #project-show-page.project-workspace-redesign .sample-files-column .file-info {
-            min-width: 0;
-            padding: 0;
-            background: transparent !important;
-            color: var(--workspace-ink);
-        }
-
-        #project-show-page.project-workspace-redesign .sample-files-column .file-header {
-            margin: 0 0 0.25rem;
-            color: var(--workspace-ink);
-            font-size: 0.9rem;
-            font-weight: 600;
-            line-height: 1.2;
-        }
-
-        #project-show-page.project-workspace-redesign .sample-files-column .file-name {
-            color: var(--workspace-ink-40);
-            font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-            font-size: 0.62rem;
-            font-weight: 500;
-            letter-spacing: 0.04em;
-            line-height: 1.2;
-            text-transform: uppercase;
-        }
-
-        #project-show-page.project-workspace-redesign .sample-files-column .file-name a {
-            color: var(--workspace-ink-40) !important;
-        }
-
-        #project-show-page.project-workspace-redesign .project-detail-list {
-            display: flex;
-            flex-direction: column;
-            gap: 1px;
-            overflow: hidden;
-            background: var(--workspace-line);
-            border: 1px solid var(--workspace-line);
-            border-radius: 12px;
-        }
-
-        #project-show-page.project-workspace-redesign .project-detail-item {
-            min-height: 68px;
-            display: grid;
-            grid-template-columns: 2.5rem minmax(0, 1fr);
-            align-items: center;
-            gap: 0.85rem;
-            padding: 1rem;
-            background: #ffffff;
-        }
-
-        #project-show-page.project-workspace-redesign .project-detail-icon {
-            width: 2rem;
-            height: 2rem;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            border-radius: 7px;
-            background: var(--workspace-soft);
-            color: #1d4ed8;
-            font-size: 1rem;
-        }
-
-        #project-show-page.project-workspace-redesign .project-detail-label {
-            margin-bottom: 0.25rem;
-            color: var(--workspace-ink-40);
-            font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-            font-size: 0.62rem;
-            font-weight: 500;
-            letter-spacing: 0.04em;
-            line-height: 1.2;
-            text-transform: uppercase;
-        }
-
-        #project-show-page.project-workspace-redesign .project-detail-value {
-            color: var(--workspace-ink);
-            font-size: 0.9rem;
-            font-weight: 600;
-            line-height: 1.25;
-            overflow-wrap: anywhere;
-        }
-
-        #project-show-page.project-workspace-redesign .sample-files-column .delete-icon {
-            top: 50%;
-            right: 0.65rem;
-            padding: 0;
-            width: 1.65rem;
-            height: 1.65rem;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            background: rgba(69, 26, 3, 0.08);
-            color: var(--workspace-ink-60);
-            border-radius: 7px;
-            transform: translateY(-50%);
-        }
-
-        #project-show-page.project-workspace-redesign .sample-files-column .upload-btn {
-            margin-bottom: 1rem;
-            padding: 0;
-            background: transparent !important;
-            color: var(--workspace-amber) !important;
-            border-radius: 0;
-            box-shadow: none;
-            font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-            font-size: 0.7rem;
-            font-weight: 600;
-            letter-spacing: 0.08em;
-            text-transform: uppercase;
-        }
-
-        #project-show-page.project-workspace-redesign .sample-files-column .no-files {
-            background: #ffffff;
-            color: var(--workspace-ink-40);
-            font-size: 0.9rem;
-        }
-
-        @media (max-width: 768px) {
-            #project-show-page.project-workspace-redesign > .card:first-child {
-                padding: 1.25rem 1rem;
-            }
-
-            #project-show-page.project-workspace-redesign .project-summary-header {
-                grid-template-columns: 1fr;
-            }
-
-            #project-show-page.project-workspace-redesign .project-content-shell {
-                grid-template-columns: 1fr;
-                gap: 1.5rem;
-            }
-
-            #project-show-page.project-workspace-redesign .project-details-rail {
-                position: static;
-            }
-
-            #project-show-page.project-workspace-redesign .project-stage-meta {
-                justify-self: start;
-                align-items: flex-start;
-                text-align: left;
-            }
-
-            #project-show-page.project-workspace-redesign .project-stage-meta .pto-greenlight-tag {
-                align-self: flex-start;
-            }
-
-            #project-show-page.project-workspace-redesign .project-customer-contact {
-                gap: 0.35rem 1rem;
-            }
-
-            #project-show-page.project-workspace-redesign .project-primary-tabs {
-                gap: 1rem;
-                overflow-x: auto;
-                flex-wrap: nowrap !important;
-            }
-
-            #project-show-page.project-workspace-redesign .project-primary-tabs .nav-link {
-                white-space: nowrap;
-            }
-
-            #project-show-page.project-workspace-redesign .project-secondary-tabs {
-                gap: 1.1rem;
-            }
-
-            #project-show-page.project-workspace-redesign .project-secondary-tabs .nav-link {
-                font-size: 0.86rem;
-            }
-
-            #project-show-page.project-workspace-redesign .sample-notes-column .note-meta {
-                align-items: flex-start !important;
-                flex-direction: column;
-                gap: 0.35rem;
-            }
-        }
     </style>
     <link rel="stylesheet" href="https://cdn.ckeditor.com/ckeditor5/42.0.0/ckeditor5.css">
-    <div id="project-show-page" class="project-workspace-redesign">
+    <div id="project-show-page">
     <div class="card card-info">
         <div class="card-body">
             <div class="row clearfix">
                 <div class="col-md-12">
-                    {{-- @if ($alertStatus)
+                    @if ($alertStatus)
                         <div class="alert alert-{{ $alertClass }} alert-dismissible fade show" role="alert">
                             {{ $message }}
                             <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
                         </div>
-                    @endif --}}
+                    @endif
                     <div class="card border-0 mb-4 no-bg">
                         @php
                             $currentAssignedName = optional($task->employee)->name ?? 'Unassigned';
@@ -1937,92 +921,38 @@
                                 : Carbon\Carbon::parse($project->pto_approval_date)->diffInDays(
                                     Carbon\Carbon::parse($project->customer->sold_date),
                                 );
-                            $customerAddressParts = array_filter([
-                                $project->customer->street,
-                                $project->customer->city,
-                                $project->customer->state,
-                                $project->customer->zipcode,
-                            ]);
-                            $customerAddress = implode(', ', $customerAddressParts);
-                            $isPtoGreenlightApproved =
-                                $alertStatus &&
-                                ($alertClass ?? null) === 'success' &&
-                                ($message ?? null) === 'PTO Greenlight approved';
                         @endphp
                         <div class="card-header project-summary-header border-0">
-                            <div class="project-summary-main">
-                                <h3 class="project-summary-title">
-                                    @if (auth()->user()->hasAnyRole(['Super Admin', 'Admin', 'Manager']))
-                                        <div class="dropdown d-inline-block">
-                                            <button class="project-title-status" type="button"
-                                                data-bs-toggle="dropdown" aria-expanded="false">
-                                                {{ str_replace('-', ' ', $project->project_name) }}
-                                            </button>
-                                            <ul class="dropdown-menu project-title-status-menu">
-                                                <li>
-                                                    <button type="button"
-                                                        class="dropdown-item project-status-option {{ $task->status == 'In-Progress' ? 'active' : '' }}"
-                                                        data-status="In-Progress">In-Progress</button>
-                                                </li>
-                                                <li>
-                                                    <button type="button"
-                                                        class="dropdown-item project-status-option {{ $task->status == 'Hold' ? 'active' : '' }}"
-                                                        data-status="Hold">Hold</button>
-                                                </li>
-                                                <li>
-                                                    <button type="button"
-                                                        class="dropdown-item project-status-option {{ $task->status == 'Cancelled' ? 'active' : '' }}"
-                                                        data-status="Cancelled">Cancelled</button>
-                                                </li>
-                                            </ul>
-                                        </div>
-                                    @else
-                                        {{ str_replace('-', ' ', $project->project_name) }}
-                                    @endif
-                                </h3>
-                                @if ($customerAddress)
-                                    <p class="project-customer-address">{{ $customerAddress }}</p>
-                                @endif
-                                <div class="project-customer-contact">
-                                    @if ($project->customer->phone)
-                                        <span>{{ $project->customer->phone }}</span>
-                                    @endif
-                                    @if ($project->customer->email)
-                                        <span>{{ $project->customer->email }}</span>
-                                    @endif
-                                </div>
-                            </div>
-                            <div class="project-stage-meta">
-                                <span class="project-days-badge">{{ $projectAgeDays }} Days in progress</span>
+                            <div class="project-days-badge">{{ $projectAgeDays }} Days</div>
+                            <h3 class="project-summary-title">
                                 @if (auth()->user()->hasAnyRole(['Super Admin', 'Admin', 'Manager']))
-                                    <div class="dropdown project-assignee-control">
-                                        <button class="project-assignee-toggle dropdown-toggle" type="button"
+                                    <div class="dropdown d-inline-block">
+                                        <button class="project-title-status dropdown-toggle" type="button"
                                             data-bs-toggle="dropdown" aria-expanded="false">
-                                            <span class="project-assignee-label">Assigned:</span>
-                                            <span class="project-assignee-name" id="currentAssignedEmployeeName">
-                                                {{ $currentAssignedName }}
-                                            </span>
+                                            {{ str_replace('-', ' ', $project->project_name) }}
                                         </button>
-                                        <ul class="dropdown-menu project-assignee-menu">
-                                            @foreach ($employees as $employee)
-                                                <li>
-                                                    <button type="button"
-                                                        class="dropdown-item project-employee-option {{ $task->employee_id == $employee->id ? 'active' : '' }}"
-                                                        data-employee-id="{{ $employee->id }}"
-                                                        data-employee-name="{{ $employee->name }}">
-                                                        {{ $employee->name }}
-                                                    </button>
-                                                </li>
-                                            @endforeach
+                                        <ul class="dropdown-menu project-title-status-menu">
+                                            <li>
+                                                <button type="button"
+                                                    class="dropdown-item project-status-option {{ $task->status == 'In-Progress' ? 'active' : '' }}"
+                                                    data-status="In-Progress">In-Progress</button>
+                                            </li>
+                                            <li>
+                                                <button type="button"
+                                                    class="dropdown-item project-status-option {{ $task->status == 'Hold' ? 'active' : '' }}"
+                                                    data-status="Hold">Hold</button>
+                                            </li>
+                                            <li>
+                                                <button type="button"
+                                                    class="dropdown-item project-status-option {{ $task->status == 'Cancelled' ? 'active' : '' }}"
+                                                    data-status="Cancelled">Cancelled</button>
+                                            </li>
                                         </ul>
                                     </div>
                                 @else
-                                    <span class="project-current-stage">Assigned: {{ $currentAssignedName }}</span>
+                                    {{ str_replace('-', ' ', $project->project_name) }}
                                 @endif
-                                @if ($isPtoGreenlightApproved)
-                                    <span class="project-tag-chip pto-greenlight-tag">PTO Greenlight Approved</span>
-                                @endif
-                            </div>
+                            </h3>
                         </div>
                     </div>
 
@@ -2033,43 +963,18 @@
                             ->filter()
                             ->unique()
                             ->values();
-                        $projectHeaderTags = collect();
-
-                        if (!empty($project->utility_company)) {
-                            $projectHeaderTags->push($project->utility_company);
-                        }
-
-                        if ($project->hoa == 'yes') {
-                            $projectHeaderTags->push('HOA');
-                        }
-
-                        if (!empty($project->ahj)) {
-                            $projectHeaderTags->push($project->ahj);
-                        }
                     @endphp
 
-                    @if (count($inverterTags) || count($adderTags) || $projectHeaderTags->isNotEmpty())
+                    @if (count($inverterTags) || count($adderTags))
                         <div class="project-tag-panel">
-                            <div class="project-tag-row">
-                                @if ($projectHeaderTags->isNotEmpty())
-                                    <div class="project-tag-list is-left">
-                                        @foreach ($projectHeaderTags as $tag)
-                                            <span class="project-tag-chip project-info-tag">{{ $tag }}</span>
-                                        @endforeach
-                                    </div>
-                                @endif
+                            <div class="project-tag-list">
+                                @foreach ($inverterTags as $tag)
+                                    <span class="project-tag-chip inverter-tag">{{ $tag }}</span>
+                                @endforeach
 
-                                @if (count($inverterTags) || count($adderTags))
-                                    <div class="project-tag-list is-right">
-                                        @foreach ($inverterTags as $tag)
-                                            <span class="project-tag-chip inverter-tag">{{ $tag }}</span>
-                                        @endforeach
-
-                                        @foreach ($adderTags as $tag)
-                                            <span class="project-tag-chip adder-tag">{{ $tag }}</span>
-                                        @endforeach
-                                    </div>
-                                @endif
+                                @foreach ($adderTags as $tag)
+                                    <span class="project-tag-chip adder-tag">{{ $tag }}</span>
+                                @endforeach
                             </div>
                         </div>
                     @endif
@@ -2097,19 +1002,12 @@
                                                         })
                                                         ->values();
                                                 }
-                                                $departmentProgressStatus = $department->id < $project->department_id
-                                                    ? 'Completed'
-                                                    : ($department->id == $project->department_id
-                                                        ? 'In Progress'
-                                                        : 'Pending');
-                                                $departmentStepLabel = str_pad($loop->iteration, 2, '0', STR_PAD_LEFT) . ' ' . $department->name;
                                             @endphp
                                             @if ($department->id < $project->department_id)
                                                 <li class="nav-item dropdown bg-success">
                                                     <a class="nav-link dropdown-toggle  text-white" id="navbarDropdown"
                                                         role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                                                        <span class="department-pipeline-title">{{ $departmentStepLabel }}</span>
-                                                        <span class="department-pipeline-status">{{ $departmentProgressStatus }}</span>
+                                                        {{ $department->name }}
                                                     </a>
                                                     @if (count($filtered_collection) > 0)
                                                         <ul class="dropdown-menu" aria-labelledby="navbarDropdown">
@@ -2126,8 +1024,7 @@
                                                     <a class="nav-link dropdown-toggle active text-white"
                                                         id="navbarDropdown" role="button" data-bs-toggle="dropdown"
                                                         aria-expanded="false">
-                                                        <span class="department-pipeline-title">{{ $departmentStepLabel }}</span>
-                                                        <span class="department-pipeline-status">{{ $departmentProgressStatus }}</span>
+                                                        {{ $department->name }}
                                                     </a>
                                                     @if (count($filtered_collection) > 0)
                                                         <ul class="dropdown-menu" aria-labelledby="navbarDropdown">
@@ -2143,8 +1040,7 @@
                                                 <li class="nav-item dropdown">
                                                     <a class="nav-link dropdown-toggle " id="navbarDropdown" role="button"
                                                         data-bs-toggle="dropdown" aria-expanded="false">
-                                                        <span class="department-pipeline-title">{{ $departmentStepLabel }}</span>
-                                                        <span class="department-pipeline-status">{{ $departmentProgressStatus }}</span>
+                                                        {{ $department->name }}
                                                     </a>
                                                     @if (count($filtered_collection) > 0)
                                                         <ul class="dropdown-menu" aria-labelledby="navbarDropdown">
@@ -2169,80 +1065,16 @@
             </div>
         </div>
     </div>
-    @php
-        $projectDetailItems = [
-            [
-                'icon' => 'icofont-briefcase',
-                'label' => 'Sales Partner',
-                'value' => optional($project->customer->salespartner)->name ?? '-',
-            ],
-            [
-                'icon' => 'icofont-user-alt-3',
-                'label' => 'Sales Person',
-                'value' => optional($project->salesPartnerUser)->name ?? '-',
-            ],
-            [
-                'icon' => 'icofont-calendar',
-                'label' => 'Sold Date',
-                'value' => $project->customer->sold_date
-                    ? \Carbon\Carbon::parse($project->customer->sold_date)->format('m/d/Y')
-                    : '-',
-            ],
-            [
-                'icon' => 'icofont-sun',
-                'label' => 'System Size',
-                'value' => $project->customer->module_value ?: '-',
-            ],
-            [
-                'icon' => 'icofont-solar-panel',
-                'label' => 'Module Type',
-                'value' => optional($project->customer->module)->name ?? '-',
-            ],
-            [
-                'icon' => 'icofont-energy-solar',
-                'label' => 'Inverter Type',
-                'value' => optional($project->customer->inverter)->name ?? '-',
-            ],
-            [
-                'icon' => 'icofont-layout',
-                'label' => 'Panel Qty',
-                'value' => $project->customer->panel_qty ?: '-',
-            ],
-            [
-                'icon' => 'icofont-dashboard-web',
-                'label' => 'Inverter Qty',
-                'value' => $project->customer->inverter_qty ?: '-',
-            ],
-            [
-                'icon' => 'icofont-chart-line',
-                'label' => 'Sold Production',
-                'value' => $project->customer->sold_production_value ?: '-',
-            ],
-            [
-                'icon' => 'icofont-globe',
-                'label' => 'Preferred Language',
-                'value' => $project->customer->preferred_language ?: '-',
-            ],
-            [
-                'icon' => 'icofont-credit-card',
-                'label' => 'Finance',
-                'value' => optional(optional($project->customer->finances)->finance)->name ?? '-',
-            ],
-        ];
-    @endphp
-
-    <div class="project-content-shell">
-        <div class="project-content-main">
     <div class="row clearfix mt-2 mb-2">
         <div class="col-md-12">
             <ul class="nav nav-tabs project-primary-tabs px-3 border-bottom-0 justify-content-center flex-wrap" role="tablist">
                 <li class="nav-item"><a class="nav-link active" data-bs-toggle="tab" href="#default"
-                        role="tab">Project Activity</a></li>
-                {{-- <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#customer"
-                        role="tab">Customer</a></li> --}}
+                        role="tab">Project</a></li>
+                <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#customer"
+                        role="tab">Customer</a></li>
                 @can('View Financial Details')
                     <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#financial"
-                            role="tab">Financial Ledger</a></li>
+                            role="tab">Financial</a></li>
                 @endcan
                 @can('View Tickets')
                     <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#tickets"
@@ -2286,7 +1118,6 @@
                                         @foreach ($departments as $department)
                                             @php
                                                 $isCurrentDepartment = $department->id == $activeDepartmentId;
-                                                $departmentDetailStepLabel = str_pad($loop->iteration, 2, '0', STR_PAD_LEFT) . ' ' . $department->name;
                                             @endphp
                                             <li class="nav-item" role="presentation">
                                                 <button class="nav-link {{ $isCurrentDepartment ? 'active' : '' }}"
@@ -2297,7 +1128,7 @@
                                                     role="tab"
                                                     aria-controls="department-detail-{{ $department->id }}"
                                                     aria-selected="{{ $isCurrentDepartment ? 'true' : 'false' }}">
-                                                    <span class="department-detail-tab-title">{{ $departmentDetailStepLabel }}</span>
+                                                    {{ $department->name }}
                                                 </button>
                                             </li>
                                         @endforeach
@@ -2316,18 +1147,13 @@
                                                     <span>{{ $department->name }}</span>
                                                 </div> --}}
 
-                                                <div class="row clearfix sample-activity-grid">
-                                                    <div class="col-lg-8 col-md-12 mb-3 sample-notes-column">
+                                                <div class="row clearfix">
+                                                    <div class="col-sm-6 mb-3">
                                                         @livewire('project.notes-section', ['projectId' => $project->id, 'taskId' => $task->id, 'departmentId' => $department->id, 'projectDepartmentId' => $project->department_id, 'ghost' => $ghost,'viewSource' => 'crm'], key('notes-' . $department->id))
-                                                        <div class="project-section-panel">
-                                                            <div class="project-section-header">
-                                                                <i class="icofont-list me-2"></i>Department Fields
-                                                            </div>
-                                                            @livewire('project.project-fields', ['project' => $project, 'taskId' => $task->id, 'departmentId' => $department->id, 'projectDepartmentId' => $project->department_id, 'ghost' => $ghost,'viewSource' => 'crm'], key('fields-' . $department->id))
-                                                        </div>
+                                                        @livewire('project.project-fields', ['project' => $project, 'taskId' => $task->id, 'departmentId' => $department->id, 'projectDepartmentId' => $project->department_id, 'ghost' => $ghost,'viewSource' => 'crm'], key('fields-' . $department->id))
                                                     </div>
 
-                                                    <div class="col-lg-4 col-md-12 mb-3 sample-files-column">
+                                                    <div class="col-sm-6 mb-3">
                                                         @livewire('project.enhanced-files-section', ['projectId' => $project->id, 'taskId' => $task->id, 'departmentId' => $department->id, 'projectDepartmentId' => $project->department_id, 'ghost' => $ghost,'viewSource' => 'crm'], key('enhanced-' . $department->id))
                                                         @if ($isCurrentDepartment)
                                                             @can('Department Tools')
@@ -2365,7 +1191,7 @@
             </div>
         </div>
     </div>
-    {{-- <div class="tab-pane fade" id="customer" role="tabpanel">
+    <div class="tab-pane fade" id="customer" role="tabpanel">
         <div class="card mt-1">
             <div class="card-header">
                 <div class="card-header py-3 px-0 d-sm-flex align-items-center  justify-content-between border-bottom">
@@ -2534,7 +1360,7 @@
                 </div>
             </div>
         </div>
-    </div> --}}
+    </div>
 
     <div class="tab-pane fade" id="financial" role="tabpanel">
         <div class="card mt-1">
@@ -2766,7 +1592,7 @@
     <div class="tab-pane fade" id="communication" role="tabpanel">
         <div class="card mt-1">
             <div class="card-body">
-                <ul class="nav nav-tabs project-secondary-tabs" role="tablist">
+                <ul class="nav nav-tabs px-3 border-bottom-0" role="tablist">
                     {{-- <li class="nav-item"><a class="nav-link active" data-bs-toggle="tab" href="#calls"
                             role="tab">Calls</a></li> --}}
                     <li class="nav-item"><a class="nav-link active" data-bs-toggle="tab" href="#emails"
@@ -2859,7 +1685,7 @@
                                     @foreach ($departments as $department)
                                         <div class="col-md-12">
                                             <div class="card border-0 mb-4 no-bg">
-                                                <div style="background-color: #ffffff;"
+                                                <div style="background-color: var(--solen-cream);"
                                                     class="card-header py-3 px-0 d-sm-flex align-items-center   justify-content-between border-bottom border-top">
                                                     <h3 class=" fw-bold flex-fill mb-0 mt-sm-0 px-2">
                                                         {{ $department->name }}
@@ -3098,7 +1924,7 @@
 
     <div class="tab-pane fade" id="history" role="tabpanel">
 
-        <ul class="nav nav-tabs project-secondary-tabs" role="tablist">
+        <ul class="nav nav-tabs px-3 border-bottom-0" role="tablist">
             @can('Project Interaction')
                 <li class="nav-item"><a class="nav-link active" data-bs-toggle="tab" href="#interaction"
                         role="tab">Interaction</a></li>
@@ -3239,28 +2065,6 @@
     </div>
 
 </div>
-        </div>
-        <aside class="project-details-rail">
-            <div class="project-section-panel">
-                <div class="files-header">
-                    <i class="icofont-info-circle me-2"></i>Project Details
-                </div>
-                <div class="project-detail-list">
-                    @foreach ($projectDetailItems as $detail)
-                        <div class="project-detail-item">
-                            <span class="project-detail-icon">
-                                <i class="{{ $detail['icon'] }}"></i>
-                            </span>
-                            <div>
-                                <div class="project-detail-label">{{ $detail['label'] }}</div>
-                                <div class="project-detail-value">{{ $detail['value'] }}</div>
-                            </div>
-                        </div>
-                    @endforeach
-                </div>
-            </div>
-        </aside>
-    </div>
 
 
 <div class="modal fade" id="createemail" tabindex="-1" aria-hidden="true">
@@ -3332,7 +2136,7 @@
                             </label>
                             <div class="position-relative">
                                 <textarea class="form-control" id="assignnotes" name="assignnotes" rows="4"
-                                    style="border-radius: 12px; border: 2px solid var(--solen-primary-border-strong); padding: 1rem; transition: all 0.3s; background-color: #ffffff; color: var(--solen-warm-text);"
+                                    style="border-radius: 12px; border: 2px solid var(--solen-primary-border-strong); padding: 1rem; transition: all 0.3s; background-color: var(--solen-cream); color: var(--solen-warm-text);"
                                     placeholder="Enter your notes here..."></textarea>
                             </div>
                         </div>
@@ -3354,7 +2158,7 @@
                                 <i class="icofont-clock-time me-2"></i>Follow-up Date
                             </label>
                             <input type="date" class="form-control" id="followUpDate" name="follow_up_date"
-                                style="border-radius: 12px; border: 2px solid var(--solen-primary-border-strong); padding: 0.75rem; transition: all 0.3s; background-color: #ffffff; color: var(--solen-warm-text);">
+                                style="border-radius: 12px; border: 2px solid var(--solen-primary-border-strong); padding: 0.75rem; transition: all 0.3s; background-color: var(--solen-cream); color: var(--solen-warm-text);">
                         </div>
 
 
@@ -3495,6 +2299,29 @@
                     Cancelled
                 </option>
             </select>
+        </div>
+        <div class="d-flex justify-content-center mt-4 mb-3">
+            <div class="dropdown project-assignee-control">
+                <button class="project-assignee-toggle dropdown-toggle" type="button"
+                    data-bs-toggle="dropdown" aria-expanded="false">
+                    <span class="project-assignee-label">Currently Assigned To :</span>
+                    <span class="project-assignee-name" id="currentAssignedEmployeeName">
+                        {{ $currentAssignedName }}
+                    </span>
+                </button>
+                <ul class="dropdown-menu project-assignee-menu">
+                    @foreach ($employees as $employee)
+                        <li>
+                            <button type="button"
+                                class="dropdown-item project-employee-option {{ $task->employee_id == $employee->id ? 'active' : '' }}"
+                                data-employee-id="{{ $employee->id }}"
+                                data-employee-name="{{ $employee->name }}">
+                                {{ $employee->name }}
+                            </button>
+                        </li>
+                    @endforeach
+                </ul>
+            </div>
         </div>
     @endif
     </div>

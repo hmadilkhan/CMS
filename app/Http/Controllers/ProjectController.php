@@ -27,7 +27,6 @@ use App\Models\ProjectFollowUp;
 use App\Models\SubDepartment;
 use App\Models\Task;
 use App\Models\Tool;
-use App\Notifications\ProjectAssignedNotification;
 use App\Services\ProjectAssignmentService;
 use App\Traits\MediaTrait;
 use Carbon\Carbon;
@@ -207,7 +206,7 @@ class ProjectController extends Controller
         $serviceManagers = \App\Models\User::role('Service Manager')->get();
         $serviceTickets = \App\Models\ServiceTicket::with(['assignedUser'])->where('project_id', $project->id)->orderBy('created_at', 'desc')->get();
 
-        $view =  "projects.show-redesign" ;//$request->routeIs('projects.show-redesign') ? "projects.show-redesign" : "projects.show";
+        $view =  "projects.show" ;//$request->routeIs('projects.show-redesign') ? "projects.show-redesign" : "projects.show";
 
         return view($view, [
             "project" => $project,
@@ -697,8 +696,8 @@ class ProjectController extends Controller
 
                 $assignedEmployee = Employee::with("user")->find($request->employee);
                 $project = Project::find($request->project_id);
-                if ($assignedEmployee?->user && $project) {
-                    $assignedEmployee->user->notify(new ProjectAssignedNotification($project, $newTask, auth()->user()->name));
+                if ($project) {
+                    app(ProjectAssignmentService::class)->notifyAssignedEmployee($assignedEmployee, $project, $newTask);
                 }
             } else {
                 Task::where("id", $currentTask->id)->update(["status" => "Completed", "notes" => "New assign to notes added"]);

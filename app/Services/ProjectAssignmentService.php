@@ -2,11 +2,13 @@
 
 namespace App\Services;
 
+use App\Jobs\SendProjectAssignedEmailNotificationJob;
 use App\Models\AssignDepartment;
 use App\Models\Employee;
 use App\Models\Project;
 use App\Models\Task;
 use App\Notifications\ProjectAssignedNotification;
+use Illuminate\Support\Facades\Log;
 
 class ProjectAssignmentService
 {
@@ -49,5 +51,22 @@ class ProjectAssignmentService
 
         $assignedBy = auth()->user()->name ?? 'System';
         $employee->user->notify(new ProjectAssignedNotification($project, $task, $assignedBy));
+
+        if (empty($employee->user->email)) {
+            return;
+        }
+
+        try {
+            SendProjectAssignedEmailNotificationJob::dispatch($employee->user, $project, $task, $assignedBy)
+                ->afterCommit();
+        } catch (\Throwable $exception) {
+            Log::error('Project assignment email notification queue failed.', [
+                'project_id' => $project->id,
+                'task_id' => $task->id,
+                'employee_id' => $employee->id,
+                'user_id' => $employee->user->id,
+                'message' => $exception->getMessage(),
+            ]);
+        }
     }
 }
