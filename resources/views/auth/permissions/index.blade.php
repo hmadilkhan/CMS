@@ -3,16 +3,19 @@
 @section('content')
     @include('auth.partials.user-management-styles')
     <div class="user-management-page">
-    <div class="user-management-heading">
-        <h1><i class="icofont-lock me-2"></i>Permissions</h1>
+    <div class="operation-page-header">
+        <div>
+            <h1 class="operation-page-title"><i class="icofont-lock me-2"></i>Permissions</h1>
+            <p class="operation-page-subtitle">Create and maintain permissions used for access control.</p>
+        </div>
     </div>
-    <div class="card mt-3">
-        <div class="card-header">
-            <h4 class="card-title w-100">
-                Permission Section
+    <div class="user-management-section mt-3">
+        <div class="user-management-section-header">
+            <h4 class="user-management-section-title w-100">
+                {{ !empty($permission) ? 'Update Permission' : 'Add Permission' }}
             </h4>
         </div>
-        <div class="card-body">
+        <div class="user-management-section-body">
             <form method="POST"
                 action="{{ !empty($permission) ? route('update.permission') : route('permission.store') }}">
                 @csrf
@@ -31,27 +34,29 @@
                             @enderror
                         <!-- </div> -->
                     </div>
-                    <div class="col-6 mt-4">
+                    <div class="col-sm-6">
                         <!-- <label></label> -->
                         <!-- <div class="form-group "> -->
+                        <div class="form-actions-inline">
                             <button type="submit" class="btn btn-primary " value="save"><i class="icofont-save"></i>
                                 Save
                             </button>
                             <button type="button" class="btn btn-danger text-white ml-2"><i class="icofont-ban"></i>
                                 Cancel
                             </button>
+                        </div>
                         <!-- </div> -->
                     </div>
                 </div>
             </form>
         </div>
     </div>
-    <div class="card mt-3">
-        <div class="card-header">
-            <h4 class="card-title">Permissions List</h3>
+    <div class="user-management-section mt-3">
+        <div class="user-management-section-header">
+            <h4 class="user-management-section-title">Permissions List</h4>
         </div>
-        <div class="card-body">
-            <table id="example1" class="table table-bordered table- datatable">
+        <div class="user-management-section-body">
+            <table id="example1" class="table table-hover datatable">
                 <thead>
                     <tr>
                         <th>No.</th>

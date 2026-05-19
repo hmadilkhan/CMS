@@ -92,6 +92,49 @@
         color: #050505;
         text-decoration: underline;
     }
+
+    .premium-card {
+        border: 0 !important;
+        border-top: 1px solid rgba(238, 143, 69, 0.28) !important;
+        border-radius: 0 !important;
+        box-shadow: none !important;
+    }
+
+    .premium-card-header {
+        border-bottom: 1px solid rgba(238, 143, 69, 0.16) !important;
+        padding: 0.85rem 0 !important;
+    }
+
+    .premium-table thead,
+    .premium-table thead th {
+        background: rgba(255, 193, 143, 0.13) !important;
+        color: #7c2d12 !important;
+        border-bottom: 1px solid rgba(238, 143, 69, 0.42) !important;
+    }
+
+    .premium-table tbody td {
+        border-bottom: 1px solid #eef2f7 !important;
+        padding: 0.8rem 0.75rem !important;
+    }
+
+    .premium-table tbody tr:hover {
+        background: #fffaf5 !important;
+    }
+
+    .premium-badge,
+    .ticket-comment-badge,
+    .ticket-badge-pending-time {
+        border-radius: 999px !important;
+    }
+
+    .project-link {
+        color: #9a3412;
+    }
+
+    .btn-dark,
+    .btn-primary {
+        border-radius: 999px !important;
+    }
 </style>
 
 @php

@@ -4,34 +4,25 @@
 @include('auth.partials.user-management-styles')
 <div class="body d-flex py-lg-3 py-md-2">
     <div class="container-xxl user-management-page">
-        <div class="user-management-heading">
+        <div class="user-management-heading d-sm-flex align-items-center justify-content-between gap-2">
             <h1><i class="icofont-users-alt-4 me-2"></i>Employees</h1>
-        </div>
-        <div class="row clearfix">
-            <div class="col-md-12">
-                <div class="mb-4">
-                    <div class="d-sm-flex align-items-center justify-content-center gap-2 flex-wrap">
-                        <button type="button" class="btn btn-dark me-1 mt-1 w-sm-100" id="openemployee"><i class="icofont-plus-circle me-2 fs-6"></i>Add Employee</button>
-                        <div class="dropdown">
-                            <button class="btn btn-primary dropdown-toggle mt-1  w-sm-100" type="button" id="dropdownMenuButton2" data-bs-toggle="dropdown" aria-expanded="false">
-                                Status
-                            </button>
-                            <ul class="dropdown-menu  dropdown-menu-end" aria-labelledby="dropdownMenuButton2">
-                                <li><a class="dropdown-item" href="#">All</a></li>
-                                <li><a class="dropdown-item" href="#">Task Assign Members</a></li>
-                                <li><a class="dropdown-item" href="#">Not Assign Members</a></li>
-                            </ul>
-                        </div>
-                    </div>
+            <div class="d-sm-flex align-items-center justify-content-end gap-2 flex-wrap">
+                <button type="button" class="btn btn-dark me-1 mt-1 w-sm-100" id="openemployee"><i class="icofont-plus-circle me-2 fs-6"></i>Add Employee</button>
+                <div class="dropdown">
+                    <button class="btn btn-primary dropdown-toggle mt-1  w-sm-100" type="button" id="dropdownMenuButton2" data-bs-toggle="dropdown" aria-expanded="false">
+                        Status
+                    </button>
+                    <ul class="dropdown-menu  dropdown-menu-end" aria-labelledby="dropdownMenuButton2">
+                        <li><a class="dropdown-item" href="#">All</a></li>
+                        <li><a class="dropdown-item" href="#">Task Assign Members</a></li>
+                        <li><a class="dropdown-item" href="#">Not Assign Members</a></li>
+                    </ul>
                 </div>
             </div>
-        </div><!-- Row End -->
-        <div class="card mt-3">
-            <div class="card-header">
-                <h4 class="card-title">Employee List</h3>
-            </div>
-            <div class="card-body">
-                <table id="example1" class="table table-bordered table-striped datatable">
+        </div>
+        <div class="user-management-section">
+            <div class="user-management-section-body">
+                <table id="example1" class="table table-hover datatable">
                     <thead>
                         <tr>
                             <th>No.</th>

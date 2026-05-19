@@ -1,125 +1,21 @@
 @extends('layouts.master')
 @section('title', 'Users')
 @section('content')
-<style>
-.premium-card {
-    border: none;
-    border-radius: 0;
-    box-shadow: none;
-    overflow: visible;
-}
-.premium-header {
-    background: transparent;
-    color: #050505;
-    padding: 1.25rem 1.5rem;
-    border: none;
-}
-.premium-header h3 {
-    margin: 0;
-    font-weight: 600;
-    font-size: 1.5rem;
-}
-.premium-body {
-    padding: 2rem;
-    background: white;
-}
-.form-label {
-    font-weight: 600;
-    color: #2c3e50;
-    margin-bottom: 0.4rem;
-    font-size: 0.875rem;
-}
-.form-control, .form-select {
-    border-radius: 8px;
-    border: 1px solid #dee2e6;
-    padding: 0.5rem 0.75rem;
-    transition: all 0.3s;
-    font-size: 0.9rem;
-    height: auto;
-}
-.form-control:focus, .form-select:focus {
-    border-color: #1d4ed8;
-    box-shadow: 0 0 0 0.2rem rgba(29, 78, 216, 0.12);
-}
-.btn-premium {
-    background: #050505;
-    border: none;
-    padding: 0.6rem 1.5rem;
-    border-radius: 8px;
-    font-weight: 600;
-    color: white;
-    transition: all 0.3s;
-    font-size: 0.9rem;
-}
-.btn-premium:hover {
-    transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
-    color: white;
-}
-.btn-cancel {
-    background: #6c757d;
-    border: none;
-    padding: 0.6rem 1.5rem;
-    border-radius: 8px;
-    font-weight: 600;
-    color: white;
-    transition: all 0.3s;
-    font-size: 0.9rem;
-}
-.btn-cancel:hover {
-    background: #5a6268;
-    transform: translateY(-1px);
-    color: white;
-}
-.table-premium {
-    margin-bottom: 0;
-}
-.table-premium thead {
-    background: #f8fafc;
-}
-.table-premium thead th {
-    border: none;
-    padding: 0.75rem;
-    font-weight: 600;
-    color: #050505;
-    font-size: 0.9rem;
-}
-.table-premium tbody td {
-    padding: 0.75rem;
-    vertical-align: middle;
-    font-size: 0.9rem;
-}
-.table-premium tbody tr {
-    transition: background 0.2s;
-}
-.table-premium tbody tr:hover {
-    background: #f8f9fa;
-}
-.action-icon {
-    font-size: 1.1rem;
-    transition: transform 0.2s;
-    display: inline-block;
-}
-.action-icon:hover {
-    transform: scale(1.2);
-}
-.btn-sm.btn-premium {
-    padding: 0.4rem 0.8rem;
-    font-size: 0.8rem;
-}
-</style>
 @include('auth.partials.user-management-styles')
 
 <div class="user-management-page">
-    <div class="user-management-heading">
-        <h1><i class="icofont-users-alt-4 me-2"></i>Users</h1>
+    <div class="operation-page-header">
+        <div>
+            <h1 class="operation-page-title"><i class="icofont-users-alt-4 me-2"></i>Users</h1>
+            <p class="operation-page-subtitle">Create and maintain CRM users, roles, and access details.</p>
+        </div>
     </div>
 
-    <div class="card premium-card">
-        <div class="card-header premium-header">
-            <h3><i class="icofont-user-alt-4 me-2"></i>{{ !empty($user) ? 'Edit User' : 'Create New User' }}</h3>
+    <div class="user-management-section">
+        <div class="user-management-section-header">
+            <h3 class="user-management-section-title"><i class="icofont-user-alt-4 me-2"></i>{{ !empty($user) ? 'Edit User' : 'Create New User' }}</h3>
         </div>
-        <div class="card-body premium-body">
+        <div class="user-management-section-body">
             <!-- ADD NEW PRODUCT PART START -->
             <form method="POST" action="{{ !empty($user) ? route('update.user') : route('store.register') }}"
                 enctype="multipart/form-data">
@@ -310,11 +206,11 @@
         </div>
     </div>
 
-    <div class="card premium-card mt-4">
-        <div class="card-header premium-header">
-            <h3><i class="icofont-users-alt-4 me-2"></i>Users List</h3>
+    <div class="user-management-section mt-4">
+        <div class="user-management-section-header">
+            <h3 class="user-management-section-title"><i class="icofont-users-alt-4 me-2"></i>Users List</h3>
         </div>
-        <div class="card-body premium-body">
+        <div class="user-management-section-body">
             <div class="table-responsive">
             <table id="example1" class="table table-premium table-hover datatable">
                 <thead>

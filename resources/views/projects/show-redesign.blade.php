@@ -1156,6 +1156,23 @@
             justify-content: flex-start;
         }
 
+        #project-show-page.project-workspace-redesign .project-tag-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 0.75rem;
+            width: 100%;
+        }
+
+        #project-show-page.project-workspace-redesign .project-tag-row .project-tag-list {
+            flex: 1 1 0;
+            min-width: 0;
+        }
+
+        #project-show-page.project-workspace-redesign .project-tag-row .project-tag-list + .project-tag-list {
+            margin-top: 0;
+        }
+
         #project-show-page.project-workspace-redesign .project-tag-list + .project-tag-list {
             margin-top: 0.55rem;
         }
@@ -2033,25 +2050,27 @@
 
                     @if (count($inverterTags) || count($adderTags) || $projectHeaderTags->isNotEmpty())
                         <div class="project-tag-panel">
-                            @if (count($inverterTags) || count($adderTags))
-                                <div class="project-tag-list is-right">
-                                    @foreach ($inverterTags as $tag)
-                                        <span class="project-tag-chip inverter-tag">{{ $tag }}</span>
-                                    @endforeach
+                            <div class="project-tag-row">
+                                @if ($projectHeaderTags->isNotEmpty())
+                                    <div class="project-tag-list is-left">
+                                        @foreach ($projectHeaderTags as $tag)
+                                            <span class="project-tag-chip project-info-tag">{{ $tag }}</span>
+                                        @endforeach
+                                    </div>
+                                @endif
 
-                                    @foreach ($adderTags as $tag)
-                                        <span class="project-tag-chip adder-tag">{{ $tag }}</span>
-                                    @endforeach
-                                </div>
-                            @endif
+                                @if (count($inverterTags) || count($adderTags))
+                                    <div class="project-tag-list is-right">
+                                        @foreach ($inverterTags as $tag)
+                                            <span class="project-tag-chip inverter-tag">{{ $tag }}</span>
+                                        @endforeach
 
-                            @if ($projectHeaderTags->isNotEmpty())
-                                <div class="project-tag-list is-left">
-                                    @foreach ($projectHeaderTags as $tag)
-                                        <span class="project-tag-chip project-info-tag">{{ $tag }}</span>
-                                    @endforeach
-                                </div>
-                            @endif
+                                        @foreach ($adderTags as $tag)
+                                            <span class="project-tag-chip adder-tag">{{ $tag }}</span>
+                                        @endforeach
+                                    </div>
+                                @endif
+                            </div>
                         </div>
                     @endif
 

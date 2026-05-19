@@ -3,16 +3,19 @@
 @section('content')
     @include('auth.partials.user-management-styles')
     <div class="user-management-page">
-    <div class="user-management-heading">
-        <h1><i class="icofont-user-suited me-2"></i>User Permissions</h1>
+    <div class="operation-page-header">
+        <div>
+            <h1 class="operation-page-title"><i class="icofont-user-suited me-2"></i>User Permissions</h1>
+            <p class="operation-page-subtitle">Assign direct permissions to individual CRM users.</p>
+        </div>
     </div>
-    <div class="card mt-3">
-        <div class="card-header">
-            <h4 class="card-title w-100">
-                Users Permission
+    <div class="user-management-section mt-3">
+        <div class="user-management-section-header">
+            <h4 class="user-management-section-title w-100">
+                {{ !empty($userpermissions) ? 'Update User Permissions' : 'Assign User Permissions' }}
             </h4>
         </div>
-        <div class="card-body">
+        <div class="user-management-section-body">
             <form method="POST"
                 action="{{ !empty($userpermissions) ? route('update.user.permission') : route('store.user.permission') }}">
                 @csrf
@@ -61,27 +64,29 @@
                             @enderror
                         <!-- </div> -->
                     </div>
-                    <div class="col-4 mt-4">
+                    <div class="col-sm-4">
                         <!-- <label></label> -->
                         <!-- <div class="form-group "> -->
+                        <div class="form-actions-inline">
                             <button type="submit" name="buttonstatus" class="btn btn-primary " value="save"><i
                                     class="icofont-save"></i> Save
                             </button>
                             <button type="button" class="btn btn-danger text-white ml-2"><i class="icofont-ban"></i>
                                 Cancel
                             </button>
+                        </div>
                         <!-- </div> -->
                     </div>
                 </div>
             </form>
         </div>
     </div>
-    <div class="card">
-        <div class="card-header">
-            <h4 class="card-title">Users List</h3>
+    <div class="user-management-section">
+        <div class="user-management-section-header">
+            <h4 class="user-management-section-title">User Permissions List</h4>
         </div>
-        <div class="card-body">
-            <table id="example1" class="table table-bordered table-striped datatable">
+        <div class="user-management-section-body">
+            <table id="example1" class="table table-hover datatable">
                 <thead>
                     <tr>
                         <th>No.</th>

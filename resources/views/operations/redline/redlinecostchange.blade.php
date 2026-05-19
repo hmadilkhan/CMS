@@ -200,6 +200,7 @@
         }
     }
 </style>
+@include('operations.partials.index-styles')
 <div class="operation-page-header">
     <div>
         <h1 class="operation-page-title">Inverter Base Cost</h1>

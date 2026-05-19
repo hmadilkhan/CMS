@@ -1,6 +1,7 @@
 @extends('layouts.master')
 @section('title', 'Service Dashboard')
 @section('content')
+@include('operations.partials.index-styles')
 <style>
     body {
         background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
@@ -147,32 +148,55 @@
         margin-bottom: 1rem;
         opacity: 0.3;
     }
+
+    .premium-badge,
+    .badge {
+        border-radius: 999px;
+    }
+
+    .premium-btn {
+        background: var(--solen-gradient, linear-gradient(135deg, #ffc18f 0%, #ee8f45 56%, #c8642d 100%)) !important;
+        border-radius: 999px !important;
+        box-shadow: 0 12px 30px -18px rgba(151, 76, 18, 0.55) !important;
+    }
+
+    .project-link {
+        color: #9a3412;
+    }
+
+    .operation-card .badge.rounded-pill {
+        background: rgba(255, 193, 143, 0.13);
+        border: 1px solid rgba(238, 143, 69, 0.28);
+        color: #7c2d12;
+    }
 </style>
 <div class="container-xxxl">
-    <div class="premium-header">
-        <h1><i class="icofont-ticket me-3"></i>Service Dashboard</h1>
-        <p>Manage and track your assigned service tickets</p>
+    <div class="operation-page-header">
+        <div>
+            <h1 class="operation-page-title"><i class="icofont-ticket me-2"></i>Service Dashboard</h1>
+            <p class="operation-page-subtitle">Manage and track your assigned service tickets.</p>
+        </div>
     </div>
 
     <div class="row g-3 mb-3 row-deck">
         <div class="col-md-4">
-            <div class="card mb-3 shadow-sm">
-                <div class="card-header py-3 d-flex justify-content-between align-items-center bg-gradient-primary">
+            <div class="operation-card mb-3">
+                <div class="card-header py-3 d-flex justify-content-between align-items-center">
                     <div class="info-header">
-                        <h6 class="mb-0 fw-bold text-white"><i class="icofont-clock-time me-2"></i>Pending Tickets</h6>
+                        <h6 class="mb-0 fw-bold"><i class="icofont-clock-time me-2"></i>Pending Tickets</h6>
                     </div>
-                    <span class="badge bg-light text-primary rounded-pill">{{ $tickets->where('status', 'Pending')->count() }}</span>
+                    <span class="badge rounded-pill">{{ $tickets->where('status', 'Pending')->count() }}</span>
                 </div>
             </div>
         </div>
 
         <div class="col-md-4">
-            <div class="card mb-3 shadow-sm">
-                <div class="card-header py-3 d-flex justify-content-between align-items-center bg-gradient-primary">
+            <div class="operation-card mb-3">
+                <div class="card-header py-3 d-flex justify-content-between align-items-center">
                     <div class="info-header">
-                        <h6 class="mb-0 fw-bold text-white"><i class="icofont-flag me-2"></i>High Priority</h6>
+                        <h6 class="mb-0 fw-bold"><i class="icofont-flag me-2"></i>High Priority</h6>
                     </div>
-                    <span class="badge bg-light text-primary rounded-pill">{{ $tickets->where('priority', 'High')->count() }}</span>
+                    <span class="badge rounded-pill">{{ $tickets->where('priority', 'High')->count() }}</span>
                 </div>
             </div>
         </div>
@@ -180,13 +204,13 @@
 
     <div class="row">
         <div class="col-12">
-            <div class="premium-card">
-                <div class="premium-card-header">
-                    <h3><i class="icofont-list me-2"></i>My Service Tickets</h3>
+            <div class="operation-card">
+                <div class="card-header">
+                    <h3 class="card-title"><i class="icofont-list me-2"></i>My Service Tickets</h3>
                 </div>
                 <div class="card-body p-0">
                     <div class="table-responsive">
-                        <table class="table premium-table">
+                        <table class="table table-hover operation-table">
                             <thead>
                                 <tr>
                                     <th><i class="icofont-folder me-2"></i>Project</th>

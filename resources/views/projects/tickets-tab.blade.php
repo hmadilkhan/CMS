@@ -1,9 +1,9 @@
 <div class="tab-pane fade" id="tickets" role="tabpanel">
-    <div class="card mt-1">
-        <div class="card-header">
-            <h3 class="fw-bold mb-0">Service Tickets</h3>
+    <div class="project-ticket-section mt-1">
+        <div class="project-ticket-section-header">
+            <h3 class="fw-bold mb-0"><i class="icofont-ticket me-2"></i>Service Tickets</h3>
         </div>
-        <div class="card-body">
+        <div class="project-ticket-section-body">
             @can("Create Tickets")
             <form id="ticketForm" method="POST" action="{{ route('service-tickets.store') }}" enctype="multipart/form-data">
                 @csrf
@@ -55,21 +55,21 @@
             </form>
             @endcan
 
-            <hr class="my-4">
+            <hr class="my-4 project-ticket-divider">
 
             <h4 class="fw-bold mb-3">Existing Tickets</h4>
             <div class="table-responsive">
-                <table class="table table-hover">
+                <table class="table table-hover project-ticket-table">
                     <thead>
                         <tr>
-                            <th class="text-white">Subject</th>
-                            <th class="text-white">Assigned To</th>
-                            <th class="text-white">Created by</th>
-                            <th class="text-white">Priority</th>
-                            <th class="text-white">Status</th>
-                            <th class="text-white">Notes</th>
-                            <th class="text-white">Created</th>
-                            <th class="text-white">Actions</th>
+                            <th>Subject</th>
+                            <th>Assigned To</th>
+                            <th>Created by</th>
+                            <th>Priority</th>
+                            <th>Status</th>
+                            <th>Notes</th>
+                            <th>Created</th>
+                            <th>Actions</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -365,6 +365,95 @@
     color: rgba(255, 255, 255, 0.6);
     font-size: 14px;
     margin-top: 8px;
+}
+
+.project-ticket-section {
+    background: #ffffff;
+    border-top: 1px solid rgba(238, 143, 69, 0.28);
+    padding: 1rem 0 1.15rem;
+}
+
+.project-ticket-section-header {
+    border-bottom: 1px solid rgba(238, 143, 69, 0.16);
+    margin-bottom: 1rem;
+    padding-bottom: 0.85rem;
+}
+
+.project-ticket-section-header h3,
+.project-ticket-section h4 {
+    color: #1f2937;
+}
+
+.project-ticket-section .form-control,
+.project-ticket-section .form-select {
+    border: 1px solid rgba(238, 143, 69, 0.28) !important;
+    border-radius: 999px !important;
+    min-height: 42px;
+}
+
+.project-ticket-section textarea.form-control {
+    border-radius: 16px !important;
+}
+
+.project-ticket-section .form-control:focus,
+.project-ticket-section .form-select:focus {
+    border-color: var(--solen-primary, #ee8f45) !important;
+    box-shadow: 0 0 0 0.2rem rgba(238, 143, 69, 0.16) !important;
+}
+
+.project-ticket-section .btn {
+    border-radius: 999px !important;
+}
+
+.project-ticket-divider {
+    border-color: rgba(238, 143, 69, 0.16);
+}
+
+.project-ticket-table thead th {
+    background: rgba(255, 193, 143, 0.13) !important;
+    border-bottom: 1px solid rgba(238, 143, 69, 0.42) !important;
+    color: #7c2d12 !important;
+    font-size: 0.78rem;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    padding: 0.85rem 0.75rem !important;
+    text-transform: uppercase;
+    white-space: nowrap;
+}
+
+.project-ticket-table tbody td {
+    border-bottom: 1px solid #eef2f7 !important;
+    color: #1f2937;
+    padding: 0.8rem 0.75rem !important;
+    vertical-align: middle;
+}
+
+.project-ticket-table tbody tr:hover {
+    background: #fffaf5 !important;
+}
+
+.file-drop-zone {
+    background: #ffffff !important;
+    border-color: rgba(238, 143, 69, 0.28) !important;
+    border-radius: 16px !important;
+}
+
+.file-drop-zone:hover {
+    background: #fffaf5 !important;
+    border-color: rgba(238, 143, 69, 0.42) !important;
+    transform: none;
+}
+
+.file-drop-zone i,
+.file-item i {
+    color: #9a3412 !important;
+}
+
+.file-item {
+    background: #ffffff !important;
+    border-color: rgba(238, 143, 69, 0.28) !important;
+    border-radius: 14px !important;
+    box-shadow: none !important;
 }
 </style>
 

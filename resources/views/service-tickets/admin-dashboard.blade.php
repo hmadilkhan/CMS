@@ -1,16 +1,23 @@
 @extends('layouts.master')
 @section('title', 'Service Admin Dashboard')
 @section('content')
+@include('operations.partials.index-styles')
 <div class="container-xxxl">
+    <div class="operation-page-header">
+        <div>
+            <h1 class="operation-page-title"><i class="icofont-ticket me-2"></i>All Service Tickets</h1>
+            <p class="operation-page-subtitle">Review service tickets across all projects.</p>
+        </div>
+    </div>
     <div class="row">
         <div class="col-12">
-            <div class="card">
+            <div class="operation-card">
                 <div class="card-header">
-                    <h3 class="fw-bold mb-0">All Service Tickets</h3>
+                    <h3 class="card-title">Tickets</h3>
                 </div>
                 <div class="card-body">
                     <div class="table-responsive">
-                        <table class="table table-hover">
+                        <table class="table table-hover operation-table">
                             <thead>
                                 <tr>
                                     <th>Project</th>

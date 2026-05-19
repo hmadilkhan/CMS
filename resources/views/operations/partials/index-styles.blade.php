@@ -4,91 +4,123 @@
         align-items: flex-start;
         justify-content: space-between;
         gap: 16px;
-        margin-bottom: 16px;
+        margin-bottom: 18px;
     }
 
     .operation-page-title {
         margin: 0;
+        color: #1f2937;
         font-size: 22px;
         font-weight: 700;
-        color: #1f2937;
+        letter-spacing: 0;
     }
 
     .operation-page-subtitle {
         margin: 4px 0 0;
-        color: #6b7280;
+        color: #64748b;
         font-size: 14px;
     }
 
     .operation-summary {
         min-width: 150px;
-        padding: 12px 16px;
-        border: 1px solid #e5e7eb;
-        border-radius: 8px;
-        background: #fff;
+        padding: 10px 16px;
+        border: 1px solid rgba(238, 143, 69, 0.28);
+        border-radius: 999px;
+        background: #ffffff;
         text-align: right;
     }
 
     .operation-summary span {
         display: block;
-        color: #6b7280;
-        font-size: 12px;
+        color: #9a3412;
+        font-size: 11px;
+        font-weight: 700;
         text-transform: uppercase;
         letter-spacing: .04em;
     }
 
     .operation-summary strong {
         display: block;
-        color: #111827;
-        font-size: 24px;
+        color: #1f2937;
+        font-size: 21px;
         line-height: 1.1;
     }
 
-    .operation-card {
-        border: 1px solid #e5e7eb;
-        border-radius: 8px;
-        box-shadow: 0 8px 22px rgba(15, 23, 42, .04);
+    .operation-card,
+    .customer-section-card {
+        background: #ffffff !important;
+        border: 0 !important;
+        border-top: 1px solid rgba(238, 143, 69, 0.28) !important;
+        border-radius: 0 !important;
+        box-shadow: none !important;
+        overflow: visible;
     }
 
-    .operation-card .card-header {
-        background: #fff;
-        border-bottom: 1px solid #edf0f2;
-        padding: 16px 18px;
+    .operation-card .card-header,
+    .customer-section-card .card-header {
+        background: transparent !important;
+        border: 0 !important;
+        border-bottom: 1px solid rgba(238, 143, 69, 0.16) !important;
+        padding: 0.85rem 0 !important;
     }
 
-    .operation-card .card-title {
+    .operation-card .card-title,
+    .customer-section-card .card-title {
         margin: 0;
-        color: #111827;
-        font-size: 16px;
+        color: #1f2937 !important;
+        font-size: 1.08rem;
         font-weight: 700;
     }
 
-    .operation-card .card-body {
-        padding: 18px;
+    .operation-card .card-body,
+    .customer-section-card .card-body {
+        background: #ffffff !important;
+        padding: 1rem 0 1.35rem !important;
     }
 
     .operation-form label {
         color: #374151;
         font-size: 13px;
-        font-weight: 600;
+        font-weight: 700;
         margin-bottom: 6px;
     }
 
     .operation-form .form-control,
-    .operation-form .form-select {
-        border-color: #d1d5db;
-        min-height: 40px;
+    .operation-form .form-select,
+    .operation-form textarea,
+    .operation-form select,
+    .operation-form input[type="file"] {
         width: 100%;
+        min-height: 42px;
+        border: 1px solid rgba(238, 143, 69, 0.28) !important;
+        border-radius: 999px !important;
+        background: #ffffff !important;
+        color: #1f2937;
+        padding-left: 0.95rem;
+        padding-right: 0.95rem;
+    }
+
+    .operation-form textarea,
+    .operation-form select[multiple],
+    .operation-form .select2-container--default .select2-selection--multiple {
+        border-radius: 16px !important;
+    }
+
+    .operation-form .form-control:focus,
+    .operation-form .form-select:focus {
+        border-color: var(--solen-primary, #ee8f45) !important;
+        box-shadow: 0 0 0 0.2rem rgba(238, 143, 69, 0.16) !important;
     }
 
     .operation-form .select2-container {
         width: 100% !important;
     }
 
-    .operation-form .select2-container--default .select2-selection--single {
-        min-height: 40px;
-        border: 1px solid #d1d5db;
-        border-radius: 4px;
+    .operation-form .select2-container--default .select2-selection--single,
+    .operation-form .select2-container--default .select2-selection--multiple {
+        min-height: 42px;
+        border: 1px solid rgba(238, 143, 69, 0.28) !important;
+        border-radius: 999px !important;
         display: flex;
         align-items: center;
         background: #fff;
@@ -96,32 +128,28 @@
 
     .operation-form .select2-container--default .select2-selection--single .select2-selection__rendered {
         color: #495057;
-        line-height: 38px;
+        line-height: 40px;
         padding-left: 12px;
         padding-right: 32px;
         width: 100%;
     }
 
-    .operation-form .select2-container--default .select2-selection--single .select2-selection__placeholder {
-        color: #6c757d;
-    }
-
-    .operation-form .select2-container--default .select2-selection--single .select2-selection__arrow {
-        height: 38px;
-        right: 6px;
+    .operation-form .select2-container--default .select2-selection__arrow {
+        height: 40px;
+        right: 8px;
     }
 
     .operation-form .select2-container--default.select2-container--focus .select2-selection--single,
     .operation-form .select2-container--default.select2-container--open .select2-selection--single {
-        border-color: #86b7fe;
-        box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.12);
+        border-color: var(--solen-primary, #ee8f45) !important;
+        box-shadow: 0 0 0 0.2rem rgba(238, 143, 69, 0.16) !important;
     }
 
     .operation-form .input-group-text {
-        border-color: #d1d5db;
-        background: #f9fafb;
-        color: #6b7280;
-        font-weight: 600;
+        border-color: rgba(238, 143, 69, 0.28) !important;
+        background: rgba(255, 193, 143, 0.13);
+        color: #9a3412;
+        font-weight: 700;
     }
 
     .operation-form .cost-input-group {
@@ -134,6 +162,8 @@
     .operation-form .cost-input-group .input-group-text {
         flex: 0 0 42px;
         justify-content: center;
+        border-top-left-radius: 999px;
+        border-bottom-left-radius: 999px;
         border-top-right-radius: 0;
         border-bottom-right-radius: 0;
     }
@@ -141,8 +171,8 @@
     .operation-form .cost-input-group .form-control {
         flex: 1 1 auto;
         min-width: 0;
-        border-top-left-radius: 0;
-        border-bottom-left-radius: 0;
+        border-top-left-radius: 0 !important;
+        border-bottom-left-radius: 0 !important;
     }
 
     .operation-actions {
@@ -150,31 +180,107 @@
         align-items: center;
         justify-content: flex-start;
         gap: 8px;
-        margin-top: 18px;
+        margin-top: 0;
     }
 
-    .operation-actions .btn {
+    .operation-actions .btn,
+    .operation-card .btn,
+    .customer-section-card .btn,
+    .operation-page-header .btn {
         min-width: 96px;
+        border-radius: 999px !important;
+    }
+
+    .operation-page-header .btn-outline-secondary,
+    .operation-actions .btn-outline-secondary {
+        background: #ffffff !important;
+        border: 1px solid rgba(238, 143, 69, 0.28) !important;
+        color: #7c2d12 !important;
     }
 
     .operation-table {
         width: 100%;
         margin-bottom: 0;
+        background: #ffffff;
     }
 
-    .operation-table thead th {
-        border-bottom: 1px solid #e5e7eb;
-        color: #4b5563;
-        font-size: 12px;
+    .operation-table thead th,
+    table.datatable thead th {
+        background: rgba(255, 193, 143, 0.13) !important;
+        color: #7c2d12 !important;
+        border-bottom: 1px solid rgba(238, 143, 69, 0.42) !important;
+        font-size: 0.78rem;
         font-weight: 700;
         text-transform: uppercase;
-        letter-spacing: .04em;
+        letter-spacing: .02em;
+        padding: 0.85rem 0.75rem !important;
         white-space: nowrap;
     }
 
-    .operation-table tbody td {
-        vertical-align: middle;
+    .operation-table tbody td,
+    table.datatable tbody td {
+        border-bottom: 1px solid #eef2f7 !important;
         color: #1f2937;
+        padding: 0.8rem 0.75rem !important;
+        vertical-align: middle;
+    }
+
+    table.datatable tbody tr:hover {
+        background: #fffaf5 !important;
+    }
+
+    div.dataTables_wrapper {
+        clear: both;
+        overflow-x: auto;
+        overflow-y: visible;
+    }
+
+    div.dataTables_wrapper > .row:first-child {
+        align-items: center;
+        row-gap: 0.75rem;
+        margin: 0 0 0.9rem !important;
+        padding: 0.65rem 0;
+        border-bottom: 1px solid rgba(238, 143, 69, 0.28);
+    }
+
+    div.dataTables_wrapper div.dataTables_filter {
+        float: none !important;
+        position: static !important;
+        text-align: right !important;
+        width: 100%;
+    }
+
+    div.dataTables_wrapper div.dataTables_length label,
+    div.dataTables_wrapper div.dataTables_filter label {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        margin: 0;
+        color: #64748b !important;
+        font-size: 0.84rem;
+        font-weight: 700 !important;
+        white-space: nowrap;
+    }
+
+    div.dataTables_wrapper div.dataTables_length select,
+    div.dataTables_wrapper div.dataTables_filter input {
+        min-height: 38px;
+        border: 1px solid rgba(238, 143, 69, 0.28) !important;
+        border-radius: 999px !important;
+        background: #ffffff !important;
+    }
+
+    div.dataTables_wrapper div.dataTables_filter input {
+        width: min(280px, 100%) !important;
+        margin-left: 0 !important;
+        padding: 0.45rem 0.9rem !important;
+    }
+
+    div.dataTables_wrapper .pagination .page-link {
+        border-color: rgba(238, 143, 69, 0.28) !important;
+        border-radius: 999px;
+        color: #7c2d12 !important;
+        margin-left: 0.2rem;
     }
 
     .cost-value {
@@ -182,22 +288,24 @@
         font-weight: 600;
     }
 
-    .action-link {
+    .action-link,
+    table.datatable td a[data-toggle="tooltip"] {
         display: inline-flex;
         align-items: center;
         justify-content: center;
         width: 32px;
         height: 32px;
-        border-radius: 6px;
-        background: #f9fafb;
-        border: 1px solid #e5e7eb;
+        border-radius: 999px;
+        background: #ffffff;
+        border: 1px solid rgba(238, 143, 69, 0.28);
         cursor: pointer;
         transition: background .15s ease, border-color .15s ease;
     }
 
-    .action-link:hover {
-        background: #f3f4f6;
-        border-color: #d1d5db;
+    .action-link:hover,
+    table.datatable td a[data-toggle="tooltip"]:hover {
+        background: #fffaf5;
+        border-color: rgba(238, 143, 69, 0.42);
         text-decoration: none;
     }
 
@@ -214,14 +322,14 @@
         flex-wrap: wrap;
         gap: 8px;
         padding: 8px 12px;
-        border: 1px solid #d1d5db;
-        border-radius: 8px;
+        border: 1px solid rgba(238, 143, 69, 0.28);
+        border-radius: 16px;
         background: #fff;
     }
 
     .tag-editor:focus-within {
-        border-color: #0d6efd;
-        box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.12);
+        border-color: var(--solen-primary, #ee8f45);
+        box-shadow: 0 0 0 0.2rem rgba(238, 143, 69, 0.16);
     }
 
     .tag-editor input {
@@ -238,7 +346,7 @@
         gap: 8px;
         padding: 6px 10px;
         border-radius: 999px;
-        background: #1f2937;
+        background: var(--solen-gradient, linear-gradient(135deg, #ffc18f 0%, #ee8f45 56%, #c8642d 100%));
         color: #fff;
         font-size: 13px;
         font-weight: 600;
@@ -265,8 +373,22 @@
         }
 
         .operation-actions {
-            margin-top: 4px;
             flex-wrap: wrap;
+        }
+
+        div.dataTables_wrapper div.dataTables_length,
+        div.dataTables_wrapper div.dataTables_filter {
+            text-align: left !important;
+        }
+
+        div.dataTables_wrapper div.dataTables_filter label {
+            align-items: flex-start;
+            flex-direction: column;
+            width: 100%;
+        }
+
+        div.dataTables_wrapper div.dataTables_filter input {
+            width: 100% !important;
         }
     }
 </style>

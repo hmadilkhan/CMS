@@ -3,10 +3,6 @@
 @section('content')
     @include('operations.partials.index-styles')
     <style>
-        .customer-section-card .card-header {
-            background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
-        }
-
         .customer-section-card .card-title {
             align-items: center;
             display: flex;
@@ -15,9 +11,10 @@
 
         .customer-section-card .section-icon {
             align-items: center;
-            background: #eef2ff;
-            border-radius: 8px;
-            color: #2d3748;
+            background: rgba(255, 193, 143, 0.13);
+            border: 1px solid rgba(238, 143, 69, 0.28);
+            border-radius: 999px;
+            color: #9a3412;
             display: inline-flex;
             height: 30px;
             justify-content: center;

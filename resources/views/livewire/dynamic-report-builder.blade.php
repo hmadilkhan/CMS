@@ -1,5 +1,68 @@
-<div>
+<div class="report-livewire-page">
     @section('title', 'Dynamic Report Builder')
+    @include('operations.partials.index-styles')
+    <style>
+        .report-livewire-page .card {
+            background: #ffffff !important;
+            border: 0 !important;
+            border-top: 1px solid rgba(238, 143, 69, 0.28) !important;
+            border-radius: 0 !important;
+            box-shadow: none !important;
+        }
+
+        .report-livewire-page .card-header {
+            background: transparent !important;
+            border: 0 !important;
+            border-bottom: 1px solid rgba(238, 143, 69, 0.16) !important;
+            padding: 0.85rem 0 !important;
+        }
+
+        .report-livewire-page .card-title,
+        .report-livewire-page .card-header h3,
+        .report-livewire-page .card-header h5,
+        .report-livewire-page .card-header h6 {
+            color: #1f2937 !important;
+            font-weight: 700;
+        }
+
+        .report-livewire-page .card-body {
+            padding: 1rem 0 1.35rem !important;
+        }
+
+        .report-livewire-page .form-control,
+        .report-livewire-page .form-select {
+            border: 1px solid rgba(238, 143, 69, 0.28) !important;
+            border-radius: 999px !important;
+            min-height: 42px;
+        }
+
+        .report-livewire-page textarea.form-control {
+            border-radius: 16px !important;
+        }
+
+        .report-livewire-page .form-control:focus,
+        .report-livewire-page .form-select:focus {
+            border-color: var(--solen-primary, #ee8f45) !important;
+            box-shadow: 0 0 0 0.2rem rgba(238, 143, 69, 0.16) !important;
+        }
+
+        .report-livewire-page .btn,
+        .report-livewire-page .badge {
+            border-radius: 999px !important;
+        }
+
+        .report-livewire-page table thead,
+        .report-livewire-page table thead th,
+        .report-livewire-page .table-dark th {
+            background: rgba(255, 193, 143, 0.13) !important;
+            border-bottom: 1px solid rgba(238, 143, 69, 0.42) !important;
+            color: #7c2d12 !important;
+        }
+
+        .report-livewire-page table tbody td {
+            border-bottom: 1px solid #eef2f7 !important;
+        }
+    </style>
 
     <!-- Header Section -->
     <div class="container-fluid">

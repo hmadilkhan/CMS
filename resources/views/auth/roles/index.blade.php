@@ -27,16 +27,16 @@
         </div>
     </div>
 
-    <div class="card operation-card">
-        <div class="card-header">
-            <h4 class="card-title">{{ !empty($role) ? 'Update Role' : 'Add Role' }}</h4>
+    <div class="user-management-section">
+        <div class="user-management-section-header">
+            <h4 class="user-management-section-title">{{ !empty($role) ? 'Update Role' : 'Add Role' }}</h4>
         </div>
-        <div class="card-body">
+        <div class="user-management-section-body">
             <form class="operation-form" method="POST" action="{{ !empty($role) ? route('update.role') : route('save.role') }}">
                 @csrf
                 <input type="hidden" name="id" value="{{ !empty($role) ? $role->id : '' }}">
 
-                <div class="row g-3 align-items-start">
+                <div class="row g-3 align-items-end">
                     <div class="col-xl-4 col-lg-6 col-md-6 col-12">
                         <label for="name">Role Name <span class="text-danger">*</span></label>
                         <input type="text" class="form-control @error('name') is-invalid @enderror" id="name"
@@ -52,7 +52,7 @@
                         @enderror
                     </div>
 
-                    <div class="col-12">
+                    <div class="col-xl-4 col-lg-6 col-md-6 col-12">
                         <div class="operation-actions">
                             <button type="submit" class="btn btn-primary">
                                 <i class="icofont-save"></i> Save
@@ -67,11 +67,11 @@
         </div>
     </div>
 
-    <div class="card operation-card mt-3">
-        <div class="card-header">
-            <h4 class="card-title">Roles List</h4>
+    <div class="user-management-section mt-3">
+        <div class="user-management-section-header">
+            <h4 class="user-management-section-title">Roles List</h4>
         </div>
-        <div class="card-body">
+        <div class="user-management-section-body">
             <table id="example1" class="table table-hover operation-table datatable">
                 <thead>
                     <tr>

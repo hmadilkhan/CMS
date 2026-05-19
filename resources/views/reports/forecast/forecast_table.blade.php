@@ -1,6 +1,6 @@
-<div class="card mt-3">
+<div class="operation-card mt-3">
     <div class="card-body">
-        <table class="table table-bordered table-striped datatable">
+        <table class="table table-hover operation-table datatable">
             <thead>
                 <tr>
                     <th>No.</th>
