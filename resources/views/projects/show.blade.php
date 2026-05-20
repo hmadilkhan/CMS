@@ -1644,6 +1644,56 @@
             border-radius: 12px;
         }
 
+        #project-show-page.project-workspace-redesign .design-details-frame {
+            margin-top: 1rem;
+            padding: 1.25rem;
+            background: #ffffff;
+            border: 1px solid var(--workspace-line);
+            border-radius: 12px;
+        }
+
+        #project-show-page.project-workspace-redesign .design-details-grid {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 0.85rem;
+        }
+
+        #project-show-page.project-workspace-redesign .design-detail-item {
+            min-height: 64px;
+            padding: 0.75rem;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            background: #f9fafb;
+        }
+
+        #project-show-page.project-workspace-redesign .design-detail-label {
+            display: block;
+            margin-bottom: 0.25rem;
+            color: var(--workspace-ink-50);
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+
+        #project-show-page.project-workspace-redesign .design-detail-value {
+            color: var(--workspace-ink);
+            font-size: 0.92rem;
+            font-weight: 600;
+            overflow-wrap: anywhere;
+        }
+
+        @media (max-width: 991.98px) {
+            #project-show-page.project-workspace-redesign .design-details-grid {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+        }
+
+        @media (max-width: 575.98px) {
+            #project-show-page.project-workspace-redesign .design-details-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
         #project-show-page.project-workspace-redesign .sample-notes-column .note-textarea {
             min-height: 120px;
             padding: 0;
@@ -1984,6 +2034,30 @@
                                 $alertStatus &&
                                 ($alertClass ?? null) === 'success' &&
                                 ($message ?? null) === 'PTO Greenlight approved';
+                            $authEmployeeId = optional(auth()->user()->employee)->id;
+                            $canManageDesignDetails = auth()->user()->hasAnyRole(['Super Admin', 'Manager']);
+                            $designDetailFields = [
+                                'name' => 'Name',
+                                'phone' => 'Phone',
+                                'address' => 'Address',
+                                'ahj' => 'AHJ',
+                                'roof_area' => 'Roof Area',
+                                'mod' => 'MOD',
+                                'array_area' => 'Array Area',
+                                'inv' => 'INV',
+                                'utility_meter' => 'M. #/Utility',
+                                'kw_rating' => 'kW Rating',
+                                'ac_cec' => 'AC-CEC',
+                                'apn' => 'APN',
+                                'stories' => 'Stories',
+                                'roof_type' => 'Roof Type',
+                                'rafter' => 'Rafter',
+                                'slope' => 'Slope',
+                                'msp' => 'MSP',
+                                'array_azi' => 'Array AZI',
+                                'design_notes' => 'Notes',
+                                'assign_notes' => 'Assign Notes',
+                            ];
                         @endphp
                         <div class="card-header project-summary-header border-0">
                             <div class="project-summary-main">
@@ -2363,14 +2437,64 @@
                                                                 @livewire('project.project-fields', ['project' => $project, 'taskId' => $task->id, 'departmentId' => $department->id, 'projectDepartmentId' => $project->department_id, 'ghost' => $ghost,'viewSource' => 'crm'], key('fields-' . $department->id))
                                                             </div>
                                                             @php
+                                                                $isEngineeringDepartment = strcasecmp($department->name ?? '', 'Engineering') === 0;
+                                                                $canViewDesignDetails =
+                                                                    !empty($designDetail) &&
+                                                                    $isEngineeringDepartment &&
+                                                                    (
+                                                                        $canManageDesignDetails ||
+                                                                        ($authEmployeeId && (int) $task->employee_id === (int) $authEmployeeId)
+                                                                    );
                                                                 $canGenerateDesignDetails =
-                                                                    auth()->user()->hasAnyRole(['Super Admin', 'Manager']) &&
+                                                                    $canManageDesignDetails &&
+                                                                    empty($designDetail) &&
                                                                     $isCurrentDepartment &&
                                                                     strcasecmp(optional($project->department)->name ?? '', 'Engineering') === 0;
                                                             @endphp
+                                                            @if ($canViewDesignDetails)
+                                                                <div class="design-details-frame">
+                                                                    <div class="d-flex align-items-center justify-content-between gap-2 flex-wrap mb-3">
+                                                                        <div class="project-section-header mb-0">
+                                                                            <i class="icofont-paper me-2"></i>Design Details
+                                                                        </div>
+                                                                        @if ($canManageDesignDetails)
+                                                                            <button type="button"
+                                                                                class="btn btn-outline-primary btn-sm open-design-details-modal"
+                                                                                data-mode="edit"
+                                                                                data-bs-toggle="modal"
+                                                                                data-bs-target="#generateDesignDetailsModal">
+                                                                                <i class="icofont-edit me-2"></i>Edit
+                                                                            </button>
+                                                                        @endif
+                                                                    </div>
+                                                                    <div class="design-details-grid">
+                                                                        @foreach ($designDetailFields as $fieldName => $fieldLabel)
+                                                                            <div class="design-detail-item">
+                                                                                <span class="design-detail-label">{{ $fieldLabel }}</span>
+                                                                                <span class="design-detail-value">{{ filled($designDetail->{$fieldName}) ? $designDetail->{$fieldName} : '-' }}</span>
+                                                                            </div>
+                                                                        @endforeach
+                                                                        <div class="design-detail-item">
+                                                                            <span class="design-detail-label">Assigned Employee</span>
+                                                                            <span class="design-detail-value">{{ optional($designDetail->employee)->name ?? '-' }}</span>
+                                                                        </div>
+                                                                        <div class="design-detail-item">
+                                                                            <span class="design-detail-label">Follow-up</span>
+                                                                            <span class="design-detail-value">
+                                                                                {{ $designDetail->follow_up ? 'Yes' : 'No' }}
+                                                                                @if ($designDetail->follow_up_date)
+                                                                                    - {{ $designDetail->follow_up_date->format('m/d/Y') }}
+                                                                                @endif
+                                                                            </span>
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                            @endif
                                                             @if ($canGenerateDesignDetails)
                                                                 <div class="mt-3 text-end">
-                                                                    <button type="button" class="btn btn-primary" data-bs-toggle="modal"
+                                                                    <button type="button" class="btn btn-primary open-design-details-modal"
+                                                                        data-mode="create"
+                                                                        data-bs-toggle="modal"
                                                                         data-bs-target="#generateDesignDetailsModal">
                                                                         <i class="icofont-paper me-2"></i>Generate Design Details
                                                                     </button>
@@ -3423,9 +3547,44 @@
     </div>
 </div>
 <!-- Modal  Delete Folder/ File-->
-@if (auth()->user()->hasAnyRole(['Super Admin', 'Manager']) && strcasecmp(optional($project->department)->name ?? '', 'Engineering') === 0)
+@if (auth()->user()->hasAnyRole(['Super Admin', 'Manager']) && (strcasecmp(optional($project->department)->name ?? '', 'Engineering') === 0 || !empty($designDetail)))
     @php
         $designCustomerName = trim(($project->customer->first_name ?? '') . ' ' . ($project->customer->last_name ?? ''));
+        $designAutoDefaults = [
+            'name' => $designCustomerName,
+            'phone' => $project->customer->phone,
+            'address' => $customerAddress,
+            'ahj' => $project->ahj,
+            'mod' => optional($project->customer->module)->name,
+            'inv' => optional($project->customer->inverter)->name,
+            'kw_rating' => $project->customer->module_value,
+        ];
+        $designExistingData = $designDetail ? [
+            'design_detail_id' => $designDetail->id,
+            'employee_id' => $designDetail->employee_id,
+            'name' => $designDetail->name,
+            'phone' => $designDetail->phone,
+            'address' => $designDetail->address,
+            'ahj' => $designDetail->ahj,
+            'roof_area' => $designDetail->roof_area,
+            'mod' => $designDetail->mod,
+            'array_area' => $designDetail->array_area,
+            'inv' => $designDetail->inv,
+            'utility_meter' => $designDetail->utility_meter,
+            'kw_rating' => $designDetail->kw_rating,
+            'ac_cec' => $designDetail->ac_cec,
+            'apn' => $designDetail->apn,
+            'stories' => $designDetail->stories,
+            'roof_type' => $designDetail->roof_type,
+            'rafter' => $designDetail->rafter,
+            'slope' => $designDetail->slope,
+            'msp' => $designDetail->msp,
+            'array_azi' => $designDetail->array_azi,
+            'design_notes' => $designDetail->design_notes,
+            'assign_notes' => $designDetail->assign_notes,
+            'follow_up' => $designDetail->follow_up,
+            'follow_up_date' => optional($designDetail->follow_up_date)->format('Y-m-d'),
+        ] : null;
     @endphp
     <div class="modal fade" id="generateDesignDetailsModal" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered modal-xl modal-dialog-scrollable">
@@ -3434,7 +3593,7 @@
                 <div class="modal-header"
                     style="background: var(--solen-gradient); border-radius: 20px 20px 0 0; padding: 1.5rem; border: none;">
                     <h5 class="modal-title fw-bold text-white">
-                        <i class="icofont-paper me-2"></i>Generate Design Details
+                        <i class="icofont-paper me-2"></i><span id="designDetailsModalTitle">Generate Design Details</span>
                     </h5>
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
                         aria-label="Close"></button>
@@ -3443,23 +3602,24 @@
                     @csrf
                     <input type="hidden" name="project_id" value="{{ $project->id }}">
                     <input type="hidden" name="task_id" id="designDetailsTaskId" value="{{ $task->id }}">
+                    <input type="hidden" name="design_detail_id" id="designDetailId" value="">
                     <div class="modal-body" style="padding: 2rem;">
                         <div class="row g-3">
                             <div class="col-md-6">
                                 <label class="form-label fw-bold">Name</label>
-                                <input type="text" class="form-control" name="name" value="{{ $designCustomerName }}">
+                                <input type="text" class="form-control design-auto-field" name="name" value="{{ $designCustomerName }}" readonly>
                             </div>
                             <div class="col-md-6">
                                 <label class="form-label fw-bold">Phone</label>
-                                <input type="text" class="form-control" name="phone" value="{{ $project->customer->phone }}">
+                                <input type="text" class="form-control design-auto-field" name="phone" value="{{ $project->customer->phone }}" readonly>
                             </div>
                             <div class="col-md-12">
                                 <label class="form-label fw-bold">Address</label>
-                                <input type="text" class="form-control" name="address" value="{{ $customerAddress }}">
+                                <input type="text" class="form-control design-auto-field" name="address" value="{{ $customerAddress }}" readonly>
                             </div>
                             <div class="col-md-6">
                                 <label class="form-label fw-bold">AHJ</label>
-                                <input type="text" class="form-control" name="ahj" value="{{ $project->ahj }}">
+                                <input type="text" class="form-control design-auto-field" name="ahj" value="{{ $project->ahj }}" readonly>
                             </div>
                             <div class="col-md-6">
                                 <label class="form-label fw-bold">Roof Area</label>
@@ -3467,8 +3627,8 @@
                             </div>
                             <div class="col-md-6">
                                 <label class="form-label fw-bold">MOD</label>
-                                <input type="text" class="form-control" name="mod"
-                                    value="{{ optional($project->customer->module)->name }}">
+                                <input type="text" class="form-control design-auto-field" name="mod"
+                                    value="{{ optional($project->customer->module)->name }}" readonly>
                             </div>
                             <div class="col-md-6">
                                 <label class="form-label fw-bold">Array Area</label>
@@ -3476,8 +3636,8 @@
                             </div>
                             <div class="col-md-6">
                                 <label class="form-label fw-bold">INV</label>
-                                <input type="text" class="form-control" name="inv"
-                                    value="{{ optional($project->customer->inverter)->name }}">
+                                <input type="text" class="form-control design-auto-field" name="inv"
+                                    value="{{ optional($project->customer->inverter)->name }}" readonly>
                             </div>
                             <div class="col-md-6">
                                 <label class="form-label fw-bold">M. #/Utility</label>
@@ -3485,8 +3645,8 @@
                             </div>
                             <div class="col-md-6">
                                 <label class="form-label fw-bold">kW Rating</label>
-                                <input type="text" class="form-control" name="kw_rating"
-                                    value="{{ $project->customer->module_value }}">
+                                <input type="text" class="form-control design-auto-field" name="kw_rating"
+                                    value="{{ $project->customer->module_value }}" readonly>
                             </div>
                             <div class="col-md-6">
                                 <label class="form-label fw-bold">AC-CEC</label>
@@ -3566,7 +3726,7 @@
                     <div class="modal-footer" style="border: 0; padding: 0 2rem 2rem;">
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
                         <button type="submit" class="btn btn-primary btn-sm" id="generateDesignDetailsSubmitBtn">
-                            <i class="icofont-save me-2"></i>Generate Design Details
+                            <i class="icofont-save me-2"></i><span id="designDetailsSubmitText">Generate Design Details</span>
                         </button>
                     </div>
                 </form>
@@ -4030,6 +4190,56 @@
         })
     })
 
+    const designAutoDefaults = @json($designAutoDefaults ?? []);
+    const existingDesignDetails = @json($designExistingData ?? null);
+
+    function setDesignDetailsFormValues(values, mode) {
+        const $form = $("#generateDesignDetailsForm");
+
+        if ($form.length) {
+            $form[0].reset();
+        }
+        $form.find("input[type='text'], input[type='date'], textarea").not("[name='_token']").val('');
+        $("#designDetailId").val(values && values.design_detail_id ? values.design_detail_id : '');
+        $("#designDetailsModalTitle").text(mode === "edit" ? "Edit Design Details" : "Generate Design Details");
+        $("#designDetailsSubmitText").text(mode === "edit" ? "Update Design Details" : "Generate Design Details");
+
+        Object.entries(designAutoDefaults).forEach(function([name, value]) {
+            $form.find(`[name="${name}"]`).val(value || '');
+        });
+
+        if (values) {
+            Object.entries(values).forEach(function([name, value]) {
+                if (name === "follow_up") {
+                    return;
+                }
+                $form.find(`[name="${name}"]`).val(value || '');
+            });
+        }
+
+        $(".design-auto-field").prop("readonly", true);
+        $("#designFollowUpCheckbox").prop("checked", !!(values && values.follow_up));
+        if (values && values.follow_up) {
+            $("#designFollowUpDateContainer").show();
+            $("#designFollowUpDate").attr("required", true);
+        } else {
+            $("#designFollowUpDateContainer").hide();
+            $("#designFollowUpDate").attr("required", false).val('');
+        }
+    }
+
+    $(".open-design-details-modal").on("click", function() {
+        const mode = $(this).data("mode");
+        setDesignDetailsFormValues(mode === "edit" ? existingDesignDetails : null, mode);
+    });
+
+    $("#generateDesignDetailsModal").on("show.bs.modal", function(event) {
+        const $trigger = $(event.relatedTarget);
+        if (!$trigger.hasClass("open-design-details-modal")) {
+            setDesignDetailsFormValues(null, "create");
+        }
+    });
+
     $("#designFollowUpCheckbox").change(function() {
         if ($(this).is(':checked')) {
             $("#designFollowUpDateContainer").slideDown(300);
@@ -4102,7 +4312,9 @@
                         $(".project-employee-option").removeClass("active");
                         $('.project-employee-option[data-employee-id="' + selectedEmployeeId + '"]').addClass("active");
                     }
-                    $("#designEmployeeId").val('');
+                    setTimeout(function() {
+                        location.reload();
+                    }, 700);
                 } else {
                     Swal.fire({
                         icon: 'error',

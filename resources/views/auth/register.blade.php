@@ -2,6 +2,16 @@
 @section('title', 'Users')
 @section('content')
 @include('auth.partials.user-management-styles')
+@php
+    $selectedRoleIds = old('role', !empty($user) ? $user->roles->pluck('id')->toArray() : []);
+    $selectedRoleNames = $roles->whereIn('id', $selectedRoleIds)->pluck('name')->toArray();
+    $employeeRoleNames = ['Employee', 'Manager', 'Service Manager', 'Sub-Contractor Manager'];
+    $selectedTypeId = old('user_type_id', !empty($user) ? $user->user_type_id : null);
+    $selectedTypeName = optional($types->firstWhere('id', $selectedTypeId))->name;
+    $showEmployeeFields = !empty($employee)
+        || $selectedTypeName === 'Employee'
+        || count(array_intersect($selectedRoleNames, $employeeRoleNames)) > 0;
+@endphp
 
 <div class="user-management-page">
     <div class="operation-page-header">
@@ -22,6 +32,7 @@
                 @csrf
                 <input type="hidden" name="id" value="{{ !empty($user) ? $user->id : '' }}" />
                 <input type="hidden" name="previous_logo" value="{{ !empty($user) ? $user->image : '' }}" />
+                <input type="hidden" name="sync_employee" id="sync_employee" value="{{ $showEmployeeFields ? 1 : 0 }}" />
                 <div class="row g-3">
                     <div class="col-md-6 col-lg-3">
                         <label class="form-label"><i class="icofont-user me-2"></i>Full Name</label>
@@ -171,10 +182,10 @@
                             <select id="role" name="role[]" multiple
                                 class="form-control select2 @error('role') is-invalid @enderror" style="width: 100%;">
                                 <option value="">Select Roles</option>
-                                @foreach ($roles as $role)
+                                    @foreach ($roles as $role)
                                     <option
-                                        {{ !empty($user) ? (in_array($role->name, $rolenames->toArray()) ? 'selected' : '') : '' }}
-                                        value="{{ $role->id }}">
+                                        {{ in_array($role->id, $selectedRoleIds) || (!empty($user) && in_array($role->name, $rolenames->toArray())) ? 'selected' : '' }}
+                                        value="{{ $role->id }}" data-role-name="{{ $role->name }}">
                                         {{ $role->name }}
                                     </option>
                                 @endforeach
@@ -189,6 +200,81 @@
                     <div class="col-md-6 col-lg-4">
                         <label for="formFileMultipleoneone" class="form-label"><i class="icofont-image me-2"></i>Profile Image</label>
                             <input class="form-control" type="file" id="formFileMultipleoneone" name="file">
+                    </div>
+
+                    <div class="col-12" id="employeeFieldsDiv" style="{{ $showEmployeeFields ? 'display:block' : 'display:none' }}">
+                        <div class="user-management-section mt-2 mb-0">
+                            <div class="user-management-section-header">
+                                <h3 class="user-management-section-title"><i class="icofont-id-card me-2"></i>Employee Details</h3>
+                            </div>
+                            <div class="user-management-section-body">
+                                <div class="row g-3">
+                                    <div class="col-md-6 col-lg-3">
+                                        <label class="form-label">Employee ID</label>
+                                        <input type="text" class="form-control @error('employee_code') is-invalid @enderror"
+                                            id="employee_code" name="employee_code" placeholder="Employee Code"
+                                            value="{{ old('employee_code', !empty($employee) ? $employee->code : '') }}">
+                                        @error('employee_code')
+                                            <span class="invalid-feedback" role="alert">
+                                                <strong>{{ $message }}</strong>
+                                            </span>
+                                        @enderror
+                                    </div>
+                                    <div class="col-md-6 col-lg-3">
+                                        <label class="form-label">Joining Date</label>
+                                        <input type="date" class="form-control @error('joined_date') is-invalid @enderror"
+                                            id="joined_date" name="joined_date"
+                                            value="{{ old('joined_date', !empty($employee) ? $employee->joined_date : '') }}">
+                                        @error('joined_date')
+                                            <span class="invalid-feedback" role="alert">
+                                                <strong>{{ $message }}</strong>
+                                            </span>
+                                        @enderror
+                                    </div>
+                                    <div class="col-md-6 col-lg-3">
+                                        <label class="form-label">Override Base Price</label>
+                                        <input type="text" class="form-control @error('overwrite_base_price') is-invalid @enderror"
+                                            id="overwrite_base_price" name="overwrite_base_price" placeholder="Override Base Cost"
+                                            value="{{ old('overwrite_base_price', !empty($user) ? $user->overwrite_base_price : '') }}">
+                                        @error('overwrite_base_price')
+                                            <span class="invalid-feedback" role="alert">
+                                                <strong>{{ $message }}</strong>
+                                            </span>
+                                        @enderror
+                                    </div>
+                                    <div class="col-md-6 col-lg-3">
+                                        <label class="form-label">Override Panel Price</label>
+                                        <input type="text" class="form-control @error('overwrite_panel_price') is-invalid @enderror"
+                                            id="overwrite_panel_price" name="overwrite_panel_price" placeholder="Override Panel Price"
+                                            value="{{ old('overwrite_panel_price', !empty($user) ? $user->overwrite_panel_price : '') }}">
+                                        @error('overwrite_panel_price')
+                                            <span class="invalid-feedback" role="alert">
+                                                <strong>{{ $message }}</strong>
+                                            </span>
+                                        @enderror
+                                    </div>
+                                    <div class="col-md-12">
+                                        <label class="form-label">Departments</label>
+                                        <select class="form-control select2 @error('departments') is-invalid @enderror"
+                                            multiple id="departments" name="departments[]" style="width: 100%;">
+                                            @php
+                                                $selectedDepartmentIds = old('departments', !empty($employee) ? $employee->department->pluck('id')->toArray() : []);
+                                            @endphp
+                                            @foreach ($departments as $department)
+                                                <option value="{{ $department->id }}" {{ in_array($department->id, $selectedDepartmentIds) ? 'selected' : '' }}>
+                                                    {{ $department->name }}
+                                                </option>
+                                            @endforeach
+                                        </select>
+                                        @error('departments')
+                                            <span class="invalid-feedback d-block" role="alert">
+                                                <strong>{{ $message }}</strong>
+                                            </span>
+                                        @enderror
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                     <div class="col-12">
                         <div class="d-flex gap-2 justify-content-end mt-3">
@@ -294,7 +380,28 @@
             } else {
                 $("#addressDiv").css("display", "none")
             }
+            toggleEmployeeFields();
         })
+
+        $("#role").change(function() {
+            toggleEmployeeFields();
+        })
+
+        function toggleEmployeeFields() {
+            let selectedTypeName = $("#user_type_id option:selected").text().trim();
+            let employeeRoles = ["Employee", "Manager", "Service Manager", "Sub-Contractor Manager"];
+            let hasEmployeeRole = $("#role option:selected").toArray().some(function(option) {
+                return employeeRoles.includes($(option).data("role-name"));
+            });
+
+            if (selectedTypeName === "Employee" || hasEmployeeRole) {
+                $("#employeeFieldsDiv").css("display", "block");
+                $("#sync_employee").val(1);
+            } else {
+                $("#employeeFieldsDiv").css("display", "none");
+                $("#sync_employee").val(0);
+            }
+        }
 
         function deleteUser(id) {
             $("#deleteId").val(id);

@@ -52,7 +52,7 @@ class ProjectAssignmentService
         $assignedBy = auth()->user()->name ?? 'System';
         $employee->user->notify(new ProjectAssignedNotification($project, $task, $assignedBy));
 
-        if (empty($employee->user->email)) {
+        if (empty($employee->user->email) || auth()->id() === $employee->user->id) {
             return;
         }
 

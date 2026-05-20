@@ -206,6 +206,10 @@ class ProjectController extends Controller
 
         $serviceManagers = \App\Models\User::role('Service Manager')->get();
         $serviceTickets = \App\Models\ServiceTicket::with(['assignedUser'])->where('project_id', $project->id)->orderBy('created_at', 'desc')->get();
+        $designDetail = ProjectDesignDetail::with(['employee.user', 'creator'])
+            ->where('project_id', $project->id)
+            ->latest('id')
+            ->first();
 
         $view =  "projects.show" ;//$request->routeIs('projects.show-redesign') ? "projects.show-redesign" : "projects.show";
 
@@ -234,6 +238,7 @@ class ProjectController extends Controller
             "addersLock" => $addersLock,
             "serviceManagers" => $serviceManagers,
             "serviceTickets" => $serviceTickets,
+            "designDetail" => $designDetail,
         ]);
     }
 
@@ -760,6 +765,7 @@ class ProjectController extends Controller
         $validated = $request->validate([
             'project_id' => 'required|exists:projects,id',
             'task_id' => 'nullable|exists:tasks,id',
+            'design_detail_id' => 'nullable|exists:project_design_details,id',
             'employee_id' => 'required|exists:employees,id',
             'name' => 'nullable|string|max:255',
             'phone' => 'nullable|string|max:255',
@@ -791,7 +797,7 @@ class ProjectController extends Controller
             return response()->json(['status' => 403, 'message' => 'You are not allowed to generate design details.'], 403);
         }
 
-        if (strcasecmp(optional($project->department)->name ?? '', 'Engineering') !== 0) {
+        if (empty($validated['design_detail_id']) && strcasecmp(optional($project->department)->name ?? '', 'Engineering') !== 0) {
             return response()->json(['status' => 422, 'message' => 'Design details can only be generated in Engineering.'], 422);
         }
 
@@ -809,11 +815,10 @@ class ProjectController extends Controller
                     ->firstOrFail();
             }
 
-            $designDetail = ProjectDesignDetail::create([
+            $designPayload = [
                 'project_id' => $project->id,
                 'task_id' => $currentTask->id,
                 'employee_id' => $validated['employee_id'],
-                'created_by' => auth()->id(),
                 'department_id' => $currentTask->department_id,
                 'sub_department_id' => $currentTask->sub_department_id,
                 'name' => $validated['name'] ?? null,
@@ -838,6 +843,37 @@ class ProjectController extends Controller
                 'assign_notes' => $validated['assign_notes'] ?? null,
                 'follow_up' => (bool) ($validated['follow_up'] ?? false),
                 'follow_up_date' => $validated['follow_up_date'] ?? null,
+            ];
+
+            if (!empty($validated['design_detail_id'])) {
+                $designDetail = ProjectDesignDetail::where('project_id', $project->id)
+                    ->findOrFail($validated['design_detail_id']);
+                $designPayload['task_id'] = $designDetail->task_id;
+                $designPayload['department_id'] = $designDetail->department_id;
+                $designPayload['sub_department_id'] = $designDetail->sub_department_id;
+                $designDetail->update($designPayload);
+
+                activity('project')
+                    ->performedOn($project)
+                    ->causedBy(auth()->user())
+                    ->setEvent('updated')
+                    ->withProperties(['project_design_detail_id' => $designDetail->id])
+                    ->log(auth()->user()->name . ' updated design details.');
+
+                DB::commit();
+
+                return response()->json([
+                    'status' => 200,
+                    'message' => 'Design details updated successfully',
+                    'task_id' => $currentTask->id,
+                    'department_id' => $currentTask->department_id,
+                    'sub_department_id' => $currentTask->sub_department_id,
+                ]);
+            }
+
+            $designDetail = ProjectDesignDetail::create([
+                ...$designPayload,
+                'created_by' => auth()->id(),
             ]);
 
             Task::where('id', $currentTask->id)->update([
