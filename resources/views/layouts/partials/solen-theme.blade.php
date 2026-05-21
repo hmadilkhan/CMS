@@ -74,7 +74,7 @@
     .sidebar .menu-list .m-link.show,
     .sidebar .menu-list .ms-link:hover,
     .sidebar .menu-list .ms-link.active {
-        background: rgba(255, 255, 255, 0.12) !important;
+        background: transparent !important;
         color: #f19828 !important;
     }
 
