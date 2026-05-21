@@ -124,7 +124,7 @@ class RegisteredUserController extends Controller
 
         DB::transaction(function () use ($request, $user) {
             $result = $this->uploads($request->file, 'users/', $request->previous_logo);
-            $image = (!empty($result) ? $result["fileName"] : $request->previous_logo);
+            $image = (!empty($result) ? $result["fileName"] : ($request->previous_logo ?? $user->image ?? ""));
 
             $user->update([
                 'name' => $request->name,
