@@ -154,6 +154,13 @@
             background: #1d4ed8 !important;
         }
 
+        .admin-dashboard-page .apexcharts-datalabel,
+        .admin-dashboard-page .apexcharts-datalabel-label,
+        .admin-dashboard-page .apexcharts-datalabel-value {
+            fill: #ffffff !important;
+            color: #ffffff !important;
+        }
+
         @media (max-width: 991px) {
             .admin-dashboard-page .premium-filter-card .d-flex,
             .admin-dashboard-page .premium-filter-card form {

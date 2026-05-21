@@ -47,13 +47,13 @@
         }
 
         .sidebar {
-            background: var(--solen-warm-text) !important;
+            background: #542407 !important;
             box-shadow: 0 24px 60px -28px rgba(120, 53, 15, 0.72);
         }
 
         .sidebar.sidebar-mini .menu-list .sub-menu,
         .sidebar.sidebar-mini .menu-list .m-link:hover span {
-            background: var(--solen-warm-text) !important;
+            background: #542407 !important;
         }
 
         .sidebar .brand-icon .logo-icon {
