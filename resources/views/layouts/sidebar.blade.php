@@ -135,14 +135,14 @@
 
 
         <!-- Theme: Switch Theme -->
-        <ul class="list-unstyled mb-0">
+        {{-- <ul class="list-unstyled mb-0">
             <li class="d-flex align-items-center justify-content-center">
                 <div class="form-check form-switch theme-switch">
                     <input class="form-check-input" type="checkbox" id="theme-switch">
                     <label class="form-check-label" for="theme-switch">Enable Dark Mode!</label>
                 </div>
             </li>
-        </ul>
+        </ul> --}}
 
         <!-- Menu: menu collepce btn -->
         <button type="button" class="btn btn-link sidebar-mini-btn text-light">
