@@ -156,9 +156,13 @@
 
         .admin-dashboard-page .apexcharts-datalabel,
         .admin-dashboard-page .apexcharts-datalabel-label,
-        .admin-dashboard-page .apexcharts-datalabel-value {
+        .admin-dashboard-page .apexcharts-datalabel-value,
+        .admin-dashboard-page .apexcharts-pie-label,
+        .admin-dashboard-page .apexcharts-datalabels text,
+        .admin-dashboard-page .apexcharts-pie text {
             fill: #ffffff !important;
             color: #ffffff !important;
+            stroke: transparent !important;
         }
 
         @media (max-width: 991px) {

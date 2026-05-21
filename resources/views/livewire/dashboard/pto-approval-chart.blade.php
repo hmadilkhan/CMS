@@ -95,7 +95,11 @@
                 dataLabels: {
                     enabled: true,
                     style: {
-                        colors: ['#fff']
+                        colors: ['#ffffff'],
+                        fontWeight: 700
+                    },
+                    dropShadow: {
+                        enabled: false
                     },
                     formatter: function(val) {
                         return val.toFixed(1) + '%'
