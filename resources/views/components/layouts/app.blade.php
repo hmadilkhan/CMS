@@ -7,7 +7,8 @@
     <meta name="csrf_token" content="{{ csrf_token() }}" />
     <title>{{ $title ?? 'Page Title' }} - Solen Energy Construction</title>
 
-    <link rel="icon" href="favicon.ico" type="image/x-icon"> <!-- Favicon-->
+    {{-- <link rel="icon" href="favicon.ico" type="image/x-icon"> <!-- Favicon--> --}}
+    <link rel="icon" type="image/png" sizes="32x32" href="{{ asset('website/images/favicon_big.png') }}">
     <!-- plugin css file  -->
     <link rel="stylesheet" href="{{ asset('assets/plugin/datatables/responsive.dataTables.min.css') }}">
     <link rel="stylesheet" href="{{ asset('assets/plugin/datatables/dataTables.bootstrap5.min.css') }}">
