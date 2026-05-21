@@ -714,8 +714,9 @@ class ProjectController extends Controller
 
                 $assignedEmployee = Employee::with("user")->find($request->employee);
                 $project = Project::find($request->project_id);
+                $shouldNotifyAssignedEmployee = (int) $currentTask->employee_id !== (int) $request->employee;
                 if ($project) {
-                    app(ProjectAssignmentService::class)->notifyAssignedEmployee($assignedEmployee, $project, $newTask);
+                    app(ProjectAssignmentService::class)->notifyAssignedEmployee($assignedEmployee, $project, $newTask, $shouldNotifyAssignedEmployee);
                 }
             } else {
                 Task::where("id", $currentTask->id)->update(["status" => "Completed", "notes" => "New assign to notes added"]);
@@ -904,7 +905,8 @@ class ProjectController extends Controller
             ]);
 
             $assignedEmployee = Employee::with('user')->find($validated['employee_id']);
-            app(ProjectAssignmentService::class)->notifyAssignedEmployee($assignedEmployee, $project, $newTask);
+            $shouldNotifyAssignedEmployee = (int) $currentTask->employee_id !== (int) $validated['employee_id'];
+            app(ProjectAssignmentService::class)->notifyAssignedEmployee($assignedEmployee, $project, $newTask, $shouldNotifyAssignedEmployee);
 
             if (!empty($validated['follow_up']) && !empty($validated['follow_up_date'])) {
                 ProjectFollowUp::where('project_id', $project->id)

@@ -134,19 +134,19 @@
             box-shadow: 0 0 0 0.15rem rgba(29,78,216,0.12);
         }
         .admin-dashboard-page .premium-apply-btn {
-            background: #050505 !important;
+            background: var(--solen-gradient, linear-gradient(135deg, #ffc18f 0%, #ee8f45 56%, #c8642d 100%)) !important;
             color: #ffffff !important;
             border: none;
             padding: 0.65rem 1.25rem;
             border-radius: 8px;
             font-weight: 700;
             transition: all 0.3s ease;
-            box-shadow: none;
+            box-shadow: 0 6px 16px rgba(238, 143, 69, 0.22);
         }
         .admin-dashboard-page .premium-apply-btn:hover {
             transform: none;
-            box-shadow: none;
-            background: #1d4ed8 !important;
+            box-shadow: 0 8px 20px rgba(238, 143, 69, 0.3);
+            background: var(--solen-gradient, linear-gradient(135deg, #ffc18f 0%, #ee8f45 56%, #c8642d 100%)) !important;
             color: #ffffff !important;
         }
 
@@ -221,7 +221,7 @@
                 <div class="row g-4 mt-2">
                     <div class="col-md-4">
                         <div class="dashboard-widget">
-                            <livewire:new-projects-card :startDate="$startDate" :endDate="$endDate" :key="'new-projects-' . time()" />
+                            <livewire:pto-approval-chart :startDate="$startDate" :endDate="$endDate" :key="'pto-approval-' . time()" />
                         </div>
                     </div>
                     <div class="col-md-4">
@@ -236,7 +236,7 @@
                     </div>
                     <div class="col-md-4">
                         <div class="dashboard-widget">
-                            <livewire:pto-approval-chart :startDate="$startDate" :endDate="$endDate" :key="'pto-approval-' . time()" />
+                            <livewire:new-projects-card :startDate="$startDate" :endDate="$endDate" :key="'new-projects-' . time()" />
                         </div>
                     </div>
                     <div class="col-md-4">

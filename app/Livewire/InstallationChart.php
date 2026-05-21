@@ -71,14 +71,14 @@ class InstallationChart extends Component
             'data' => $data,
             'colors' => [
                 '#1d4ed8',
-                '#0f766e',
+                '#ee8f45',
                 '#0284c7',
                 '#334155',
                 '#64748b',
                 '#2563eb',
-                '#0891b2',
+                '#c8642d',
                 '#475569',
-                '#0e7490',
+                '#ffc18f',
                 '#94a3b8'
             ]
         ];

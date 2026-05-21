@@ -71,8 +71,8 @@ class DepartmentTimeChart extends Component
             'labels' => $labels,
             'data' => $data,
             'colors' => [
-                '#1d4ed8', '#0f766e', '#0284c7', '#334155', '#64748b',
-                '#2563eb', '#0891b2', '#475569', '#0e7490', '#94a3b8'
+                '#1d4ed8', '#ee8f45', '#0284c7', '#334155', '#64748b',
+                '#2563eb', '#c8642d', '#475569', '#ffc18f', '#94a3b8'
             ]
         ];
         $this->dispatch('refreshDepartmentChart');

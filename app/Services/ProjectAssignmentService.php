@@ -43,16 +43,16 @@ class ProjectAssignmentService
             ->first();
     }
 
-    public function notifyAssignedEmployee(?Employee $employee, Project $project, Task $task): void
+    public function notifyAssignedEmployee(?Employee $employee, Project $project, Task $task, bool $shouldNotify = true): void
     {
-        if (!$employee?->user) {
+        if (!$shouldNotify || !$employee?->user) {
             return;
         }
 
         $assignedBy = auth()->user()->name ?? 'System';
         $employee->user->notify(new ProjectAssignedNotification($project, $task, $assignedBy));
 
-        if (empty($employee->user->email) || auth()->id() === $employee->user->id) {
+        if (empty($employee->user->email)) {
             return;
         }
 
