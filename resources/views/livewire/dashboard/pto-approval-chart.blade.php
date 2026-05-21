@@ -47,7 +47,6 @@
                 data3.length = 1;
                 data3[0] = 0;
             }
-
             var options3 = {
                 series: data3,
                 chart: {

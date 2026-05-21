@@ -45,7 +45,6 @@
             dataPoints.length = 1;
             dataPoints[0] = 0;
         }
-
         var options = {
             series: dataPoints,
             chart: {
