@@ -35,7 +35,7 @@
     .sidebar,
     [data-theme="dark"] .sidebar,
     [data-theme="light"] .sidebar {
-        background: linear-gradient(180deg, var(--solen-warm-text) 0%, #542407 100%) !important;
+        background: var(--solen-warm-text) !important;
         background-clip: padding-box;
         border: 0 !important;
         outline: 0 !important;
@@ -44,7 +44,7 @@
 
     .sidebar.sidebar-mini .menu-list .sub-menu,
     .sidebar.sidebar-mini .menu-list .m-link:hover span {
-        background: linear-gradient(180deg, var(--solen-warm-text) 0%, #542407 100%) !important;
+        background: var(--solen-warm-text) !important;
     }
 
     .sidebar .brand-icon .logo-icon {

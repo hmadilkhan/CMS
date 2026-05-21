@@ -47,13 +47,13 @@
         }
 
         .sidebar {
-            background: linear-gradient(180deg, var(--solen-warm-text) 0%, #542407 100%) !important;
+            background: var(--solen-warm-text) !important;
             box-shadow: 0 24px 60px -28px rgba(120, 53, 15, 0.72);
         }
 
         .sidebar.sidebar-mini .menu-list .sub-menu,
         .sidebar.sidebar-mini .menu-list .m-link:hover span {
-            background: linear-gradient(180deg, var(--solen-warm-text) 0%, #542407 100%) !important;
+            background: var(--solen-warm-text) !important;
         }
 
         .sidebar .brand-icon .logo-icon {
