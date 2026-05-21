@@ -47,13 +47,13 @@
         }
 
         .sidebar {
-            background: #542407 !important;
-            box-shadow: 0 24px 60px -28px rgba(120, 53, 15, 0.72);
+            background: #212529 !important;
+            box-shadow: 0 24px 60px -28px rgba(0, 0, 0, 0.68);
         }
 
         .sidebar.sidebar-mini .menu-list .sub-menu,
         .sidebar.sidebar-mini .menu-list .m-link:hover span {
-            background: #542407 !important;
+            background: #212529 !important;
         }
 
         .sidebar .brand-icon .logo-icon {
@@ -66,24 +66,24 @@
         .sidebar .menu-list .ms-link,
         .sidebar .form-switch label,
         .sidebar .sidebar-title {
-            color: rgba(255, 247, 237, 0.9) !important;
+            color: rgba(255, 255, 255, 0.88) !important;
         }
 
         .sidebar .brand-icon .logo-text {
-            color: #fff7ed !important;
+            color: #ffffff !important;
         }
 
         .sidebar .menu-list .m-link:hover,
         .sidebar .menu-list .m-link.active,
         .sidebar .menu-list .ms-link:hover,
         .sidebar .menu-list .ms-link.active {
-            background: rgba(255, 247, 237, 0.16);
-            color: #ffffff !important;
+            background: rgba(255, 255, 255, 0.12);
+            color: #f19828 !important;
         }
 
         .sidebar .menu-list .sub-menu::before,
         .sidebar .menu-list li[aria-expanded="true"] .sub-menu:before {
-            background-color: rgba(255, 247, 237, 0.42);
+            background-color: rgba(241, 152, 40, 0.7);
         }
 
         .main,
