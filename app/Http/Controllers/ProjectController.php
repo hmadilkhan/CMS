@@ -587,7 +587,19 @@ class ProjectController extends Controller
                 throw new \RuntimeException("No employee assignment found for this department.");
             }
 
-            Task::where("id", $request->taskId)->update(["status" => "Completed", "notes" => $request->notes]);
+            $activeStatuses = ["In-Progress", "Hold", "Cancelled"];
+            $currentTask = Task::where("id", $request->taskId)
+                ->where("project_id", $request->projectId)
+                ->first();
+
+            if (!$currentTask || !in_array($currentTask->status, $activeStatuses)) {
+                $currentTask = Task::where("project_id", $request->projectId)
+                    ->whereIn("status", $activeStatuses)
+                    ->latest("id")
+                    ->firstOrFail();
+            }
+
+            Task::where("id", $currentTask->id)->update(["status" => "Completed", "notes" => $request->notes]);
             $newTask = Task::create([
                 "project_id" => $request->projectId,
                 "employee_id" => $emp->id,

@@ -2224,7 +2224,7 @@
                                                     @if (count($filtered_collection) > 0)
                                                         <ul class="dropdown-menu" aria-labelledby="navbarDropdown">
                                                             @foreach ($filtered_collection as $subdepartment)
-                                                                <li><a onclick="moveProjectModal('{{ $project->id }}','{{ $task->id }}','{{ $department->id }}','{{ $subdepartment->id }}')"
+                                                                <li><a onclick="moveProjectModal('{{ $project->id }}', currentProjectTaskId, '{{ $department->id }}','{{ $subdepartment->id }}')"
                                                                         class="dropdown-item">{{ $subdepartment->name }}</a>
                                                                 </li>
                                                             @endforeach
@@ -2242,7 +2242,7 @@
                                                     @if (count($filtered_collection) > 0)
                                                         <ul class="dropdown-menu" aria-labelledby="navbarDropdown">
                                                             @foreach ($filtered_collection as $subdepartment)
-                                                                <li><a onclick="moveProjectModal('{{ $project->id }}','{{ $task->id }}','{{ $department->id }}','{{ $subdepartment->id }}')"
+                                                                <li><a onclick="moveProjectModal('{{ $project->id }}', currentProjectTaskId, '{{ $department->id }}','{{ $subdepartment->id }}')"
                                                                         class="dropdown-item">{{ $subdepartment->name }}</a>
                                                                 </li>
                                                             @endforeach
@@ -2259,7 +2259,7 @@
                                                     @if (count($filtered_collection) > 0)
                                                         <ul class="dropdown-menu" aria-labelledby="navbarDropdown">
                                                             @foreach ($filtered_collection as $subdepartment)
-                                                                <li><a onclick="moveProjectModal('{{ $project->id }}','{{ $task->id }}','{{ $department->id }}','{{ $subdepartment->id }}')"
+                                                                <li><a onclick="moveProjectModal('{{ $project->id }}', currentProjectTaskId, '{{ $department->id }}','{{ $subdepartment->id }}')"
                                                                         class="dropdown-item">{{ $subdepartment->name }}</a>
                                                                 </li>
                                                             @endforeach
