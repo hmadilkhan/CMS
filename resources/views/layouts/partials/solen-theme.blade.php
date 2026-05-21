@@ -35,7 +35,7 @@
     .sidebar,
     [data-theme="dark"] .sidebar,
     [data-theme="light"] .sidebar {
-        background: #212529 !important;
+        background: #000000 !important;
         background-clip: padding-box;
         border: 0 !important;
         outline: 0 !important;
@@ -44,7 +44,7 @@
 
     .sidebar.sidebar-mini .menu-list .sub-menu,
     .sidebar.sidebar-mini .menu-list .m-link:hover span {
-        background: #212529 !important;
+        background: #000000 !important;
     }
 
     .sidebar .brand-icon .logo-icon {

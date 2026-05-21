@@ -47,13 +47,13 @@
         }
 
         .sidebar {
-            background: #212529 !important;
+            background: #000000 !important;
             box-shadow: 0 24px 60px -28px rgba(0, 0, 0, 0.68);
         }
 
         .sidebar.sidebar-mini .menu-list .sub-menu,
         .sidebar.sidebar-mini .menu-list .m-link:hover span {
-            background: #212529 !important;
+            background: #000000 !important;
         }
 
         .sidebar .brand-icon .logo-icon {
