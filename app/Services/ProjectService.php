@@ -17,6 +17,9 @@ class ProjectService
     public function projectQuery(Request $request)
     {
         $query = Project::with("customer", "customer.salespartner", "department", "subdepartment", "assignedPerson", "assignedPerson.employee","task");
+        $query->withCount(['emails as viewed_emails_count' => function ($query) {
+            $query->where('is_view', 1);
+        }]);
         $subdepartmentsQuery = SubDepartment::with("department");
         if (auth()->user()->getRoleNames()[0] == "Sales Person") {
             $query->whereHas("customer", function ($query) {

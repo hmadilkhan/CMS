@@ -43,7 +43,7 @@ class EmailReceivedNotification extends Notification implements ShouldQueue
             ->greeting('Hello ' . $notifiable->name . ',')
             ->line('A new email was received for the project: ' . $this->project->project_name)
             ->line('Subject: ' . $this->email->subject)
-            ->line('From: ' . ($this->email->from ?? 'Unknown'))
+            ->line('From: ' . ($this->sender ?? 'Unknown'))
             ->action('View Project', url('/projects/' . $this->project->id))
             ->line('Thank you for using our application!');
     }
@@ -57,7 +57,7 @@ class EmailReceivedNotification extends Notification implements ShouldQueue
             'project_id' => $this->project->id,
             'project_name' => $this->project->project_name,
             'email_subject' => $this->email->subject,
-            'email_from' => $this->email->from ?? 'Unknown',
+            'email_from' => $this->sender ?? 'Unknown',
             'message' => 'A new email was received for project: ' . $this->project->project_name,
             'url' => url('/projects/' . $this->project->id),
         ];

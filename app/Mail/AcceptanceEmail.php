@@ -9,6 +9,7 @@ use Illuminate\Mail\Mailables\Attachment;
 use Illuminate\Mail\Mailables\Content;
 use Illuminate\Mail\Mailables\Envelope;
 use Illuminate\Queue\SerializesModels;
+use Illuminate\Support\Facades\Storage;
 
 class AcceptanceEmail extends Mailable
 {
@@ -28,7 +29,7 @@ class AcceptanceEmail extends Mailable
         $this->subject = $details['subject'];
         $this->body = $details['body'];
         $this->uploadedFiles = $files;
-        $this->ccEmails = $ccEmails;
+        $this->ccEmails = is_array($ccEmails) ? array_filter($ccEmails) : array_filter((array) $ccEmails);
     }
 
     /**
@@ -38,6 +39,7 @@ class AcceptanceEmail extends Mailable
     {
         return new Envelope(
             subject: $this->subject,
+            cc: $this->ccEmails,
         );
     }
 
@@ -59,11 +61,17 @@ class AcceptanceEmail extends Mailable
      */
     public function attachments(): array
     {
-        foreach ($this->uploadedFiles as $key => $file) {
-            //    array_push($this->sendAttachments, Attachment::fromPath(public_path("/storage/emails/$file")));
-            array_push($this->sendAttachments, Attachment::fromPath(asset("/storage/pdfs/" . $file)));
+        $attachments = [];
+
+        foreach ($this->uploadedFiles as $file) {
+            $path = Storage::disk('public')->path("pdfs/{$file}");
+
+            if (is_file($path)) {
+                $attachments[] = Attachment::fromPath($path)->as($file);
+            }
         }
-        return $this->sendAttachments;
+
+        return $attachments;
     }
 
     // public function build()

@@ -3816,20 +3816,24 @@
         Font
     } from 'ckeditor5';
 
-    ClassicEditor
-        .create(document.querySelector('#editor'), {
-            plugins: [Essentials, Paragraph, Bold, Italic, Font],
-            toolbar: [
-                'undo', 'redo', '|', 'bold', 'italic', '|',
-                'fontSize', 'fontFamily', 'fontColor', 'fontBackgroundColor'
-            ]
-        })
-        .then(editor => {
-            window.editor = editor;
-        })
-        .catch(error => {
-            // console.log(error);
-        });
+    const emailEditorElement = document.querySelector('#editor');
+
+    if (emailEditorElement) {
+        ClassicEditor
+            .create(emailEditorElement, {
+                plugins: [Essentials, Paragraph, Bold, Italic, Font],
+                toolbar: [
+                    'undo', 'redo', '|', 'bold', 'italic', '|',
+                    'fontSize', 'fontFamily', 'fontColor', 'fontBackgroundColor'
+                ]
+            })
+            .then(editor => {
+                window.editor = editor;
+            })
+            .catch(error => {
+                // console.log(error);
+            });
+    }
 </script>
 <!-- A friendly reminder to run on a server, remove this during the integration. -->
 {{-- <script>
@@ -3970,47 +3974,60 @@
     function openEmailModal() {
         $("#createemail").modal("show");
     }
-    setTimeout(function() {
-        $("#emailform").submit(function(e) {
-            e.preventDefault();
-            $("#btnEmail").attr('disabled', true);
-            $.ajax({
-                url: "{{ route('send.email') }}",
-                type: 'POST',
-                data: new FormData(this),
-                dataType: 'JSON',
-                contentType: false,
-                cache: false,
-                processData: false,
-                success: function(response) {
-                    if (response.status == 200) {
-                        $("#subject").val('');
+    $("#emailform").submit(function(e) {
+        e.preventDefault();
+
+        const $emailButton = $("#btnEmail");
+        $emailButton.attr('disabled', true);
+
+        if (window.editor) {
+            window.editor.updateSourceElement();
+        }
+
+        $.ajax({
+            url: "{{ route('send.email') }}",
+            type: 'POST',
+            data: new FormData(this),
+            dataType: 'JSON',
+            contentType: false,
+            cache: false,
+            processData: false,
+            success: function(response) {
+                if (response.status == 200) {
+                    $("#subject").val('');
+                    if (window.editor) {
                         window.editor.setData('');
-                        $("#email_no").val('').change();
-                        $("#ccEmails").val('');
-                        Swal.fire(
-                            'Sent!',
-                            response.message,
-                            'success'
-                        )
-                        fetchEmails();
-                        $("#btnEmail").removeAttr("disabled");
-                    } else {
-                        Swal.fire(
-                            'Failed!',
-                            response.message,
-                            'error'
-                        )
-                        $("#btnEmail").removeAttr("disabled");
                     }
-                },
-                error: function(error) {
-                    console.log(error);
-                    $("#btnEmail").removeAttr("disabled");
+                    $("#email_no").val('').change();
+                    $("#image").val('');
+                    $("#ccEmailsHidden").val('');
+                    $("#ccEmails .tag").remove();
+                    Swal.fire(
+                        'Sent!',
+                        response.message,
+                        'success'
+                    )
+                    fetchEmails();
+                } else {
+                    Swal.fire(
+                        'Failed!',
+                        response.message || 'Unable to send email.',
+                        'error'
+                    )
                 }
-            });
+                $emailButton.removeAttr("disabled");
+            },
+            error: function(error) {
+                console.log(error);
+                Swal.fire(
+                    'Failed!',
+                    error.responseJSON?.message || 'Unable to send email.',
+                    'error'
+                )
+                $emailButton.removeAttr("disabled");
+            }
         });
-    }, 3000);
+    });
 
     $("#forward").change(function() {
         let totalCount = $("#" + $("#forward").val() + "_length").val();
@@ -4701,6 +4718,10 @@
     })
 
     $("#email_no").change(function() {
+        if (!$(this).val()) {
+            return;
+        }
+
         $.ajax({
             url: "{{ route('projects.email.script') }}",
             method: "POST",
@@ -4711,36 +4732,23 @@
                 project: "{{ $project->id }}",
             },
             success: function(response) {
-                window.editor.setData(response);
+                if (!window.editor) {
+                    return;
+                }
+
                 let customer_name =
                     "{{ $project->customer->first_name . ' ' . $project->customer->last_name }}";
                 let salespartner = "{{ $project->customer->salespartner->name }}";
                 let code = "{{ $project->code }}";
-                let customerreplace = window.editor.getData();
-                let customer_replaced_text = customerreplace.replace("customer_name", "<b>" +
-                    customer_name + "</b>");
-                window.editor.setData(customer_replaced_text);
-                let customerreplace_1 = window.editor.getData();
-                let customer_replaced_text_1 = customerreplace_1.replace("customer_name_1", "<b>" +
-                    customer_name + "</b>");
-                window.editor.setData(customer_replaced_text_1);
-                let salespartnerName = window.editor.getData();
-                let sales_partner_text = salespartnerName.replace("salespartner_name", "<b>" +
-                    salespartner +
-                    "</b>");
-                window.editor.setData(sales_partner_text);
-                let salespartnerName1 = window.editor.getData();
-                let sales_partner_text1 = salespartnerName1.replace("salespartner_name_1", "<b>" +
-                    salespartner +
-                    "</b>");
-                window.editor.setData(sales_partner_text1);
-                let projectcode = window.editor.getData();
-                
-                
-                projectcode = projectcode.replace("project_code", "<b>" +
-                    code +
-                    "</b>");
-                window.editor.setData(projectcode);
+                let emailContent = response;
+
+                emailContent = emailContent.split("customer_name_1").join("<b>" + customer_name + "</b>");
+                emailContent = emailContent.split("customer_name").join("<b>" + customer_name + "</b>");
+                emailContent = emailContent.split("salespartner_name_1").join("<b>" + salespartner + "</b>");
+                emailContent = emailContent.split("salespartner_name").join("<b>" + salespartner + "</b>");
+                emailContent = emailContent.split("project_code").join("<b>" + code + "</b>");
+
+                window.editor.setData(emailContent);
             },
             error: function(error) {
                 Swal.fire(
@@ -4824,8 +4832,11 @@
         const tagsInput = document.querySelector('.tags-input');
         const input = document.createElement('input');
         const hiddenInput = document.getElementById('ccEmailsHidden');
-        const form = document.getElementById('emailForm');
         const emailError = document.getElementById('emailError');
+
+        if (!tagsInput || !hiddenInput || !emailError) {
+            return;
+        }
 
         tagsInput.appendChild(input);
 

@@ -43,6 +43,16 @@ class SendEmailJob implements ShouldQueue
 
         // Mail::to("info@testsolencrm.com")->send(new TestEmail($this->details,$this->uploadedFiles));
 
+        $config = EmailConfig::where("department_id", $this->details['department_id'])->first();
+
+        if (empty($config)) {
+            throw new \RuntimeException("Email configuration is missing for this department.");
+        }
+
+        Mail::mailer($config->mailer_name)
+            ->to($this->details['customer_email'])
+            ->send(new TestEmail($this->details, $this->uploadedFiles, $this->ccEmails));
+
         $email = Email::create([
             "project_id" => $this->details['project_id'],
             "department_id" => $this->details['department_id'],
@@ -56,16 +66,6 @@ class SendEmailJob implements ShouldQueue
                 "email_id" => $email->id,
                 "file" => $file,
             ]);
-        }
-        // if ($this->details['department_id'] == 1) {
-        //     Mail::to($this->details['customer_email'])->send(new TestEmail($this->details, $this->uploadedFiles));
-        // }elseif ($this->details['department_id'] == 2) {
-        //     Mail::mailer('info')->to($this->details['customer_email'])->send(new TestEmail($this->details, $this->uploadedFiles));
-        // }
-
-        $config = EmailConfig::where("department_id",$this->details['department_id'])->first();
-        if(!empty($config)){
-            Mail::mailer($config->mailer_name)->to($this->details['customer_email'])->send(new TestEmail($this->details, $this->uploadedFiles,$this->ccEmails));
         }
 
         // This needs to be run to process the queue and if we want to do this automatically then we need to do this by scheduling this commands on the server side.        

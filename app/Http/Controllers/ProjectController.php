@@ -1061,6 +1061,9 @@ class ProjectController extends Controller
             ->pluck('project_id'); // Get the relevant project IDs
 
         $query = Project::with("customer", "customer.salespartner", "department", "subdepartment", "assignedPerson", "assignedPerson.employee", "task", "notes");
+        $query->withCount(['emails as viewed_emails_count' => function ($query) {
+            $query->where('is_view', 1);
+        }]);
         $query->whereIn("id", $projectIds);
         return $query->get();
         // Fetch all tasks for those projects that match your conditions

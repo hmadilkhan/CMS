@@ -54,7 +54,7 @@ return $item->department_id == $department->id;
                                 @endforeach
                                 @endif
                             </div>
-                            <button class="btn btn-warning float-right mt-2" onclick="ReplyEmail('{{$email->subject}}')">Reply</button>
+                            <button class="btn btn-warning float-right mt-2" onclick='ReplyEmail(@json($email->subject))'>Reply</button>
                         </li>
                         @endif
                     </ul>

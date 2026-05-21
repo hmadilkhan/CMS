@@ -9,6 +9,7 @@ use Illuminate\Mail\Mailables\Attachment;
 use Illuminate\Mail\Mailables\Content;
 use Illuminate\Mail\Mailables\Envelope;
 use Illuminate\Queue\SerializesModels;
+use Illuminate\Support\Facades\Storage;
 
 class TestEmail extends Mailable
 {
@@ -28,7 +29,7 @@ class TestEmail extends Mailable
         $this->subject = $details['subject'];
         $this->body = $details['body'];
         $this->uploadedFiles = $files;
-        $this->ccEmails = $ccEmails;
+        $this->ccEmails = is_array($ccEmails) ? array_filter($ccEmails) : array_filter((array) $ccEmails);
     }
 
     /**
@@ -38,6 +39,7 @@ class TestEmail extends Mailable
     {
         return new Envelope(
             subject: $this->subject,
+            cc: $this->ccEmails,
         );
     }
 
@@ -59,33 +61,17 @@ class TestEmail extends Mailable
      */
     public function attachments(): array
     {
-        foreach ($this->uploadedFiles as $key => $file) {
-        //    array_push($this->sendAttachments, Attachment::fromPath(public_path("/storage/emails/$file")));
-           array_push($this->sendAttachments, Attachment::fromPath(asset("/storage/emails/".$file)));
+        $attachments = [];
+
+        foreach ($this->uploadedFiles as $file) {
+            $path = Storage::disk('public')->path("emails/{$file}");
+
+            if (is_file($path)) {
+                $attachments[] = Attachment::fromPath($path)->as($file);
+            }
         }
-        return $this->sendAttachments;
+
+        return $attachments;
     }
 
-     /**
-     * Build the message.
-     *
-     * @return $this
-     */
-    public function build()
-    {
-        $email = $this->subject($this->subject)
-                      ->view('mail.test-email', ['body' => $this->body]);
-
-        // Add CC recipients
-        if (!empty($this->ccEmails)) {
-            $email->cc($this->ccEmails);
-        }
-
-        // Attach files
-        foreach ($this->attachments() as $attachment) {
-            $email->attach($attachment);
-        }
-
-        return $email;
-    }
 }

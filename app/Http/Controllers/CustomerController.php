@@ -570,34 +570,70 @@ class CustomerController extends Controller
     public function sendEmail(Request $request)
     {
         try {
+            $validated = $request->validate([
+                "project_id" => ["required", "exists:projects,id"],
+                "department_id" => ["required", "exists:departments,id"],
+                "customer_id" => ["required", "exists:customers,id"],
+                "subject" => ["required", "string", "max:255"],
+                "content" => ["required", "string"],
+                "ccEmails" => ["nullable", "string"],
+                "images" => ["nullable", "array"],
+                "images.*" => ["file", "max:10240"],
+            ]);
+
+            $project = Project::with(["customer", "salesPartnerUser"])
+                ->where("id", $validated["project_id"])
+                ->where("customer_id", $validated["customer_id"])
+                ->firstOrFail();
+
+            if (empty($project->customer?->email)) {
+                return response()->json(["status" => 422, "message" => "Customer email is missing."], 422);
+            }
+
             $attachments = [];
             $ccEmails = [];
             $details = [
-                "subject" => $request->subject,
-                "body" => $request->content,
-                "project_id" => $request->project_id,
-                "department_id" => $request->department_id,
-                "customer_id" => $request->customer_id,
-                "customer_email" => $request->customer_email,
+                "subject" => $validated["subject"],
+                "body" => $validated["content"],
+                "project_id" => $project->id,
+                "department_id" => $validated["department_id"],
+                "customer_id" => $project->customer_id,
+                "customer_email" => $project->customer->email,
                 "user_id" => auth()->user()->id,
             ];
-            $salesPersonEmail = User::whereIn("id", Project::where("id", $request->project_id)->pluck("sales_partner_user_id"))->first();
-            if ($request->ccEmails != "") {
-                $ccEmails = $this->handleCommaSeparatedValues($request->ccEmails);
+
+            if (!empty($validated["ccEmails"])) {
+                $ccEmails = array_filter($this->handleCommaSeparatedValues($validated["ccEmails"]));
             }
 
-            if (!empty($salesPersonEmail)) {
-                array_push($ccEmails, $salesPersonEmail->email);
+            foreach ($ccEmails as $email) {
+                if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+                    return response()->json(["status" => 422, "message" => "Invalid CC email: {$email}"], 422);
+                }
             }
 
-            if (!empty($request->images) && count($request->images) > 0) {
-                foreach ($request->images  as $file) {
+            if (!empty($project->salesPartnerUser?->email)) {
+                $ccEmails[] = $project->salesPartnerUser->email;
+            }
+
+            $ccEmails = array_values(array_unique($ccEmails));
+
+            if ($request->hasFile("images")) {
+                foreach ($request->file("images") as $file) {
                     $savedFile = $this->uploads($file, 'emails/');
                     array_push($attachments, $savedFile['fileName']);
                 }
             }
-            dispatch(new SendEmailJob($details, $attachments, $ccEmails));
+
+            SendEmailJob::dispatchSync($details, $attachments, $ccEmails);
+
             return response()->json(["status" => 200, "message" => "Email has been sent", "ccEmails" => $ccEmails]);
+        } catch (ValidationException $th) {
+            return response()->json([
+                "status" => 422,
+                "message" => $th->validator->errors()->first(),
+                "errors" => $th->errors(),
+            ], 422);
         } catch (\Throwable $th) {
             return response()->json(["status" => 500, "message" => "Error : " . $th->getMessage()]);
         }
