@@ -63,7 +63,7 @@ return $item->department_id == $department->id;
                             <div class="message-data">
                                 <span class="message-data-time">{{date("d M Y H:i a", strtotime($email->received_date))}}</span>
                             </div>
-                            <div class="message my-message">
+                            <div class="message my-message d-block w-100">
                                 <p class="text-start fw-bold mb-2">{{ $email->subject }}</p>
                                 <div class="text-start bg-white rounded p-3 border">
                                     {!! nl2br(e($latestReply)) !!}
