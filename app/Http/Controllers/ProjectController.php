@@ -176,8 +176,9 @@ class ProjectController extends Controller
             }])
             ->where("id", $project->id)
             ->first();
-        $days = $project->customer->finances->finance->no_of_days;
-        $alertStatus = $project->customer->finances->finance->pto_restriction;
+        $financeOption = optional(optional(optional($project->customer)->finances)->finance);
+        $days = (int) ($financeOption->no_of_days ?? 0);
+        $alertStatus = $financeOption->pto_restriction ?? null;
         $ntpApprovalDate = $project->ntp_approval_date;
         if ($ntpApprovalDate != "" && $days > 0) {
             $finalDate = Carbon::parse($ntpApprovalDate)->addDays($days)->format('Y-m-d');

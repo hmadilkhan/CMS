@@ -2753,44 +2753,53 @@
         <div class="card mt-1">
             <div class="card-body">
                 @can('View Financial Details')
+                    @php
+                        $customerFinance = optional($project->customer)->finances;
+                        $financeOption = optional($customerFinance)->finance;
+                    @endphp
                     <div class="card-header py-3 px-0 d-sm-flex align-items-center  justify-content-between border-bottom">
                         <h3 class=" fw-bold flex-fill mb-0 mt-sm-0 px-3" data-bs-toggle="collapse"
                             data-bs-target="#finance" aria-expanded="false" aria-controls="finance">Financial Details
                         </h3>
                     </div>
+                    @if (empty($customerFinance) || empty($financeOption))
+                        <div class="alert alert-warning mt-3 mb-0">
+                            Financial details are not available for this project yet.
+                        </div>
+                    @else
                     <div class="row g-3 mb-3">
                         <div class="col-sm-3 ">
                             <label for="finance_option_id" class="form-label">Finance Option</label>
                             <input type="text" class="form-control"
-                                value="{{ $project->customer->finances->finance->name }}">
+                                value="{{ $financeOption->name }}">
                         </div>
                         @if (
-                            $project->customer->finances->finance->name != 'Cash' &&
-                                $project->customer->finances->finance->name != 'LightReach PPA')
+                            $financeOption->name != 'Cash' &&
+                                $financeOption->name != 'LightReach PPA')
                             <div class="col-sm-3  loandiv">
                                 <label for="loan_term_id" class="form-label">Loan Term</label>
                                 <input type="text" class="form-control"
-                                    value="{{ !empty($project->customer->finances->term) ? $project->customer->finances->term->year : '' }}"
+                                    value="{{ !empty($customerFinance->term) ? $customerFinance->term->year : '' }}"
                                     id="loan_term_id" name="loan_term_id">
                             </div>
                             <div class="col-sm-3  loandiv">
                                 <label for="loan_apr_id" class="form-label">Loan Apr</label>
                                 <input type="text" class="form-control"
-                                    value="{{ !empty($project->customer->finances->apr) ? $project->customer->finances->apr->apr : '' }}"
+                                    value="{{ !empty($customerFinance->apr) ? $customerFinance->apr->apr : '' }}"
                                     id="loan_apr_id" name="loan_apr_id">
                             </div>
                         @endif
                         <div class="col-sm-3 ">
                             <label for="contract_amount" class="form-label">Contract Amount</label>
                             <input type="text" class="form-control"
-                                value="$ {{ number_format($project->customer->finances->contract_amount, 2) }}"
+                                value="$ {{ number_format($customerFinance->contract_amount, 2) }}"
                                 id="contract_amount" name="contract_amount">
                         </div>
                         @php
                             $totalOverridePanelCost = $project->customer->panel_qty * $project->overwrite_panel_price;
                             $totalOverride = $totalOverridePanelCost + $project->overwrite_base_price;
-                            $actualRedlineCost = $project->customer->finances->redline_costs - $totalOverride;
-                            $totalCommission = $totalOverride + $project->customer->finances->commission;
+                            $actualRedlineCost = $customerFinance->redline_costs - $totalOverride;
+                            $totalCommission = $totalOverride + $customerFinance->commission;
                             // $project->customer->finances->redline_costs
                         @endphp
                         <div class="col-sm-3 ">
@@ -2802,7 +2811,7 @@
                         <div class="col-sm-3 ">
                             <label for="adders" class="form-label">Adders</label>
                             <input type="text" class="form-control"
-                                value="$ {{ number_format($project->customer->finances->adders, 2) }}" id="adders_amount"
+                                value="$ {{ number_format($customerFinance->adders, 2) }}" id="adders_amount"
                                 name="adders_amount">
                         </div>
                         <div class="col-sm-3 ">
@@ -2810,33 +2819,33 @@
                             <input type="text" class="form-control"
                                 value="$ {{ number_format($totalCommission, 2) }}" id="commission" name="commission">
                         </div>
-                        @if ((int) $project->customer->finances->finance_option_id === 9)
+                        @if ((int) $customerFinance->finance_option_id === 9)
                             <div class="col-sm-3 ">
                                 <label for="third_party_credit" class="form-label">Third Party Credit</label>
                                 <input type="text" class="form-control"
-                                    value="$ {{ number_format($project->customer->finances->third_party_credit, 2) }}"
+                                    value="$ {{ number_format($customerFinance->third_party_credit, 2) }}"
                                     id="third_party_credit" name="third_party_credit">
                             </div>
                             <div class="col-sm-3 ">
                                 <label for="customer_portion" class="form-label">Customer Portion</label>
                                 <input type="text" class="form-control"
-                                    value="$ {{ number_format($project->customer->finances->customer_portion, 2) }}"
+                                    value="$ {{ number_format($customerFinance->customer_portion, 2) }}"
                                     id="customer_portion" name="customer_portion">
                             </div>
                         @endif
                         @if (
-                            $project->customer->finances->finance->name != 'Cash' &&
-                                $project->customer->finances->finance->name != 'LightReach PPA')
+                            $financeOption->name != 'Cash' &&
+                                $financeOption->name != 'LightReach PPA')
                             <div class="col-sm-3 ">
                                 <label for="dealer_fee" class="form-label">Dealer Fee</label>
                                 <input type="text" class="form-control"
-                                    value="{{ $project->customer->finances->dealer_fee }}" id="dealer_fee"
+                                    value="{{ $customerFinance->dealer_fee }}" id="dealer_fee"
                                     name="dealer_fee">
                             </div>
                             <div class="col-sm-3 ">
                                 <label for="dealer_fee_amount" class="form-label">Dealer Fee Amount</label>
                                 <input type="text" class="form-control"
-                                    value="$ {{ number_format($project->customer->finances->dealer_fee_amount, 2) }}"
+                                    value="$ {{ number_format($customerFinance->dealer_fee_amount, 2) }}"
                                     id="dealer_fee_amount" name="dealer_fee_amount">
                             </div>
                         @endif
@@ -2844,10 +2853,11 @@
                             <div class="col-sm-3 ">
                                 <label for="commission" class="form-label">Holdback Amount</label>
                                 <input type="text" class="form-control"
-                                    value="$ {{ number_format($project->customer->finances->holdback_amount, 2) }}">
+                                    value="$ {{ number_format($customerFinance->holdback_amount, 2) }}">
                             </div>
                         @endcan
                     </div>
+                    @endif
                     {{-- <div class="col-sm-12 mb-3">
                         <button type="submit" class="btn btn-dark me-1 mt-1 w-sm-100"><i
                                 class="icofont-arrow-left me-2 fs-6"></i>Submit</button>
@@ -2857,6 +2867,10 @@
             </div>
         </div>
         @can('View Adder Details')
+            @php
+                $customerFinance = $customerFinance ?? optional($project->customer)->finances;
+                $financeOption = $financeOption ?? optional($customerFinance)->finance;
+            @endphp
             <div class="card mt-1">
                 <div class="card-body">
                     <div class="card-header py-3 px-0 d-sm-flex align-items-center  border-bottom">
@@ -2870,7 +2884,7 @@
                         <input type="hidden" name="project_id" value="{{ $project->id }}">
                         <input type="hidden" name="customer_id" value="{{ $project->customer->id }}">
                         <input type="hidden" name="finance_option_id"
-                            value="{{ $project->customer->finances->finance->id }}">
+                            value="{{ optional($financeOption)->id }}">
                         @if (auth()->user()->hasAnyRole(['Manager', 'Admin', 'Super Admin']))
                             @if ($isAddersLocked)
                                 <div class="alert alert-warning mb-3">
