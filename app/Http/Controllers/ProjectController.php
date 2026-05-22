@@ -175,10 +175,10 @@ class ProjectController extends Controller
                 $query->where('is_view', 1);
             }])
             ->where("id", $project->id)
-            ->first();
-        $financeOption = optional(optional(optional($project->customer)->finances)->finance);
-        $days = (int) ($financeOption->no_of_days ?? 0);
-        $alertStatus = $financeOption->pto_restriction ?? null;
+            ->firstOrFail();
+        $financeOption = data_get($project, 'customer.finances.finance');
+        $days = (int) data_get($financeOption, 'no_of_days', 0);
+        $alertStatus = data_get($financeOption, 'pto_restriction');
         $ntpApprovalDate = $project->ntp_approval_date;
         if ($ntpApprovalDate != "" && $days > 0) {
             $finalDate = Carbon::parse($ntpApprovalDate)->addDays($days)->format('Y-m-d');
