@@ -162,7 +162,7 @@ Route::middleware('auth')->group(function () {
     Route::post('toggle-adders-lock', [App\Http\Controllers\ProjectController::class, 'toggleAddersLock'])->name('toggle.adders.lock');
     Route::post('update-followup-status', [App\Http\Controllers\ProjectController::class, 'updateFollowUpStatus'])->name('followup.status.update');
     Route::get('/projects/{project}/redesign', [App\Http\Controllers\ProjectController::class, 'show'])->name('projects.show-redesign');
-    Route::get('/projects/{id}/{ghost?}', [App\Http\Controllers\ProjectController::class, 'show'])->name('projects.show');
+    Route::get('/projects/{project}/{ghost?}', [App\Http\Controllers\ProjectController::class, 'show'])->name('projects.show');
 
     // SERVICE TICKETS
     Route::post('service-tickets', [App\Http\Controllers\ServiceTicketController::class, 'store'])->name('service-tickets.store');

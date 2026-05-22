@@ -143,8 +143,10 @@ class ProjectController extends Controller
         $alertClass = "";
         $alertStatus = false;
         $message = "";
-        if ($request->ghost == "ghost") {
-            $project = Project::findOrFail($request->id);
+        if ($request->route('ghost') == "ghost") {
+            $routeProject = $request->route('project');
+            $projectId = $routeProject instanceof Project ? $routeProject->id : $routeProject;
+            $project = Project::findOrFail($projectId);
         }
         $projectLogs  = Task::with("employee", "user", "department", "subdepartment")->where("project_id", $project->id)->get();
         $totalDaysByDepartment = $projectLogs->groupBy('department_id')->map(function ($group) {
