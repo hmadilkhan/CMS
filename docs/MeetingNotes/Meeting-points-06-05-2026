@@ -1,0 +1,29 @@
+* Add date in Tickets section
+* Make “W” small in Welcome Sign In heading
+* Change Projects bar color to orange gradient
+* Move Department search bar to top
+* Center department name
+* Replace department icons with counts
+* Apply orange gradient to department background
+* Apply orange gradient to sidebar
+* Implement Assign Department feature
+* Send system notification on department assignment (automatic + manual)
+* Remove cards from Project Show page
+* Remove “Back to List” button
+* Show status dropdown on project name click
+* Move Project Days above project name
+* Remove dashes from project names
+* Apply orange gradient to Project, Customer & Communication Center sections
+* Remove cards from Action Menu & Department Tools
+* Add department tabs with Project Notes tab
+* Keep current department selected by default
+* Apply orange gradient to Department Notes files section
+* Add “Files” heading above files section
+* Move Department Tools below Files section
+* Show Department Tools according to current department
+* Add “Currently Assigned To” section at bottom with orange gradient
+* Show employee dropdown on click
+* Open popup after employee selection
+* Change inverter tags to orange gradient
+* Show follow-ups on Admin Dashboard
+* Remove Archived section from employee side
