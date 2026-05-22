@@ -3174,7 +3174,12 @@
                                 <a class="btn btn-dark me-1 mt-1 w-sm-100" onclick="fetchEmails()"><i
                                         class="icofont-refresh me-2 fs-6"></i>Refresh</a>
                             </div>
-                            <div id="emailDiv"></div>
+                            <div id="emailDiv">
+                                @include('projects.partial.show-emails', [
+                                    'project' => $project,
+                                    'departments' => $departments,
+                                ])
+                            </div>
                             {{-- <div class="row clearfix">
                                             <div class="col-lg-12">
                                                 <div class="card">
