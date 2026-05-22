@@ -1034,7 +1034,7 @@ class ProjectController extends Controller
         if ($request->id == "all") {
             $subdepartmentsQuery->groupBy("department_id");
         }
-        if (in_array("Super Admin", auth()->user()->getRoleNames()->toArray())) {
+        if (auth()->user()->hasAnyRole(["Super Admin", "Sales Manager", "Sales Person", "Sub-Contractor User", "Sub-Contractor Manager"])) {
             $departments = Department::with("subdepartments")->where("id", "!=", 9)->get();
         } else {
             $departments = Department::with("subdepartments")->whereIN("id", EmployeeDepartment::whereIn("employee_id", Employee::where("user_id", auth()->user()->id)->pluck("id"))->pluck("department_id"))->get();
