@@ -1226,10 +1226,12 @@
             width: 100%;
             margin: 0 !important;
             padding: 1px !important;
-            overflow: hidden !important;
+            overflow: visible !important;
             background: var(--workspace-line) !important;
             border: 1px solid var(--workspace-line) !important;
             border-radius: 14px !important;
+            position: relative;
+            z-index: 30;
         }
 
         #project-show-page.project-workspace-redesign .project-department-tabs.prtab-set .nav-item,
@@ -1240,6 +1242,12 @@
 
         #project-show-page.project-workspace-redesign .project-department-tabs.prtab-set .nav-item {
             flex: 1 1 0;
+            position: relative;
+        }
+
+        #project-show-page.project-workspace-redesign .project-department-tabs.prtab-set .nav-item.dropdown:hover,
+        #project-show-page.project-workspace-redesign .project-department-tabs.prtab-set .nav-item.dropdown.show {
+            z-index: 1200;
         }
 
         #project-show-page.project-workspace-redesign .project-department-tabs.prtab-set .nav-link {
@@ -1314,6 +1322,35 @@
         #project-show-page.project-workspace-redesign .project-department-tabs.prtab-set .nav-link.active .department-pipeline-status {
             color: var(--workspace-ink);
             font-weight: 600;
+        }
+
+        #project-show-page.project-workspace-redesign .project-department-tabs.prtab-set .dropdown-menu {
+            top: calc(100% + 4px) !important;
+            left: 50% !important;
+            right: auto !important;
+            transform: translateX(-50%) !important;
+            z-index: 1200 !important;
+            min-width: max(220px, 100%);
+            max-width: min(320px, 90vw);
+            max-height: 310px;
+            overflow-y: auto;
+            overflow-x: hidden;
+            padding: 0.45rem 0;
+            border: 1px solid var(--workspace-line) !important;
+            border-radius: 8px !important;
+            box-shadow: 0 18px 45px -26px rgba(69, 26, 3, 0.45) !important;
+        }
+
+        #project-show-page.project-workspace-redesign .project-department-tabs.prtab-set .dropdown-item {
+            white-space: normal;
+            line-height: 1.25;
+            padding: 0.65rem 0.9rem;
+        }
+
+        #project-show-page.project-workspace-redesign .project-department-tabs.prtab-set .dropdown-item:hover,
+        #project-show-page.project-workspace-redesign .project-department-tabs.prtab-set .dropdown-item:focus {
+            background: var(--workspace-soft) !important;
+            color: var(--workspace-ink) !important;
         }
 
         #project-show-page.project-workspace-redesign #departmentDetailTabs {

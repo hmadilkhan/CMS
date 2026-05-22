@@ -113,7 +113,7 @@ Route::middleware('auth')->group(function () {
     Route::resource('employees', EmployeeController::class);
     Route::resource('customers', CustomerController::class);
     Route::resource('intake-form', IntakeFormController::class);
-    Route::resource('projects', ProjectController::class);
+    Route::resource('projects', ProjectController::class)->except(['show']);
     Route::resource('module-types', ModuleTypeController::class);
     Route::resource('office-costs', OfficeCostController::class);
     Route::resource('labor-costs', LaborCostController::class);
@@ -304,19 +304,19 @@ Route::middleware('auth')->group(function () {
 
     Route::controller(ReportController::class)->group(function () {
         Route::get('/reports-profilt', 'profitabilityReport')->name("reports.profit");
-        Route::post('/reports-profilt', 'getProfitabilityReport')->name("reports.profit");
+        Route::post('/reports-profilt', 'getProfitabilityReport');
         Route::get('/profitable-report-excel-export/{from}/{to}', 'getProfitableReportExport')->name("profitable.report.excel.export");
         Route::get('/profitable-report-pdf-export/{from}/{to}', 'getProfitableReportPdfExport')->name("profitable.report.pdf.export");
 
         // FORECAST REPORT
         Route::get('/forecast-report', 'forecastReport')->name("forecast.report");
-        Route::post('/forecast-report', 'getForecastReport')->name("forecast.report");
+        Route::post('/forecast-report', 'getForecastReport');
         Route::get('/forecast-report-excel-export/{from}/{to}', 'getForecastReportExport')->name("forecast.report.excel.export");
         Route::get('/forecast-report-pdf-export/{from}/{to}', 'getForecastReportPdfExport')->name("forecast.report.pdf.export");
 
         // OVERRIDE REPORT
         Route::get('/override-report', 'overrideReport')->name("override.report");
-        Route::post('/override-report', 'getOverrideReport')->name("override.report");
+        Route::post('/override-report', 'getOverrideReport');
         Route::get('/override-report-excel-export/{salespartner}/{from}/{to}', 'getOverrideReportExport')->name("override.report.excel.export");
         Route::get('/override-report-pdf-export/{salespartner}/{from}/{to}', 'getOverrideReportPdfExport')->name("override.report.pdf.export");
 
@@ -345,7 +345,7 @@ Route::middleware('auth')->group(function () {
     // NOTIFICATIONS
     Route::get('/notifications', [App\Http\Controllers\NotificationController::class, 'index'])->name('notifications.index');
     Route::post('/notifications/mark-all-read', [App\Http\Controllers\NotificationController::class, 'markAllAsRead'])->name('notifications.mark-all-read');
-    Route::post('/notifications/{id}/mark-read', [App\Http\Controllers\NotificationController::class, 'markAsRead'])->name('notifications.mark-read');
+    Route::post('/notifications/{id}/mark-read', [App\Http\Controllers\NotificationController::class, 'markAsRead']);
     Route::get('/notifications/{id}/mark-read', [App\Http\Controllers\NotificationController::class, 'markAsRead'])->name('notifications.mark-read');
 
     Route::get('tickets', [App\Http\Controllers\NewTicketController::class, 'index'])->name("tickets");
@@ -363,8 +363,8 @@ Route::middleware(['web', 'auth', 'role:Super Admin'])
     ->name('impersonate');
 
 // Stop impersonation — available only when impersonating
-Route::middleware(['web', 'auth'])->group(function () {
-    Route::impersonate(); // creates 'impersonate' & 'impersonate.leave'
-});
+Route::middleware(['web', 'auth'])
+    ->get('/impersonate/leave', [ImpersonateController::class, 'leave'])
+    ->name('impersonate.leave');
 
 require __DIR__ . '/auth.php';
