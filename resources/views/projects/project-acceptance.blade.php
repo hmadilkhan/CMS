@@ -158,7 +158,7 @@
                                 class="mr-1 icofont-close me-2 fs-6"></i>Reject</button>
                         <button
                             onclick="acceptanceAction('1','{{ $projectAcceptance->id }}','{{ $projectAcceptance->project_id }}')"
-                            type="button" class="btn btn-success me-1 w-sm-100 float-right text-white"><i
+                            type="button" class="btn btn-success me-1 w-sm-100 float-right text-white" style="border-radius: var(--bs-btn-border-radius);"><i
                                 class="mr-1 icofont-tick-mark me-2 fs-6"></i> Approve</button>
                     </div>
                 </div>
