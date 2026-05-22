@@ -151,14 +151,14 @@
         @if ($mode == 'view' && auth()->user()->hasAnyRole(['Manager', 'Sales Person']))
             @if (!empty($projectAcceptance) && $projectAcceptance->action_by == 0)
                 <div class="row mt-4 mx-3">
-                    <div class="col-md-12 ">
+                    <div class="col-md-12 d-flex justify-content-end gap-2">
                         <button
                             onclick="acceptanceAction('2','{{ $projectAcceptance->id }}','{{ $projectAcceptance->project_id }}')"
-                            type="button" class="btn btn-danger me-1 w-sm-100 float-right text-white rounded-pill" style="border-radius: 50rem !important; min-width: 118px; padding-left: 1.25rem; padding-right: 1.25rem;"><i
+                            type="button" class="btn btn-danger text-white rounded-pill" style="border-radius: 50rem !important; width: 128px !important;"><i
                                 class="mr-1 icofont-close me-2 fs-6"></i>Reject</button>
                         <button
                             onclick="acceptanceAction('1','{{ $projectAcceptance->id }}','{{ $projectAcceptance->project_id }}')"
-                            type="button" class="btn btn-success me-1 w-sm-100 float-right text-white rounded-pill" style="border-radius: 50rem !important; min-width: 118px; padding-left: 1.25rem; padding-right: 1.25rem;"><i
+                            type="button" class="btn btn-success text-white rounded-pill" style="border-radius: 50rem !important; width: 128px !important;"><i
                                 class="mr-1 icofont-tick-mark me-2 fs-6"></i> Approve</button>
                     </div>
                 </div>
