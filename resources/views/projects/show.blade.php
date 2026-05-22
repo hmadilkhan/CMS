@@ -3236,7 +3236,7 @@
                                                             <i class="icofont-upload-alt me-1"></i>Upload Design <span class="text-danger">*</span>
                                                         </label>
                                                         <input class="form-control form-control-lg" type="file" id="file" name="file"
-                                                            accept=".png,.jpg,.pdf" multiple>
+                                                            accept=".png,.jpg,.pdf">
                                                         <small class="text-muted">Accepted formats: PNG, JPG, PDF</small>
                                                         @error('file')
                                                             <div id="file_message" class="text-danger message mt-2">
@@ -4915,6 +4915,8 @@
                 $("#project-acceptance-view").html(response);
             },
             error: function(xhr) {
+                const message = xhr.responseJSON?.message || xhr.responseText || 'Unable to submit project acceptance.';
+                $("#file_message").html(message);
                 console.error('Error uploading file: ' + xhr.responseText);
             }
         });

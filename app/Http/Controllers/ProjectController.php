@@ -1282,11 +1282,18 @@ class ProjectController extends Controller
     {
         if ($request->mode == "post") {
             $request->validate([
-                "file" => "required"
+                "file" => "required|file|mimes:png,jpg,jpeg,pdf|max:10240",
+                "project_id" => "required|exists:projects,id",
+                "sales_partner_id" => "required",
+                "notes" => "nullable|string",
             ]);
             $result = $this->uploads($request->file, 'project-acceptance/');
             if (!empty($result)) {
                 $project = Project::with("task", "customer", "customer.salespartner", "customer.adders", "customer.finances", "customer.inverter", "salesPartnerUser")->where("id", $request->project_id)->first();
+
+                if (!$project?->customer?->finances || !$project->customer?->inverter || !$project->salesPartnerUser) {
+                    return response("Project acceptance cannot be submitted because required financial, inverter, or sales partner user data is missing.", 422);
+                }
                 
                 // Calculate financial values (same logic as in blade)
                 $basePrice = $project->customer->finances->inverter_base_cost + $project->overwrite_base_price;
@@ -1296,7 +1303,9 @@ class ProjectController extends Controller
                 // Extract adder names
                 $addersList = [];
                 foreach ($project->customer->adders as $adder) {
-                    $addersList[] = $adder->type->name;
+                    if (!empty($adder->type)) {
+                        $addersList[] = $adder->type->name;
+                    }
                 }
                 
                 $projectAcceptance = ProjectAcceptance::create([
@@ -1505,7 +1514,8 @@ class ProjectController extends Controller
             }
 
             $projectUrl = url('/projects/' . $project->id);
-            $emailText = "<p>Hi " . $project->assignedPerson[0]->employee->name . "</p><p>The Project Acceptance Review for " . $project->customer->first_name . " " . $project->customer->last_name . " has been " . ($request->mode == 1 ? 'approved' : 'rejected') . "</p><p>Project URL: <a href='" . $projectUrl . "'>" . $projectUrl . "</a></p><p>Please take the necessary steps to continue moving the job forward.</p><p>Thank you!.</p>";
+            $assignedEmployeeName = $project->assignedPerson->first()?->employee?->name ?? "Team";
+            $emailText = "<p>Hi " . $assignedEmployeeName . "</p><p>The Project Acceptance Review for " . $project->customer->first_name . " " . $project->customer->last_name . " has been " . ($request->mode == 1 ? 'approved' : 'rejected') . "</p><p>Project URL: <a href='" . $projectUrl . "'>" . $projectUrl . "</a></p><p>Please take the necessary steps to continue moving the job forward.</p><p>Thank you!.</p>";
             $this->sendEmailForProjectAcceptance($project, "Project Acceptance Review Status - " . $project->customer->first_name . " " . $project->customer->last_name, $emailText, "engineering@solenenergyco.com");
             // Log the custom message
             $username = auth()->user()->name;

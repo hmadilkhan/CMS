@@ -50,8 +50,22 @@
             </div>
         </div>
         <div class="col-md-12 d-flex justify-content-center mx-3">
-            <img src="{{ !empty($projectAcceptance) ? asset('storage/project-acceptance/' . $projectAcceptance->image) : '' }}"
-                width="100%" alt="" class=" mx-auto d-block">
+            @php
+                $acceptanceFile = !empty($projectAcceptance) ? $projectAcceptance->image : '';
+                $acceptanceExtension = strtolower(pathinfo($acceptanceFile, PATHINFO_EXTENSION));
+            @endphp
+            @if ($acceptanceExtension === 'pdf')
+                <div class="w-100 border rounded p-3 text-center bg-light">
+                    <i class="icofont-file-pdf fs-1 text-danger"></i>
+                    <p class="mb-2 fw-bold">{{ $acceptanceFile }}</p>
+                    <a target="_blank" href="{{ asset('storage/project-acceptance/' . $acceptanceFile) }}" class="btn btn-sm btn-dark">
+                        View PDF
+                    </a>
+                </div>
+            @else
+                <img src="{{ $acceptanceFile !== '' ? asset('storage/project-acceptance/' . $acceptanceFile) : '' }}"
+                    width="100%" alt="" class=" mx-auto d-block">
+            @endif
         </div>
         <div class="row mt-4">
             <div class="col-md-12 d-flex justify-content-center">
@@ -78,32 +92,32 @@
                     <td>{{ number_format($basePrice, 2) }}</td>
                 </tr>
                 <tr>
-                    <td>Dealer Fee </d>
+                    <td>Dealer Fee</td>
                     <td>-</td>
                     <td>{{ number_format($dealerFeeAmount, 2) }}</td>
                 </tr>
                 <tr>
-                    <td>Module Count </d>
+                    <td>Module Count</td>
                     <td>{{ $panelQty }} x {{ $moduleQtyPrice }}</td>
                     <td>{{ number_format($modulesAmount, 2) }}</td>
                 </tr>
                 <tr>
-                    <td>Contract Price</d>
+                    <td>Contract Price</td>
                     <td>-</td>
                     <td>{{ number_format($contractAmount, 2) }}</td>
                 </tr>
                 <tr>
-                    <td>System Cost</d>
+                    <td>System Cost</td>
                     <td>-</td>
                     <td>{{ number_format($redlineCosts, 2) }}</td>
                 </tr>
                 <tr>
-                    <td>Adder Total</d>
+                    <td>Adder Total</td>
                     <td>-</td>
                     <td>{{ number_format($addersAmount, 2) }}</td>
                 </tr>
                 <tr>
-                    <td>Commission</d>
+                    <td>Commission</td>
                     <td>-</td>
                     <td>{{ number_format($commissionAmount, 2) }}</td>
                 </tr>
@@ -200,8 +214,17 @@
                                     <strong>Reason:</strong>
                                     <p class="border p-2 bg-light">{{ $rejected->reason ?? 'No reason provided' }}</p>
                                 </div>
-                                <div class="text-center mb-3">
-                                    <img src="{{ asset('storage/project-acceptance/' . $rejected->image) }}" class="img-fluid" style="max-height: 400px;">
+                            <div class="text-center mb-3">
+                                    @php
+                                        $rejectedExtension = strtolower(pathinfo($rejected->image, PATHINFO_EXTENSION));
+                                    @endphp
+                                    @if ($rejectedExtension === 'pdf')
+                                        <a target="_blank" href="{{ asset('storage/project-acceptance/' . $rejected->image) }}" class="btn btn-sm btn-dark">
+                                            View Rejected PDF
+                                        </a>
+                                    @else
+                                        <img src="{{ asset('storage/project-acceptance/' . $rejected->image) }}" class="img-fluid" style="max-height: 400px;">
+                                    @endif
                                 </div>
                                 <h6 class="fw-bold">Financial Details</h6>
                                 <table class="table table-bordered table-sm">
