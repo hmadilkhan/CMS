@@ -8,6 +8,7 @@ use Illuminate\Mail\Mailable;
 use Illuminate\Mail\Mailables\Attachment;
 use Illuminate\Mail\Mailables\Content;
 use Illuminate\Mail\Mailables\Envelope;
+use Illuminate\Mail\Mailables\Headers;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\Storage;
 
@@ -20,6 +21,7 @@ class TestEmail extends Mailable
     public $uploadedFiles = [];
     public $sendAttachments = [];
     public $ccEmails = [];
+    public $messageId;
 
     /**
      * Create a new message instance.
@@ -30,6 +32,7 @@ class TestEmail extends Mailable
         $this->body = $details['body'];
         $this->uploadedFiles = $files;
         $this->ccEmails = is_array($ccEmails) ? array_filter($ccEmails) : array_filter((array) $ccEmails);
+        $this->messageId = $details['message_id'] ?? null;
     }
 
     /**
@@ -51,6 +54,13 @@ class TestEmail extends Mailable
         return new Content(
             view: 'mail.test-email',
             with: ["body" => $this->body],
+        );
+    }
+
+    public function headers(): Headers
+    {
+        return new Headers(
+            messageId: $this->messageId,
         );
     }
 

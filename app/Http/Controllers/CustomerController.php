@@ -29,6 +29,7 @@ use App\Services\ProjectAssignmentService;
 use App\Traits\MediaTrait;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 
@@ -592,14 +593,20 @@ class CustomerController extends Controller
 
             $attachments = [];
             $ccEmails = [];
+            $subject = $validated["subject"];
+            if (!empty($project->code) && stripos($subject, $project->code) === false) {
+                $subject .= " [" . $project->code . "]";
+            }
+
             $details = [
-                "subject" => $validated["subject"],
+                "subject" => $subject,
                 "body" => $validated["content"],
                 "project_id" => $project->id,
                 "department_id" => $validated["department_id"],
                 "customer_id" => $project->customer_id,
                 "customer_email" => $project->customer->email,
                 "user_id" => auth()->user()->id,
+                "message_id" => $this->makeProjectMessageId($project),
             ];
 
             if (!empty($validated["ccEmails"])) {
@@ -654,5 +661,12 @@ class CustomerController extends Controller
         }
 
         return $values;
+    }
+
+    private function makeProjectMessageId(Project $project): string
+    {
+        $host = parse_url(config('app.url'), PHP_URL_HOST) ?: 'solaroperations.info';
+
+        return 'crm-project-' . $project->id . '-' . Str::uuid() . '@' . $host;
     }
 }

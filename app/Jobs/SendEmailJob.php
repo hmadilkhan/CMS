@@ -14,6 +14,7 @@ use Illuminate\Mail\Mailables\Attachment;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Str;
 
 class SendEmailJob implements ShouldQueue
 {
@@ -49,6 +50,8 @@ class SendEmailJob implements ShouldQueue
             throw new \RuntimeException("Email configuration is missing for this department.");
         }
 
+        $this->details['message_id'] = $this->details['message_id'] ?? $this->makeMessageId();
+
         Mail::mailer($config->mailer_name)
             ->to($this->details['customer_email'])
             ->send(new TestEmail($this->details, $this->uploadedFiles, $this->ccEmails));
@@ -60,6 +63,8 @@ class SendEmailJob implements ShouldQueue
             "subject" => $this->details['subject'],
             "body" => $this->details['body'],
             "user_id" => $this->details['user_id'],
+            "message_id" => $this->details['message_id'],
+            "direction" => "sent",
         ]);
         foreach ($this->uploadedFiles as $key => $file) {
             EmailAttachment::create([
@@ -71,5 +76,12 @@ class SendEmailJob implements ShouldQueue
         // This needs to be run to process the queue and if we want to do this automatically then we need to do this by scheduling this commands on the server side.        
         //PHP artisan queue:listen
         // php artisan queue:restart
+    }
+
+    private function makeMessageId(): string
+    {
+        $host = parse_url(config('app.url'), PHP_URL_HOST) ?: 'solaroperations.info';
+
+        return 'crm-email-' . Str::uuid() . '@' . $host;
     }
 }

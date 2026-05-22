@@ -23,7 +23,7 @@ return $item->department_id == $department->id;
             <div class="chat">
                 <div class="chat-history">
                     <ul class="m-b-0">
-                        @if ($email->message_id == '')
+                        @if ($email->direction === 'sent' || ($email->message_id == '' && !empty($email->user)))
                         <li class="clearfix">
                             @if(!empty($email->user))
                             <div class="message-data">
