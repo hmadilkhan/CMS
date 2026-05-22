@@ -968,6 +968,8 @@
         }
 
         #project-show-page.project-workspace-redesign > .card:first-child {
+            position: relative;
+            z-index: 100;
             border-bottom: 0 !important;
             background: #ffffff !important;
             backdrop-filter: blur(12px);
@@ -1231,7 +1233,7 @@
             border: 1px solid var(--workspace-line) !important;
             border-radius: 14px !important;
             position: relative;
-            z-index: 30;
+            z-index: 2000;
         }
 
         #project-show-page.project-workspace-redesign .project-department-tabs.prtab-set .nav-item,
@@ -1247,7 +1249,7 @@
 
         #project-show-page.project-workspace-redesign .project-department-tabs.prtab-set .nav-item.dropdown:hover,
         #project-show-page.project-workspace-redesign .project-department-tabs.prtab-set .nav-item.dropdown.show {
-            z-index: 1200;
+            z-index: 2100;
         }
 
         #project-show-page.project-workspace-redesign .project-department-tabs.prtab-set .nav-link {
@@ -1329,7 +1331,7 @@
             left: 50% !important;
             right: auto !important;
             transform: translateX(-50%) !important;
-            z-index: 1200 !important;
+            z-index: 2200 !important;
             min-width: max(220px, 100%);
             max-width: min(320px, 90vw);
             max-height: 310px;
@@ -1418,6 +1420,8 @@
         }
 
         #project-show-page.project-workspace-redesign .project-content-shell {
+            position: relative;
+            z-index: 1;
             max-width: none;
             display: grid;
             grid-template-columns: minmax(0, 1fr) minmax(240px, 16vw);
