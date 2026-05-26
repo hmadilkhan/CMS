@@ -13,7 +13,11 @@ class AiChatService
 {
     public function __construct(
         private readonly OpenAiService $openAiService,
-        private readonly AiQueryPlannerService $aiQueryPlannerService
+        private readonly AiQueryPlannerService $aiQueryPlannerService,
+        private readonly AiSqlBuilderService $aiSqlBuilderService,
+        private readonly AiSqlValidatorService $aiSqlValidatorService,
+        private readonly AiQueryExecutorService $aiQueryExecutorService,
+        private readonly AiAnswerFormatterService $aiAnswerFormatterService
     ) {
     }
 
@@ -25,6 +29,79 @@ class AiChatService
             ->latest('last_message_at')
             ->latest('id')
             ->get();
+    }
+
+    public function messagePayload(AiChat $chat)
+    {
+        return $chat->messages->map(fn ($message) => [
+            'id' => $message->id,
+            'role' => $message->role,
+            'content' => $message->content,
+            'metadata' => $message->metadata,
+            'created_at' => optional($message->created_at)->diffForHumans(),
+        ]);
+    }
+
+    public function suggestedQuestionsFor(User $user): array
+    {
+        if ($user->hasAnyRole(['Super Admin', 'Admin'])) {
+            return [
+                'Total active projects',
+                'Profitability report dikhao',
+                'Tickets pending by department',
+                'Customer wise projects',
+            ];
+        }
+
+        if ($user->hasAnyRole(['Manager', 'Sales Manager', 'Sub-Contractor Manager'])) {
+            return [
+                'Department projects',
+                'Team pending tickets',
+                'Project delays',
+            ];
+        }
+
+        return [
+            'My assigned projects',
+            'My pending tickets',
+            'Today tasks',
+        ];
+    }
+
+    public function rename(AiChat $chat, string $title): AiChat
+    {
+        $chat->update(['title' => trim($title)]);
+
+        return $chat->fresh();
+    }
+
+    public function delete(AiChat $chat): void
+    {
+        $chat->delete();
+    }
+
+    public function retryLastUserMessage(User $user, AiChat $chat): AiChat
+    {
+        $message = $chat->messages()
+            ->where('role', 'user')
+            ->latest()
+            ->value('content');
+
+        if (blank($message)) {
+            $chat->messages()->create([
+                'role' => 'assistant',
+                'content' => 'There is no previous question to retry.',
+                'metadata' => [
+                    'status' => 'failed',
+                    'error_type' => 'invalid_question',
+                    'retryable' => false,
+                ],
+            ]);
+
+            return $chat->fresh('messages');
+        }
+
+        return $this->respondToMessage($chat, $user, $message, false);
     }
 
     public function findUserChat(User $user, int $chatId): AiChat
@@ -47,23 +124,20 @@ class AiChatService
             ]);
         }
 
-        $startedAt = microtime(true);
-        $log = AiQueryLog::create([
-            'ai_chat_id' => $chat->id,
-            'user_id' => $user->id,
-            'provider' => 'openai',
-            'status' => 'pending',
-            'model' => config('services.openai.model', 'gpt-4.1-mini'),
-            'request_payload' => [
-                'message' => $message,
-                'previous_response_id' => $chat->openai_response_id,
-            ],
-        ]);
+        return $this->respondToMessage($chat, $user, $message, true);
+    }
 
-        $chat->messages()->create([
-            'role' => 'user',
-            'content' => $message,
-        ]);
+    private function respondToMessage(AiChat $chat, User $user, string $message, bool $storeUserMessage): AiChat
+    {
+        $startedAt = microtime(true);
+        $log = $this->createQueryLog($chat, $user, $message);
+
+        if ($storeUserMessage) {
+            $chat->messages()->create([
+                'role' => 'user',
+                'content' => $message,
+            ]);
+        }
 
         $chat->update(['last_message_at' => now()]);
 
@@ -72,7 +146,11 @@ class AiChatService
                 return $this->handleQueryPlan($chat, $user, $message, $log, $startedAt);
             }
 
-            $response = $this->openAiService->createResponse($message, $chat->openai_response_id);
+            $response = $this->openAiService->createResponse(
+                $message,
+                $chat->openai_response_id,
+                $this->userContext($user)
+            );
 
             DB::transaction(function () use ($chat, $response, $log, $startedAt) {
                 $chat->messages()->create([
@@ -110,8 +188,54 @@ class AiChatService
                 'error_message' => $exception->getMessage(),
             ]);
 
-            throw $exception;
+            return $this->storeFailureMessage($chat, $exception);
         }
+
+        return $chat->fresh('messages');
+    }
+
+    private function createQueryLog(AiChat $chat, User $user, string $message): AiQueryLog
+    {
+        return AiQueryLog::create([
+            'ai_chat_id' => $chat->id,
+            'user_id' => $user->id,
+            'provider' => 'openai',
+            'status' => 'pending',
+            'model' => config('services.openai.model', 'gpt-4.1-mini'),
+            'request_payload' => [
+                'message' => $message,
+                'previous_response_id' => $chat->openai_response_id,
+            ],
+        ]);
+    }
+
+    private function userContext(User $user): array
+    {
+        return [
+            'app_name' => config('app.name', 'CRM'),
+            'user_name' => $user->name,
+            'username' => $user->username,
+            'roles' => $user->roles->pluck('name')->values()->all(),
+        ];
+    }
+
+    private function storeFailureMessage(AiChat $chat, Throwable $exception): AiChat
+    {
+        $message = str_contains(strtolower($exception->getMessage()), 'openai')
+            ? 'OpenAI is unavailable right now. Please retry in a moment.'
+            : 'I could not complete that request safely. Please try again.';
+
+        $chat->messages()->create([
+            'role' => 'assistant',
+            'content' => $message,
+            'metadata' => [
+                'status' => 'failed',
+                'error_type' => str_contains(strtolower($exception->getMessage()), 'permission') ? 'permission_denied' : 'openai_failure',
+                'retryable' => true,
+            ],
+        ]);
+
+        $chat->update(['last_message_at' => now()]);
 
         return $chat->fresh('messages');
     }
@@ -122,24 +246,66 @@ class AiChatService
         $plan = $planned['plan'];
         $response = $planned['openai'];
         $usage = $response['usage'];
-        $assistantMessage = $plan['intent'] === 'unknown'
-            ? $plan['fallback_message']
-            : "Safe CRM query plan generated. SQL execution is disabled for now.\n\n" . json_encode($plan, JSON_PRETTY_PRINT);
+        $sqlPreview = null;
+        $validation = null;
+        $execution = null;
+        $answer = null;
 
-        DB::transaction(function () use ($chat, $plan, $response, $usage, $log, $startedAt, $assistantMessage) {
+        if ($plan['intent'] !== 'unknown') {
+            $sqlPreview = $this->aiSqlBuilderService->build($plan, $user);
+            $validation = $this->aiSqlValidatorService->validate($sqlPreview, $plan, $user);
+
+            if ($validation['approved'] ?? false) {
+                $execution = $this->aiQueryExecutorService->execute($sqlPreview);
+                $answer = $this->aiAnswerFormatterService->format($message, $plan, $execution);
+            }
+        }
+
+        if ($plan['intent'] === 'unknown') {
+            $assistantMessage = $plan['fallback_message'] ?: 'I could not understand that CRM question yet. Try one of the suggested questions.';
+        } elseif (! ($validation['approved'] ?? false)) {
+            $assistantMessage = 'I could not safely prepare this CRM query. ' . ($validation['reason'] ?? 'Please try a different question.');
+        } elseif (! ($execution['success'] ?? false)) {
+            $assistantMessage = $execution['error_message'] ?? 'I could not safely run this CRM query. Please try again.';
+        } elseif (($execution['row_count'] ?? 0) === 0) {
+            $assistantMessage = 'No data found for this request.';
+            $answer = [
+                'type' => 'text',
+                'message' => $assistantMessage,
+                'columns' => [],
+                'rows' => [],
+                'cards' => [],
+            ];
+        } else {
+            $assistantMessage = $answer['message'] ?? 'Here are the CRM results.';
+        }
+
+        DB::transaction(function () use ($chat, $plan, $response, $usage, $log, $startedAt, $assistantMessage, $sqlPreview, $validation, $message, $execution, $answer) {
             $chat->messages()->create([
                 'role' => 'assistant',
                 'content' => $assistantMessage,
                 'metadata' => [
                     'type' => 'query_plan',
                     'query_plan' => $plan,
+                    'sql_preview' => $sqlPreview,
+                    'sql_validation' => $validation,
+                    'query_execution' => $execution,
+                    'answer' => $answer,
+                    'status' => $plan['intent'] === 'unknown'
+                        ? 'invalid_question'
+                        : ((! ($validation['approved'] ?? true)) ? 'unsafe_query_rejected' : ((! ($execution['success'] ?? true)) ? 'failed' : 'success')),
+                    'retryable' => $plan['intent'] !== 'unknown' && (! ($validation['approved'] ?? true) || ! ($execution['success'] ?? true)),
                     'openai_response_id' => $response['id'],
                     'model' => $response['model'],
                 ],
             ]);
 
             $log->update([
-                'status' => $plan['intent'] === 'unknown' ? 'planned_unknown' : 'planned',
+                'status' => $plan['intent'] === 'unknown'
+                    ? 'planned_unknown'
+                    : (! ($validation['approved'] ?? false)
+                        ? 'rejected'
+                        : (($execution['success'] ?? false) ? 'executed' : 'execution_failed')),
                 'response_id' => $response['id'],
                 'model' => $response['model'],
                 'prompt_tokens' => $usage['input_tokens'] ?? null,
@@ -148,9 +314,17 @@ class AiChatService
                 'duration_ms' => (int) ((microtime(true) - $startedAt) * 1000),
                 'request_payload' => $response['payload'],
                 'response_payload' => [
+                    'question' => $message,
                     'query_plan' => $plan,
+                    'sql_preview' => $sqlPreview,
+                    'sql_validation' => $validation,
+                    'query_execution' => $execution,
+                    'answer' => $answer,
                     'openai_raw' => $response['raw'],
                 ],
+                'error_message' => ! ($validation['approved'] ?? true)
+                    ? ($validation['reason'] ?? 'Query rejected by validator.')
+                    : ((! ($execution['success'] ?? true)) ? ($execution['error_message'] ?? 'Query execution failed.') : null),
             ]);
 
             $chat->update([

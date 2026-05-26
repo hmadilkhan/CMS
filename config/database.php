@@ -17,6 +17,8 @@ return [
 
     'default' => env('DB_CONNECTION', 'mysql'),
 
+    'ai_readonly_connection' => env('AI_READONLY_DB_CONNECTION'),
+
     /*
     |--------------------------------------------------------------------------
     | Database Connections

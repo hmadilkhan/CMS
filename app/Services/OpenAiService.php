@@ -8,7 +8,7 @@ use RuntimeException;
 
 class OpenAiService
 {
-    public function createResponse(string $message, ?string $previousResponseId = null): array
+    public function createResponse(string $message, ?string $previousResponseId = null, array $context = []): array
     {
         $apiKey = config('services.openai.api_key');
 
@@ -18,7 +18,7 @@ class OpenAiService
 
         $payload = array_filter([
             'model' => config('services.openai.model', 'gpt-4.1-mini'),
-            'instructions' => 'You are a helpful CRM assistant. Answer clearly and professionally. Do not query or infer from the CRM database yet.',
+            'instructions' => $this->buildAssistantInstructions($context),
             'input' => $message,
             'previous_response_id' => $previousResponseId,
             'max_output_tokens' => (int) config('services.openai.max_output_tokens', 1200),
@@ -93,6 +93,31 @@ class OpenAiService
             'payload' => $payload,
             'raw' => $data,
         ];
+    }
+
+    private function buildAssistantInstructions(array $context): string
+    {
+        $appName = $context['app_name'] ?? config('app.name', 'CRM');
+        $userName = $context['user_name'] ?? null;
+        $username = $context['username'] ?? null;
+        $roles = implode(', ', array_filter($context['roles'] ?? []));
+
+        $identity = [
+            "Application name: {$appName}",
+            $userName ? "Logged-in user name: {$userName}" : null,
+            $username ? "Logged-in username: {$username}" : null,
+            $roles ? "Logged-in user roles: {$roles}" : null,
+        ];
+
+        return implode("\n", array_filter([
+            'You are the built-in AI assistant for this Laravel CRM.',
+            'Answer clearly, professionally, and helpfully.',
+            'You may greet the logged-in user by name when it is natural.',
+            'Use the safe identity context below only for greeting and personalization.',
+            'Do not claim that you lack access to the logged-in user name when it is provided in this context.',
+            'Do not invent CRM records or private details. CRM data questions are handled by the secure query pipeline.',
+            implode("\n", array_filter($identity)),
+        ]));
     }
 
     private function extractText(array $response): string

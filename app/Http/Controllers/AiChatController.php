@@ -6,6 +6,7 @@ use App\Models\AiChat;
 use App\Services\AiChatService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Str;
 use Illuminate\View\View;
 
 class AiChatController extends Controller
@@ -19,6 +20,10 @@ class AiChatController extends Controller
         return view('ai-chat.index', [
             'chats' => $this->aiChatService->chatsFor($request->user()),
             'activeChat' => null,
+            'suggestedQuestions' => $this->aiChatService->suggestedQuestionsFor($request->user()),
+            'userName' => $request->user()->name,
+            'appName' => config('app.name', 'CRM'),
+            'backUrl' => $this->backUrl($request),
         ]);
     }
 
@@ -29,6 +34,10 @@ class AiChatController extends Controller
         return view('ai-chat.index', [
             'chats' => $this->aiChatService->chatsFor($request->user()),
             'activeChat' => $chat->load('messages'),
+            'suggestedQuestions' => $this->aiChatService->suggestedQuestionsFor($request->user()),
+            'userName' => $request->user()->name,
+            'appName' => config('app.name', 'CRM'),
+            'backUrl' => $this->backUrl($request),
         ]);
     }
 
@@ -51,12 +60,76 @@ class AiChatController extends Controller
                 'title' => $chat->title,
                 'url' => route('ai-chat.show', $chat),
             ],
-            'messages' => $chat->messages->map(fn ($message) => [
-                'id' => $message->id,
-                'role' => $message->role,
-                'content' => $message->content,
-                'created_at' => optional($message->created_at)->diffForHumans(),
-            ]),
+            'messages' => $this->aiChatService->messagePayload($chat),
         ]);
+    }
+
+    public function rename(Request $request, AiChat $chat): JsonResponse
+    {
+        abort_unless($chat->user_id === $request->user()->id, 403);
+
+        $validated = $request->validate([
+            'title' => ['required', 'string', 'max:100'],
+        ]);
+
+        $chat = $this->aiChatService->rename($chat, $validated['title']);
+
+        return response()->json([
+            'id' => $chat->id,
+            'title' => $chat->title,
+        ]);
+    }
+
+    public function destroy(Request $request, AiChat $chat): JsonResponse
+    {
+        abort_unless($chat->user_id === $request->user()->id, 403);
+
+        $this->aiChatService->delete($chat);
+
+        return response()->json([
+            'redirect' => route('ai-chat.index'),
+        ]);
+    }
+
+    public function retry(Request $request, AiChat $chat): JsonResponse
+    {
+        abort_unless($chat->user_id === $request->user()->id, 403);
+
+        $chat = $this->aiChatService->retryLastUserMessage($request->user(), $chat);
+
+        return response()->json([
+            'chat' => [
+                'id' => $chat->id,
+                'title' => $chat->title,
+                'url' => route('ai-chat.show', $chat),
+            ],
+            'messages' => $this->aiChatService->messagePayload($chat),
+        ]);
+    }
+
+    private function backUrl(Request $request): string
+    {
+        $fallback = route('dashboard');
+        $previous = url()->previous();
+
+        if ($this->isValidCrmBackUrl($previous)) {
+            $request->session()->put('ai_chat_back_url', $previous);
+
+            return $previous;
+        }
+
+        return $request->session()->get('ai_chat_back_url', $fallback);
+    }
+
+    private function isValidCrmBackUrl(?string $url): bool
+    {
+        if (blank($url)) {
+            return false;
+        }
+
+        $urlHost = parse_url($url, PHP_URL_HOST);
+        $path = parse_url($url, PHP_URL_PATH) ?: '/';
+
+        return $urlHost === request()->getHost() && ! Str::startsWith($path, '/ai-chat');
     }
 }

@@ -9,9 +9,13 @@ class AiQueryPlannerService
 {
     private const ALLOWED_INTENTS = [
         'project_count',
+        'project_status_summary',
+        'project_department_summary',
         'project_customer',
         'ticket_status',
         'finance_summary',
+        'profitability_report',
+        'customer_revenue',
         'unknown',
     ];
 
@@ -24,7 +28,8 @@ class AiQueryPlannerService
 
     public function __construct(
         private readonly OpenAiService $openAiService,
-        private readonly AiSchemaService $aiSchemaService
+        private readonly AiSchemaService $aiSchemaService,
+        private readonly AiPermissionService $aiPermissionService
     ) {
     }
 
@@ -44,15 +49,119 @@ class AiQueryPlannerService
                             'answer_type' => 'count',
                             'intent' => 'project_count',
                             'tables' => ['projects'],
-                            'columns' => ['id', 'sales_partner_user_id', 'sub_contractor_user_id'],
+                            'columns' => ['id'],
+                            'filters' => [],
+                            'requires_finance_access' => false,
+                            'sql' => null,
+                            'fallback_message' => null,
+                        ],
+                    ],
+                    [
+                        'question' => 'Deal Review department me is waqt kitne projects hain?',
+                        'expected_plan' => [
+                            'answer_type' => 'count',
+                            'intent' => 'project_count',
+                            'tables' => ['projects', 'departments'],
+                            'columns' => ['id', 'name'],
                             'filters' => [
                                 [
-                                    'column' => 'sales_partner_user_id',
-                                    'operator' => '=',
-                                    'value' => 'current_user.id',
+                                    'column' => 'name',
+                                    'operator' => 'like',
+                                    'value' => 'deal review',
                                 ],
                             ],
                             'requires_finance_access' => false,
+                            'sql' => null,
+                            'fallback_message' => null,
+                        ],
+                    ],
+                    [
+                        'question' => 'Mere projects status wise show karo',
+                        'expected_plan' => [
+                            'answer_type' => 'table',
+                            'intent' => 'project_status_summary',
+                            'tables' => ['projects', 'tasks'],
+                            'columns' => ['id', 'status'],
+                            'filters' => [],
+                            'requires_finance_access' => false,
+                            'sql' => null,
+                            'fallback_message' => null,
+                        ],
+                    ],
+                    [
+                        'question' => 'Total project count department or subdepartment name ke sath show karo',
+                        'expected_plan' => [
+                            'answer_type' => 'table',
+                            'intent' => 'project_department_summary',
+                            'tables' => ['projects', 'departments', 'sub_departments'],
+                            'columns' => ['department_id', 'sub_department_id', 'name'],
+                            'filters' => [],
+                            'requires_finance_access' => false,
+                            'sql' => null,
+                            'fallback_message' => null,
+                        ],
+                    ],
+                    [
+                        'question' => 'Project customer info show karo',
+                        'expected_plan' => [
+                            'answer_type' => 'card',
+                            'intent' => 'project_customer',
+                            'tables' => ['projects', 'customers'],
+                            'columns' => ['project_name', 'code', 'first_name', 'last_name', 'email', 'phone', 'city', 'state'],
+                            'filters' => [],
+                            'requires_finance_access' => false,
+                            'sql' => null,
+                            'fallback_message' => null,
+                        ],
+                    ],
+                    [
+                        'question' => 'Tickets status wise show karo',
+                        'expected_plan' => [
+                            'answer_type' => 'table',
+                            'intent' => 'ticket_status',
+                            'tables' => ['service_tickets'],
+                            'columns' => ['status'],
+                            'filters' => [],
+                            'requires_finance_access' => false,
+                            'sql' => null,
+                            'fallback_message' => null,
+                        ],
+                    ],
+                    [
+                        'question' => 'Is project ki financing show karo',
+                        'expected_plan' => [
+                            'answer_type' => 'card',
+                            'intent' => 'finance_summary',
+                            'tables' => ['project_finances', 'projects'],
+                            'columns' => ['project_id', 'finance_option', 'financing_status', 'contract_amount', 'dealer_fee_amount', 'commission_amount'],
+                            'filters' => [],
+                            'requires_finance_access' => true,
+                            'sql' => null,
+                            'fallback_message' => null,
+                        ],
+                    ],
+                    [
+                        'question' => 'Profitability report dikhao',
+                        'expected_plan' => [
+                            'answer_type' => 'table',
+                            'intent' => 'profitability_report',
+                            'tables' => ['profitability_reports', 'projects'],
+                            'columns' => ['project_id', 'total_revenue', 'total_expense', 'gross_profit', 'margin_percent', 'report_date'],
+                            'filters' => [],
+                            'requires_finance_access' => true,
+                            'sql' => null,
+                            'fallback_message' => null,
+                        ],
+                    ],
+                    [
+                        'question' => 'Customer wise revenue show karo',
+                        'expected_plan' => [
+                            'answer_type' => 'table',
+                            'intent' => 'customer_revenue',
+                            'tables' => ['project_revenue', 'customers'],
+                            'columns' => ['customer_id', 'first_name', 'last_name', 'revenue_amount'],
+                            'filters' => [],
+                            'requires_finance_access' => true,
                             'sql' => null,
                             'fallback_message' => null,
                         ],
@@ -63,8 +172,15 @@ class AiQueryPlannerService
             $this->jsonSchema()
         );
 
+        $plan = $this->sanitizePlan($response['json'], $user);
+        $inferredPlan = $this->inferKnownPlan($question);
+
+        if ($inferredPlan && (($plan['intent'] ?? 'unknown') === 'unknown' || $this->inferredPlanIsMoreSpecific($plan, $inferredPlan))) {
+            $plan = $this->sanitizePlan($inferredPlan, $user);
+        }
+
         return [
-            'plan' => $this->sanitizePlan($response['json']),
+            'plan' => $plan,
             'openai' => $response,
         ];
     }
@@ -85,6 +201,10 @@ class AiQueryPlannerService
             'task',
             'tasks',
             'department',
+            'departments',
+            'subdepartment',
+            'sub department',
+            'sub_department',
             'assigned',
             'mere',
             'mery',
@@ -94,6 +214,10 @@ class AiQueryPlannerService
             'count',
             'status',
             'finance',
+            'financing',
+            'profitability',
+            'report',
+            'expense',
             'payment',
             'amount',
             'cost',
@@ -130,7 +254,7 @@ If any requested table or column is missing from allowed_schema, do not invent i
 The only valid output shape is:
 {
   "answer_type": "text|table|card|count",
-  "intent": "project_count|project_customer|ticket_status|finance_summary|unknown",
+  "intent": "project_count|project_status_summary|project_department_summary|project_customer|ticket_status|finance_summary|profitability_report|customer_revenue|unknown",
   "tables": [],
   "columns": [],
   "filters": [],
@@ -207,7 +331,7 @@ PROMPT;
         ];
     }
 
-    private function sanitizePlan(array $plan): array
+    private function sanitizePlan(array $plan, User $user): array
     {
         $safe = array_merge($this->unknownPlan(), Arr::only($plan, [
             'answer_type',
@@ -230,9 +354,23 @@ PROMPT;
 
         $safe['tables'] = array_values(array_filter((array) $safe['tables'], fn ($table) => $this->aiSchemaService->isTableAllowed($table)));
 
-        $safe['columns'] = array_values(array_filter((array) $safe['columns'], function ($column) use ($safe) {
+        foreach ($safe['tables'] as $table) {
+            if (! $this->aiPermissionService->canAccessTable($user, $table)) {
+                return $this->permissionDeniedPlan();
+            }
+        }
+
+        foreach ((array) $safe['columns'] as $column) {
             foreach ($safe['tables'] as $table) {
-                if ($this->aiSchemaService->isColumnAllowed($table, $column)) {
+                if ($this->aiSchemaService->isColumnAllowed($table, $column) && ! $this->aiPermissionService->canAccessColumn($user, $table, $column)) {
+                    return $this->permissionDeniedPlan();
+                }
+            }
+        }
+
+        $safe['columns'] = array_values(array_filter((array) $safe['columns'], function ($column) use ($safe, $user) {
+            foreach ($safe['tables'] as $table) {
+                if ($this->aiPermissionService->canAccessColumn($user, $table, $column)) {
                     return true;
                 }
             }
@@ -240,13 +378,25 @@ PROMPT;
             return false;
         }));
 
-        $safe['filters'] = is_array($safe['filters']) ? array_values(array_filter($safe['filters'], function ($filter) use ($safe) {
+        foreach ((array) $safe['filters'] as $filter) {
+            if (! is_array($filter) || ! isset($filter['column'])) {
+                continue;
+            }
+
+            foreach ($safe['tables'] as $table) {
+                if ($this->aiSchemaService->isColumnAllowed($table, $filter['column']) && ! $this->aiPermissionService->canAccessColumn($user, $table, $filter['column'])) {
+                    return $this->permissionDeniedPlan();
+                }
+            }
+        }
+
+        $safe['filters'] = is_array($safe['filters']) ? array_values(array_filter($safe['filters'], function ($filter) use ($safe, $user) {
             if (! is_array($filter) || ! isset($filter['column'], $filter['operator'])) {
                 return false;
             }
 
             foreach ($safe['tables'] as $table) {
-                if ($this->aiSchemaService->isColumnAllowed($table, $filter['column'])) {
+                if ($this->aiPermissionService->canAccessColumn($user, $table, $filter['column'])) {
                     return true;
                 }
             }
@@ -255,6 +405,16 @@ PROMPT;
         })) : [];
         $safe['requires_finance_access'] = (bool) $safe['requires_finance_access'];
         $safe['sql'] = null;
+
+        if ($safe['requires_finance_access'] && ! $this->aiPermissionService->canAccessFinance($user)) {
+            return $this->permissionDeniedPlan();
+        }
+
+        foreach ($safe['tables'] as $table) {
+            if ($this->aiSchemaService->getAccessRule($table) === 'profitability_access' && ! $this->aiPermissionService->canAccessProfitability($user)) {
+                return $this->permissionDeniedPlan();
+            }
+        }
 
         if ($safe['intent'] === 'unknown' || empty($safe['tables'])) {
             $safe['answer_type'] = 'text';
@@ -286,6 +446,88 @@ PROMPT;
             ->all();
     }
 
+    private function inferKnownPlan(string $question): ?array
+    {
+        $normalized = mb_strtolower($question);
+        $mentionsProject = str_contains($normalized, 'project');
+        $mentionsDepartment = str_contains($normalized, 'department') || str_contains($normalized, 'subdepartment') || str_contains($normalized, 'sub department');
+        $mentionsCount = str_contains($normalized, 'count') || str_contains($normalized, 'kitne') || str_contains($normalized, 'kitni') || str_contains($normalized, 'wise');
+
+        if ($mentionsProject && $mentionsDepartment && $mentionsCount && $departmentName = $this->extractDepartmentName($normalized)) {
+            return [
+                'answer_type' => 'count',
+                'intent' => 'project_count',
+                'tables' => ['projects', 'departments'],
+                'columns' => ['id', 'name'],
+                'filters' => [
+                    [
+                        'column' => 'name',
+                        'operator' => 'like',
+                        'value' => $departmentName,
+                    ],
+                ],
+                'requires_finance_access' => false,
+                'sql' => null,
+                'fallback_message' => null,
+            ];
+        }
+
+        if ($mentionsProject && $mentionsDepartment && $mentionsCount) {
+            return [
+                'answer_type' => 'table',
+                'intent' => 'project_department_summary',
+                'tables' => ['projects', 'departments', 'sub_departments'],
+                'columns' => ['department_id', 'sub_department_id', 'name'],
+                'filters' => [],
+                'requires_finance_access' => false,
+                'sql' => null,
+                'fallback_message' => null,
+            ];
+        }
+
+        return null;
+    }
+
+    private function inferredPlanIsMoreSpecific(array $plan, array $inferredPlan): bool
+    {
+        return ($plan['intent'] ?? null) === ($inferredPlan['intent'] ?? null)
+            && empty($plan['filters'] ?? [])
+            && ! empty($inferredPlan['filters'] ?? []);
+    }
+
+    private function extractDepartmentName(string $question): ?string
+    {
+        if (! preg_match('/([a-z0-9\s&-]+?)\s+department\b/u', $question, $matches)) {
+            return null;
+        }
+
+        $name = trim($matches[1]);
+        $stopWords = [
+            'total',
+            'count',
+            'project',
+            'projects',
+            'kitne',
+            'kitni',
+            'is waqt',
+            'currently',
+            'show',
+            'dikhao',
+            'dhikhao',
+            'me',
+            'main',
+            'mein',
+        ];
+
+        foreach ($stopWords as $word) {
+            $name = trim(preg_replace('/\b' . preg_quote($word, '/') . '\b/u', ' ', $name));
+        }
+
+        $name = trim(preg_replace('/\s+/u', ' ', $name));
+
+        return $name !== '' ? $name : null;
+    }
+
     private function sensitiveAllowedColumns(string $table): array
     {
         return array_values(array_filter(
@@ -314,6 +556,20 @@ PROMPT;
             'requires_finance_access' => false,
             'sql' => null,
             'fallback_message' => null,
+        ];
+    }
+
+    private function permissionDeniedPlan(): array
+    {
+        return [
+            'answer_type' => 'text',
+            'intent' => 'unknown',
+            'tables' => [],
+            'columns' => [],
+            'filters' => [],
+            'requires_finance_access' => false,
+            'sql' => null,
+            'fallback_message' => 'You do not have permission to access this information.',
         ];
     }
 }

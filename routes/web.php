@@ -76,6 +76,9 @@ Route::post('show-website-emails', [App\Http\Controllers\ImapController::class, 
 Route::middleware('auth')->group(function () {
     Route::get('/ai-chat', [AiChatController::class, 'index'])->name('ai-chat.index');
     Route::post('/ai-chat/send', [AiChatController::class, 'send'])->name('ai-chat.send');
+    Route::post('/ai-chat/{chat}/retry', [AiChatController::class, 'retry'])->name('ai-chat.retry');
+    Route::patch('/ai-chat/{chat}', [AiChatController::class, 'rename'])->name('ai-chat.rename');
+    Route::delete('/ai-chat/{chat}', [AiChatController::class, 'destroy'])->name('ai-chat.destroy');
     Route::get('/ai-chat/{chat}', [AiChatController::class, 'show'])->name('ai-chat.show');
 
     Route::get('/dashboard', [App\Http\Controllers\HomeController::class, 'dashboard'])
