@@ -990,7 +990,11 @@ class ProjectController extends Controller
         $query->withCount(['emails as viewed_emails_count' => function ($query) {
             $query->where('is_view', 1);
         }]);
-        if (!auth()->user()->hasRole('Super Admin')) {
+        $hasDepartmentNineAssigned = EmployeeDepartment::whereIn("employee_id", Employee::where("user_id", auth()->id())->pluck("id"))
+            ->where("department_id", 9)
+            ->exists();
+
+        if (!auth()->user()->hasRole('Super Admin') && !$hasDepartmentNineAssigned) {
             $query->where("department_id", "!=", 9);
         }
         $subdepartmentsQuery = SubDepartment::with("department");
