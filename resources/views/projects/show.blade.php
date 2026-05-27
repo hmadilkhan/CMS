@@ -1421,7 +1421,7 @@
 
         #project-show-page.project-workspace-redesign .project-content-shell {
             position: relative;
-            z-index: 1;
+            z-index: auto;
             max-width: none;
             display: grid;
             grid-template-columns: minmax(0, 1fr) minmax(240px, 16vw);
