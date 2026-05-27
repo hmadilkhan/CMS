@@ -24,10 +24,14 @@
             pointer-events: auto;
         }
 
-        body.project-file-delete-modal-open .modal-backdrop.show {
+        .project-file-delete-modal {
+            z-index: 100200;
             background: transparent;
+        }
+
+        .project-file-delete-modal.show {
+            background: rgba(255, 255, 255, 0.01);
             backdrop-filter: blur(8px);
-            opacity: 1;
         }
 
         .file-preview {
@@ -93,16 +97,25 @@
             font-size: 1rem;
             font-weight: 600;
             margin-bottom: 8px;
-            word-wrap: break-word;
+            overflow-wrap: anywhere;
+            word-break: break-word;
+            line-height: 1.35;
         }
 
         .file-name {
             font-size: 0.85rem;
             opacity: 0.9;
-            word-wrap: break-word;
             display: flex;
-            align-items: center;
+            align-items: flex-start;
             gap: 8px;
+            line-height: 1.35;
+            min-width: 0;
+        }
+
+        .file-name a {
+            min-width: 0;
+            overflow-wrap: anywhere;
+            word-break: break-word;
         }
 
         .upload-btn {
@@ -169,7 +182,7 @@
 
         .delete-icon {
             position: absolute;
-            top: 10px;
+            top: 8px;
             right: 10px;
             cursor: pointer;
             transition: all 0.3s ease;
@@ -322,11 +335,13 @@
             .file-header {
                 font-size: 0.85rem;
                 margin-bottom: 6px;
+                line-height: 1.3;
             }
 
             .file-name {
                 font-size: 0.75rem;
                 gap: 5px;
+                line-height: 1.3;
             }
 
             .file-preview .file-icon {
@@ -623,19 +638,20 @@
     @endphp
 
     <!-- Delete Modal -->
-    <div class="modal fade" id="{{ $deleteModalId }}" tabindex="-1" aria-hidden="true" wire:ignore.self>
+    <div class="modal fade project-file-delete-modal" id="{{ $deleteModalId }}" tabindex="-1" aria-hidden="true"
+        data-bs-backdrop="false" data-backdrop="false" wire:ignore.self>
         <div class="modal-dialog modal-dialog-centered modal-md">
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title fw-bold">Delete item Permanently?</h5>
-                    <button type="button" class="btn-close close-delete-file-modal" data-bs-dismiss="modal"></button>
+                    <button type="button" class="btn-close close-delete-file-modal"></button>
                 </div>
                 <div class="modal-body justify-content-center flex-column d-flex">
                     <i class="icofont-ui-delete text-danger display-2 text-center mt-2"></i>
                     <p class="mt-4 fs-5 text-center">You can only delete this item Permanently</p>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary close-delete-file-modal" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-secondary close-delete-file-modal">Cancel</button>
                     <button type="button" class="btn btn-danger" wire:click="deleteFile">Delete</button>
                 </div>
             </div>
@@ -647,14 +663,41 @@
     <script>
         (() => {
             const deleteModalId = @js($deleteModalId);
+            const deleteModal = $('#' + deleteModalId);
+
+            const showDeleteModal = () => {
+                cleanupDeleteModal();
+                deleteModal.addClass('show d-block').attr({
+                    'aria-modal': 'true',
+                    'aria-hidden': 'false'
+                });
+            };
+
+            const hideDeleteModal = () => {
+                deleteModal.removeClass('show d-block').attr({
+                    'aria-hidden': 'true'
+                }).removeAttr('aria-modal');
+                cleanupDeleteModal();
+            };
+
+            const cleanupDeleteModal = () => {
+                document.body.classList.remove('project-file-delete-modal-open');
+                $('.modal-backdrop').remove();
+
+                if (!$('.modal.show').length) {
+                    $('body').removeClass('modal-open').css({
+                        overflow: '',
+                        paddingRight: ''
+                    });
+                }
+            };
 
             window.addEventListener('show-delete-modal', (event) => {
                 if (event.detail?.modalId !== deleteModalId) {
                     return;
                 }
 
-                document.body.classList.add('project-file-delete-modal-open');
-                $('#' + deleteModalId).modal('show');
+                showDeleteModal();
             });
 
             window.addEventListener('hide-delete-modal', (event) => {
@@ -662,15 +705,11 @@
                     return;
                 }
 
-                $('#' + deleteModalId).modal('hide');
+                hideDeleteModal();
             });
 
-            $('#' + deleteModalId).on('hidden.bs.modal', () => {
-                document.body.classList.remove('project-file-delete-modal-open');
-            });
-
-            $('#' + deleteModalId).find('.close-delete-file-modal').on('click', () => {
-                $('#' + deleteModalId).modal('hide');
+            deleteModal.find('.close-delete-file-modal').off('click.deleteFileModal').on('click.deleteFileModal', () => {
+                hideDeleteModal();
             });
         })();
 
