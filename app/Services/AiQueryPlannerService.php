@@ -13,9 +13,13 @@ class AiQueryPlannerService
         'project_department_summary',
         'project_customer',
         'ticket_status',
+        'ticket_creator_status_summary',
         'finance_summary',
         'profitability_report',
         'customer_revenue',
+        'crm_count',
+        'crm_list',
+        'crm_group_summary',
         'unknown',
     ];
 
@@ -35,6 +39,15 @@ class AiQueryPlannerService
 
     public function plan(string $question, User $user): array
     {
+        if ($this->isWriteOperationQuestion($question)) {
+            return [
+                'plan' => array_merge($this->unknownPlan(), [
+                    'fallback_message' => 'I can only read CRM data. Insert, update, delete, and other write operations are not allowed.',
+                ]),
+                'openai' => $this->syntheticOpenAiResponse(),
+            ];
+        }
+
         $response = $this->openAiService->createJsonResponse(
             $this->instructions(),
             [
@@ -50,6 +63,7 @@ class AiQueryPlannerService
                             'intent' => 'project_count',
                             'tables' => ['projects'],
                             'columns' => ['id'],
+                            'group_by' => [],
                             'filters' => [],
                             'requires_finance_access' => false,
                             'sql' => null,
@@ -63,6 +77,7 @@ class AiQueryPlannerService
                             'intent' => 'project_count',
                             'tables' => ['projects', 'departments'],
                             'columns' => ['id', 'name'],
+                            'group_by' => [],
                             'filters' => [
                                 [
                                     'column' => 'name',
@@ -82,7 +97,28 @@ class AiQueryPlannerService
                             'intent' => 'project_status_summary',
                             'tables' => ['projects', 'tasks'],
                             'columns' => ['id', 'status'],
+                            'group_by' => ['status'],
                             'filters' => [],
+                            'requires_finance_access' => false,
+                            'sql' => null,
+                            'fallback_message' => null,
+                        ],
+                    ],
+                    [
+                        'question' => 'In-Progress projects show karo',
+                        'expected_plan' => [
+                            'answer_type' => 'table',
+                            'intent' => 'crm_list',
+                            'tables' => ['tasks', 'projects', 'departments', 'sub_departments'],
+                            'columns' => ['project_name', 'code', 'status', 'name'],
+                            'group_by' => [],
+                            'filters' => [
+                                [
+                                    'column' => 'status',
+                                    'operator' => 'like',
+                                    'value' => 'In-Progress',
+                                ],
+                            ],
                             'requires_finance_access' => false,
                             'sql' => null,
                             'fallback_message' => null,
@@ -108,6 +144,7 @@ class AiQueryPlannerService
                             'intent' => 'project_customer',
                             'tables' => ['projects', 'customers'],
                             'columns' => ['project_name', 'code', 'first_name', 'last_name', 'email', 'phone', 'city', 'state'],
+                            'group_by' => [],
                             'filters' => [],
                             'requires_finance_access' => false,
                             'sql' => null,
@@ -121,6 +158,21 @@ class AiQueryPlannerService
                             'intent' => 'ticket_status',
                             'tables' => ['service_tickets'],
                             'columns' => ['status'],
+                            'group_by' => ['status'],
+                            'filters' => [],
+                            'requires_finance_access' => false,
+                            'sql' => null,
+                            'fallback_message' => null,
+                        ],
+                    ],
+                    [
+                        'question' => 'How many tickets created by users? Show user name and count of each status.',
+                        'expected_plan' => [
+                            'answer_type' => 'table',
+                            'intent' => 'ticket_creator_status_summary',
+                            'tables' => ['service_tickets', 'users'],
+                            'columns' => ['user_id', 'name', 'status'],
+                            'group_by' => ['name', 'status'],
                             'filters' => [],
                             'requires_finance_access' => false,
                             'sql' => null,
@@ -134,6 +186,7 @@ class AiQueryPlannerService
                             'intent' => 'finance_summary',
                             'tables' => ['project_finances', 'projects'],
                             'columns' => ['project_id', 'finance_option', 'financing_status', 'contract_amount', 'dealer_fee_amount', 'commission_amount'],
+                            'group_by' => [],
                             'filters' => [],
                             'requires_finance_access' => true,
                             'sql' => null,
@@ -147,6 +200,7 @@ class AiQueryPlannerService
                             'intent' => 'profitability_report',
                             'tables' => ['profitability_reports', 'projects'],
                             'columns' => ['project_id', 'total_revenue', 'total_expense', 'gross_profit', 'margin_percent', 'report_date'],
+                            'group_by' => [],
                             'filters' => [],
                             'requires_finance_access' => true,
                             'sql' => null,
@@ -160,8 +214,43 @@ class AiQueryPlannerService
                             'intent' => 'customer_revenue',
                             'tables' => ['project_revenue', 'customers'],
                             'columns' => ['customer_id', 'first_name', 'last_name', 'revenue_amount'],
+                            'group_by' => ['customer_id', 'first_name', 'last_name'],
                             'filters' => [],
                             'requires_finance_access' => true,
+                            'sql' => null,
+                            'fallback_message' => null,
+                        ],
+                    ],
+                    [
+                        'question' => 'Show customers from California',
+                        'expected_plan' => [
+                            'answer_type' => 'table',
+                            'intent' => 'crm_list',
+                            'tables' => ['customers'],
+                            'columns' => ['first_name', 'last_name', 'email', 'phone', 'city', 'state'],
+                            'group_by' => [],
+                            'filters' => [
+                                [
+                                    'column' => 'state',
+                                    'operator' => 'like',
+                                    'value' => 'California',
+                                ],
+                            ],
+                            'requires_finance_access' => false,
+                            'sql' => null,
+                            'fallback_message' => null,
+                        ],
+                    ],
+                    [
+                        'question' => 'User wise ticket count by status',
+                        'expected_plan' => [
+                            'answer_type' => 'table',
+                            'intent' => 'crm_group_summary',
+                            'tables' => ['service_tickets', 'users'],
+                            'columns' => ['name', 'status'],
+                            'group_by' => ['name', 'status'],
+                            'filters' => [],
+                            'requires_finance_access' => false,
                             'sql' => null,
                             'fallback_message' => null,
                         ],
@@ -254,9 +343,10 @@ If any requested table or column is missing from allowed_schema, do not invent i
 The only valid output shape is:
 {
   "answer_type": "text|table|card|count",
-  "intent": "project_count|project_status_summary|project_department_summary|project_customer|ticket_status|finance_summary|profitability_report|customer_revenue|unknown",
+  "intent": "project_count|project_status_summary|project_department_summary|project_customer|ticket_status|ticket_creator_status_summary|finance_summary|profitability_report|customer_revenue|crm_count|crm_list|crm_group_summary|unknown",
   "tables": [],
   "columns": [],
+  "group_by": [],
   "filters": [],
   "requires_finance_access": false,
   "sql": null,
@@ -265,6 +355,12 @@ The only valid output shape is:
 
 For filters, use simple objects with "column", "operator", and "value".
 For current user filters, use "current_user.id" as the value.
+If the question can be answered using allowed_schema but does not match a specific intent, use:
+- crm_count for counts on one allowed table
+- crm_list for simple result lists
+- crm_group_summary for grouped count summaries
+Never include sensitive columns such as password, remember_token, api_token, token, secret, salary, cost, profit, margin, revenue, payment, amount, expense, or commission unless they are explicitly allowed in allowed_schema and the user role requires finance access.
+Reject write requests such as insert, update, delete, create, drop, alter, truncate, restore, approve, move, assign, or change by returning unknown.
 PROMPT;
     }
 
@@ -282,6 +378,7 @@ PROMPT;
                     'intent',
                     'tables',
                     'columns',
+                    'group_by',
                     'filters',
                     'requires_finance_access',
                     'sql',
@@ -301,6 +398,10 @@ PROMPT;
                         'items' => ['type' => 'string'],
                     ],
                     'columns' => [
+                        'type' => 'array',
+                        'items' => ['type' => 'string'],
+                    ],
+                    'group_by' => [
                         'type' => 'array',
                         'items' => ['type' => 'string'],
                     ],
@@ -338,6 +439,7 @@ PROMPT;
             'intent',
             'tables',
             'columns',
+            'group_by',
             'filters',
             'requires_finance_access',
             'sql',
@@ -369,6 +471,16 @@ PROMPT;
         }
 
         $safe['columns'] = array_values(array_filter((array) $safe['columns'], function ($column) use ($safe, $user) {
+            foreach ($safe['tables'] as $table) {
+                if ($this->aiPermissionService->canAccessColumn($user, $table, $column)) {
+                    return true;
+                }
+            }
+
+            return false;
+        }));
+
+        $safe['group_by'] = array_values(array_filter((array) ($safe['group_by'] ?? []), function ($column) use ($safe, $user) {
             foreach ($safe['tables'] as $table) {
                 if ($this->aiPermissionService->canAccessColumn($user, $table, $column)) {
                     return true;
@@ -421,6 +533,7 @@ PROMPT;
             $safe['intent'] = 'unknown';
             $safe['tables'] = [];
             $safe['columns'] = [];
+            $safe['group_by'] = [];
             $safe['filters'] = [];
             $safe['requires_finance_access'] = false;
             $safe['fallback_message'] = $safe['fallback_message'] ?: 'I can plan CRM data queries only for allowed CRM tables and columns. I could not map this question safely yet.';
@@ -450,8 +563,121 @@ PROMPT;
     {
         $normalized = mb_strtolower($question);
         $mentionsProject = str_contains($normalized, 'project');
+        $mentionsTicket = str_contains($normalized, 'ticket');
         $mentionsDepartment = str_contains($normalized, 'department') || str_contains($normalized, 'subdepartment') || str_contains($normalized, 'sub department');
         $mentionsCount = str_contains($normalized, 'count') || str_contains($normalized, 'kitne') || str_contains($normalized, 'kitni') || str_contains($normalized, 'wise');
+        $mentionsUser = str_contains($normalized, 'user') || str_contains($normalized, 'users') || str_contains($normalized, 'created by') || str_contains($normalized, 'creator');
+        $mentionsStatus = str_contains($normalized, 'status') || str_contains($normalized, 'pending') || str_contains($normalized, 'resolved');
+        $status = $this->extractStatus($normalized);
+        $assignedEmployeeName = $this->extractAssignedEmployeeName($normalized);
+
+        if ($mentionsTicket && $mentionsUser && ($mentionsStatus || $mentionsCount)) {
+            return [
+                'answer_type' => 'table',
+                'intent' => 'ticket_creator_status_summary',
+                'tables' => ['service_tickets', 'users'],
+                'columns' => ['user_id', 'name', 'status'],
+                'group_by' => ['name', 'status'],
+                'filters' => [],
+                'requires_finance_access' => false,
+                'sql' => null,
+                'fallback_message' => null,
+            ];
+        }
+
+        if ($mentionsProject && $assignedEmployeeName) {
+            return [
+                'answer_type' => 'table',
+                'intent' => 'crm_list',
+                'tables' => ['tasks', 'projects', 'employees'],
+                'columns' => ['project_name', 'code', 'name'],
+                'group_by' => ['project_name', 'code', 'name'],
+                'filters' => [
+                    [
+                        'column' => 'name',
+                        'operator' => 'like',
+                        'value' => $assignedEmployeeName,
+                    ],
+                ],
+                'requires_finance_access' => false,
+                'sql' => null,
+                'fallback_message' => null,
+            ];
+        }
+
+        if ($mentionsProject && $status) {
+            return [
+                'answer_type' => 'table',
+                'intent' => 'crm_list',
+                'tables' => ['tasks', 'projects', 'departments', 'sub_departments'],
+                'columns' => ['project_name', 'code', 'status', 'name'],
+                'group_by' => [],
+                'filters' => array_values(array_filter([
+                    [
+                        'column' => 'status',
+                        'operator' => 'like',
+                        'value' => $status,
+                    ],
+                    $this->excludesArchivedDepartment($normalized)
+                        ? [
+                            'column' => 'name',
+                            'operator' => 'not_like',
+                            'value' => 'archived',
+                        ]
+                        : null,
+                    $this->excludesArchivedDepartment($normalized)
+                        ? [
+                            'column' => 'department_id',
+                            'operator' => '!=',
+                            'value' => (int) config('ai.schema.archived_department_id', 9),
+                        ]
+                        : null,
+                ])),
+                'requires_finance_access' => false,
+                'sql' => null,
+                'fallback_message' => null,
+            ];
+        }
+
+        if ($mentionsTicket && $status) {
+            return [
+                'answer_type' => 'table',
+                'intent' => 'crm_list',
+                'tables' => ['service_tickets', 'users'],
+                'columns' => ['subject', 'priority', 'status', 'name', 'created_at'],
+                'group_by' => [],
+                'filters' => [
+                    [
+                        'column' => 'status',
+                        'operator' => 'like',
+                        'value' => $status,
+                    ],
+                ],
+                'requires_finance_access' => false,
+                'sql' => null,
+                'fallback_message' => null,
+            ];
+        }
+
+        if (str_contains($normalized, 'task') && $status) {
+            return [
+                'answer_type' => 'table',
+                'intent' => 'crm_list',
+                'tables' => ['tasks', 'projects'],
+                'columns' => ['project_name', 'code', 'notes', 'assign_to_notes', 'status'],
+                'group_by' => [],
+                'filters' => [
+                    [
+                        'column' => 'status',
+                        'operator' => 'like',
+                        'value' => $status,
+                    ],
+                ],
+                'requires_finance_access' => false,
+                'sql' => null,
+                'fallback_message' => null,
+            ];
+        }
 
         if ($mentionsProject && $mentionsDepartment && $mentionsCount && $departmentName = $this->extractDepartmentName($normalized)) {
             return [
@@ -459,6 +685,7 @@ PROMPT;
                 'intent' => 'project_count',
                 'tables' => ['projects', 'departments'],
                 'columns' => ['id', 'name'],
+                'group_by' => [],
                 'filters' => [
                     [
                         'column' => 'name',
@@ -478,6 +705,7 @@ PROMPT;
                 'intent' => 'project_department_summary',
                 'tables' => ['projects', 'departments', 'sub_departments'],
                 'columns' => ['department_id', 'sub_department_id', 'name'],
+                'group_by' => ['name'],
                 'filters' => [],
                 'requires_finance_access' => false,
                 'sql' => null,
@@ -490,6 +718,14 @@ PROMPT;
 
     private function inferredPlanIsMoreSpecific(array $plan, array $inferredPlan): bool
     {
+        if (($plan['intent'] ?? null) === 'ticket_status' && ($inferredPlan['intent'] ?? null) === 'ticket_creator_status_summary') {
+            return true;
+        }
+
+        if (($inferredPlan['intent'] ?? null) === 'crm_list' && ! empty($inferredPlan['filters'] ?? [])) {
+            return in_array(($plan['intent'] ?? null), ['unknown', 'crm_list', 'project_status_summary'], true);
+        }
+
         return ($plan['intent'] ?? null) === ($inferredPlan['intent'] ?? null)
             && empty($plan['filters'] ?? [])
             && ! empty($inferredPlan['filters'] ?? []);
@@ -528,12 +764,119 @@ PROMPT;
         return $name !== '' ? $name : null;
     }
 
+    private function extractAssignedEmployeeName(string $question): ?string
+    {
+        if (! str_contains($question, 'assigned') && ! str_contains($question, 'assign')) {
+            return null;
+        }
+
+        $patterns = [
+            '/assigned\s+to\s+(.+?)\s+employee\b/u',
+            '/assign(?:ed)?\s+to\s+(.+?)\s+employee\b/u',
+            '/assigned\s+to\s+(.+?)(?:\s+show|\s+project|\s+projects|\s+list|$)/u',
+        ];
+
+        $name = null;
+        foreach ($patterns as $pattern) {
+            if (preg_match($pattern, $question, $matches)) {
+                $name = trim($matches[1]);
+                break;
+            }
+        }
+
+        if (! $name) {
+            return null;
+        }
+
+        $stopWords = [
+            'show',
+            'project',
+            'projects',
+            'list',
+            'which',
+            'are',
+            'assigned',
+            'assign',
+            'to',
+            'employee',
+            'name',
+            'column',
+            'columns',
+            'do',
+            'not',
+            'duplication',
+            'duplicate',
+            'without',
+            'with',
+        ];
+
+        foreach ($stopWords as $word) {
+            $name = trim(preg_replace('/\b' . preg_quote($word, '/') . '\b/u', ' ', $name));
+        }
+
+        $name = trim(preg_replace('/\s+/u', ' ', $name));
+
+        return $name !== '' ? $name : null;
+    }
+
+    private function extractStatus(string $question): ?string
+    {
+        $statuses = [
+            'in-progress' => 'In-Progress',
+            'in progress' => 'In-Progress',
+            'completed' => 'Completed',
+            'complete' => 'Completed',
+            'cancelled' => 'Cancelled',
+            'canceled' => 'Cancelled',
+            'hold' => 'Hold',
+            'pending' => 'Pending',
+            'resolved' => 'Resolved',
+        ];
+
+        foreach ($statuses as $needle => $status) {
+            if (str_contains($question, $needle)) {
+                return $status;
+            }
+        }
+
+        return null;
+    }
+
+    private function excludesArchivedDepartment(string $question): bool
+    {
+        return str_contains($question, 'archived')
+            && (
+                str_contains($question, 'mat')
+                || str_contains($question, 'not')
+                || str_contains($question, 'exclude')
+                || str_contains($question, 'without')
+                || str_contains($question, 'chor')
+                || str_contains($question, 'chhor')
+            );
+    }
+
     private function sensitiveAllowedColumns(string $table): array
     {
         return array_values(array_filter(
             $this->aiSchemaService->getAllowedColumns($table),
             fn (string $column) => $this->aiSchemaService->isSensitiveColumn($table, $column)
         ));
+    }
+
+    private function isWriteOperationQuestion(string $question): bool
+    {
+        return preg_match('/\b(insert|update|delete|drop|alter|create|truncate|restore|approve|move|change|edit|remove)\b/i', $question) === 1;
+    }
+
+    private function syntheticOpenAiResponse(): array
+    {
+        return [
+            'id' => null,
+            'model' => config('services.openai.model', 'gpt-4.1-mini'),
+            'usage' => [],
+            'payload' => [],
+            'raw' => [],
+        ];
     }
 
     private function userRole(User $user): string
@@ -552,6 +895,7 @@ PROMPT;
             'intent' => 'unknown',
             'tables' => [],
             'columns' => [],
+            'group_by' => [],
             'filters' => [],
             'requires_finance_access' => false,
             'sql' => null,
@@ -566,6 +910,7 @@ PROMPT;
             'intent' => 'unknown',
             'tables' => [],
             'columns' => [],
+            'group_by' => [],
             'filters' => [],
             'requires_finance_access' => false,
             'sql' => null,

@@ -90,7 +90,7 @@
                     </select>
                 </div>
 
-                <section id="messages" class="min-h-0 flex-1 space-y-5 overflow-y-auto px-4 py-7 sm:px-8">
+                <section id="messages" class="min-h-0 flex-1 space-y-5 overflow-y-auto scroll-smooth px-4 py-7 pb-12 sm:px-8">
                     @if ($activeChat && $activeChat->messages->isNotEmpty())
                         @foreach ($activeChat->messages as $message)
                             @php($answer = $message->metadata['answer'] ?? null)
@@ -151,6 +151,15 @@
                                             </table>
                                         </div>
                                     @endif
+                                    @if ($message->role === 'assistant')
+                                        <div class="feedback-panel mt-3 flex flex-wrap items-center gap-2 border-t border-slate-200 pt-2 text-xs text-slate-400" data-feedback-url="{{ route('ai-chat.feedback', $message) }}">
+                                            <span>Was this helpful?</span>
+                                            <button type="button" class="feedback-button rounded-md border border-slate-200 px-2 py-1 font-semibold hover:border-green-200 hover:text-green-600" data-rating="up">Yes</button>
+                                            <button type="button" class="feedback-button rounded-md border border-slate-200 px-2 py-1 font-semibold hover:border-red-200 hover:text-red-600" data-rating="down">No</button>
+                                            <textarea class="feedback-comment hidden min-h-[44px] w-full rounded-md border border-slate-200 px-2 py-1 text-xs text-slate-700 outline-none focus:border-slate-300" placeholder="What were you expecting?"></textarea>
+                                            <button type="button" class="feedback-submit hidden rounded-md bg-slate-900 px-3 py-1 font-semibold text-white">Submit feedback</button>
+                                        </div>
+                                    @endif
                                 </div>
                             </div>
                         @endforeach
@@ -171,14 +180,17 @@
                     @endif
                 </section>
 
-                <div id="typing" class="hidden px-4 pb-2 sm:px-6">
-                    <div class="inline-flex items-center gap-3 rounded-full border border-slate-200 bg-white px-4 py-2 text-sm text-slate-500 shadow-sm">
+                <div id="typing" class="hidden px-4 pb-4 sm:px-8">
+                    <div class="mx-auto flex max-w-5xl">
+                        <div class="mr-4 hidden h-9 w-9 shrink-0 items-center justify-center rounded-full bg-slate-950 text-base font-bold text-white sm:flex">AI</div>
+                        <div class="inline-flex items-center gap-3 rounded-full border border-slate-200 bg-white px-4 py-2 text-sm text-slate-500 shadow-sm">
                         <span class="flex gap-1">
                             <span class="h-2 w-2 animate-bounce rounded-full bg-amber-500"></span>
                             <span class="h-2 w-2 animate-bounce rounded-full bg-amber-500 [animation-delay:120ms]"></span>
                             <span class="h-2 w-2 animate-bounce rounded-full bg-amber-500 [animation-delay:240ms]"></span>
                         </span>
-                        Securely checking CRM access
+                            <span id="typing-stage">Thinking...</span>
+                        </div>
                     </div>
                 </div>
 
@@ -208,12 +220,64 @@
         const input = document.getElementById('message-input');
         const messages = document.getElementById('messages');
         const typing = document.getElementById('typing');
+        const typingStage = document.getElementById('typing-stage');
         const sendButton = document.getElementById('send-button');
         const chatId = document.getElementById('chat-id');
         const csrfToken = document.querySelector('meta[name="csrf_token"]').content;
+        const typingPipelines = {
+            chat: [
+                {text: 'Sending your question...', delay: 0},
+                {text: 'Checking if CRM data is needed...', delay: 500},
+                {text: 'Planning safe CRM access...', delay: 1400},
+                {text: 'Waiting for OpenAI and CRM response...', delay: 2600},
+            ],
+            retry: [
+                {text: 'Retrying the last response...', delay: 0},
+                {text: 'Rechecking CRM access...', delay: 600},
+                {text: 'Waiting for OpenAI and CRM response...', delay: 1600},
+            ],
+            render: [
+                {text: 'Rendering answer...', delay: 0},
+            ],
+        };
+        let typingStageTimer = null;
+        let typingStageTimeouts = [];
 
-        function scrollMessages() {
-            messages.scrollTop = messages.scrollHeight;
+        function scrollMessages(extra = 0) {
+            requestAnimationFrame(() => {
+                messages.scrollTo({
+                    top: messages.scrollHeight + extra,
+                    behavior: 'smooth',
+                });
+            });
+        }
+
+        function clearTypingTimers() {
+            clearInterval(typingStageTimer);
+            typingStageTimer = null;
+            typingStageTimeouts.forEach((timeout) => clearTimeout(timeout));
+            typingStageTimeouts = [];
+        }
+
+        function setTypingStage(text) {
+            typingStage.textContent = text;
+            scrollMessages(240);
+        }
+
+        function showTyping(pipeline = 'chat') {
+            clearTypingTimers();
+            typing.classList.remove('hidden');
+            scrollMessages(240);
+
+            const stages = typingPipelines[pipeline] || typingPipelines.chat;
+            stages.forEach((stage) => {
+                typingStageTimeouts.push(setTimeout(() => setTypingStage(stage.text), stage.delay));
+            });
+        }
+
+        function hideTyping() {
+            clearTypingTimers();
+            typing.classList.add('hidden');
         }
 
         function actionBar(content, metadata = {}) {
@@ -316,7 +380,24 @@
             return null;
         }
 
-        function appendMessage(role, content, answer = null, metadata = {}) {
+        function feedbackPanel(messageId) {
+            if (!messageId) return null;
+
+            const panel = document.createElement('div');
+            panel.className = 'feedback-panel mt-3 flex flex-wrap items-center gap-2 border-t border-slate-200 pt-2 text-xs text-slate-400';
+            panel.dataset.feedbackUrl = `{{ url('/ai-chat/messages') }}/${messageId}/feedback`;
+            panel.innerHTML = `
+                <span>Was this helpful?</span>
+                <button type="button" class="feedback-button rounded-md border border-slate-200 px-2 py-1 font-semibold hover:border-green-200 hover:text-green-600" data-rating="up">Yes</button>
+                <button type="button" class="feedback-button rounded-md border border-slate-200 px-2 py-1 font-semibold hover:border-red-200 hover:text-red-600" data-rating="down">No</button>
+                <textarea class="feedback-comment hidden min-h-[44px] w-full rounded-md border border-slate-200 px-2 py-1 text-xs text-slate-700 outline-none focus:border-slate-300" placeholder="What were you expecting?"></textarea>
+                <button type="button" class="feedback-submit hidden rounded-md bg-slate-900 px-3 py-1 font-semibold text-white">Submit feedback</button>
+            `;
+
+            return panel;
+        }
+
+        function appendMessage(role, content, answer = null, metadata = {}, messageId = null) {
             const wrapper = document.createElement('div');
             wrapper.className = `mx-auto flex max-w-5xl ${role === 'user' ? 'justify-end' : 'justify-start'}`;
 
@@ -345,9 +426,13 @@
             if (answerElement) {
                 bubble.appendChild(answerElement);
             }
+            if (role === 'assistant') {
+                const panel = feedbackPanel(messageId);
+                if (panel) bubble.appendChild(panel);
+            }
             wrapper.appendChild(bubble);
             messages.appendChild(wrapper);
-            scrollMessages();
+            scrollMessages(role === 'user' ? 260 : 120);
         }
 
         input.addEventListener('input', () => {
@@ -389,7 +474,7 @@
             const retryButton = event.target.closest('.retry-response');
             if (retryButton) {
                 retryButton.disabled = true;
-                typing.classList.remove('hidden');
+                showTyping('retry');
                 try {
                     const response = await fetch(retryButton.dataset.retryUrl, {
                         method: 'POST',
@@ -403,13 +488,35 @@
                         throw new Error(data.message || 'Unable to retry response.');
                     }
                     const assistant = data.messages[data.messages.length - 1];
-                    appendMessage('assistant', assistant.content, assistant.metadata?.answer || null, assistant.metadata || {});
+                    setTypingStage('Rendering answer...');
+                    appendMessage('assistant', assistant.content, assistant.metadata?.answer || null, assistant.metadata || {}, assistant.id);
                 } catch (error) {
                     appendMessage('assistant', error.message || 'Retry failed. Please try again.', null, {status: 'failed', retryable: false});
                 } finally {
-                    typing.classList.add('hidden');
+                    hideTyping();
                     retryButton.disabled = false;
                 }
+                return;
+            }
+
+            const feedbackButton = event.target.closest('.feedback-button');
+            if (feedbackButton) {
+                const panel = feedbackButton.closest('.feedback-panel');
+                if (feedbackButton.dataset.rating === 'down') {
+                    panel.querySelector('.feedback-comment')?.classList.remove('hidden');
+                    panel.querySelector('.feedback-submit')?.classList.remove('hidden');
+                    panel.dataset.rating = 'down';
+                    return;
+                }
+
+                await submitFeedback(panel, 'up');
+                return;
+            }
+
+            const feedbackSubmit = event.target.closest('.feedback-submit');
+            if (feedbackSubmit) {
+                const panel = feedbackSubmit.closest('.feedback-panel');
+                await submitFeedback(panel, panel.dataset.rating || 'down');
                 return;
             }
 
@@ -468,7 +575,7 @@
             input.value = '';
             input.style.height = 'auto';
             sendButton.disabled = true;
-            typing.classList.remove('hidden');
+            showTyping('chat');
 
             try {
                 const response = await fetch('{{ route('ai-chat.send') }}', {
@@ -492,7 +599,8 @@
 
                 chatId.value = data.chat.id;
                 const assistant = data.messages[data.messages.length - 1];
-                appendMessage('assistant', assistant.content, assistant.metadata?.answer || null, assistant.metadata || {});
+                setTypingStage('Rendering answer...');
+                appendMessage('assistant', assistant.content, assistant.metadata?.answer || null, assistant.metadata || {}, assistant.id);
 
                 if (window.location.pathname === '{{ route('ai-chat.index', [], false) }}') {
                     window.history.replaceState({}, '', data.chat.url);
@@ -500,11 +608,33 @@
             } catch (error) {
                 appendMessage('assistant', error.message || 'Something went wrong. Please try again.');
             } finally {
-                typing.classList.add('hidden');
+                hideTyping();
                 sendButton.disabled = false;
                 input.focus();
+                scrollMessages(160);
             }
         });
+
+        async function submitFeedback(panel, rating) {
+            if (!panel?.dataset.feedbackUrl) return;
+
+            const comment = panel.querySelector('.feedback-comment')?.value || '';
+            const response = await fetch(panel.dataset.feedbackUrl, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                    'X-CSRF-TOKEN': csrfToken,
+                },
+                body: JSON.stringify({rating, comment}),
+            });
+
+            if (response.ok) {
+                panel.innerHTML = '<span class="font-semibold text-green-600">Thanks for the feedback.</span>';
+            } else {
+                panel.innerHTML = '<span class="font-semibold text-red-600">Feedback could not be saved.</span>';
+            }
+        }
 
         scrollMessages();
     </script>

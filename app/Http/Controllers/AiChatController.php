@@ -3,6 +3,9 @@
 namespace App\Http\Controllers;
 
 use App\Models\AiChat;
+use App\Models\AiChatMessage;
+use App\Models\AiQueryExample;
+use App\Models\AiQueryFeedback;
 use App\Services\AiChatService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -105,6 +108,52 @@ class AiChatController extends Controller
             ],
             'messages' => $this->aiChatService->messagePayload($chat),
         ]);
+    }
+
+    public function feedback(Request $request, AiChatMessage $message): JsonResponse
+    {
+        $message->load('chat');
+
+        abort_unless($message->role === 'assistant', 404);
+        abort_unless($message->chat?->user_id === $request->user()->id, 403);
+
+        $validated = $request->validate([
+            'rating' => ['required', 'in:up,down'],
+            'comment' => ['nullable', 'string', 'max:500'],
+            'expected_result' => ['nullable', 'string', 'max:1000'],
+        ]);
+
+        AiQueryFeedback::updateOrCreate(
+            [
+                'ai_chat_message_id' => $message->id,
+                'user_id' => $request->user()->id,
+            ],
+            [
+                'rating' => $validated['rating'],
+                'comment' => $validated['comment'] ?? null,
+                'expected_result' => $validated['expected_result'] ?? null,
+            ]
+        );
+
+        $question = $message->chat->messages()
+            ->where('role', 'user')
+            ->where('created_at', '<=', $message->created_at)
+            ->latest('id')
+            ->value('content');
+
+        if ($question) {
+            $example = AiQueryExample::firstOrCreate(
+                ['question' => Str::limit($question, 500, '')],
+                [
+                    'plan' => $message->metadata['query_plan'] ?? null,
+                    'sql' => $message->metadata['sql_preview']['sql'] ?? null,
+                ]
+            );
+
+            $example->increment('feedback_score', $validated['rating'] === 'up' ? 1 : -1);
+        }
+
+        return response()->json(['success' => true]);
     }
 
     private function backUrl(Request $request): string

@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\AiChat;
 use App\Models\AiQueryLog;
+use App\Models\AiQueryExample;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -256,7 +257,7 @@ class AiChatService
             $validation = $this->aiSqlValidatorService->validate($sqlPreview, $plan, $user);
 
             if ($validation['approved'] ?? false) {
-                $execution = $this->aiQueryExecutorService->execute($sqlPreview);
+                $execution = $this->aiQueryExecutorService->execute($sqlPreview, $user->id);
                 $answer = $this->aiAnswerFormatterService->format($message, $plan, $execution);
             }
         }
@@ -332,6 +333,25 @@ class AiChatService
             ]);
         });
 
+        $this->storeQueryExample($message, $plan, $sqlPreview, $execution);
+
         return $chat->fresh('messages');
+    }
+
+    private function storeQueryExample(string $message, array $plan, ?array $sqlPreview, ?array $execution): void
+    {
+        if (! $sqlPreview || ($plan['intent'] ?? 'unknown') === 'unknown') {
+            return;
+        }
+
+        $example = AiQueryExample::firstOrCreate(
+            ['question' => Str::limit($message, 500, '')],
+            [
+                'plan' => $plan,
+                'sql' => $sqlPreview['sql'] ?? null,
+            ]
+        );
+
+        $example->increment(($execution['success'] ?? false) ? 'success_count' : 'fail_count');
     }
 }

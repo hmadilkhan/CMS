@@ -261,7 +261,7 @@ class AiChatModuleTest extends TestCase
             $mock->shouldReceive('execute')->once()->with(Mockery::on(function (array $preview) {
                 return str_contains($preview['sql'], 'departments')
                     && in_array('%deal review%', $preview['bindings'], true);
-            }))->andReturn([
+            }), Mockery::type('int'))->andReturn([
                 'success' => true,
                 'rows' => [['aggregate' => 12]],
                 'row_count' => 1,
@@ -286,6 +286,277 @@ class AiChatModuleTest extends TestCase
             ->assertJsonPath('messages.1.content', 'Deal Review department has 12 projects.')
             ->assertJsonPath('messages.1.metadata.query_plan.tables.1', 'departments')
             ->assertJsonPath('messages.1.metadata.query_plan.filters.0.value', 'deal review');
+    }
+
+    public function test_ticket_status_summary_by_creator_is_mapped_safely(): void
+    {
+        $user = $this->userWithRole('Admin');
+        $this->mockPlannerResponse([
+            'answer_type' => 'table',
+            'intent' => 'ticket_status',
+            'tables' => ['service_tickets'],
+            'columns' => ['status'],
+            'filters' => [],
+            'requires_finance_access' => false,
+            'sql' => null,
+            'fallback_message' => null,
+        ]);
+
+        $this->mock(AiQueryExecutorService::class, function ($mock) {
+            $mock->shouldReceive('execute')->once()->with(Mockery::on(function (array $preview) {
+                return str_contains($preview['sql'], 'users')
+                    && str_contains($preview['sql'], 'pending_count')
+                    && str_contains($preview['sql'], 'resolved_count');
+            }), Mockery::type('int'))->andReturn([
+                'success' => true,
+                'rows' => [
+                    ['user_name' => 'Admin User', 'pending_count' => 2, 'resolved_count' => 5, 'total_tickets' => 7],
+                ],
+                'row_count' => 1,
+                'connection' => 'testing',
+                'error_message' => null,
+            ]);
+        });
+
+        $this->mock(AiAnswerFormatterService::class, function ($mock) {
+            $mock->shouldReceive('format')->once()->andReturn([
+                'type' => 'table',
+                'message' => 'Here is the ticket status summary by user.',
+                'columns' => ['user_name', 'pending_count', 'resolved_count', 'total_tickets'],
+                'rows' => [
+                    ['user_name' => 'Admin User', 'pending_count' => 2, 'resolved_count' => 5, 'total_tickets' => 7],
+                ],
+                'cards' => [],
+            ]);
+        });
+
+        $this->actingAs($user)->postJson(route('ai-chat.send'), [
+            'message' => 'How many tickets created by users? Give me summary thats show user name, count of status',
+        ])->assertOk()
+            ->assertJsonPath('messages.1.content', 'Here is the ticket status summary by user.')
+            ->assertJsonPath('messages.1.metadata.query_plan.intent', 'ticket_creator_status_summary')
+            ->assertJsonPath('messages.1.metadata.query_plan.tables.1', 'users');
+    }
+
+    public function test_in_progress_projects_question_maps_to_project_list_filtered_by_task_status(): void
+    {
+        $user = $this->userWithRole('Admin');
+        $this->mockPlannerResponse([
+            'answer_type' => 'text',
+            'intent' => 'unknown',
+            'tables' => [],
+            'columns' => [],
+            'group_by' => [],
+            'filters' => [],
+            'requires_finance_access' => false,
+            'sql' => null,
+            'fallback_message' => 'I cannot map this question safely.',
+        ]);
+
+        $this->mock(AiQueryExecutorService::class, function ($mock) {
+            $mock->shouldReceive('execute')->once()->with(Mockery::on(function (array $preview) {
+                return str_contains($preview['sql'], 'projects')
+                    && in_array('%In-Progress%', $preview['bindings'], true);
+            }), Mockery::type('int'))->andReturn([
+                'success' => true,
+                'rows' => [
+                    ['project_name' => 'Solar A', 'code' => 'P-001', 'status' => 'In-Progress'],
+                ],
+                'row_count' => 1,
+                'connection' => 'testing',
+                'error_message' => null,
+            ]);
+        });
+
+        $this->mock(AiAnswerFormatterService::class, function ($mock) {
+            $mock->shouldReceive('format')->once()->andReturn([
+                'type' => 'table',
+                'message' => 'Here are the In-Progress projects.',
+                'columns' => ['project_name', 'code', 'status'],
+                'rows' => [
+                    ['project_name' => 'Solar A', 'code' => 'P-001', 'status' => 'In-Progress'],
+                ],
+                'cards' => [],
+            ]);
+        });
+
+        $this->actingAs($user)->postJson(route('ai-chat.send'), [
+            'message' => 'In-Progress projects show karo',
+        ])->assertOk()
+            ->assertJsonPath('messages.1.content', 'Here are the In-Progress projects.')
+            ->assertJsonPath('messages.1.metadata.query_plan.intent', 'crm_list')
+            ->assertJsonPath('messages.1.metadata.query_plan.filters.0.value', 'In-Progress')
+            ->assertJsonPath('messages.1.metadata.query_plan.tables.2', 'departments')
+            ->assertJsonPath('messages.1.metadata.query_plan.tables.3', 'sub_departments');
+    }
+
+    public function test_in_progress_projects_can_exclude_archived_department(): void
+    {
+        $user = $this->userWithRole('Admin');
+        $this->mockPlannerResponse([
+            'answer_type' => 'table',
+            'intent' => 'crm_list',
+            'tables' => ['tasks', 'projects', 'departments', 'sub_departments'],
+            'columns' => ['project_name', 'code', 'status', 'name'],
+            'group_by' => [],
+            'filters' => [
+                [
+                    'column' => 'status',
+                    'operator' => 'like',
+                    'value' => 'In-Progress',
+                ],
+            ],
+            'requires_finance_access' => false,
+            'sql' => null,
+            'fallback_message' => null,
+        ]);
+
+        $this->mock(AiQueryExecutorService::class, function ($mock) {
+            $mock->shouldReceive('execute')->once()->with(Mockery::on(function (array $preview) {
+                $sql = strtolower($preview['sql']);
+
+                return str_contains($sql, 'not like')
+                    && str_contains($sql, 'department_id')
+                    && in_array('%archived%', $preview['bindings'], true)
+                    && in_array(9, $preview['bindings'], true);
+            }), Mockery::type('int'))->andReturn([
+                'success' => true,
+                'rows' => [
+                    ['project_name' => 'Solar A', 'code' => 'P-001', 'status' => 'In-Progress', 'department_name' => 'Permitting'],
+                ],
+                'row_count' => 1,
+                'connection' => 'testing',
+                'error_message' => null,
+            ]);
+        });
+
+        $this->mock(AiAnswerFormatterService::class, function ($mock) {
+            $mock->shouldReceive('format')->once()->andReturn([
+                'type' => 'table',
+                'message' => 'Here are the In-Progress projects excluding archived department.',
+                'columns' => ['project_name', 'code', 'status', 'department_name'],
+                'rows' => [
+                    ['project_name' => 'Solar A', 'code' => 'P-001', 'status' => 'In-Progress', 'department_name' => 'Permitting'],
+                ],
+                'cards' => [],
+            ]);
+        });
+
+        $this->actingAs($user)->postJson(route('ai-chat.send'), [
+            'message' => 'In-Progress projects show karo magar archived department k mat show krna',
+        ])->assertOk()
+            ->assertJsonPath('messages.1.metadata.query_plan.filters.1.operator', 'not_like')
+            ->assertJsonPath('messages.1.metadata.query_plan.filters.2.value', 9);
+    }
+
+    public function test_pending_tickets_question_maps_to_ticket_list_filtered_by_status(): void
+    {
+        $user = $this->userWithRole('Admin');
+        $this->mockPlannerResponse([
+            'answer_type' => 'text',
+            'intent' => 'unknown',
+            'tables' => [],
+            'columns' => [],
+            'group_by' => [],
+            'filters' => [],
+            'requires_finance_access' => false,
+            'sql' => null,
+            'fallback_message' => 'I cannot map this question safely.',
+        ]);
+
+        $this->mock(AiQueryExecutorService::class, function ($mock) {
+            $mock->shouldReceive('execute')->once()->with(Mockery::on(function (array $preview) {
+                return str_contains($preview['sql'], 'service_tickets')
+                    && in_array('%Pending%', $preview['bindings'], true);
+            }), Mockery::type('int'))->andReturn([
+                'success' => true,
+                'rows' => [
+                    ['subject' => 'Panel issue', 'priority' => 'High', 'status' => 'Pending', 'name' => 'Admin User'],
+                ],
+                'row_count' => 1,
+                'connection' => 'testing',
+                'error_message' => null,
+            ]);
+        });
+
+        $this->mock(AiAnswerFormatterService::class, function ($mock) {
+            $mock->shouldReceive('format')->once()->andReturn([
+                'type' => 'table',
+                'message' => 'Here are the pending tickets.',
+                'columns' => ['subject', 'priority', 'status', 'name'],
+                'rows' => [
+                    ['subject' => 'Panel issue', 'priority' => 'High', 'status' => 'Pending', 'name' => 'Admin User'],
+                ],
+                'cards' => [],
+            ]);
+        });
+
+        $this->actingAs($user)->postJson(route('ai-chat.send'), [
+            'message' => 'Pending tickets show karo',
+        ])->assertOk()
+            ->assertJsonPath('messages.1.metadata.query_plan.intent', 'crm_list')
+            ->assertJsonPath('messages.1.metadata.query_plan.filters.0.value', 'Pending');
+    }
+
+    public function test_assigned_employee_project_question_filters_employee_name_and_hides_employee_id(): void
+    {
+        $user = $this->userWithRole('Admin');
+        $this->mockPlannerResponse([
+            'answer_type' => 'table',
+            'intent' => 'crm_list',
+            'tables' => ['tasks', 'projects'],
+            'columns' => ['project_name', 'employee_id'],
+            'group_by' => [],
+            'filters' => [],
+            'requires_finance_access' => false,
+            'sql' => null,
+            'fallback_message' => null,
+        ]);
+
+        $this->mock(AiQueryExecutorService::class, function ($mock) {
+            $mock->shouldReceive('execute')->once()->with(Mockery::on(function (array $preview) {
+                $sql = strtolower($preview['sql']);
+
+                return str_contains($sql, 'join "employees"')
+                    && str_contains($sql, '"employees"."name" like')
+                    && str_contains($sql, 'assigned_employee_name')
+                    && str_contains($sql, 'max(latest_tasks.id)')
+                    && str_contains($sql, 'group by "projects"."id"')
+                    && in_array('%ibad dawood%', $preview['bindings'], true)
+                    && in_array('%ibad%dawood%', $preview['bindings'], true)
+                    && in_array('In-Progress', $preview['bindings'], true)
+                    && $preview['columns'] === ['project_name', 'code', 'assigned_employee_name'];
+            }), Mockery::type('int'))->andReturn([
+                'success' => true,
+                'rows' => [
+                    ['project_name' => 'Solar House', 'code' => 'P-100', 'assigned_employee_name' => 'Ibad Dawood'],
+                ],
+                'row_count' => 1,
+                'connection' => 'testing',
+                'error_message' => null,
+            ]);
+        });
+
+        $this->mock(AiAnswerFormatterService::class, function ($mock) {
+            $mock->shouldReceive('format')->once()->andReturn([
+                'type' => 'table',
+                'message' => 'Here are Ibad Dawood assigned projects.',
+                'columns' => ['project_name', 'code', 'assigned_employee_name'],
+                'rows' => [
+                    ['project_name' => 'Solar House', 'code' => 'P-100', 'assigned_employee_name' => 'Ibad Dawood'],
+                ],
+                'cards' => [],
+            ]);
+        });
+
+        $this->actingAs($user)->postJson(route('ai-chat.send'), [
+            'message' => 'Show the project list which are assigned to Ibad Dawood employee show the project name and assigned column name do not show duplication projects',
+        ])->assertOk()
+            ->assertJsonPath('messages.1.metadata.query_plan.intent', 'crm_list')
+            ->assertJsonPath('messages.1.metadata.query_plan.tables.2', 'employees')
+            ->assertJsonPath('messages.1.metadata.query_plan.filters.0.column', 'name')
+            ->assertJsonPath('messages.1.metadata.query_plan.filters.0.value', 'ibad dawood')
+            ->assertJsonMissing(['employee_id']);
     }
 
     public function test_query_limit_is_enforced(): void

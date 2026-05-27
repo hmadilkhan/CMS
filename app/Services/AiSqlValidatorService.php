@@ -19,11 +19,20 @@ class AiSqlValidatorService
         'revoke',
         'exec',
         'execute',
+        'load_file',
+        'outfile',
+        'sleep',
+        'benchmark',
+        'information_schema',
+        'procedure',
+        'trigger',
+        'event',
     ];
 
     public function __construct(
         private readonly AiSchemaService $aiSchemaService,
-        private readonly AiPermissionService $aiPermissionService
+        private readonly AiPermissionService $aiPermissionService,
+        private readonly AiSqlParserService $aiSqlParserService
     ) {
     }
 
@@ -32,9 +41,18 @@ class AiSqlValidatorService
         // Security: only SELECT statements generated from approved schema metadata may pass this validator.
         $sql = (string) ($sqlPreview['sql'] ?? '');
         $normalizedSql = strtolower(trim($sql));
+        $parseResult = $this->aiSqlParserService->validate($sql);
+
+        if (! ($parseResult['valid'] ?? false)) {
+            return $this->reject($parseResult['error'] ?? 'SQL parser rejected this query.');
+        }
 
         if ($normalizedSql === '' || ! str_starts_with($normalizedSql, 'select')) {
             return $this->reject('Only SELECT queries are allowed.');
+        }
+
+        if (preg_match('/\bfrom\s*\(\s*select\b/i', $sql)) {
+            return $this->reject('Subqueries in FROM are not allowed.');
         }
 
         foreach (self::BLOCKED_KEYWORDS as $keyword) {
@@ -57,7 +75,10 @@ class AiSqlValidatorService
 
         $limit = $sqlPreview['limit'] ?? null;
 
-        if (! is_int($limit) || $limit < 1 || $limit > 100 || ! preg_match('/\blimit\s+100\b/i', $sql)) {
+        $maxLimit = (int) config('ai.schema.max_query_limit', 100);
+        $maxLimit = max(1, min($maxLimit, 100));
+
+        if (! is_int($limit) || $limit < 1 || $limit > $maxLimit || ! preg_match('/\blimit\s+' . preg_quote((string) $limit, '/') . '\b/i', $sql)) {
             return $this->reject('A LIMIT of 100 or less is required.');
         }
 
@@ -74,6 +95,12 @@ class AiSqlValidatorService
         foreach (($plan['columns'] ?? []) as $column) {
             if (! $this->isColumnAllowedForAnyPlanTable($user, $plan, $column)) {
                 return $this->reject('The query references a column that is not allowed.');
+            }
+        }
+
+        foreach (($plan['group_by'] ?? []) as $column) {
+            if (! $this->isColumnAllowedForAnyPlanTable($user, $plan, $column)) {
+                return $this->reject('The query groups by a column that is not allowed.');
             }
         }
 

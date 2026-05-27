@@ -11,6 +11,7 @@ class Kernel extends ConsoleKernel
         Commands\FetchEmails::class,
         Commands\DeployCRM::class,
         Commands\RollbackCRM::class,
+        Commands\CheckAiDataIntegrity::class,
     ];
     /**
      * Define the application's command schedule.
@@ -25,6 +26,7 @@ class Kernel extends ConsoleKernel
         // $schedule->command('app:fetch-emails')->timezone('Asia/Karachi')->dailyAt('09:00');
         // $schedule->command('app:fetch-emails')->timezone('Asia/Karachi')->dailyAt('18:00');
         $schedule->command('app:fetch-emails')->timezone('Asia/Karachi')->hourly();
+        $schedule->command('ai:check-integrity')->timezone('Asia/Karachi')->dailyAt('00:30');
     }
 
     /**

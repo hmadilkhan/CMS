@@ -52,7 +52,10 @@ PROMPT;
             ? $answer['type']
             : ($plan['answer_type'] ?? 'text');
 
-        $rows = array_values($answer['rows'] ?? ($execution['rows'] ?? []));
+        $executionRows = array_values($execution['rows'] ?? []);
+        $rows = $type === 'card'
+            ? array_values($answer['rows'] ?? $executionRows)
+            : $executionRows;
         $cards = array_values($answer['cards'] ?? []);
 
         if ($type === 'count' && empty($cards)) {
@@ -67,7 +70,9 @@ PROMPT;
         return [
             'type' => $type,
             'message' => (string) ($answer['message'] ?? 'Here are the results.'),
-            'columns' => array_values($answer['columns'] ?? $this->columnsFromRows($execution['rows'] ?? [])),
+            'columns' => $type === 'card'
+                ? array_values($answer['columns'] ?? $this->columnsFromRows($executionRows))
+                : $this->columnsFromRows($executionRows),
             'rows' => $rows,
             'cards' => $cards,
         ];
@@ -92,9 +97,11 @@ PROMPT;
         }
 
         $type = ($plan['answer_type'] ?? 'table') === 'card' ? 'card' : 'table';
-        $message = ($plan['intent'] ?? null) === 'project_department_summary'
-            ? 'Here is the project count by department and subdepartment.'
-            : 'Here are the matching CRM results.';
+        $message = match ($plan['intent'] ?? null) {
+            'project_department_summary' => 'Here is the project count by department and subdepartment.',
+            'ticket_creator_status_summary' => 'Here is the ticket status summary by user.',
+            default => 'Here are the matching CRM results.',
+        };
 
         return [
             'type' => $type,
@@ -180,6 +187,15 @@ PROMPT;
                     ['label' => 'Financing Status', 'value' => 'Approved'],
                     ['label' => 'Contract Amount', 'value' => '$25,000'],
                 ],
+            ],
+            'ticket_creator_status_summary' => [
+                'type' => 'table',
+                'message' => 'Here is the ticket status summary by user.',
+                'columns' => ['user_name', 'pending_count', 'resolved_count', 'total_tickets'],
+                'rows' => [
+                    ['user_name' => 'Jane Doe', 'pending_count' => 3, 'resolved_count' => 7, 'total_tickets' => 10],
+                ],
+                'cards' => [],
             ],
             'profitability_report' => [
                 'type' => 'table',
