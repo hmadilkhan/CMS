@@ -1064,7 +1064,8 @@ class ProjectController extends Controller
                 $query->select(DB::raw(1))
                     ->from('tasks as t')
                     ->whereColumn('t.project_id', 'tasks.project_id')
-                    ->where('t.department_id', '>=', 7); // Exclude if moved to department 7 or beyond
+                    ->where('t.department_id', '>=', 7)
+                    ->where('t.department_id', '!=', 9); // Exclude if moved to department 7 or beyond, but ignore archived department 9
             })
             ->groupBy('project_id')
             ->pluck('project_id'); // Get the relevant project IDs
