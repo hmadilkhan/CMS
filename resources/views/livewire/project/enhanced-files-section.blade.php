@@ -24,6 +24,12 @@
             pointer-events: auto;
         }
 
+        body.project-file-delete-modal-open .modal-backdrop.show {
+            background: transparent;
+            backdrop-filter: blur(8px);
+            opacity: 1;
+        }
+
         .file-preview {
             width: 100%;
             height: 250px;
@@ -622,14 +628,14 @@
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title fw-bold">Delete item Permanently?</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    <button type="button" class="btn-close close-delete-file-modal" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body justify-content-center flex-column d-flex">
                     <i class="icofont-ui-delete text-danger display-2 text-center mt-2"></i>
                     <p class="mt-4 fs-5 text-center">You can only delete this item Permanently</p>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-secondary close-delete-file-modal" data-bs-dismiss="modal">Cancel</button>
                     <button type="button" class="btn btn-danger" wire:click="deleteFile">Delete</button>
                 </div>
             </div>
@@ -647,6 +653,7 @@
                     return;
                 }
 
+                document.body.classList.add('project-file-delete-modal-open');
                 $('#' + deleteModalId).modal('show');
             });
 
@@ -655,6 +662,14 @@
                     return;
                 }
 
+                $('#' + deleteModalId).modal('hide');
+            });
+
+            $('#' + deleteModalId).on('hidden.bs.modal', () => {
+                document.body.classList.remove('project-file-delete-modal-open');
+            });
+
+            $('#' + deleteModalId).find('.close-delete-file-modal').on('click', () => {
                 $('#' + deleteModalId).modal('hide');
             });
         })();
