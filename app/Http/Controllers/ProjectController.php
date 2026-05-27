@@ -1070,11 +1070,14 @@ class ProjectController extends Controller
             ->groupBy('project_id')
             ->pluck('project_id'); // Get the relevant project IDs
 
-        $query = Project::with("customer", "customer.salespartner", "department", "subdepartment", "assignedPerson", "assignedPerson.employee", "task", "notes");
+        $query = Project::with("customer", "customer.salespartner", "department", "subdepartment", "assignedPerson", "assignedPerson.employee", "task", "notes")
+            ->join('customers', 'customers.id', '=', 'projects.customer_id')
+            ->select('projects.*')
+            ->orderByRaw('DATEDIFF(COALESCE(projects.pto_approval_date, CURDATE()), customers.sold_date) ASC');
         $query->withCount(['emails as viewed_emails_count' => function ($query) {
             $query->where('is_view', 1);
         }]);
-        $query->whereIn("id", $projectIds);
+        $query->whereIn("projects.id", $projectIds);
         return $query->get();
         // Fetch all tasks for those projects that match your conditions
         // $result = Task::whereIn('project_id', $projects)

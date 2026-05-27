@@ -370,13 +370,18 @@
                     return $item->sub_department_id == $subdepartment->id;
                 })
                 ->values();
+            $displayCount = $subdepartment->id == 21
+                ? $ghostProjects->filter(function ($project) {
+                    return !empty($project->assignedPerson[0]) && $project->assignedPerson[0]->status == 'In-Progress';
+                })->count()
+                : count($collections);
         @endphp
         <div class="container-fluid py-2">
             <div class="department-header d-flex justify-content-center align-items-center position-relative">
                 <h3 class="fw-bold mb-0">
                     <span class="department-title-wrap">
                     <span><i class="icofont-tasks me-2"></i>{{ $subdepartment->name }}</span>
-                    <span class="count-badge" id="count-{{ $subdepartment->id }}">{{ count($collections) }}</span>
+                    <span class="count-badge" id="count-{{ $subdepartment->id }}">{{ $displayCount }}</span>
                     </span>
                 </h3>
                 @if (in_array($subdepartment->id, [9,10]))
