@@ -533,6 +533,22 @@
                     @if (count($ghostProjects) > 0)
                         @foreach ($ghostProjects as $project)
                             @if ($project->assignedPerson[0]->status == 'In-Progress')
+                                @php
+                                    $acceptanceStatus = 'Not Initiated';
+                                    $acceptanceClass = '';
+                                    if (!empty($project->projectAcceptance)) {
+                                        if ($project->projectAcceptance->status == 0) {
+                                            $acceptanceStatus = 'Pending';
+                                            $acceptanceClass = 'text-warning';
+                                        } elseif ($project->projectAcceptance->status == 1) {
+                                            $acceptanceStatus = 'Approved';
+                                            $acceptanceClass = 'text-success';
+                                        } elseif ($project->projectAcceptance->status == 2) {
+                                            $acceptanceStatus = 'Rejected';
+                                            $acceptanceClass = 'text-danger';
+                                        }
+                                    }
+                                @endphp
                                 <a href="{{ url('projects/' . $project->id . '/ghost') }}"
                                     class="col-xxxl-3 col-xxl-3 col-xl-4 col-lg-4 col-md-6 col-sm-12 project-link"
                                     style="cursor:pointer; min-width: 320px; max-width: 380px; padding: 0.5rem;"
