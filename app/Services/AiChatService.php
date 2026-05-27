@@ -7,6 +7,7 @@ use App\Models\AiQueryLog;
 use App\Models\AiQueryExample;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 use Throwable;
 
@@ -340,7 +341,7 @@ class AiChatService
 
     private function storeQueryExample(string $message, array $plan, ?array $sqlPreview, ?array $execution): void
     {
-        if (! $sqlPreview || ($plan['intent'] ?? 'unknown') === 'unknown') {
+        if (! $sqlPreview || ($plan['intent'] ?? 'unknown') === 'unknown' || ! Schema::hasTable('ai_query_examples')) {
             return;
         }
 

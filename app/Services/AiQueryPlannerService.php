@@ -48,6 +48,15 @@ class AiQueryPlannerService
             ];
         }
 
+        $inferredPlan = $this->inferKnownPlan($question);
+
+        if ($inferredPlan) {
+            return [
+                'plan' => $this->sanitizePlan($inferredPlan, $user),
+                'openai' => $this->syntheticOpenAiResponse(),
+            ];
+        }
+
         $response = $this->openAiService->createJsonResponse(
             $this->instructions(),
             [
@@ -262,7 +271,6 @@ class AiQueryPlannerService
         );
 
         $plan = $this->sanitizePlan($response['json'], $user);
-        $inferredPlan = $this->inferKnownPlan($question);
 
         if ($inferredPlan && (($plan['intent'] ?? 'unknown') === 'unknown' || $this->inferredPlanIsMoreSpecific($plan, $inferredPlan))) {
             $plan = $this->sanitizePlan($inferredPlan, $user);
@@ -700,11 +708,17 @@ PROMPT;
         }
 
         if ($mentionsProject && $mentionsDepartment && $mentionsCount) {
+            $includeSubDepartment = $this->wantsSubDepartmentSummary($normalized);
+
             return [
                 'answer_type' => 'table',
                 'intent' => 'project_department_summary',
-                'tables' => ['projects', 'departments', 'sub_departments'],
-                'columns' => ['department_id', 'sub_department_id', 'name'],
+                'tables' => $includeSubDepartment
+                    ? ['projects', 'departments', 'sub_departments']
+                    : ['projects', 'departments'],
+                'columns' => $includeSubDepartment
+                    ? ['department_id', 'sub_department_id', 'name']
+                    : ['department_id', 'name'],
                 'group_by' => ['name'],
                 'filters' => [],
                 'requires_finance_access' => false,
@@ -714,6 +728,26 @@ PROMPT;
         }
 
         return null;
+    }
+
+    private function wantsSubDepartmentSummary(string $question): bool
+    {
+        $mentionsSubDepartment = str_contains($question, 'subdepartment')
+            || str_contains($question, 'sub department')
+            || str_contains($question, 'sub_department');
+
+        if (! $mentionsSubDepartment) {
+            return false;
+        }
+
+        return ! (
+            str_contains($question, 'sub department wise ni')
+            || str_contains($question, 'sub department wise nahi')
+            || str_contains($question, 'subdepartment wise ni')
+            || str_contains($question, 'subdepartment wise nahi')
+            || str_contains($question, 'sub department wise not')
+            || str_contains($question, 'not sub department')
+        );
     }
 
     private function inferredPlanIsMoreSpecific(array $plan, array $inferredPlan): bool

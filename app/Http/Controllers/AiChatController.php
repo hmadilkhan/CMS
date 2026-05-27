@@ -9,6 +9,7 @@ use App\Models\AiQueryFeedback;
 use App\Services\AiChatService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 use Illuminate\View\View;
 
@@ -114,6 +115,7 @@ class AiChatController extends Controller
     {
         $message->load('chat');
 
+        abort_unless(Schema::hasTable('ai_query_feedback'), 404);
         abort_unless($message->role === 'assistant', 404);
         abort_unless($message->chat?->user_id === $request->user()->id, 403);
 
@@ -141,7 +143,7 @@ class AiChatController extends Controller
             ->latest('id')
             ->value('content');
 
-        if ($question) {
+        if ($question && Schema::hasTable('ai_query_examples')) {
             $example = AiQueryExample::firstOrCreate(
                 ['question' => Str::limit($question, 500, '')],
                 [

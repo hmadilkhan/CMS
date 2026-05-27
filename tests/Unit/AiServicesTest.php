@@ -143,6 +143,31 @@ class AiServicesTest extends TestCase
         $this->assertSame(['department_name', 'sub_department_name', 'aggregate'], $preview['columns']);
     }
 
+    public function test_ai_sql_builder_groups_projects_by_department_only(): void
+    {
+        $user = $this->userWithRole('Admin');
+        $builder = app(AiSqlBuilderService::class);
+
+        $preview = $builder->build([
+            'answer_type' => 'table',
+            'intent' => 'project_department_summary',
+            'tables' => ['projects', 'departments'],
+            'columns' => ['department_id', 'name'],
+            'group_by' => ['name'],
+            'filters' => [],
+            'requires_finance_access' => false,
+            'sql' => null,
+            'fallback_message' => null,
+        ], $user);
+
+        $sql = strtolower($preview['sql']);
+
+        $this->assertStringContainsString('departments', $sql);
+        $this->assertStringNotContainsString('sub_departments', $sql);
+        $this->assertStringContainsString('group by "departments"."name"', $sql);
+        $this->assertSame(['department_name', 'aggregate'], $preview['columns']);
+    }
+
     public function test_ai_sql_builder_counts_projects_for_named_department(): void
     {
         $user = $this->userWithRole('Admin');
@@ -297,6 +322,48 @@ class AiServicesTest extends TestCase
         $this->assertContains('Hold', $preview['bindings']);
         $this->assertContains('Cancelled', $preview['bindings']);
         $this->assertSame(['project_name', 'code', 'assigned_employee_name'], $preview['columns']);
+    }
+
+    public function test_ai_sql_builder_lists_completed_projects_by_latest_completed_task(): void
+    {
+        $user = $this->userWithRole('Admin');
+        $builder = app(AiSqlBuilderService::class);
+
+        $preview = $builder->build([
+            'answer_type' => 'table',
+            'intent' => 'crm_list',
+            'tables' => ['tasks', 'projects', 'departments', 'sub_departments'],
+            'columns' => ['project_name', 'code', 'status', 'name'],
+            'group_by' => [],
+            'filters' => [
+                [
+                    'column' => 'status',
+                    'operator' => 'like',
+                    'value' => 'Completed',
+                ],
+                [
+                    'column' => 'name',
+                    'operator' => 'not_like',
+                    'value' => 'archived',
+                ],
+                [
+                    'column' => 'department_id',
+                    'operator' => '!=',
+                    'value' => 9,
+                ],
+            ],
+            'requires_finance_access' => false,
+            'sql' => null,
+            'fallback_message' => null,
+        ], $user);
+
+        $sql = strtolower($preview['sql']);
+
+        $this->assertStringContainsString('latest_tasks"."status" like', $sql);
+        $this->assertContains('%Completed%', $preview['bindings']);
+        $this->assertContains('%archived%', $preview['bindings']);
+        $this->assertContains(9, $preview['bindings']);
+        $this->assertSame(['project_name', 'code', 'status', 'department_name', 'sub_department_name'], $preview['columns']);
     }
 
     public function test_ai_sql_builder_joins_related_tables_when_order_is_reversed(): void

@@ -604,7 +604,7 @@ class AiChatModuleTest extends TestCase
     private function mockPlannerResponse(array $plan): void
     {
         $this->mock(OpenAiService::class, function ($mock) use ($plan) {
-            $mock->shouldReceive('createJsonResponse')->once()->andReturn([
+            $mock->shouldReceive('createJsonResponse')->zeroOrMoreTimes()->andReturn([
                 'id' => 'resp_plan',
                 'model' => 'gpt-test',
                 'json' => $plan,

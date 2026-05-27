@@ -56,6 +56,7 @@ PROMPT;
         $rows = $type === 'card'
             ? array_values($answer['rows'] ?? $executionRows)
             : $executionRows;
+        $rows = $this->appendTotalRowIfNeeded($plan, $rows);
         $cards = array_values($answer['cards'] ?? []);
 
         if ($type === 'count' && empty($cards)) {
@@ -81,6 +82,7 @@ PROMPT;
     private function fallbackAnswer(array $plan, array $execution): array
     {
         $rows = $execution['rows'] ?? [];
+        $rows = $this->appendTotalRowIfNeeded($plan, $rows);
 
         if (($plan['answer_type'] ?? null) === 'count') {
             $count = $rows[0]['aggregate'] ?? 0;
@@ -98,7 +100,9 @@ PROMPT;
 
         $type = ($plan['answer_type'] ?? 'table') === 'card' ? 'card' : 'table';
         $message = match ($plan['intent'] ?? null) {
-            'project_department_summary' => 'Here is the project count by department and subdepartment.',
+            'project_department_summary' => in_array('sub_departments', $plan['tables'] ?? [], true)
+                ? 'Here is the project count by department and subdepartment.'
+                : 'Here is the project count by department.',
             'ticket_creator_status_summary' => 'Here is the ticket status summary by user.',
             default => 'Here are the matching CRM results.',
         };
@@ -137,6 +141,25 @@ PROMPT;
     private function columnsFromRows(array $rows): array
     {
         return isset($rows[0]) && is_array($rows[0]) ? array_keys($rows[0]) : [];
+    }
+
+    private function appendTotalRowIfNeeded(array $plan, array $rows): array
+    {
+        if (($plan['intent'] ?? null) !== 'project_department_summary' || $rows === []) {
+            return $rows;
+        }
+
+        $total = collect($rows)->sum(fn (array $row) => (int) ($row['aggregate'] ?? 0));
+        $totalRow = ['department_name' => 'Total'];
+
+        if (in_array('sub_departments', $plan['tables'] ?? [], true)) {
+            $totalRow['sub_department_name'] = '';
+        }
+
+        $totalRow['aggregate'] = $total;
+        $rows[] = $totalRow;
+
+        return $rows;
     }
 
     private function cardsFromRows(array $rows): array

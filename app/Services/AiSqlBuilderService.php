@@ -91,12 +91,22 @@ class AiSqlBuilderService
 
         if (($plan['intent'] ?? null) === 'project_department_summary') {
             $this->ensureJoin($query, 'departments', 'projects.department_id', '=', 'departments.id');
-            $this->ensureJoin($query, 'sub_departments', 'projects.sub_department_id', '=', 'sub_departments.id');
+
+            if (in_array('sub_departments', $plan['tables'] ?? [], true)) {
+                $this->ensureJoin($query, 'sub_departments', 'projects.sub_department_id', '=', 'sub_departments.id');
+                $query->select(
+                    'departments.name as department_name',
+                    'sub_departments.name as sub_department_name',
+                    DB::raw('count(distinct projects.id) as aggregate')
+                )->groupBy('departments.name', 'sub_departments.name');
+
+                return;
+            }
+
             $query->select(
                 'departments.name as department_name',
-                'sub_departments.name as sub_department_name',
                 DB::raw('count(distinct projects.id) as aggregate')
-            )->groupBy('departments.name', 'sub_departments.name');
+            )->groupBy('departments.name');
         }
 
         if (($plan['intent'] ?? null) === 'project_customer') {
@@ -198,6 +208,7 @@ class AiSqlBuilderService
         }
 
         if (($plan['intent'] ?? null) === 'crm_list' && $baseTable === 'tasks' && in_array('projects', $plan['tables'] ?? [], true)) {
+            $statusFilter = $this->statusFilterValue($plan);
             $this->ensureJoin($query, 'departments', 'tasks.department_id', '=', 'departments.id');
             $this->ensureJoin($query, 'sub_departments', 'tasks.sub_department_id', '=', 'sub_departments.id');
             $query->select(
@@ -208,11 +219,22 @@ class AiSqlBuilderService
                 'sub_departments.name as sub_department_name'
             );
 
-            $query->where('tasks.id', function ($latestTaskQuery) {
-                $latestTaskQuery->selectRaw('max(latest_tasks.id)')
-                    ->from('tasks as latest_tasks')
-                    ->whereColumn('latest_tasks.project_id', 'tasks.project_id');
-            })
+            if ($statusFilter && strcasecmp($statusFilter, 'Completed') === 0) {
+                $query->where('tasks.id', function ($latestTaskQuery) use ($statusFilter) {
+                    $latestTaskQuery->selectRaw('max(latest_tasks.id)')
+                        ->from('tasks as latest_tasks')
+                        ->whereColumn('latest_tasks.project_id', 'tasks.project_id')
+                        ->where('latest_tasks.status', 'like', '%' . $statusFilter . '%');
+                });
+            } else {
+                $query->where('tasks.id', function ($latestTaskQuery) {
+                    $latestTaskQuery->selectRaw('max(latest_tasks.id)')
+                        ->from('tasks as latest_tasks')
+                        ->whereColumn('latest_tasks.project_id', 'tasks.project_id');
+                });
+            }
+
+            $query
                 ->whereNotNull('projects.id')
                 ->whereNotNull('projects.project_name')
                 ->where('projects.project_name', '!=', '')
@@ -275,6 +297,21 @@ class AiSqlBuilderService
             && in_array('employees', $plan['tables'] ?? [], true)
             && is_scalar($value)
             && trim((string) $value) !== '';
+    }
+
+    private function statusFilterValue(array $plan): ?string
+    {
+        foreach ($plan['filters'] ?? [] as $filter) {
+            if (! is_array($filter) || ($filter['column'] ?? null) !== 'status') {
+                continue;
+            }
+
+            $value = $filter['value'] ?? null;
+
+            return is_scalar($value) ? (string) $value : null;
+        }
+
+        return null;
     }
 
     private function flexibleNamePattern(string $value): string
@@ -418,7 +455,9 @@ class AiSqlBuilderService
         }
 
         if (($plan['intent'] ?? null) === 'project_department_summary') {
-            return ['department_name', 'sub_department_name', 'aggregate'];
+            return in_array('sub_departments', $plan['tables'] ?? [], true)
+                ? ['department_name', 'sub_department_name', 'aggregate']
+                : ['department_name', 'aggregate'];
         }
 
         if (($plan['intent'] ?? null) === 'ticket_status') {

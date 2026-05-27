@@ -29,8 +29,14 @@ class AiQueryExecutorService
 
             $timeoutMs = (int) config('ai.security.query_timeout_ms', 5000);
             if ($timeoutMs > 0 && $connection->getDriverName() === 'mysql') {
-                $connection->statement('SET SESSION MAX_EXECUTION_TIME=' . $timeoutMs);
-                $timeoutApplied = true;
+                try {
+                    $connection->statement('SET SESSION MAX_EXECUTION_TIME=' . $timeoutMs);
+                    $timeoutApplied = true;
+                } catch (Throwable $timeoutException) {
+                    Log::info('AI query timeout setting is not supported by this database server.', [
+                        'message' => $timeoutException->getMessage(),
+                    ]);
+                }
             }
 
             $rows = $connection->select($sqlPreview['sql'], $sqlPreview['bindings'] ?? []);
