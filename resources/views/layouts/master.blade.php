@@ -153,6 +153,19 @@
         .premium-modal-header a {
             color: inherit !important;
         }
+
+        .modal-backdrop {
+            z-index: 100190 !important;
+        }
+
+        .modal {
+            z-index: 100200 !important;
+        }
+
+        .select2-container--open,
+        .select2-dropdown {
+            z-index: 100300 !important;
+        }
     </style>
 
     @include('layouts.partials.solen-theme')

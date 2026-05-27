@@ -1233,7 +1233,7 @@
             border: 1px solid var(--workspace-line) !important;
             border-radius: 14px !important;
             position: relative;
-            z-index: 2000;
+            z-index: 20;
         }
 
         #project-show-page.project-workspace-redesign .project-department-tabs.prtab-set .nav-item,

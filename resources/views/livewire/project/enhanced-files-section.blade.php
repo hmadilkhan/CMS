@@ -462,7 +462,7 @@
 
     <!-- Upload Modal -->
     @if ($showModal)
-        <div class="modal fade show d-block" tabindex="-1" style="background: rgba(0,0,0,0.5); z-index: 1050;"
+        <div class="modal fade show d-block" tabindex="-1" style="background: rgba(0,0,0,0.5); z-index: 100200;"
             wire:ignore.self>
             <div class="modal-dialog modal-dialog-centered modal-lg" style="pointer-events: auto;">
                 <div class="modal-content" style="pointer-events: auto;">
