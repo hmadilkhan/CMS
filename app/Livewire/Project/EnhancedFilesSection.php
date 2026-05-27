@@ -34,7 +34,7 @@ class EnhancedFilesSection extends Component
     {
         if ($id != "") {
             $this->deleteId = $id;
-            $this->dispatch('show-delete-modal');
+            $this->dispatch('show-delete-modal', modalId: 'deletefile-' . $this->getId());
         }
     }
 
@@ -44,7 +44,7 @@ class EnhancedFilesSection extends Component
             $projectFile = ProjectFile::findOrFail($this->deleteId);
             Storage::disk('public')->delete('projects/' . $projectFile->filename);
             $projectFile->delete();
-            $this->dispatch('hide-delete-modal');
+            $this->dispatch('hide-delete-modal', modalId: 'deletefile-' . $this->getId());
             $this->reset(['deleteId']);
             $this->dispatch('refreshComponent');
         }

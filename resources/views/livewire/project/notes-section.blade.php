@@ -36,6 +36,14 @@
             box-shadow: 0 0 0 0.2rem var(--solen-primary-focus);
         }
 
+        .note-text-display {
+            min-height: 60px;
+            white-space: pre-wrap;
+            overflow-wrap: anywhere;
+            color: var(--solen-warm-text);
+            line-height: 1.5;
+        }
+
         .note-header {
             background: var(--solen-gradient);
             color: white;
@@ -261,9 +269,7 @@
                             <div class="note-card">
                                 <div class="d-flex justify-content-between align-items-start">
                                     <div class="flex-grow-1">
-                                        <textarea class="form-control note-textarea" disabled
-                                            style="resize: none; background-color: white; border: none; padding: 0; min-height: 60px; height: auto; overflow: hidden;"
-                                            onload="this.style.height = this.scrollHeight + 'px'">{{ $value->notes }}</textarea>
+                                        <div class="note-text-display">{{ $value->notes }}</div>
                                     </div>
                                     @if ($value->user_id == auth()->user()->id && $viewSource != 'website')
                                         <div class="note-actions ms-3">
@@ -290,14 +296,6 @@
     @endcan
 </div>
 <script>
-    // Auto-resize textareas to fit content
-    document.addEventListener('DOMContentLoaded', function() {
-        document.querySelectorAll('textarea.note-textarea[disabled]').forEach(function(textarea) {
-            textarea.style.height = 'auto';
-            textarea.style.height = textarea.scrollHeight + 'px';
-        });
-    });
-
     function mentionHandler() {
         return {
             employees: {!! json_encode($employees) !!},

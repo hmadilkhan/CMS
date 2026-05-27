@@ -612,8 +612,12 @@
         }
     </script>
 
+    @php
+        $deleteModalId = 'deletefile-' . $this->getId();
+    @endphp
+
     <!-- Delete Modal -->
-    <div class="modal fade" id="deletefile" tabindex="-1" aria-hidden="true">
+    <div class="modal fade" id="{{ $deleteModalId }}" tabindex="-1" aria-hidden="true" wire:ignore.self>
         <div class="modal-dialog modal-dialog-centered modal-md">
             <div class="modal-content">
                 <div class="modal-header">
@@ -635,13 +639,25 @@
 
 @script
     <script>
-        window.addEventListener('show-delete-modal', () => {
-            $('#deletefile').modal('show');
-        });
+        (() => {
+            const deleteModalId = @js($deleteModalId);
 
-        window.addEventListener('hide-delete-modal', () => {
-            $('#deletefile').modal('hide');
-        });
+            window.addEventListener('show-delete-modal', (event) => {
+                if (event.detail?.modalId !== deleteModalId) {
+                    return;
+                }
+
+                $('#' + deleteModalId).modal('show');
+            });
+
+            window.addEventListener('hide-delete-modal', (event) => {
+                if (event.detail?.modalId !== deleteModalId) {
+                    return;
+                }
+
+                $('#' + deleteModalId).modal('hide');
+            });
+        })();
 
         function handleDragOver(e) {
             e.preventDefault();
