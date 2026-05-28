@@ -18,6 +18,7 @@ return [
 
     'security' => [
         'max_daily_requests_per_user' => env('AI_MAX_DAILY_REQUESTS_PER_USER', 100),
+        'per_minute_requests_per_user' => env('AI_MAX_REQUESTS_PER_MINUTE_PER_USER', 60),
         'query_timeout_ms' => env('AI_QUERY_TIMEOUT_MS', 5000),
         'query_cache_ttl' => env('AI_QUERY_CACHE_TTL', 300),
     ],
