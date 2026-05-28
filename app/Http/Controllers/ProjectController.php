@@ -1075,9 +1075,9 @@ class ProjectController extends Controller
             ->select('projects.*');
 
         if (DB::connection()->getDriverName() === 'sqlite') {
-            $query->orderByRaw("julianday(COALESCE(projects.pto_approval_date, date('now'))) - julianday(customers.sold_date) ASC");
+            $query->orderByRaw("julianday(COALESCE(projects.pto_approval_date, date('now'))) - julianday(customers.sold_date) DESC");
         } else {
-            $query->orderByRaw('DATEDIFF(COALESCE(projects.pto_approval_date, CURDATE()), customers.sold_date) ASC');
+            $query->orderByRaw('DATEDIFF(COALESCE(projects.pto_approval_date, CURDATE()), customers.sold_date) DESC');
         }
 
         $query->withCount(['emails as viewed_emails_count' => function ($query) {
