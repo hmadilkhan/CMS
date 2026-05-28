@@ -421,6 +421,10 @@ class AiQueryPlannerService
             'resolved',
             'pto',
             'ntp',
+            'ghost',
+            'lane',
+            'pre-inspection',
+            'pre inspection',
         ];
 
         foreach ($keywords as $keyword) {
@@ -1361,6 +1365,39 @@ PROMPT;
             ];
         }
 
+        if ($mentionsProject && $this->isPreInspectionOrGhostQuestion($normalized)) {
+            return [
+                'answer_type' => 'table',
+                'intent' => 'project_pre_inspection_or_ghost_list',
+                'tables' => ['projects', 'customers', 'departments', 'sub_departments', 'tasks', 'employees'],
+                'columns' => [
+                    'project_name',
+                    'code',
+                    'first_name',
+                    'last_name',
+                    'sold_date',
+                    'department_id',
+                    'sub_department_id',
+                    'name',
+                    'status',
+                    'employee_id',
+                ],
+                'group_by' => [],
+                'filters' => [],
+                'sort' => [
+                    [
+                        'table' => 'customers',
+                        'column' => 'sold_date',
+                        'direction' => 'asc',
+                    ],
+                ],
+                'limit' => 100,
+                'requires_finance_access' => false,
+                'sql' => null,
+                'fallback_message' => null,
+            ];
+        }
+
         if ($mentionsProject && $status) {
             return [
                 'answer_type' => 'table',
@@ -1469,6 +1506,17 @@ PROMPT;
         }
 
         return null;
+    }
+
+    private function isPreInspectionOrGhostQuestion(string $question): bool
+    {
+        $mentionsPreInspection = str_contains($question, 'pre-inspection')
+            || str_contains($question, 'pre inspection')
+            || str_contains($question, 'preinspection');
+        $mentionsGhost = str_contains($question, 'ghost');
+        $mentionsLane = str_contains($question, 'lane');
+
+        return $mentionsGhost || ($mentionsPreInspection && $mentionsLane);
     }
 
     private function wantsSubDepartmentSummary(string $question): bool

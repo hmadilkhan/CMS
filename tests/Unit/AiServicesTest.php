@@ -1162,6 +1162,65 @@ class AiServicesTest extends TestCase
         $this->assertContains('%Pending%', $preview['bindings']);
     }
 
+    public function test_ai_planner_maps_pre_inspection_or_ghost_projects_question(): void
+    {
+        $user = $this->userWithRole('Admin');
+        $planner = app(AiQueryPlannerService::class);
+
+        $result = $planner->plan('Show me maximum old projects currently in Pre-Inspection Lane or Ghost projects', $user);
+
+        $this->assertSame('project_pre_inspection_or_ghost_list', $result['plan']['intent']);
+        $this->assertSame(['projects', 'customers', 'departments', 'sub_departments', 'tasks', 'employees'], $result['plan']['tables']);
+        $this->assertSame(100, $result['plan']['limit']);
+    }
+
+    public function test_ai_sql_builder_lists_pre_inspection_or_ghost_projects_by_age(): void
+    {
+        $user = $this->userWithRole('Admin');
+        $builder = app(AiSqlBuilderService::class);
+
+        $preview = $builder->build([
+            'answer_type' => 'table',
+            'intent' => 'project_pre_inspection_or_ghost_list',
+            'tables' => ['projects', 'customers', 'departments', 'sub_departments', 'tasks', 'employees'],
+            'columns' => ['project_name', 'code', 'first_name', 'last_name', 'sold_date', 'department_id', 'sub_department_id', 'name', 'status', 'employee_id'],
+            'group_by' => [],
+            'filters' => [],
+            'sort' => [],
+            'requires_finance_access' => false,
+            'sql' => null,
+            'fallback_message' => null,
+        ], $user);
+        $validation = app(AiSqlValidatorService::class)->validate($preview, [
+            'tables' => ['projects', 'customers', 'departments', 'sub_departments', 'tasks', 'employees'],
+            'columns' => ['project_name', 'code', 'first_name', 'last_name', 'sold_date', 'department_id', 'sub_department_id', 'name', 'status', 'employee_id'],
+            'group_by' => [],
+            'filters' => [],
+            'requires_finance_access' => false,
+        ], $user);
+
+        $sql = strtolower($preview['sql']);
+
+        $this->assertTrue($validation['approved'], $validation['reason'] ?? '');
+        $this->assertStringContainsString('"projects"."sub_department_id" = ?', $sql);
+        $this->assertStringContainsString('ghost_tasks', $sql);
+        $this->assertStringContainsString('"later_tasks"."department_id" >= ?', $sql);
+        $this->assertStringContainsString('project_age_days', $sql);
+        $this->assertStringContainsString('order by julianday', $sql);
+        $this->assertContains(21, $preview['bindings']);
+        $this->assertSame([
+            'project_name',
+            'code',
+            'customer_name',
+            'sold_date',
+            'department_name',
+            'lane_name',
+            'latest_task_status',
+            'assigned_employee_name',
+            'project_age_days',
+        ], $preview['columns']);
+    }
+
     private function userWithRole(string $role): User
     {
         $user = User::factory()->create();

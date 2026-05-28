@@ -37,6 +37,7 @@ class AiSqlBuilderService
             'project_acceptance_summary',
             'project_acceptance_count',
             'project_acceptance_list',
+            'project_pre_inspection_or_ghost_list',
             'project_movement_summary',
             'finance_summary',
             'project_financing_summary',
@@ -327,6 +328,59 @@ class AiSqlBuilderService
                         ->whereColumn('latest_acceptances.project_id', 'projects.id');
                 })
                 ->orderBy('projects.project_name');
+        }
+
+        if (($plan['intent'] ?? null) === 'project_pre_inspection_or_ghost_list') {
+            $this->ensureJoin($query, 'customers', 'projects.customer_id', '=', 'customers.id');
+            $this->ensureJoin($query, 'departments', 'projects.department_id', '=', 'departments.id');
+            $this->ensureJoin($query, 'sub_departments', 'projects.sub_department_id', '=', 'sub_departments.id');
+            $this->ensureJoin($query, 'tasks', 'tasks.project_id', '=', 'projects.id');
+            $this->ensureJoin($query, 'employees', 'tasks.employee_id', '=', 'employees.id');
+
+            $ghostProjectIds = DB::table('tasks as ghost_tasks')
+                ->select('ghost_tasks.project_id')
+                ->where('ghost_tasks.department_id', 4)
+                ->whereNotExists(function ($existsQuery) {
+                    $existsQuery->select(DB::raw(1))
+                        ->from('tasks as later_tasks')
+                        ->whereColumn('later_tasks.project_id', 'ghost_tasks.project_id')
+                        ->where('later_tasks.department_id', '>=', 7)
+                        ->where('later_tasks.department_id', '!=', 9);
+                })
+                ->groupBy('ghost_tasks.project_id');
+
+            $ageExpression = DB::connection()->getDriverName() === 'sqlite'
+                ? "julianday(COALESCE(projects.pto_approval_date, date('now'))) - julianday(customers.sold_date)"
+                : 'DATEDIFF(COALESCE(projects.pto_approval_date, CURDATE()), customers.sold_date)';
+
+            $query->select(
+                'projects.project_name',
+                'projects.code',
+                DB::raw("concat(coalesce(customers.first_name, ''), ' ', coalesce(customers.last_name, '')) as customer_name"),
+                'customers.sold_date',
+                'departments.name as department_name',
+                DB::raw("case when projects.sub_department_id = 21 then sub_departments.name else 'Ghost Projects' end as lane_name"),
+                'tasks.status as latest_task_status',
+                'employees.name as assigned_employee_name',
+                DB::raw($ageExpression . ' as project_age_days')
+            )
+                ->where(function (Builder $laneQuery) use ($ghostProjectIds) {
+                    $laneQuery->where('projects.sub_department_id', 21)
+                        ->orWhereIn('projects.id', $ghostProjectIds);
+                })
+                ->where('tasks.id', function ($latestTaskQuery) {
+                    $latestTaskQuery->selectRaw('max(latest_tasks.id)')
+                        ->from('tasks as latest_tasks')
+                        ->whereColumn('latest_tasks.project_id', 'projects.id')
+                        ->whereIn('latest_tasks.status', ['In-Progress', 'Hold', 'Cancelled']);
+                })
+                ->whereIn('tasks.status', ['In-Progress', 'Hold', 'Cancelled'])
+                ->whereNotNull('customers.sold_date')
+                ->whereNotNull('projects.project_name')
+                ->where('projects.project_name', '!=', '')
+                ->orderByRaw($ageExpression . ' DESC');
+
+            return;
         }
 
         if (($plan['intent'] ?? null) === 'project_movement_summary') {
@@ -937,6 +991,20 @@ class AiSqlBuilderService
                 'reason',
                 'acceptance_created_at',
                 'acceptance_updated_at',
+            ];
+        }
+
+        if (($plan['intent'] ?? null) === 'project_pre_inspection_or_ghost_list') {
+            return [
+                'project_name',
+                'code',
+                'customer_name',
+                'sold_date',
+                'department_name',
+                'lane_name',
+                'latest_task_status',
+                'assigned_employee_name',
+                'project_age_days',
             ];
         }
 
