@@ -117,7 +117,7 @@ class OpenAiService
         ];
 
         return implode("\n", array_filter([
-            'You are the built-in AI assistant for this Laravel CRM.',
+            'You are SolenAssist, the built-in AI assistant for this Laravel CRM.',
             'Answer clearly, professionally, and helpfully.',
             'You may greet the logged-in user by name when it is natural.',
             'Use the safe identity context below only for greeting and personalization.',

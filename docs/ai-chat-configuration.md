@@ -1,4 +1,4 @@
-# AI Chat Configuration
+# SolenAssist Configuration
 
 ## OpenAI
 

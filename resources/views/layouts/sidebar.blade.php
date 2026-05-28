@@ -17,6 +17,12 @@
                     <i class="icofont-home fs-5"></i> <span>Dashboard</span> <span class=" ms-auto text-end fs-5"></span></a>
             </li>
             @endcan
+            @can('SolenAssist')
+            <li class="collapsed">
+                <a class="m-link {{ str_starts_with(Route::currentRouteName() ?? '', 'ai-chat.') ? 'active' : '' }}" href="{{ route('ai-chat.index') }}">
+                    <i class="icofont-robot fs-5"></i> <span>SolenAssist</span> <span class=" ms-auto text-end fs-5"></span></a>
+            </li>
+            @endcan
             @can('User Management')
             <li class="collapsed">
                 <a class="m-link {{ (Route::currentRouteName() == 'get.register' or Route::currentRouteName() == 'role' or Route::currentRouteName() == 'permission' or Route::currentRouteName() == 'role.permission' or Route::currentRouteName() == 'user.permission') ? 'show' : '' }}" data-bs-toggle="collapse" data-bs-target="#user-Components" href="#">

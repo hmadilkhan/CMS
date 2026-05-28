@@ -74,7 +74,7 @@ Route::get('/track-your-project/{project_id}', [App\Http\Controllers\ProjectCont
 Route::post('show-website-emails', [App\Http\Controllers\ImapController::class, 'showEmails'])->name("show.website.emails");
 
 Route::middleware('auth')->group(function () {
-    Route::middleware('throttle:ai_chat')->group(function () {
+    Route::middleware(['can:SolenAssist', 'throttle:ai_chat'])->group(function () {
         Route::get('/ai-chat', [AiChatController::class, 'index'])->name('ai-chat.index');
         Route::post('/ai-chat/send', [AiChatController::class, 'send'])->middleware('ai.daily.limit')->name('ai-chat.send');
         Route::post('/ai-chat/{chat}/retry', [AiChatController::class, 'retry'])->middleware('ai.daily.limit')->name('ai-chat.retry');

@@ -11,6 +11,7 @@ use App\Services\AiSqlBuilderService;
 use App\Services\OpenAiService;
 use App\Http\Middleware\VerifyCsrfToken;
 use Mockery;
+use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
 use Tests\Concerns\CreatesAiChatTestSchema;
 use Tests\TestCase;
@@ -1181,7 +1182,9 @@ class AiChatModuleTest extends TestCase
     private function userWithRole(string $role): User
     {
         $user = User::factory()->create();
-        $user->syncRoles([Role::firstOrCreate(['name' => $role, 'guard_name' => 'web'])]);
+        $roleModel = Role::firstOrCreate(['name' => $role, 'guard_name' => 'web']);
+        $roleModel->givePermissionTo(Permission::firstOrCreate(['name' => 'SolenAssist', 'guard_name' => 'web']));
+        $user->syncRoles([$roleModel]);
 
         return $user->fresh();
     }

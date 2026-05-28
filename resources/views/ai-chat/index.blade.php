@@ -1,6 +1,6 @@
 @extends('layouts.ai-chat')
 
-@section('title', 'AI Chat')
+@section('title', 'SolenAssist')
 
 @section('content')
     <div class="flex h-screen w-screen overflow-hidden bg-white" id="ai-chat-page">
@@ -9,7 +9,7 @@
                 <div class="flex items-center justify-between">
                     <div class="flex items-center gap-3">
                         <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-slate-950 text-lg font-bold text-white">✧</div>
-                        <div class="truncate text-lg font-bold text-slate-950">Solen Energy Co.</div>
+                        <div class="truncate text-lg font-bold text-slate-950">SolenAssist</div>
                     </div>
                     <a href="{{ $backUrl ?? route('dashboard') }}" class="inline-flex h-8 w-8 items-center justify-center rounded-lg text-slate-500 transition hover:bg-slate-200 hover:text-slate-900" title="Back to CRM">
                         <span class="text-lg leading-none">&larr;</span>
@@ -48,7 +48,7 @@
                         </div>
                     @empty
                         <div class="rounded-xl border border-dashed border-slate-300 bg-white p-4 text-sm text-slate-500">
-                            Your AI conversations will appear here.
+                            Your SolenAssist conversations will appear here.
                         </div>
                     @endforelse
                 </div>
@@ -71,7 +71,7 @@
         <main class="flex min-w-0 flex-1 flex-col bg-white">
                 <header class="flex h-14 shrink-0 items-center justify-between border-b border-slate-200 bg-white px-6">
                     <div class="min-w-0">
-                        <h1 class="truncate text-lg font-bold text-slate-950">{{ $activeChat?->title ?? 'Welcome to your assistant' }}</h1>
+                        <h1 class="truncate text-lg font-bold text-slate-950">{{ $activeChat?->title ?? 'Welcome to SolenAssist' }}</h1>
                     </div>
                     <div class="flex items-center gap-2">
                         <a href="{{ $backUrl ?? route('dashboard') }}" class="inline-flex items-center justify-center rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-100">Back to CRM</a>
@@ -101,7 +101,7 @@
                                 <div class="max-w-[92%] rounded-2xl px-5 py-3 text-base leading-7 {{ $message->role === 'user' ? 'rounded-br-lg bg-slate-950 text-white sm:max-w-[74%]' : 'rounded-bl-lg bg-slate-100 text-slate-950 sm:max-w-[92%]' }}">
                                     @if ($message->role === 'assistant')
                                         <div class="mb-2 flex items-center justify-between gap-3 border-b border-slate-200 pb-2">
-                                            <span class="text-xs font-semibold uppercase tracking-wide text-slate-400">Assistant</span>
+                                            <span class="text-xs font-semibold uppercase tracking-wide text-slate-400">SolenAssist</span>
                                             <div class="flex gap-2">
                                                 <button type="button" class="copy-answer rounded-md border border-slate-200 px-2 py-1 text-xs font-semibold text-slate-500 hover:bg-slate-50" data-copy="{{ e($message->content) }}">Copy</button>
                                                 @if (($message->metadata['retryable'] ?? false) && $activeChat)
@@ -168,7 +168,7 @@
                             <div class="flex justify-start">
                                 <div class="mr-4 hidden h-9 w-9 shrink-0 items-center justify-center rounded-full bg-slate-950 text-base font-bold text-white sm:flex">✧</div>
                                 <div class="max-w-3xl rounded-2xl rounded-bl-lg bg-slate-100 px-5 py-4 text-base leading-7 text-slate-950">
-                                    Hi {{ $userName ?? auth()->user()->name }}! I'm your AI assistant for {{ $appName ?? config('app.name', 'CRM') }}. Ask me anything about projects, tickets, summaries, writing, or planning. How can I help today?
+                                    Hi {{ $userName ?? auth()->user()->name }}! I'm SolenAssist for {{ $appName ?? config('app.name', 'CRM') }}. Ask me anything about projects, tickets, summaries, writing, or planning. How can I help today?
                                 </div>
                             </div>
                             <div class="mt-5 flex flex-wrap gap-2 pl-0 sm:pl-[52px]">
@@ -203,12 +203,12 @@
                         @endforeach
                     </div>
                     <div class="mx-auto flex max-w-7xl items-center gap-3 rounded-[24px] border-2 border-slate-300 bg-white px-5 py-2 shadow-sm">
-                        <textarea id="message-input" rows="1" class="max-h-36 min-h-[38px] flex-1 resize-none border-0 bg-transparent px-1 py-2 text-base text-slate-900 outline-none placeholder:text-slate-500 focus:ring-0" placeholder="Message Solen Energy Co..."></textarea>
+                        <textarea id="message-input" rows="1" class="max-h-36 min-h-[38px] flex-1 resize-none border-0 bg-transparent px-1 py-2 text-base text-slate-900 outline-none placeholder:text-slate-500 focus:ring-0" placeholder="Message SolenAssist..."></textarea>
                         <button id="send-button" type="submit" class="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-slate-400 text-2xl text-white transition hover:bg-slate-700 disabled:cursor-not-allowed disabled:bg-slate-300" title="Send">
                             <span class="-mt-1">⌁</span>
                         </button>
                     </div>
-                    <p class="mx-auto mt-2 max-w-7xl text-center text-xs text-slate-500">Solen Energy Co. AI can make mistakes. Check important info.</p>
+                    <p class="mx-auto mt-2 max-w-7xl text-center text-xs text-slate-500">SolenAssist can make mistakes. Check important info.</p>
                 </form>
             </main>
     </div>
@@ -286,7 +286,7 @@
 
             const label = document.createElement('span');
             label.className = 'text-xs font-semibold uppercase tracking-wide text-slate-400';
-            label.textContent = metadata.status === 'failed' ? 'Needs attention' : 'Assistant';
+            label.textContent = metadata.status === 'failed' ? 'Needs attention' : 'SolenAssist';
             bar.appendChild(label);
 
             const actions = document.createElement('div');
