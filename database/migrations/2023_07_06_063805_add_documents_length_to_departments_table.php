@@ -12,7 +12,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('departments', function (Blueprint $table) {
-            $table->integer("document_length");
+            $table->integer("document_length")->default(0);
         });
     }
 

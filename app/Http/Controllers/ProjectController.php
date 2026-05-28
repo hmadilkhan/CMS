@@ -1072,8 +1072,14 @@ class ProjectController extends Controller
 
         $query = Project::with("customer", "customer.salespartner", "department", "subdepartment", "assignedPerson", "assignedPerson.employee", "task", "notes")
             ->join('customers', 'customers.id', '=', 'projects.customer_id')
-            ->select('projects.*')
-            ->orderByRaw('DATEDIFF(COALESCE(projects.pto_approval_date, CURDATE()), customers.sold_date) ASC');
+            ->select('projects.*');
+
+        if (DB::connection()->getDriverName() === 'sqlite') {
+            $query->orderByRaw("julianday(COALESCE(projects.pto_approval_date, date('now'))) - julianday(customers.sold_date) ASC");
+        } else {
+            $query->orderByRaw('DATEDIFF(COALESCE(projects.pto_approval_date, CURDATE()), customers.sold_date) ASC');
+        }
+
         $query->withCount(['emails as viewed_emails_count' => function ($query) {
             $query->where('is_view', 1);
         }]);

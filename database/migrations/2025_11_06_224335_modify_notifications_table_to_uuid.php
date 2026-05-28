@@ -4,6 +4,7 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 
 return new class extends Migration
 {
@@ -28,12 +29,22 @@ return new class extends Migration
             $table->timestamps();
         });
         
-        // Restore data with new UUIDs
-        DB::statement("
-            INSERT INTO notifications (id, type, notifiable_type, notifiable_id, data, read_at, created_at, updated_at)
-            SELECT UUID(), type, notifiable_type, notifiable_id, data, read_at, created_at, updated_at
-            FROM notifications_backup
-        ");
+        // Restore data with new UUIDs. Generate UUIDs in PHP so tests also work on SQLite.
+        DB::table('notifications_backup')
+            ->orderBy('created_at')
+            ->get()
+            ->each(function ($notification) {
+                DB::table('notifications')->insert([
+                    'id' => (string) Str::uuid(),
+                    'type' => $notification->type,
+                    'notifiable_type' => $notification->notifiable_type,
+                    'notifiable_id' => $notification->notifiable_id,
+                    'data' => $notification->data,
+                    'read_at' => $notification->read_at,
+                    'created_at' => $notification->created_at,
+                    'updated_at' => $notification->updated_at,
+                ]);
+            });
         
         // Drop backup table
         DB::statement('DROP TABLE notifications_backup');

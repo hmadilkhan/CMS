@@ -12,8 +12,8 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('customer_finances', function (Blueprint $table) {
-            $table->float("module_type_cost");
-            $table->float("inverter_base_cost");
+            $table->float("module_type_cost")->default(0);
+            $table->float("inverter_base_cost")->default(0);
         });
     }
 

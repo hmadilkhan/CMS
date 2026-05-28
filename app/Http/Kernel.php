@@ -65,6 +65,7 @@ class Kernel extends HttpKernel
         'verified' => \Illuminate\Auth\Middleware\EnsureEmailIsVerified::class,
         'permission' => \Spatie\Permission\Middlewares\PermissionMiddleware::class,
         'role' => \Spatie\Permission\Middlewares\RoleMiddleware::class,
+        'ai.daily.limit' => \App\Http\Middleware\AiDailyLimit::class,
     ];
 
     protected $routeMiddleware = [
@@ -80,5 +81,6 @@ class Kernel extends HttpKernel
         'throttle' => \Illuminate\Routing\Middleware\ThrottleRequests::class,
         'verified' => \Illuminate\Auth\Middleware\EnsureEmailIsVerified::class,
         'check.admin' => \App\Http\Middleware\CheckAdminRole::class,
+        'ai.daily.limit' => \App\Http\Middleware\AiDailyLimit::class,
     ];
 }

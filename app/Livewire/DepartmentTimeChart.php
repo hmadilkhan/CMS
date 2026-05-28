@@ -6,6 +6,7 @@ use App\Models\Task;
 use Livewire\Component;
 use Illuminate\Support\Facades\Log;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\DB;
 
 class DepartmentTimeChart extends Component
 {
@@ -29,11 +30,15 @@ class DepartmentTimeChart extends Component
 
     public function render()
     {
-        $departmentStats = Task::selectRaw('
+        $durationExpression = DB::connection()->getDriverName() === 'sqlite'
+            ? "COALESCE(AVG(julianday(tasks.updated_at) - julianday(tasks.created_at)), 0)"
+            : "COALESCE(AVG(TIMESTAMPDIFF(DAY, tasks.created_at, tasks.updated_at)), 0)";
+
+        $departmentStats = Task::selectRaw("
             departments.name as department_name,
-             COALESCE(AVG(TIMESTAMPDIFF(DAY, tasks.created_at, tasks.updated_at)), 0) as average_duration,
+            {$durationExpression} as average_duration,
             COUNT(tasks.id) as task_count
-        ')
+        ")
         ->join('departments', 'tasks.department_id', '=', 'departments.id')
         ->whereDate('tasks.created_at', '>=', $this->startDate)
         ->whereDate('tasks.created_at', '<=', $this->endDate)
