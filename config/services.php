@@ -31,4 +31,11 @@ return [
         'region' => env('AWS_DEFAULT_REGION', 'us-east-1'),
     ],
 
+    'openai' => [
+        'api_key' => env('OPENAI_API_KEY'),
+        'model' => env('OPENAI_MODEL', 'gpt-4.1-mini'),
+        'max_output_tokens' => env('OPENAI_MAX_OUTPUT_TOKENS', 1200),
+        'timeout' => env('OPENAI_TIMEOUT', 60),
+    ],
+
 ];

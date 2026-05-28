@@ -1,6 +1,7 @@
 ﻿<?php
 
 use App\Http\Controllers\AuroraController;
+use App\Http\Controllers\AiChatController;
 use App\Http\Controllers\CustomerController;
 use App\Http\Controllers\DeployController;
 use App\Http\Controllers\EmployeeController;
@@ -73,6 +74,16 @@ Route::get('/track-your-project/{project_id}', [App\Http\Controllers\ProjectCont
 Route::post('show-website-emails', [App\Http\Controllers\ImapController::class, 'showEmails'])->name("show.website.emails");
 
 Route::middleware('auth')->group(function () {
+    Route::middleware('throttle:ai_chat')->group(function () {
+        Route::get('/ai-chat', [AiChatController::class, 'index'])->name('ai-chat.index');
+        Route::post('/ai-chat/send', [AiChatController::class, 'send'])->middleware('ai.daily.limit')->name('ai-chat.send');
+        Route::post('/ai-chat/{chat}/retry', [AiChatController::class, 'retry'])->middleware('ai.daily.limit')->name('ai-chat.retry');
+        Route::post('/ai-chat/messages/{message}/feedback', [AiChatController::class, 'feedback'])->name('ai-chat.feedback');
+        Route::patch('/ai-chat/{chat}', [AiChatController::class, 'rename'])->name('ai-chat.rename');
+        Route::delete('/ai-chat/{chat}', [AiChatController::class, 'destroy'])->name('ai-chat.destroy');
+        Route::get('/ai-chat/{chat}', [AiChatController::class, 'show'])->name('ai-chat.show');
+    });
+
     Route::get('/dashboard', [App\Http\Controllers\HomeController::class, 'dashboard'])
         ->middleware('check.admin')
         ->name('dashboard');

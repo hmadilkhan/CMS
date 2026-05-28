@@ -101,6 +101,7 @@ class ProjectMovementWorkflowTest extends TestCase
             'budget' => 28000,
             'start_date' => now()->toDateString(),
             'end_date' => now()->addMonth()->toDateString(),
+            'ahj' => 'Movement AHJ',
         ]);
 
         $task = Task::create([
