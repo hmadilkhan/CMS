@@ -42,6 +42,23 @@ class AiSchemaService
         }
     }
 
+    public function getDefaultFilters(string $table): array
+    {
+        try {
+            $filters = $this->getTableConfig($table)['default_filters'] ?? null;
+
+            if (is_array($filters)) {
+                return $filters;
+            }
+
+            return $this->isColumnAllowed($table, 'deleted_at')
+                ? [['column' => 'deleted_at', 'operator' => '=', 'value' => null]]
+                : [];
+        } catch (Throwable) {
+            return [];
+        }
+    }
+
     public function isTableAllowed(string $table): bool
     {
         try {

@@ -46,6 +46,11 @@ class Employee extends Model
       return $this->belongsToMany(Department::class, 'employee_departments')->withTrashed();
    }
 
+   public function departments(): BelongsToMany
+   {
+      return $this->department();
+   }
+
    public function assignDepartments(): HasMany
    {
       return $this->hasMany(AssignDepartment::class, 'employee_id', 'id');

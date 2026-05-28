@@ -66,33 +66,40 @@ class OpenAiService
             'max_output_tokens' => $maxOutputTokens,
         ];
 
-        $response = Http::withToken($apiKey)
-            ->acceptJson()
-            ->asJson()
-            ->timeout((int) config('services.openai.timeout', 60))
-            ->post('https://api.openai.com/v1/responses', $payload);
+        $lastData = null;
+        $lastText = null;
 
-        if ($response->failed()) {
-            throw new RuntimeException($response->json('error.message') ?? 'OpenAI request failed.');
+        for ($attempt = 1; $attempt <= 2; $attempt++) {
+            $response = Http::withToken($apiKey)
+                ->acceptJson()
+                ->asJson()
+                ->timeout((int) config('services.openai.timeout', 60))
+                ->post('https://api.openai.com/v1/responses', $payload);
+
+            if ($response->failed()) {
+                throw new RuntimeException($response->json('error.message') ?? 'OpenAI request failed.');
+            }
+
+            $lastData = $response->json();
+            $lastText = $this->extractText($lastData);
+            $decoded = json_decode($lastText, true);
+
+            if (is_array($decoded)) {
+                return [
+                    'id' => Arr::get($lastData, 'id'),
+                    'model' => Arr::get($lastData, 'model', $payload['model']),
+                    'json' => $decoded,
+                    'text' => $lastText,
+                    'usage' => Arr::get($lastData, 'usage', []),
+                    'payload' => $payload,
+                    'raw' => $lastData,
+                ];
+            }
+
+            $payload['input'] = "The previous response was not valid JSON. Return JSON only that matches the required schema.\n\nOriginal input:\n" . $payload['input'];
         }
 
-        $data = $response->json();
-        $text = $this->extractText($data);
-        $decoded = json_decode($text, true);
-
-        if (! is_array($decoded)) {
-            throw new RuntimeException('OpenAI did not return valid JSON.');
-        }
-
-        return [
-            'id' => Arr::get($data, 'id'),
-            'model' => Arr::get($data, 'model', $payload['model']),
-            'json' => $decoded,
-            'text' => $text,
-            'usage' => Arr::get($data, 'usage', []),
-            'payload' => $payload,
-            'raw' => $data,
-        ];
+        throw new RuntimeException('OpenAI did not return valid JSON.');
     }
 
     private function buildAssistantInstructions(array $context): string

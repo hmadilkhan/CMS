@@ -94,11 +94,11 @@
                     @if ($activeChat && $activeChat->messages->isNotEmpty())
                         @foreach ($activeChat->messages as $message)
                             @php($answer = $message->metadata['answer'] ?? null)
-                            <div class="mx-auto flex max-w-5xl {{ $message->role === 'user' ? 'justify-end' : 'justify-start' }}">
+                            <div class="mx-auto flex max-w-7xl {{ $message->role === 'user' ? 'justify-end' : 'justify-start' }}">
                                 @if ($message->role === 'assistant')
                                     <div class="mr-4 hidden h-9 w-9 shrink-0 items-center justify-center rounded-full bg-slate-950 text-base font-bold text-white sm:flex">✧</div>
                                 @endif
-                                <div class="max-w-[86%] rounded-2xl px-5 py-3 text-base leading-7 sm:max-w-[74%] {{ $message->role === 'user' ? 'rounded-br-lg bg-slate-950 text-white' : 'rounded-bl-lg bg-slate-100 text-slate-950' }}">
+                                <div class="max-w-[92%] rounded-2xl px-5 py-3 text-base leading-7 {{ $message->role === 'user' ? 'rounded-br-lg bg-slate-950 text-white sm:max-w-[74%]' : 'rounded-bl-lg bg-slate-100 text-slate-950 sm:max-w-[92%]' }}">
                                     @if ($message->role === 'assistant')
                                         <div class="mb-2 flex items-center justify-between gap-3 border-b border-slate-200 pb-2">
                                             <span class="text-xs font-semibold uppercase tracking-wide text-slate-400">Assistant</span>
@@ -143,7 +143,7 @@
                                                     @foreach (($answer['rows'] ?? []) as $row)
                                                         <tr>
                                                             @foreach (($answer['columns'] ?? []) as $column)
-                                                                <td class="px-3 py-2">{{ $row[$column] ?? '' }}</td>
+                                                                <td class="whitespace-nowrap px-3 py-2">{{ $row[$column] ?? '' }}</td>
                                                             @endforeach
                                                         </tr>
                                                     @endforeach
@@ -164,7 +164,7 @@
                             </div>
                         @endforeach
                     @else
-                        <div id="empty-state" class="mx-auto max-w-5xl">
+                        <div id="empty-state" class="mx-auto max-w-7xl">
                             <div class="flex justify-start">
                                 <div class="mr-4 hidden h-9 w-9 shrink-0 items-center justify-center rounded-full bg-slate-950 text-base font-bold text-white sm:flex">✧</div>
                                 <div class="max-w-3xl rounded-2xl rounded-bl-lg bg-slate-100 px-5 py-4 text-base leading-7 text-slate-950">
@@ -181,7 +181,7 @@
                 </section>
 
                 <div id="typing" class="hidden px-4 pb-4 sm:px-8">
-                    <div class="mx-auto flex max-w-5xl">
+                    <div class="mx-auto flex max-w-7xl">
                         <div class="mr-4 hidden h-9 w-9 shrink-0 items-center justify-center rounded-full bg-slate-950 text-base font-bold text-white sm:flex">AI</div>
                         <div class="inline-flex items-center gap-3 rounded-full border border-slate-200 bg-white px-4 py-2 text-sm text-slate-500 shadow-sm">
                         <span class="flex gap-1">
@@ -197,18 +197,18 @@
                 <form id="chat-form" class="shrink-0 border-t border-slate-200 bg-white px-4 py-3 sm:px-8">
                     @csrf
                     <input type="hidden" id="chat-id" value="{{ $activeChat?->id }}">
-                    <div class="mx-auto mb-3 flex max-w-5xl gap-2 overflow-x-auto pb-1">
+                    <div class="mx-auto mb-3 flex max-w-7xl gap-2 overflow-x-auto pb-1">
                         @foreach ($suggestedQuestions as $question)
                             <button type="button" class="suggestion-chip shrink-0 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-500 hover:bg-slate-50" data-question="{{ $question }}">{{ $question }}</button>
                         @endforeach
                     </div>
-                    <div class="mx-auto flex max-w-5xl items-center gap-3 rounded-[24px] border-2 border-slate-300 bg-white px-5 py-2 shadow-sm">
+                    <div class="mx-auto flex max-w-7xl items-center gap-3 rounded-[24px] border-2 border-slate-300 bg-white px-5 py-2 shadow-sm">
                         <textarea id="message-input" rows="1" class="max-h-36 min-h-[38px] flex-1 resize-none border-0 bg-transparent px-1 py-2 text-base text-slate-900 outline-none placeholder:text-slate-500 focus:ring-0" placeholder="Message Solen Energy Co..."></textarea>
                         <button id="send-button" type="submit" class="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-slate-400 text-2xl text-white transition hover:bg-slate-700 disabled:cursor-not-allowed disabled:bg-slate-300" title="Send">
                             <span class="-mt-1">⌁</span>
                         </button>
                     </div>
-                    <p class="mx-auto mt-2 max-w-5xl text-center text-xs text-slate-500">Solen Energy Co. AI can make mistakes. Check important info.</p>
+                    <p class="mx-auto mt-2 max-w-7xl text-center text-xs text-slate-500">Solen Energy Co. AI can make mistakes. Check important info.</p>
                 </form>
             </main>
     </div>
@@ -365,7 +365,7 @@
                     const tr = document.createElement('tr');
                     (answer.columns || []).forEach((column) => {
                         const td = document.createElement('td');
-                        td.className = 'px-3 py-2';
+                        td.className = 'whitespace-nowrap px-3 py-2';
                         td.textContent = row[column] ?? '';
                         tr.appendChild(td);
                     });
@@ -399,7 +399,7 @@
 
         function appendMessage(role, content, answer = null, metadata = {}, messageId = null) {
             const wrapper = document.createElement('div');
-            wrapper.className = `mx-auto flex max-w-5xl ${role === 'user' ? 'justify-end' : 'justify-start'}`;
+            wrapper.className = `mx-auto flex max-w-7xl ${role === 'user' ? 'justify-end' : 'justify-start'}`;
 
             if (role === 'assistant') {
                 const avatar = document.createElement('div');
@@ -411,7 +411,7 @@
             const bubble = document.createElement('div');
             bubble.className = role === 'user'
                 ? 'max-w-[86%] sm:max-w-[74%] rounded-2xl rounded-br-lg bg-slate-950 px-5 py-3 text-base leading-7 text-white'
-                : 'max-w-[86%] sm:max-w-[74%] rounded-2xl rounded-bl-lg bg-slate-100 px-5 py-3 text-base leading-7 text-slate-950';
+                : 'max-w-[92%] sm:max-w-[92%] rounded-2xl rounded-bl-lg bg-slate-100 px-5 py-3 text-base leading-7 text-slate-950';
 
             const text = document.createElement('div');
             text.className = 'whitespace-pre-wrap';

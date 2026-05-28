@@ -24,6 +24,7 @@ Then add `database.connections.ai_readonly` in `config/database.php` with creden
 ## Schema Mapping
 
 All AI-accessible tables and columns are controlled by `config/ai_schema.php`.
+See `docs/ai-query-planner.md` for the hybrid planner flow and how to add modules safely.
 
 Security rules:
 

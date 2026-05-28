@@ -61,6 +61,12 @@ return [
                 'production_value_achieved',
                 'fire_review_required',
                 'fire_inspection_date',
+                'office_cost',
+                'actual_permit_fee',
+                'actual_labor_cost',
+                'actual_material_cost',
+                'overwrite_base_price',
+                'overwrite_panel_price',
                 'created_at',
                 'updated_at',
                 'deleted_at',
@@ -429,7 +435,7 @@ return [
                     'local_key' => 'user_id',
                     'foreign_key' => 'id',
                 ],
-                'departments' => [
+                'employeeDepartments' => [
                     'table' => 'employee_departments',
                     'local_key' => 'id',
                     'foreign_key' => 'employee_id',
@@ -1184,6 +1190,34 @@ return [
             'relationships' => [],
             'sensitive_columns' => [],
             'default_sort_column' => 'name',
+            'access_rule' => 'admin_only',
+        ],
+
+        'model_has_roles' => [
+            'model' => null,
+            'table' => 'model_has_roles',
+            'allowed_columns' => [
+                'role_id',
+                'model_type',
+                'model_id',
+            ],
+            'searchable_columns' => [
+                'model_type',
+            ],
+            'relationships' => [
+                'role' => [
+                    'table' => 'roles',
+                    'local_key' => 'role_id',
+                    'foreign_key' => 'id',
+                ],
+                'user' => [
+                    'table' => 'users',
+                    'local_key' => 'model_id',
+                    'foreign_key' => 'id',
+                ],
+            ],
+            'sensitive_columns' => [],
+            'default_sort_column' => 'role_id',
             'access_rule' => 'admin_only',
         ],
 

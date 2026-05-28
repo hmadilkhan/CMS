@@ -16,7 +16,9 @@ class AiChatService
     public function __construct(
         private readonly OpenAiService $openAiService,
         private readonly AiQueryPlannerService $aiQueryPlannerService,
-        private readonly AiSqlBuilderService $aiSqlBuilderService,
+        private readonly AiPlanValidatorService $aiPlanValidatorService,
+        private readonly AiEntityResolverService $aiEntityResolverService,
+        private readonly AiSafeQueryBuilderService $aiSafeQueryBuilderService,
         private readonly AiSqlValidatorService $aiSqlValidatorService,
         private readonly AiQueryExecutorService $aiQueryExecutorService,
         private readonly AiAnswerFormatterService $aiAnswerFormatterService
@@ -249,22 +251,39 @@ class AiChatService
         $response = $planned['openai'];
         $usage = $response['usage'];
         $sqlPreview = null;
+        $planValidation = null;
+        $entityResolution = null;
         $validation = null;
         $execution = null;
         $answer = null;
 
         if ($plan['intent'] !== 'unknown') {
-            $sqlPreview = $this->aiSqlBuilderService->build($plan, $user);
-            $validation = $this->aiSqlValidatorService->validate($sqlPreview, $plan, $user);
+            $planValidation = $this->aiPlanValidatorService->validate($plan, $user);
 
-            if ($validation['approved'] ?? false) {
-                $execution = $this->aiQueryExecutorService->execute($sqlPreview, $user->id);
-                $answer = $this->aiAnswerFormatterService->format($message, $plan, $execution);
+            if ($planValidation['approved'] ?? false) {
+                $entityResolution = $this->aiEntityResolverService->resolve($plan);
+
+                if (in_array($entityResolution['status'] ?? null, ['clarification_required', 'not_found'], true)) {
+                    $plan['intent'] = 'unknown';
+                    $plan['mode'] = $entityResolution['status'];
+                    $plan['fallback_message'] = $entityResolution['message'] ?? 'I need one more detail before I can answer safely.';
+                } else {
+                    $plan = $entityResolution['plan'] ?? $plan;
+                    $sqlPreview = $this->aiSafeQueryBuilderService->build($plan, $user);
+                    $validation = $this->aiSqlValidatorService->validate($sqlPreview, $plan, $user);
+
+                    if ($validation['approved'] ?? false) {
+                        $execution = $this->aiQueryExecutorService->execute($sqlPreview, $user->id);
+                        $answer = $this->aiAnswerFormatterService->format($message, $plan, $execution);
+                    }
+                }
             }
         }
 
         if ($plan['intent'] === 'unknown') {
             $assistantMessage = $plan['fallback_message'] ?: 'I could not understand that CRM question yet. Try one of the suggested questions.';
+        } elseif (! ($planValidation['approved'] ?? false)) {
+            $assistantMessage = ($planValidation['reason'] ?? 'I need one more detail before I can answer safely.');
         } elseif (! ($validation['approved'] ?? false)) {
             $assistantMessage = 'I could not safely prepare this CRM query. ' . ($validation['reason'] ?? 'Please try a different question.');
         } elseif (! ($execution['success'] ?? false)) {
@@ -282,21 +301,23 @@ class AiChatService
             $assistantMessage = $answer['message'] ?? 'Here are the CRM results.';
         }
 
-        DB::transaction(function () use ($chat, $plan, $response, $usage, $log, $startedAt, $assistantMessage, $sqlPreview, $validation, $message, $execution, $answer) {
+        DB::transaction(function () use ($chat, $plan, $response, $usage, $log, $startedAt, $assistantMessage, $sqlPreview, $planValidation, $entityResolution, $validation, $message, $execution, $answer) {
             $chat->messages()->create([
                 'role' => 'assistant',
                 'content' => $assistantMessage,
                 'metadata' => [
                     'type' => 'query_plan',
                     'query_plan' => $plan,
+                    'plan_validation' => $planValidation,
+                    'entity_resolution' => $entityResolution,
                     'sql_preview' => $sqlPreview,
                     'sql_validation' => $validation,
                     'query_execution' => $execution,
                     'answer' => $answer,
                     'status' => $plan['intent'] === 'unknown'
                         ? 'invalid_question'
-                        : ((! ($validation['approved'] ?? true)) ? 'unsafe_query_rejected' : ((! ($execution['success'] ?? true)) ? 'failed' : 'success')),
-                    'retryable' => $plan['intent'] !== 'unknown' && (! ($validation['approved'] ?? true) || ! ($execution['success'] ?? true)),
+                        : ((! ($planValidation['approved'] ?? true) || ! ($validation['approved'] ?? true)) ? 'unsafe_query_rejected' : ((! ($execution['success'] ?? true)) ? 'failed' : 'success')),
+                    'retryable' => $plan['intent'] !== 'unknown' && (! ($planValidation['approved'] ?? true) || ! ($validation['approved'] ?? true) || ! ($execution['success'] ?? true)),
                     'openai_response_id' => $response['id'],
                     'model' => $response['model'],
                 ],
@@ -305,9 +326,11 @@ class AiChatService
             $log->update([
                 'status' => $plan['intent'] === 'unknown'
                     ? 'planned_unknown'
-                    : (! ($validation['approved'] ?? false)
+                    : (! ($planValidation['approved'] ?? false)
                         ? 'rejected'
-                        : (($execution['success'] ?? false) ? 'executed' : 'execution_failed')),
+                        : (! ($validation['approved'] ?? false)
+                        ? 'rejected'
+                        : (($execution['success'] ?? false) ? 'executed' : 'execution_failed'))),
                 'response_id' => $response['id'],
                 'model' => $response['model'],
                 'prompt_tokens' => $usage['input_tokens'] ?? null,
@@ -318,15 +341,19 @@ class AiChatService
                 'response_payload' => [
                     'question' => $message,
                     'query_plan' => $plan,
+                    'plan_validation' => $planValidation,
+                    'entity_resolution' => $entityResolution,
                     'sql_preview' => $sqlPreview,
                     'sql_validation' => $validation,
                     'query_execution' => $execution,
                     'answer' => $answer,
                     'openai_raw' => $response['raw'],
                 ],
-                'error_message' => ! ($validation['approved'] ?? true)
+                'error_message' => ! ($planValidation['approved'] ?? true)
+                    ? ($planValidation['reason'] ?? 'Plan rejected by validator.')
+                    : (! ($validation['approved'] ?? true)
                     ? ($validation['reason'] ?? 'Query rejected by validator.')
-                    : ((! ($execution['success'] ?? true)) ? ($execution['error_message'] ?? 'Query execution failed.') : null),
+                    : ((! ($execution['success'] ?? true)) ? ($execution['error_message'] ?? 'Query execution failed.') : null)),
             ]);
 
             $chat->update([

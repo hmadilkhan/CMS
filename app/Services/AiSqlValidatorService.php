@@ -106,8 +106,13 @@ class AiSqlValidatorService
 
         foreach (($plan['filters'] ?? []) as $filter) {
             $column = is_array($filter) ? ($filter['column'] ?? null) : null;
+            $table = is_array($filter) ? ($filter['table'] ?? null) : null;
 
-            if ($column && ! $this->isColumnAllowedForAnyPlanTable($user, $plan, $column)) {
+            if ($column && $table && (! in_array($table, $plan['tables'] ?? [], true) || ! $this->aiPermissionService->canAccessColumn($user, $table, $column))) {
+                return $this->reject('The query filters on a column that is not allowed.');
+            }
+
+            if ($column && ! $table && ! $this->isColumnAllowedForAnyPlanTable($user, $plan, $column)) {
                 return $this->reject('The query filters on a column that is not allowed.');
             }
         }
