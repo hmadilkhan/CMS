@@ -369,62 +369,101 @@ class AiQueryPlannerService
     {
         $question = mb_strtolower($question);
 
+        // Clearly non-CRM: pure greetings or thanks — skip pipeline
+        $greetingsOnly = ['hello', 'hi', 'hey', 'thanks', 'thank you', 'shukriya', 'ok', 'okay', 'bye', 'goodbye'];
+        $trimmed = trim($question, " \t\n\r.,!?");
+        if (in_array($trimmed, $greetingsOnly, true)) {
+            return false;
+        }
+
         $keywords = [
-            'project',
-            'projects',
-            'customer',
-            'customers',
-            'client',
-            'clients',
-            'ticket',
-            'tickets',
-            'task',
-            'tasks',
-            'department',
-            'departments',
-            'role',
-            'roles',
-            'permission',
-            'permissions',
-            'subdepartment',
-            'sub department',
-            'sub_department',
-            'assigned',
-            'mere',
-            'mery',
-            'meri',
-            'kitne',
-            'kitni',
-            'count',
-            'status',
-            'finance',
-            'financing',
-            'profitability',
-            'report',
-            'expense',
-            'payment',
-            'transaction',
-            'transactions',
-            'remittance',
-            'remitted',
-            'deduction',
-            'milestone',
-            'payee',
-            'amount',
-            'cost',
-            'profit',
-            'revenue',
-            'commission',
-            'forecast',
-            'override',
-            'pending',
-            'resolved',
-            'pto',
-            'ntp',
-            'ghost',
-            'lane',
-            'pre-inspection',
-            'pre inspection',
+            // Core CRM entities
+            'project', 'projects',
+            'customer', 'customers',
+            'client', 'clients',
+            'ticket', 'tickets',
+            'task', 'tasks',
+            'department', 'departments',
+            'role', 'roles',
+            'permission', 'permissions',
+            'subdepartment', 'sub department', 'sub_department',
+            'employee', 'employees',
+            'user', 'users',
+            'sales partner', 'salespartner',
+            'sub-contractor', 'subcontractor',
+            'sub contractor',
+
+            // Solar installation domain
+            'solar', 'install', 'installation', 'installations',
+            'panel', 'panels', 'battery', 'batteries',
+            'inverter', 'inverters',
+            'monitoring', 'monitor',
+            'utility', 'utility company',
+            'adder', 'adders',
+            'production', 'production value',
+            'system', 'systems',
+
+            // Project milestone / date fields
+            'permit', 'permitting', 'permited',
+            'inspection', 'inspections',
+            'survey', 'site survey',
+            'ntp', 'pto',
+            'hoa', 'ahj', 'mpu',
+            'meter spot', 'meter',
+            'placards', 'placard',
+            'rough inspection', 'final inspection', 'fire inspection',
+            'fire review',
+            'coc', 'packet',
+
+            // Project modules
+            'follow up', 'followup', 'follow-up',
+            'call log', 'calllog', 'call-log',
+            'design', 'design detail',
+            'acceptance', 'project acceptance',
+            'file', 'files', 'attachment',
+
+            // Finance / payments
+            'finance', 'financing',
+            'profitability', 'profitablity',
+            'report', 'reports',
+            'expense', 'expenses',
+            'payment', 'payments',
+            'transaction', 'transactions',
+            'remittance', 'remitted',
+            'deduction', 'deductions',
+            'milestone', 'milestones',
+            'payee', 'amount', 'amounts',
+            'cost', 'costs',
+            'profit', 'revenue',
+            'commission', 'commissions',
+            'contract', 'contract amount',
+            'dealer fee', 'holdback',
+            'loan', 'loan term', 'apr',
+            'redline', 'adders',
+
+            // Status and metrics
+            'status', 'statuses',
+            'pending', 'resolved', 'active',
+            'count', 'total', 'summary',
+            'forecast', 'override',
+            'overwrite', 'overrider',
+            'priority', 'priorities',
+            'ghost', 'lane',
+            'pre-inspection', 'pre inspection',
+
+            // Urdu / mixed-language CRM queries
+            'mere', 'mery', 'meri', 'mera',
+            'kitne', 'kitni', 'kitna',
+            'dikhao', 'dikha', 'dikhai',
+            'batao', 'bata', 'batana',
+            'list karo', 'list kare', 'list karta',
+            'kaunse', 'kaun se',
+            'assigned', 'assign',
+            'kab', 'kb',
+            'sab', 'sabka', 'sab ka',
+            'show karo', 'show kare',
+            'report karo', 'report nikalo',
+            'nikalo', 'nikaal',
         ];
 
         foreach ($keywords as $keyword) {
@@ -439,72 +478,133 @@ class AiQueryPlannerService
     private function instructions(): string
     {
         return <<<'PROMPT'
-You are a safe CRM query planner for a Laravel CRM.
+You are a safe CRM query planner for a solar installation company's Laravel CRM.
 
-Return structured JSON only. Do not return markdown. Do not answer the user's CRM question directly.
+Return structured JSON only. Do not return markdown. Do not answer the user's question directly.
 Do not generate SQL. Never include a raw SQL string.
 Use only the supplied allowed_schema tables and allowed columns.
 
-IMPORTANT: Be FLEXIBLE and HELPFUL. If the question can be answered using allowed_schema:
-- Use appropriate intent (project_count, crm_list, crm_group_summary, etc.)
-- Include ALL relevant tables needed to answer the question
-- Include ALL relevant columns from those tables
-- Add appropriate filters based on the question
-- Do not require a fixed/hardcoded intent. Fixed actions are optional; data_explorer is the normal mode for new CRM questions.
-- Before returning unsupported, search allowed_schema and crm_module_hints for related tables, relationships, searchable columns, status fields, name fields, and date fields.
+## CORE RULES
+- Be FLEXIBLE and HELPFUL. If the question can be answered using allowed_schema, answer it.
+- Before returning unsupported/unknown, carefully check allowed_schema and crm_module_hints for related tables, relationships, searchable columns, and date fields.
 - Prefer generic intents when no exact report exists: crm_list, crm_count, crm_group_summary, crm_detail.
-- Prefer real mapped tables over placeholders. For project financing use projects + customers + customer_finances + finance_options when those tables are allowed.
+- For project financing use: projects + customers + customer_finances + finance_options.
+- Never invent tables or columns not in allowed_schema.
 
-CURRENT USER CONTEXT:
-When user asks about "my", "assigned to me", "mine", etc., add filter:
-- For projects assigned to current user: use tasks + projects and filter {"table": "tasks", "column": "employee_id", "operator": "=", "value": "current_employee.id"}
-- For tickets: Use filter {"column": "user_id", "operator": "=", "value": "current_user.id"} OR {"column": "assigned_to", "operator": "=", "value": "current_user.id"}
-- For tasks: Use filter {"column": "user_id", "operator": "=", "value": "current_user.id"}
+## SOLAR CRM DOMAIN KNOWLEDGE — Column Mappings
+This is a solar energy installation company CRM. Use these term-to-column mappings:
 
-EXAMPLES:
-"How many projects assigned to me?" → Add filter: {"column": "user_id", "operator": "=", "value": "current_user.id"}
-"My tickets" → Add filter: {"column": "user_id", "operator": "=", "value": "current_user.id"}
-"Show my projects" → Add filter: {"column": "user_id", "operator": "=", "value": "current_user.id"}
+### Project Milestone Dates (table: projects)
+- "solar installation" / "solar install" / "installed" → solar_install_date
+- "battery installation" / "battery install" → battery_install_date
+- "NTP" / "notice to proceed" / "ntp approval" → ntp_approval_date
+- "PTO" / "permission to operate" / "pto submission" → pto_submission_date, pto_approval_date
+- "permitting" / "permit submitted" → permitting_submittion_date
+- "permit approved" / "permit approval" → permitting_approval_date
+- "site survey" / "survey" → site_survey_link (or project date context)
+- "HOA" / "hoa approval" / "homeowners association" → hoa_approval_date, hoa_approval_request_date, hoa
+- "AHJ" / "authority having jurisdiction" → ahj
+- "MPU" / "main panel upgrade" → mpu_required, mpu_install_date
+- "meter spot" / "meter" → meter_spot_requestd_date, meter_spot_result
+- "rough inspection" → rough_inspection_date
+- "final inspection" → final_inspection_date
+- "fire inspection" / "fire review" → fire_inspection_date, fire_review_required
+- "COC" / "coc packet" → coc_packet_mailed_out_date
+- "placards" → placards_ordered, placards_note
+- "monitoring" → monitoring_link
+- "production value" → production_value_achieved
 
-For NEW or UNCOMMON questions:
-- Use "crm_count" for simple counts
-- Use "crm_list" for listing records with filters
-- Use "crm_group_summary" for grouped summaries
-- Set answer_type to "table" for lists, "count" for counts, "card" for detailed views
+### Project Status Terms
+- "ghost project" / "pre-inspection lane" / "ghost" → projects where sub_department is "Pre-Inspection Lane"
+- "active projects" → filter status = 'active' or check tasks/sub_departments
 
-If the question cannot be answered from allowed_schema, return intent "unknown".
-If the question needs finance, payment, cost, revenue, amount, commission, margin, profit, or profitability data, set requires_finance_access to true.
-If any requested table or column is missing from allowed_schema, do not invent it; return intent "unknown".
+### Finance / Cost Columns (table: customer_finances, projects)
+- "contract amount" / "deal amount" → contract_amount (customer_finances)
+- "dealer fee" → dealer_fee, dealer_fee_amount
+- "commission" → commission
+- "redline" / "redline cost" → redline_costs
+- "adders" → adders
+- "holdback" → holdback_amount
+- "office cost" → office_cost (projects, sensitive)
+- "labor cost" → actual_labor_cost (projects, sensitive)
+- "material cost" → actual_material_cost (projects, sensitive)
+- "permit fee" → actual_permit_fee (projects, sensitive)
 
-The preferred output shape is:
+### Related Modules (separate tables)
+- "follow up" / "followup" / "follow-up" → table: project_follow_ups
+- "call log" / "call logs" / "calls" → table: project_call_logs
+- "project design" / "design details" → table: project_design_details
+- "acceptance" / "project acceptance" → table: project_acceptances (status: 0=pending, 1=approved, 2=rejected)
+- "project files" / "documents" → table: project_files
+- "loan" / "loan terms" → table: loan_terms
+- "APR" / "interest rate" → table: loan_aprs
+- "transactions" / "remittance" / "payments" → table: account_transactions
+
+### Customer Fields
+- "customer name" → customers.first_name + customers.last_name
+- "customer location" / "city" / "state" → customers.city, customers.state
+- "solar system size" / "panel count" → customers.panel_qty
+- "inverter" → customers.inverter_type_id, customers.inverter_qty
+- "module" → customers.module_type_id, customers.module_value
+- "sold date" / "sale date" → customers.sold_date
+- "language" → customers.preferred_language
+
+### People / Assignments
+- "sales partner" / "sales rep" → projects.sales_partner_user_id → users table
+- "sub-contractor" / "subcontractor" → projects.sub_contractor_user_id → users table
+- "assigned employee" → tasks.employee_id → employees table
+- "ticket creator" → service_tickets.user_id → users table
+- "ticket assigned to" → service_tickets.assigned_to → users table
+
+## CURRENT USER CONTEXT
+When user says "my", "mere", "meri", "mera", "mine", "assigned to me":
+- Projects: filter tasks.employee_id = current_employee.id (join tasks + projects)
+- Tickets: filter service_tickets.user_id = current_user.id OR assigned_to = current_user.id
+- Tasks: filter tasks.employee_id = current_employee.id
+
+## ANSWER TYPE GUIDE
+- Single number result → answer_type: "count"
+- List of records → answer_type: "table"
+- Grouped/summarized data → answer_type: "table" with group_by
+- Single project/customer details → answer_type: "card"
+
+## OUTPUT SHAPE
 {
   "mode": "fixed_action|data_explorer|clarification_required|unsupported",
-  "confidence": 0.82,
+  "confidence": 0.85,
   "entities": [],
   "selected_columns": [{"table": "projects", "columns": ["id", "project_name"]}],
   "filters": [],
   "relationships": [],
   "sort": [],
-  "limit": 20,
+  "limit": 50,
   "answer_type": "text|table|card|count",
-  "intent": "<any descriptive string like project_count, customer_list, ticket_summary>",
+  "intent": "<descriptive string: project_count, installation_list, permit_status, etc.>",
   "needs_clarification": false,
   "clarification_question": null,
   "fallback_message": null
 }
 
-For filters, use objects with "table", "column", "operator", and "value".
-For current user filters, use "current_user.id" as the value.
-Allowed operators are only: =, !=, >, >=, <, <=, like, in, between.
+Allowed filter operators: =, !=, >, >=, <, <=, like, in, between
+For current user: use "current_user.id" or "current_employee.id" as filter value.
 
-Never include sensitive columns such as password, remember_token, api_token, token, secret unless they are explicitly allowed in allowed_schema and the user role requires finance access.
-Reject write requests such as insert, update, delete, create, drop, alter, truncate, restore, approve, move, assign, or change by returning unknown.
+## SECURITY
+- Never include: password, remember_token, api_token, token, secret
+- Reject write operations (insert, update, delete, create, drop, alter, truncate, restore, approve, move, assign, change) → return unknown
+- Finance columns (cost, amount, commission, dealer_fee, redline, holdback) → set requires_finance_access: true
 
-EXAMPLES OF FLEXIBILITY:
-- "Show me all customers" → intent: "crm_list", tables: ["customers"], columns: ["first_name", "last_name", "email", "phone", "city", "state"]
-- "How many users are there?" → intent: "crm_count", tables: ["users"], columns: ["id"]
-- "List projects with their customer names" → intent: "crm_list", tables: ["projects", "customers"], columns: ["project_name", "code", "first_name", "last_name"]
-- "Show tickets grouped by priority" → intent: "crm_group_summary", tables: ["service_tickets"], columns: ["priority"], group_by: ["priority"]
+## QUICK EXAMPLES
+- "Solar installations this month" → tables: ["projects"], columns: ["project_name", "solar_install_date"], filter: solar_install_date this month
+- "How many permits submitted?" → tables: ["projects"], columns: ["id", "permitting_submittion_date"], intent: "permit_count", answer_type: "count"
+- "PTO pending projects" → tables: ["projects"], columns: ["project_name", "pto_submission_date", "pto_approval_date"], filter: pto_approval_date IS NULL
+- "HOA pending list" → tables: ["projects"], columns: ["project_name", "hoa_approval_date", "hoa_approval_request_date"], filter: hoa_approval_date IS NULL
+- "Follow ups this week" → tables: ["project_follow_ups", "projects"], columns: ["project_id", "project_name", "created_at"]
+- "Call logs today" → tables: ["project_call_logs", "projects"], columns: ["project_id", "project_name", "created_at"]
+- "Acceptance pending" → tables: ["project_acceptances", "projects"], columns: ["project_id", "status", "approved_date"], filter: status = 0
+- "Customers from California" → tables: ["customers"], columns: ["first_name", "last_name", "city", "state"], filter: state like "California"
+- "Show me all customers" → tables: ["customers"], columns: ["first_name", "last_name", "email", "phone", "city", "state"]
+- "Tickets grouped by priority" → tables: ["service_tickets"], columns: ["priority"], group_by: ["priority"], answer_type: "table"
+- "Battery installations last month" → tables: ["projects"], columns: ["project_name", "battery_install_date"], filter: battery_install_date last month
 PROMPT;
     }
 

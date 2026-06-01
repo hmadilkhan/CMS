@@ -146,6 +146,10 @@ class AiChatService
         $chat->update(['last_message_at' => now()]);
 
         try {
+            if ($this->isHelpRequest($message)) {
+                return $this->handleHelpRequest($chat, $user, $log, $startedAt, $message);
+            }
+
             if ($this->aiQueryPlannerService->looksLikeCrmDataQuestion($message)) {
                 return $this->handleQueryPlan($chat, $user, $message, $log, $startedAt);
             }
@@ -281,15 +285,18 @@ class AiChatService
         }
 
         if ($plan['intent'] === 'unknown') {
-            $assistantMessage = $plan['fallback_message'] ?: 'I could not understand that CRM question yet. Try one of the suggested questions.';
+            $assistantMessage = $plan['fallback_message']
+                ?: "I wasn't able to match that to a CRM query. Try asking something like:\n- \"Total active projects\"\n- \"My pending tickets\"\n- \"Customer list dikhao\"\n\nOr type **help** to see what I can assist you with.";
         } elseif (! ($planValidation['approved'] ?? false)) {
-            $assistantMessage = ($planValidation['reason'] ?? 'I need one more detail before I can answer safely.');
+            $reason = $planValidation['reason'] ?? null;
+            $assistantMessage = $reason
+                ?: "You don't have permission to access that data. If you think this is a mistake, please contact your administrator.";
         } elseif (! ($validation['approved'] ?? false)) {
-            $assistantMessage = 'I could not safely prepare this CRM query. ' . ($validation['reason'] ?? 'Please try a different question.');
+            $assistantMessage = 'I couldn\'t safely prepare that CRM query. ' . ($validation['reason'] ?? 'Please try rephrasing your question.');
         } elseif (! ($execution['success'] ?? false)) {
-            $assistantMessage = $execution['error_message'] ?? 'I could not safely run this CRM query. Please try again.';
+            $assistantMessage = $execution['error_message'] ?? 'I ran into an issue executing that query. Please try again or rephrase your question.';
         } elseif (($execution['row_count'] ?? 0) === 0) {
-            $assistantMessage = 'No data found for this request.';
+            $assistantMessage = 'No records found for that request. This could mean the data does not exist yet, or try adjusting your filters.';
             $answer = [
                 'type' => 'text',
                 'message' => $assistantMessage,
@@ -357,11 +364,68 @@ class AiChatService
             ]);
 
             $chat->update([
+                'openai_response_id' => $response['id'],
                 'last_message_at' => now(),
             ]);
         });
 
         $this->storeQueryExample($message, $plan, $sqlPreview, $execution);
+
+        return $chat->fresh('messages');
+    }
+
+    private function isHelpRequest(string $message): bool
+    {
+        $lower = strtolower(trim($message));
+        $keywords = ['help', 'kya kar sakte', 'what can you do', 'capabilities', 'kya poochu', 'kya puchna', 'guide me', 'mujhe guide', 'commands', 'features'];
+
+        foreach ($keywords as $keyword) {
+            if (str_contains($lower, $keyword)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private function handleHelpRequest(AiChat $chat, User $user, AiQueryLog $log, float $startedAt, string $message): AiChat
+    {
+        $suggested = $this->suggestedQuestionsFor($user);
+        $roleNames = $user->roles->pluck('name')->join(', ');
+        $suggestedList = implode("\n", array_map(fn ($q) => "- {$q}", $suggested));
+
+        $helpText = implode("\n", [
+            "Hi {$user->name}! Here's what I can help you with as **{$roleNames}**:",
+            '',
+            '**Live CRM Data**',
+            'Ask me about projects, tasks, tickets, customers, or teams — I\'ll fetch the latest data securely.',
+            '',
+            '**Suggested questions for your role:**',
+            $suggestedList,
+            '',
+            '**General Questions**',
+            'Ask me how the CRM works, what a status means, or how a workflow operates.',
+            '',
+            '**What I cannot do:**',
+            '- Create, update, or delete any records',
+            '- Access data outside your role\'s permissions',
+            '',
+            'Just type your question naturally and I\'ll do my best to help!',
+        ]);
+
+        $chat->messages()->create([
+            'role' => 'assistant',
+            'content' => $helpText,
+            'metadata' => ['type' => 'help_response', 'status' => 'success'],
+        ]);
+
+        $log->update([
+            'status' => 'success',
+            'duration_ms' => (int) ((microtime(true) - $startedAt) * 1000),
+            'request_payload' => ['message' => $message],
+        ]);
+
+        $chat->update(['last_message_at' => now()]);
 
         return $chat->fresh('messages');
     }
