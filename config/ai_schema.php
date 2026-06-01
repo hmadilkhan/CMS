@@ -1240,6 +1240,44 @@ return [
             'default_sort_column' => 'name',
             'access_rule' => 'admin_only',
         ],
+
+        // Project activity / department-move history
+        'activity_log' => [
+            'model' => null,
+            'table' => 'activity_log',
+            'allowed_columns' => [
+                'id',
+                'log_name',
+                'description',
+                'subject_type',
+                'subject_id',
+                'event',
+                'causer_id',
+                'properties',
+                'created_at',
+                'updated_at',
+            ],
+            'searchable_columns' => [
+                'description',
+                'log_name',
+                'event',
+            ],
+            'relationships' => [
+                'project' => [
+                    'table'       => 'projects',
+                    'local_key'   => 'subject_id',
+                    'foreign_key' => 'id',
+                ],
+                'causer' => [
+                    'table'       => 'users',
+                    'local_key'   => 'causer_id',
+                    'foreign_key' => 'id',
+                ],
+            ],
+            'sensitive_columns' => [],
+            'default_sort_column' => 'created_at',
+            'access_rule' => 'project_access',
+        ],
     ],
 
     'manual_review' => [

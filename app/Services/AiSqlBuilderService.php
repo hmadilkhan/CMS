@@ -53,6 +53,12 @@ class AiSqlBuilderService
             'crm_list',
             'crm_group_summary',
             'crm_count',
+            // New named group-by intents
+            'customer_project_count',
+            'department_project_top',
+            'customer_city_count',
+            'customer_state_count',
+            'project_status_count',
         ];
         
         // Use hardcoded logic for known complex intents
@@ -178,6 +184,60 @@ class AiSqlBuilderService
                 ->where('model_has_roles.model_type', User::class)
                 ->groupBy('roles.id', 'roles.name')
                 ->orderBy('roles.name');
+        }
+
+        if (($plan['intent'] ?? null) === 'customer_project_count') {
+            $this->ensureJoin($query, 'customers', 'projects.customer_id', '=', 'customers.id');
+            $query->select(
+                DB::raw("CONCAT(COALESCE(customers.first_name,''), ' ', COALESCE(customers.last_name,'')) as customer_name"),
+                'customers.email as customer_email',
+                'customers.phone as customer_phone',
+                DB::raw('COUNT(DISTINCT projects.id) as no_of_projects')
+            )
+                ->groupBy('customers.id', 'customers.first_name', 'customers.last_name', 'customers.email', 'customers.phone')
+                ->orderByRaw('no_of_projects DESC');
+        }
+
+        if (($plan['intent'] ?? null) === 'department_project_top') {
+            $this->ensureJoin($query, 'departments', 'projects.department_id', '=', 'departments.id');
+            $query->select(
+                'departments.name as department_name',
+                DB::raw('COUNT(DISTINCT projects.id) as no_of_projects')
+            )
+                ->groupBy('departments.id', 'departments.name')
+                ->orderByRaw('no_of_projects DESC');
+        }
+
+        if (($plan['intent'] ?? null) === 'customer_city_count') {
+            $query->select(
+                'customers.city as city',
+                DB::raw('COUNT(customers.id) as customer_count')
+            )
+                ->whereNotNull('customers.city')
+                ->where('customers.city', '!=', '')
+                ->groupBy('customers.city')
+                ->orderByRaw('customer_count DESC');
+        }
+
+        if (($plan['intent'] ?? null) === 'customer_state_count') {
+            $query->select(
+                'customers.state as state',
+                DB::raw('COUNT(customers.id) as customer_count')
+            )
+                ->whereNotNull('customers.state')
+                ->where('customers.state', '!=', '')
+                ->groupBy('customers.state')
+                ->orderByRaw('customer_count DESC');
+        }
+
+        if (($plan['intent'] ?? null) === 'project_status_count') {
+            $this->ensureJoin($query, 'tasks', 'tasks.project_id', '=', 'projects.id');
+            $query->select(
+                'tasks.status as project_status',
+                DB::raw('COUNT(DISTINCT projects.id) as no_of_projects')
+            )
+                ->groupBy('tasks.status')
+                ->orderByRaw('no_of_projects DESC');
         }
 
         if (($plan['intent'] ?? null) === 'project_status_summary') {
@@ -896,6 +956,23 @@ class AiSqlBuilderService
     {
         if (($plan['intent'] ?? null) === 'employee_department_list') {
             return ['employee_id', 'name', 'email', 'phone', 'department_names', 'department_count'];
+        }
+
+        // New named group-by intents — explicit column names for clean display
+        if (($plan['intent'] ?? null) === 'customer_project_count') {
+            return ['customer_name', 'customer_email', 'customer_phone', 'no_of_projects'];
+        }
+        if (($plan['intent'] ?? null) === 'department_project_top') {
+            return ['department_name', 'no_of_projects'];
+        }
+        if (($plan['intent'] ?? null) === 'customer_city_count') {
+            return ['city', 'customer_count'];
+        }
+        if (($plan['intent'] ?? null) === 'customer_state_count') {
+            return ['state', 'customer_count'];
+        }
+        if (($plan['intent'] ?? null) === 'project_status_count') {
+            return ['project_status', 'no_of_projects'];
         }
 
         if (($plan['answer_type'] ?? null) === 'count') {

@@ -451,6 +451,12 @@ class AiQueryPlannerService
             'ghost', 'lane',
             'pre-inspection', 'pre inspection',
 
+            // Activity / audit log
+            'activity', 'activity log', 'audit', 'audit log',
+            'change log', 'changelog', 'action log',
+            'who moved', 'who changed', 'who approved',
+            'history log', 'move log',
+
             // Urdu / mixed-language CRM queries
             'mere', 'mery', 'meri', 'mera',
             'kitne', 'kitni', 'kitna',
@@ -593,6 +599,20 @@ For current user: use "current_user.id" or "current_employee.id" as filter value
 - Reject write operations (insert, update, delete, create, drop, alter, truncate, restore, approve, move, assign, change) → return unknown
 - Finance columns (cost, amount, commission, dealer_fee, redline, holdback) → set requires_finance_access: true
 
+## ACTIVITY LOG MODULE
+The `activity_log` table records all project activity and department moves.
+- Use for: "who moved project X", "project activity", "department change history", "action log"
+- Key columns: event, description, subject_id (= project id), causer_id (= user id), properties (JSON), created_at
+- For lane moves: filter event = 'move' — properties JSON has old_lane and new_lane
+- Always join: activity_log.subject_id = projects.id, activity_log.causer_id = users.id
+
+## UNSUPPORTED QUESTIONS
+If the question cannot be answered from any table in allowed_schema AND it is not a CRM data question
+(e.g., "what is solar energy?", "tell me a joke"), set:
+  mode: "unsupported", intent: "unknown", fallback_message: null
+The system will then route the question to the general AI assistant automatically.
+Do NOT set a fallback_message for unsupported — leave it null so the router can fall back cleanly.
+
 ## QUICK EXAMPLES
 - "Solar installations this month" → tables: ["projects"], columns: ["project_name", "solar_install_date"], filter: solar_install_date this month
 - "How many permits submitted?" → tables: ["projects"], columns: ["id", "permitting_submittion_date"], intent: "permit_count", answer_type: "count"
@@ -605,6 +625,8 @@ For current user: use "current_user.id" or "current_employee.id" as filter value
 - "Show me all customers" → tables: ["customers"], columns: ["first_name", "last_name", "email", "phone", "city", "state"]
 - "Tickets grouped by priority" → tables: ["service_tickets"], columns: ["priority"], group_by: ["priority"], answer_type: "table"
 - "Battery installations last month" → tables: ["projects"], columns: ["project_name", "battery_install_date"], filter: battery_install_date last month
+- "Who moved project Annie-Ewing last?" → tables: ["activity_log", "projects", "users"], columns: ["description", "created_at", "name"], filter: event = "move", subject matches project
+- "What happened on project X yesterday?" → tables: ["activity_log", "projects"], columns: ["description", "event", "created_at"], filter: subject_id = projectId, created_at yesterday
 PROMPT;
     }
 
@@ -1044,12 +1066,108 @@ PROMPT;
                 'common_columns' => ['status', 'approved_date', 'reason', 'panel_qty', 'inverter_name', 'action_by'],
                 'status_values' => ['pending' => 0, 'approved' => 1, 'rejected' => 2],
             ],
+            'activity_history' => [
+                'tables' => ['activity_log', 'projects', 'users'],
+                'common_columns' => ['log_name', 'description', 'event', 'subject_id', 'causer_id', 'properties', 'created_at'],
+                'common_questions' => ['project activity log', 'who moved project', 'department move history', 'project changes', 'action history'],
+                'note' => 'Use event="move" for lane/department movement. properties JSON has old_lane and new_lane.',
+            ],
         ];
     }
 
     private function inferKnownPlan(string $question): ?array
     {
         $normalized = mb_strtolower($question);
+
+        // Detect project lane movement / days-in-lane queries
+        $mentionsLane = str_contains($normalized, 'lane')
+            || str_contains($normalized, 'lanes');
+        $mentionsMovement = str_contains($normalized, 'movement')
+            || str_contains($normalized, 'moved')
+            || str_contains($normalized, 'history')
+            || str_contains($normalized, 'transition')
+            || str_contains($normalized, 'journey')
+            || str_contains($normalized, 'move log')
+            || str_contains($normalized, 'move history')
+            // "progress" alone — but NOT inside "in-progress" (project status)
+            || preg_match('/(?<!in-)progress\b/i', $normalized);
+        $mentionsDaysInLane = (str_contains($normalized, 'days') || str_contains($normalized, 'how long') || str_contains($normalized, 'time') || str_contains($normalized, 'duration') || str_contains($normalized, 'kitne din'))
+            && (str_contains($normalized, 'lane') || str_contains($normalized, 'department'));
+
+        if ($mentionsLane || ($mentionsMovement && str_contains($normalized, 'department')) || $mentionsDaysInLane) {
+            // Summary only when user explicitly asks for aggregate/overview
+            $wantsSummary = str_contains($normalized, 'summary')
+                || str_contains($normalized, 'average')
+                || str_contains($normalized, 'avg')
+                || str_contains($normalized, 'all projects')
+                || str_contains($normalized, 'overview')
+                || str_contains($normalized, 'sab projects')
+                || str_contains($normalized, 'tamam projects');
+
+            return [
+                'answer_type' => 'table',
+                'intent'      => $wantsSummary ? 'project_lane_summary' : 'project_lane_movement',
+                'tables'      => ['tasks', 'projects', 'departments'],
+                'columns'     => ['project_name', 'code', 'department', 'created_at', 'updated_at'],
+                'group_by'    => [],
+                'filters'     => [],
+                'requires_finance_access' => false,
+                'sql'             => null,
+                'fallback_message' => null,
+            ];
+        }
+        // ── Simple total-count fast-paths ────────────────────────────────────────
+        // ($mentionsCount is not defined yet here — define it locally)
+        $isTotalCount = str_contains($normalized, 'count')
+            || str_contains($normalized, 'total')
+            || str_contains($normalized, 'how many')
+            || str_contains($normalized, 'kitne')
+            || str_contains($normalized, 'kitni')
+            || str_contains($normalized, 'wise');
+
+        if ($isTotalCount && preg_match('/\b(project|projects)\b/i', $normalized) && ! preg_match('/\b(department|customer|status|subdepartment|sub_department|ticket|task|lane|acceptance)\b/i', $normalized)) {
+            return [
+                'answer_type' => 'count',
+                'intent'      => 'crm_count',
+                'tables'      => ['projects'],
+                'columns'     => ['id'],
+                'group_by'    => [],
+                'filters'     => [],
+                'requires_finance_access' => false,
+                'sql'          => null,
+                'fallback_message' => null,
+            ];
+        }
+
+        if ($isTotalCount && preg_match('/\b(ticket|tickets)\b/i', $normalized) && ! preg_match('/\b(users?|status|priority|pending|resolved|department|created by)\b/i', $normalized)) {
+            return [
+                'answer_type' => 'count',
+                'intent'      => 'crm_count',
+                'tables'      => ['service_tickets'],
+                'columns'     => ['id'],
+                'group_by'    => [],
+                'filters'     => [],
+                'requires_finance_access' => false,
+                'sql'          => null,
+                'fallback_message' => null,
+            ];
+        }
+
+        if ($isTotalCount && preg_match('/\b(customer|customers)\b/i', $normalized) && ! preg_match('/\b(city|state|project|phone|email|wise)\b/i', $normalized)) {
+            return [
+                'answer_type' => 'count',
+                'intent'      => 'crm_count',
+                'tables'      => ['customers'],
+                'columns'     => ['id'],
+                'group_by'    => [],
+                'filters'     => [],
+                'requires_finance_access' => false,
+                'sql'          => null,
+                'fallback_message' => null,
+            ];
+        }
+        // ─────────────────────────────────────────────────────────────────────────
+
         $mentionsProject = str_contains($normalized, 'project');
         $mentionsTicket = str_contains($normalized, 'ticket');
         $mentionsDepartment = str_contains($normalized, 'department') || str_contains($normalized, 'subdepartment') || str_contains($normalized, 'sub department');
@@ -1058,7 +1176,13 @@ PROMPT;
         $mentionsUser = str_contains($normalized, 'user') || str_contains($normalized, 'users') || str_contains($normalized, 'created by') || str_contains($normalized, 'creator');
         $mentionsStatus = str_contains($normalized, 'status') || str_contains($normalized, 'pending') || str_contains($normalized, 'resolved');
         $mentionsSummary = str_contains($normalized, 'summary') || str_contains($normalized, 'summarize') || str_contains($normalized, 'wise');
-        $mentionsAcceptance = str_contains($normalized, 'acceptance') || str_contains($normalized, 'approved') || str_contains($normalized, 'approval');
+        // "approval" alone should not trigger acceptance routing when it refers to domain milestones
+        // (NTP approval, HOA approval, PTO approval, permit approval, etc.)
+        $mentionsAcceptance = str_contains($normalized, 'acceptance')
+            || (
+                preg_match('/\b(approved|approval)\b/i', $normalized)
+                && ! preg_match('/\b(ntp|pto|hoa|ahj|mpu|permit|permitting|inspection|survey|fire|meter|finance|financing|loan)\b/i', $normalized)
+            );
         $mentionsForecast = str_contains($normalized, 'forecast');
         $mentionsOverride = str_contains($normalized, 'override') || str_contains($normalized, 'overrider');
         $mentionsTransaction = str_contains($normalized, 'transaction')
@@ -1081,8 +1205,79 @@ PROMPT;
         $ticketUserName = $this->extractTicketUserName($normalized);
         $projectSummaryName = $this->extractProjectSummaryName($normalized);
         $projectAcceptanceName = $this->extractProjectAcceptanceName($normalized);
-        $acceptanceStatus = $this->extractAcceptanceStatus($normalized);
+        $acceptanceCondition = $this->extractAcceptanceCondition($normalized);
         $dateRange = $this->extractDateRange($question);
+
+        // ── Customer project count (customer name + no of projects) ──────────────
+        if ($mentionsProject && str_contains($normalized, 'customer') && ($mentionsCount || $mentionsSummary || str_contains($normalized, 'wise') || str_contains($normalized, 'grouped'))) {
+            return [
+                'answer_type' => 'table',
+                'intent'      => 'customer_project_count',
+                'tables'      => ['projects', 'customers'],
+                'columns'     => ['customer_name', 'no_of_projects'],
+                'group_by'    => [],
+                'filters'     => [],
+                'requires_finance_access' => false,
+                'sql' => null, 'fallback_message' => null,
+            ];
+        }
+
+        // ── Department top projects (ordered by count DESC) ───────────────────────
+        if ($mentionsProject && $mentionsDepartment && (str_contains($normalized, 'most') || str_contains($normalized, 'highest') || str_contains($normalized, 'top') || str_contains($normalized, 'zyada'))) {
+            return [
+                'answer_type' => 'table',
+                'intent'      => 'department_project_top',
+                'tables'      => ['projects', 'departments'],
+                'columns'     => ['department_name', 'no_of_projects'],
+                'group_by'    => [],
+                'filters'     => [],
+                'requires_finance_access' => false,
+                'sql' => null, 'fallback_message' => null,
+            ];
+        }
+
+        // ── City-wise customers ────────────────────────────────────────────────────
+        if (str_contains($normalized, 'customer') && str_contains($normalized, 'city') && ($mentionsCount || $mentionsSummary || str_contains($normalized, 'wise') || str_contains($normalized, 'grouped'))) {
+            return [
+                'answer_type' => 'table',
+                'intent'      => 'customer_city_count',
+                'tables'      => ['customers'],
+                'columns'     => ['city', 'customer_count'],
+                'group_by'    => [],
+                'filters'     => [],
+                'requires_finance_access' => false,
+                'sql' => null, 'fallback_message' => null,
+            ];
+        }
+
+        // ── State-wise customers ──────────────────────────────────────────────────
+        if (str_contains($normalized, 'customer') && str_contains($normalized, 'state') && ($mentionsCount || $mentionsSummary || str_contains($normalized, 'wise') || str_contains($normalized, 'grouped'))) {
+            return [
+                'answer_type' => 'table',
+                'intent'      => 'customer_state_count',
+                'tables'      => ['customers'],
+                'columns'     => ['state', 'customer_count'],
+                'group_by'    => [],
+                'filters'     => [],
+                'requires_finance_access' => false,
+                'sql' => null, 'fallback_message' => null,
+            ];
+        }
+
+        // ── Project status wise count ─────────────────────────────────────────────
+        if ($mentionsProject && str_contains($normalized, 'status') && ($mentionsSummary || $mentionsCount || str_contains($normalized, 'wise') || str_contains($normalized, 'grouped'))) {
+            return [
+                'answer_type' => 'table',
+                'intent'      => 'project_status_count',
+                'tables'      => ['projects', 'tasks'],
+                'columns'     => ['project_status', 'no_of_projects'],
+                'group_by'    => [],
+                'filters'     => [],
+                'requires_finance_access' => false,
+                'sql' => null, 'fallback_message' => null,
+            ];
+        }
+        // ─────────────────────────────────────────────────────────────────────────
 
         if ($mentionsUser && $mentionsRole) {
             $wantsCount = $mentionsCount
@@ -1138,6 +1333,29 @@ PROMPT;
                 ],
                 'requires_finance_access' => false,
                 'sql' => null,
+                'fallback_message' => null,
+            ];
+        }
+
+        // COUNT must be checked BEFORE project-name lookup to avoid false matches
+        if ($mentionsProject && $mentionsAcceptance && ($mentionsCount || str_contains($normalized, 'how many') || str_contains($normalized, 'kitne') || str_contains($normalized, 'total') || str_contains($normalized, 'kitni'))) {
+            // Unknown/unsupported status (e.g. "cancelled") — return a helpful fallback
+            if (isset($acceptanceCondition['fallback'])) {
+                return array_merge($this->unknownPlan(), ['fallback_message' => $acceptanceCondition['fallback']]);
+            }
+
+            $hasCondition = $acceptanceCondition !== null && ! isset($acceptanceCondition['fallback']);
+            $statusFilter = $hasCondition ? [$acceptanceCondition] : [];
+
+            return [
+                'answer_type' => $hasCondition ? 'count' : 'table',
+                'intent'      => 'project_acceptance_count',
+                'tables'      => ['projects', 'project_acceptances'],
+                'columns'     => ['id', 'project_id', 'status'],
+                'group_by'    => $hasCondition ? [] : ['status'],
+                'filters'     => $statusFilter,
+                'requires_finance_access' => false,
+                'sql'          => null,
                 'fallback_message' => null,
             ];
         }
@@ -1325,32 +1543,20 @@ PROMPT;
             ];
         }
 
-        if ($mentionsProject && $mentionsAcceptance && $acceptanceStatus !== null && ! ($mentionsCount || str_contains($normalized, 'how many') || str_contains($normalized, 'kitne'))) {
+        if ($mentionsProject && $mentionsAcceptance && $acceptanceCondition !== null && ! ($mentionsCount || str_contains($normalized, 'how many') || str_contains($normalized, 'kitne'))) {
+            if (isset($acceptanceCondition['fallback'])) {
+                return array_merge($this->unknownPlan(), ['fallback_message' => $acceptanceCondition['fallback']]);
+            }
+
             return [
                 'answer_type' => 'table',
-                'intent' => 'project_acceptance_list',
-                'tables' => ['projects', 'customers', 'project_acceptances'],
-                'columns' => [
-                    'project_name',
-                    'code',
-                    'first_name',
-                    'last_name',
-                    'status',
-                    'approved_date',
-                    'reason',
-                    'created_at',
-                    'updated_at',
-                ],
-                'group_by' => [],
-                'filters' => [
-                    [
-                        'column' => 'status',
-                        'operator' => '=',
-                        'value' => $acceptanceStatus,
-                    ],
-                ],
+                'intent'      => 'project_acceptance_list',
+                'tables'      => ['projects', 'customers', 'project_acceptances'],
+                'columns'     => ['project_name', 'code', 'first_name', 'last_name', 'status', 'approved_date', 'reason', 'created_at', 'updated_at'],
+                'group_by'    => [],
+                'filters'     => [$acceptanceCondition],
                 'requires_finance_access' => false,
-                'sql' => null,
+                'sql'          => null,
                 'fallback_message' => null,
             ];
         }
@@ -1383,22 +1589,32 @@ PROMPT;
             ];
         }
 
-        if ($mentionsProject && $mentionsAcceptance && ($mentionsCount || str_contains($normalized, 'how many') || str_contains($normalized, 'kitne')) && $acceptanceStatus !== null) {
+        // Priority-wise ticket summary — must come BEFORE user-ticket check
+        if ($mentionsTicket && (str_contains($normalized, 'priority') || str_contains($normalized, 'priority wise'))) {
             return [
-                'answer_type' => 'count',
-                'intent' => 'project_acceptance_count',
-                'tables' => ['projects', 'project_acceptances'],
-                'columns' => ['id', 'project_id', 'status'],
-                'group_by' => [],
-                'filters' => [
-                    [
-                        'column' => 'status',
-                        'operator' => '=',
-                        'value' => $acceptanceStatus,
-                    ],
-                ],
+                'answer_type' => 'table',
+                'intent'      => 'crm_group_summary',
+                'tables'      => ['service_tickets'],
+                'columns'     => ['priority'],
+                'group_by'    => ['priority'],
+                'filters'     => [],
                 'requires_finance_access' => false,
-                'sql' => null,
+                'sql'          => null,
+                'fallback_message' => null,
+            ];
+        }
+
+        // Status-wise ticket summary
+        if ($mentionsTicket && str_contains($normalized, 'status') && $mentionsSummary && ! $mentionsUser && ! $ticketUserName) {
+            return [
+                'answer_type' => 'table',
+                'intent'      => 'crm_group_summary',
+                'tables'      => ['service_tickets'],
+                'columns'     => ['status'],
+                'group_by'    => ['status'],
+                'filters'     => [],
+                'requires_finance_access' => false,
+                'sql'          => null,
                 'fallback_message' => null,
             ];
         }
@@ -1761,10 +1977,17 @@ PROMPT;
             return null;
         }
 
+        // These phrases indicate aggregate/grouping queries — no specific user intended
+        $aggregatePatterns = ['user wise', 'priority wise', 'status wise', 'assigned wise', 'all users', 'all tickets', 'created by users'];
+        foreach ($aggregatePatterns as $agg) {
+            if (str_contains($question, $agg)) {
+                return null;
+            }
+        }
+
         $patterns = [
-            '/summary\s+of\s+(.+?)\s+tickets?\b/u',
-            '/(.+?)\s+tickets?\s+summary\b/u',
-            '/tickets?\s+(?:of|for|by|created\s+by)\s+(.+?)(?:\s+summary|$)/u',
+            '/tickets?\s+(?:of|for|by|created\s+by)\s+([A-Z][a-zA-Z\s\-]{2,40})(?:\s+summary|$)/u',
+            '/summary\s+of\s+([A-Z][a-zA-Z\s\-]{2,40})\s+tickets?\b/u',
         ];
 
         foreach ($patterns as $pattern) {
@@ -1773,20 +1996,7 @@ PROMPT;
             }
 
             $name = trim($matches[1]);
-            $stopWords = [
-                'show',
-                'me',
-                'the',
-                'of',
-                'for',
-                'by',
-                'created',
-                'ticket',
-                'tickets',
-                'summary',
-                'status',
-                'wise',
-            ];
+            $stopWords = ['show', 'me', 'the', 'of', 'for', 'by', 'created', 'ticket', 'tickets', 'summary', 'status', 'wise'];
 
             foreach ($stopWords as $word) {
                 $name = trim(preg_replace('/\b' . preg_quote($word, '/') . '\b/u', ' ', $name));
@@ -1794,7 +2004,8 @@ PROMPT;
 
             $name = trim(preg_replace('/\s+/u', ' ', $name));
 
-            if ($name !== '') {
+            // Must look like a real name: 2–40 chars, 1–4 words, starts uppercase
+            if ($name !== '' && mb_strlen($name) <= 40 && str_word_count($name) <= 4 && ctype_upper(mb_substr($name, 0, 1))) {
                 return $name;
             }
         }
@@ -1804,10 +2015,18 @@ PROMPT;
 
     private function extractProjectSummaryName(string $question): ?string
     {
+        // Aggregate phrases — these mean "group by", not "filter by project name"
+        $aggregatePatterns = ['department wise', 'subdepartment wise', 'sub department wise', 'status wise', 'customer wise', 'user wise', 'all projects'];
+        foreach ($aggregatePatterns as $agg) {
+            if (str_contains(mb_strtolower($question), $agg)) {
+                return null;
+            }
+        }
+
         $patterns = [
-            '/project\s+summary\s+of\s+(.+?)\s+project\b/u',
-            '/summary\s+of\s+(.+?)\s+project\b/u',
-            '/(.+?)\s+project\s+summary\b/u',
+            '/project\s+summary\s+of\s+([A-Z][a-zA-Z\s\-]{2,40})\s+project\b/u',
+            '/summary\s+of\s+([A-Z][a-zA-Z\s\-]{2,40})\s+project\b/u',
+            '/([A-Z][a-zA-Z\s\-]{2,40})\s+project\s+summary\b/u',
         ];
 
         foreach ($patterns as $pattern) {
@@ -1816,16 +2035,7 @@ PROMPT;
             }
 
             $name = trim($matches[1]);
-            $stopWords = [
-                'show',
-                'me',
-                'the',
-                'of',
-                'project',
-                'summary',
-                'details',
-                'detail',
-            ];
+            $stopWords = ['show', 'me', 'the', 'of', 'project', 'summary', 'details', 'detail'];
 
             foreach ($stopWords as $word) {
                 $name = trim(preg_replace('/\b' . preg_quote($word, '/') . '\b/u', ' ', $name));
@@ -1833,7 +2043,7 @@ PROMPT;
 
             $name = trim(preg_replace('/\s+/u', ' ', $name));
 
-            if ($name !== '') {
+            if ($name !== '' && mb_strlen($name) <= 40 && str_word_count($name) <= 4) {
                 return $name;
             }
         }
@@ -1845,6 +2055,14 @@ PROMPT;
     {
         if (! str_contains($question, 'acceptance') && ! str_contains($question, 'approved') && ! str_contains($question, 'approval')) {
             return null;
+        }
+
+        // If question sounds like a count/list query, don't try to extract a project name
+        $questionWords = ['how many', 'how much', 'kitne', 'kitni', 'total', 'count', 'list', 'show all', 'all projects', 'tamam', 'sab'];
+        foreach ($questionWords as $qw) {
+            if (str_contains($question, $qw)) {
+                return null;
+            }
         }
 
         $patterns = [
@@ -1861,20 +2079,11 @@ PROMPT;
 
             $name = trim($matches[1]);
             $stopWords = [
-                'is',
-                'the',
-                'this',
-                'project',
-                'acceptance',
-                'approved',
-                'approval',
-                'status',
-                'for',
-                'of',
-                'show',
-                'me',
-                'details',
-                'detail',
+                'is', 'the', 'this', 'that', 'a', 'an',
+                'project', 'acceptance', 'approved', 'approval',
+                'status', 'for', 'of', 'show', 'me', 'details',
+                'detail', 'tell', 'what', 'which', 'where',
+                'whose', 'there', 'are', 'in', 'list',
             ];
 
             foreach ($stopWords as $word) {
@@ -1882,6 +2091,12 @@ PROMPT;
             }
 
             $name = trim(preg_replace('/\s+/u', ' ', $name));
+
+            // Reject if extracted name is too long (>40 chars) or has too many words (>4)
+            // — that means we captured a sentence fragment, not a project name
+            if ($name === '' || mb_strlen($name) > 40 || str_word_count($name) > 4) {
+                return null;
+            }
 
             if ($name !== '') {
                 return $name;
@@ -1891,18 +2106,55 @@ PROMPT;
         return null;
     }
 
-    private function extractAcceptanceStatus(string $question): ?int
+    /**
+     * Returns a filter array ['column', 'operator', 'value'] for known acceptance
+     * statuses, or ['fallback' => 'message'] for statuses that don't exist in the DB,
+     * or null when no status can be identified.
+     *
+     * DB values: 0 = pending, 1 = approved, 2 = rejected
+     */
+    private function extractAcceptanceCondition(string $question): ?array
     {
-        if (str_contains($question, 'approved') || str_contains($question, 'approve')) {
-            return 1;
+        $q = mb_strtolower($question);
+
+        // "not approved" / "unapproved" — must check BEFORE plain "approved"
+        if (preg_match('/\bnot\s+approved\b|\bunapproved\b/i', $question)) {
+            return ['column' => 'status', 'operator' => '!=', 'value' => 1];
         }
 
-        if (str_contains($question, 'rejected') || str_contains($question, 'reject')) {
-            return 2;
+        // "not rejected"
+        if (preg_match('/\bnot\s+rejected\b/i', $question)) {
+            return ['column' => 'status', 'operator' => '!=', 'value' => 2];
         }
 
-        if (str_contains($question, 'pending')) {
-            return 0;
+        // "approved" — exact word match only; "approval" must NOT match (it's a domain milestone term)
+        if (preg_match('/\bapproved?\b/i', $question)) {
+            return ['column' => 'status', 'operator' => '=', 'value' => 1];
+        }
+
+        // "rejected"
+        if (str_contains($q, 'rejected') || str_contains($q, 'reject')) {
+            return ['column' => 'status', 'operator' => '=', 'value' => 2];
+        }
+
+        // "pending" / "not initiated" / "awaiting"
+        if (
+            str_contains($q, 'pending')
+            || str_contains($q, 'not initiated')
+            || str_contains($q, 'awaiting')
+            || str_contains($q, 'initiate nahi')
+            || str_contains($q, 'shuru nahi')
+        ) {
+            return ['column' => 'status', 'operator' => '=', 'value' => 0];
+        }
+
+        // "cancelled" / "canceled" — no such status in this CRM
+        if (str_contains($q, 'cancelled') || str_contains($q, 'canceled')) {
+            return [
+                'fallback' => 'Project Acceptance does not have a "cancelled" status. '
+                    . 'The available statuses are: **Pending** (not yet reviewed), **Approved**, or **Rejected**. '
+                    . 'Please try asking about one of those.',
+            ];
         }
 
         return null;
@@ -2014,7 +2266,8 @@ PROMPT;
 
     private function isWriteOperationQuestion(string $question): bool
     {
-        return preg_match('/\b(insert|update|delete|drop|alter|create|truncate|restore|approve|move|change|edit|remove)\b/i', $question) === 1;
+        // "move" is intentionally excluded — "project move history" is a valid read query
+        return preg_match('/\b(insert|update|delete|drop|alter|create|truncate|restore|approve|change|edit|remove)\b/i', $question) === 1;
     }
 
     private function syntheticOpenAiResponse(): array
