@@ -11,6 +11,27 @@ use InvalidArgumentException;
 
 class AiSqlBuilderService
 {
+    /**
+     * Project-linked tables that carry a `project_id` column. For scoped roles
+     * (Manager/Employee/Sales/Sub-Contractor) these are restricted to the rows
+     * belonging to projects the user is allowed to see, mirroring the row scope
+     * applied to the `projects` table itself. Without this, a scoped user could
+     * read every row of these child tables regardless of project ownership.
+     */
+    private const PROJECT_LINKED_TABLES = [
+        'project_follow_ups',
+        'project_call_logs',
+        'project_files',
+        'project_design_details',
+        'project_acceptances',
+        'account_transactions',
+        'department_notes',
+        'notes_mentions',
+        'project_adders_locks',
+        'site_surveys',
+        'emails',
+    ];
+
     public function __construct(
         private readonly AiSchemaService $aiSchemaService,
         private readonly AiPermissionService $aiPermissionService,
@@ -861,6 +882,19 @@ class AiSqlBuilderService
             if ($user->hasRole('Manager')) {
                 $departmentIds = EmployeeDepartment::whereIn('employee_id', Employee::where('user_id', $user->id)->select('id'))->select('department_id');
                 $query->whereIn('tasks.department_id', $departmentIds);
+            }
+
+            return;
+        }
+
+        // Generic row-scope for any other project-linked base table. Scoped roles
+        // only ever see rows belonging to projects they may access; an empty
+        // allow-list collapses to project_id IN (0) (deny all) so nothing leaks.
+        if (in_array($baseTable, self::PROJECT_LINKED_TABLES, true)) {
+            $allowedProjectIds = $this->aiRowScopeService->allowedProjectIds($user);
+
+            if ($allowedProjectIds !== null) {
+                $query->whereIn($baseTable . '.project_id', $allowedProjectIds ?: [0]);
             }
         }
     }
