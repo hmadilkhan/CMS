@@ -478,16 +478,21 @@ class AiSqlBuilderService
         }
 
         if (($plan['intent'] ?? null) === 'finance_summary') {
-            $this->ensureJoin($query, 'projects', 'project_finances.project_id', '=', 'projects.id');
+            // Real data lives in customer_finances (there is no project_finances table).
+            $this->ensureJoin($query, 'customers', 'projects.customer_id', '=', 'customers.id');
+            $this->ensureJoin($query, 'customer_finances', 'customers.id', '=', 'customer_finances.customer_id');
+            $this->ensureJoin($query, 'finance_options', 'customer_finances.finance_option_id', '=', 'finance_options.id');
             $query->select(
                 'projects.project_name',
                 'projects.code',
-                'project_finances.finance_option',
-                'project_finances.financing_status',
-                'project_finances.contract_amount',
-                'project_finances.dealer_fee_amount',
-                'project_finances.commission_amount'
-            );
+                'finance_options.name as finance_option',
+                'customer_finances.contract_amount',
+                'customer_finances.dealer_fee_amount',
+                'customer_finances.commission'
+            )
+                ->whereNotNull('customer_finances.id')
+                ->whereNull('customer_finances.deleted_at')
+                ->orderByDesc('customer_finances.updated_at');
         }
 
         if (($plan['intent'] ?? null) === 'project_financing_summary') {
@@ -605,12 +610,21 @@ class AiSqlBuilderService
         }
 
         if (($plan['intent'] ?? null) === 'customer_revenue') {
-            $this->ensureJoin($query, 'customers', 'project_revenue.customer_id', '=', 'customers.id');
+            // Revenue = customer_finances.contract_amount, summed PER PROJECT so the
+            // figures reconcile with the dashboard "Revenue" widgets (WidgetsCards),
+            // which iterate projects and sum project->customer->finances->contract_amount.
+            // Base table is `projects`, so date filters (e.g. projects.created_at this
+            // year) and role scoping behave exactly like the dashboard.
+            $this->ensureJoin($query, 'customers', 'projects.customer_id', '=', 'customers.id');
+            $this->ensureJoin($query, 'customer_finances', 'customers.id', '=', 'customer_finances.customer_id');
             $query->select(
                 'customers.first_name',
                 'customers.last_name',
-                DB::raw('sum(project_revenue.revenue_amount) as revenue_amount')
-            )->groupBy('project_revenue.customer_id', 'customers.first_name', 'customers.last_name');
+                DB::raw('sum(customer_finances.contract_amount) as revenue_amount')
+            )
+                ->whereNotNull('customer_finances.id') // mirror dashboard whereHas('customer.finances')
+                ->whereNull('customer_finances.deleted_at')
+                ->groupBy('customers.id', 'customers.first_name', 'customers.last_name');
         }
 
         if (($plan['intent'] ?? null) === 'crm_group_summary') {
@@ -1093,7 +1107,7 @@ class AiSqlBuilderService
         }
 
         if (($plan['intent'] ?? null) === 'finance_summary') {
-            return ['project_name', 'code', 'finance_option', 'financing_status', 'contract_amount', 'dealer_fee_amount', 'commission_amount'];
+            return ['project_name', 'code', 'finance_option', 'contract_amount', 'dealer_fee_amount', 'commission'];
         }
 
         if (($plan['intent'] ?? null) === 'project_financing_summary') {

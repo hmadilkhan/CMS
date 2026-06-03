@@ -228,6 +228,18 @@ class AiChatService
                 }
             }
 
+            // 2.7 "Who moved project X" / project move history — answered directly
+            //      from the activity log (with correct subject_type + code→id
+            //      resolution that AI-written SQL routinely gets wrong). Falls
+            //      through when no project is named or nothing matched.
+            if ($this->isProjectMoveActivityRequest($message)) {
+                $moved = $this->handleProjectMoveActivity($chat, $user, $message, $log, $startedAt);
+
+                if ($moved !== null) {
+                    return $moved;
+                }
+            }
+
             // 3. CRM-first: route everything through the query pipeline.
             //    The planner will return intent="unknown"/mode="unsupported" for
             //    non-CRM questions and we gracefully fall through to general chat.
@@ -917,6 +929,79 @@ class AiChatService
         });
 
         return $chat->fresh('messages');
+    }
+
+    /**
+     * True for "who moved project X" / move-history / project-activity questions.
+     * These need the activity log (causer = who), which the generic pipeline tends
+     * to get wrong (subject_type FQCN + code-vs-id), so we handle them directly.
+     */
+    private function isProjectMoveActivityRequest(string $message): bool
+    {
+        $lower = mb_strtolower($message);
+
+        foreach ([
+            'who moved', 'who changed', 'who shifted', 'who pushed', 'who transferred',
+            'move history', 'movement history', 'moved history', 'move log',
+            'department change history', 'project activity', 'activity log', 'last moved',
+            'kisne move', 'kisne shift', 'kisne badla', 'kisne change',
+        ] as $cue) {
+            if (str_contains($lower, $cue)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Answer a "who moved / move history" question from the activity log. Returns
+     * null (so the caller falls through to the normal pipeline) when no project is
+     * named or nothing matched — never dead-ends on a stray phrase.
+     */
+    private function handleProjectMoveActivity(AiChat $chat, User $user, string $message, AiQueryLog $log, float $startedAt): ?AiChat
+    {
+        // Resolve the project: explicit code / hyphenated or quoted name, else the
+        // project carried from the previous turn ("this project").
+        $search = $this->extractProjectSearchTerm($message);
+
+        if ($search === '') {
+            $search = $this->getRecentProjectSearch($chat);
+        }
+
+        if ($search === '') {
+            return null;
+        }
+
+        $lower    = mb_strtolower($message);
+        $lastOnly = str_contains($lower, 'last') || str_contains($lower, 'latest')
+            || str_contains($lower, 'recent') || str_contains($lower, 'akhri') || str_contains($lower, 'aakhri');
+
+        $result   = $this->aiProjectLaneService->getProjectMoveActivity($user, $search, $lastOnly ? 1 : 20);
+        $rowCount = $result['row_count'];
+
+        if ($rowCount === 0) {
+            return null;
+        }
+
+        $label = $result['project_label'] ?: $search;
+
+        if ($lastOnly) {
+            $row = $result['rows'][0];
+            $assistantMessage = "**{$row['Moved By']}** made the last recorded move on **{$label}** — {$row['Movement']} ({$row['When']}).";
+        } else {
+            $assistantMessage = "Here is the recent move history for **{$label}** — {$rowCount} " . ($rowCount === 1 ? 'entry' : 'entries') . ':';
+        }
+
+        $answer = [
+            'type'    => 'table',
+            'message' => $assistantMessage,
+            'columns' => $result['columns'],
+            'rows'    => $result['rows'],
+            'cards'   => [],
+        ];
+
+        return $this->storeProjectDetailMessage($chat, $message, $assistantMessage, $answer, $log, $startedAt, 'success', $search);
     }
 
     /**

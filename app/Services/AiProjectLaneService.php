@@ -365,6 +365,94 @@ class AiProjectLaneService
         return ['projects' => $projects, 'project_count' => $grouped->count()];
     }
 
+    /**
+     * "Who moved project X" / project move history, from the Spatie activity log.
+     *
+     * Important gotchas this handles (which naive AI-written SQL gets wrong):
+     *   - activity_log.subject_type stores the FQCN (App\Models\Project), not 'projects';
+     *   - activity_log.subject_id is the project PRIMARY KEY id, not the project code —
+     *     so we join projects and match on code/name, never on the raw number;
+     *   - move events use event = 'move' with properties {old_lane,new_lane}.
+     *
+     * Respects the same role scope as the lane reports.
+     *
+     * @return array{rows: array<int,array>, row_count: int, columns: array<int,string>, project_label: string}
+     */
+    public function getProjectMoveActivity(User $user, string $search, int $limit = 20): array
+    {
+        $limit = max(1, min($limit, 50));
+
+        $query = DB::table('activity_log as a')
+            ->join('projects as p', 'p.id', '=', 'a.subject_id')
+            ->leftJoin('users as u', 'u.id', '=', 'a.causer_id')
+            ->where('a.subject_type', \App\Models\Project::class)
+            ->where('a.event', 'move')
+            ->select([
+                'p.project_name',
+                'p.code',
+                'u.name as moved_by',
+                'a.description',
+                'a.properties',
+                'a.created_at',
+            ])
+            ->orderByDesc('a.created_at')
+            ->orderByDesc('a.id');
+
+        $query = $this->applyProjectScope($query, $user);
+
+        if ($search !== '') {
+            $query->where(function ($q) use ($search) {
+                $q->where('p.project_name', 'like', '%' . $search . '%')
+                  ->orWhere('p.code', 'like', '%' . $search . '%');
+            });
+        }
+
+        $logs = $query->limit($limit)->get();
+
+        if ($logs->isEmpty()) {
+            return ['rows' => [], 'row_count' => 0, 'columns' => [], 'project_label' => ''];
+        }
+
+        $rows = [];
+        foreach ($logs as $logRow) {
+            $rows[] = [
+                'Project'  => $logRow->project_name,
+                'Code'     => $logRow->code ?: '-',
+                'Moved By' => $logRow->moved_by ?: 'System',
+                'Movement' => $this->describeMove($logRow->properties, $logRow->description),
+                'When'     => Carbon::parse($logRow->created_at)->format('d M Y H:i'),
+            ];
+        }
+
+        $names = array_values(array_unique(array_map(fn ($r) => $r['Project'], $rows)));
+        $label = count($names) === 1 ? (string) $names[0] : (count($names) . ' projects');
+
+        return [
+            'rows'          => $rows,
+            'row_count'     => count($rows),
+            'columns'       => array_keys($rows[0]),
+            'project_label' => $label,
+        ];
+    }
+
+    /**
+     * Human-readable movement string: "Permitting → Installation" from the
+     * properties JSON when present, otherwise the stored activity description.
+     */
+    private function describeMove(?string $properties, ?string $description): string
+    {
+        $data = json_decode((string) $properties, true);
+
+        if (is_array($data) && ! empty($data['old_lane']) && ! empty($data['new_lane'])) {
+            $old = (string) $data['old_lane'];
+            $new = (string) $data['new_lane'];
+
+            return $old === $new ? "Updated within {$new}" : "{$old} → {$new}";
+        }
+
+        return trim((string) $description) ?: 'Moved';
+    }
+
     private function applyProjectScope(Builder $query, User $user): Builder
     {
         if ($user->hasAnyRole(['Super Admin', 'Admin', 'Finance'])) {

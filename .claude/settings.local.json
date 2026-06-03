@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "PowerShell(wsl -e bash -lc \"cd /home/hmadilkhan/CMS && php _act_probe.php; rm -f _act_probe.php\")",
+      "PowerShell(wsl -e bash -lc \"cd /home/hmadilkhan/CMS && php -l app/Services/OpenAiService.php\")"
+    ]
+  }
+}

@@ -30,10 +30,35 @@ class AiAnswerFormatterService
                 1600
             );
 
-            return $this->normalizeAnswer($response['json'], $plan, $execution);
+            return $this->normalizeAnswer($response['json'], $plan, $execution, $question);
         } catch (Throwable) {
-            return $this->fallbackAnswer($plan, $execution);
+            return $this->fallbackAnswer($plan, $execution, $question);
         }
+    }
+
+    /**
+     * Drop noisy created_at / updated_at columns from table output unless the user
+     * actually asked about dates/times. Keeps meaningful date columns (e.g.
+     * solar_install_date, transaction_date, sold_date) which are not named exactly
+     * created_at/updated_at.
+     *
+     * @param array<int,string> $columns
+     * @return array<int,string>
+     */
+    private function hideTimestampColumns(array $columns, string $question): array
+    {
+        $q = mb_strtolower($question);
+
+        foreach (['created', 'updated', 'timestamp', 'time stamp', 'when ', 'kab ', 'date added', 'last modified', 'modified'] as $cue) {
+            if (str_contains($q, $cue)) {
+                return $columns; // user asked about timing — keep them
+            }
+        }
+
+        return array_values(array_filter(
+            $columns,
+            fn ($col) => ! in_array(strtolower((string) $col), ['created_at', 'updated_at'], true)
+        ));
     }
 
     private function instructions(): string
@@ -46,7 +71,7 @@ Keep the message concise and useful for CRM users.
 PROMPT;
     }
 
-    private function normalizeAnswer(array $answer, array $plan, array $execution): array
+    private function normalizeAnswer(array $answer, array $plan, array $execution, string $question = ''): array
     {
         $type = in_array($answer['type'] ?? null, ['text', 'table', 'card', 'count'], true)
             ? $answer['type']
@@ -71,18 +96,20 @@ PROMPT;
             ];
         }
 
+        $columns = $type === 'card'
+            ? array_values($answer['columns'] ?? $this->columnsFromRows($executionRows))
+            : $this->columnsFromRows($executionRows);
+
         return [
             'type' => $type,
             'message' => $message,
-            'columns' => $type === 'card'
-                ? array_values($answer['columns'] ?? $this->columnsFromRows($executionRows))
-                : $this->columnsFromRows($executionRows),
+            'columns' => $this->hideTimestampColumns($columns, $question),
             'rows' => $rows,
             'cards' => $cards,
         ];
     }
 
-    private function fallbackAnswer(array $plan, array $execution): array
+    private function fallbackAnswer(array $plan, array $execution, string $question = ''): array
     {
         $rows = $execution['rows'] ?? [];
         $rows = $this->appendTotalRowIfNeeded($plan, $rows);
@@ -130,7 +157,7 @@ PROMPT;
         return [
             'type' => $type,
             'message' => $message,
-            'columns' => $this->columnsFromRows($rows),
+            'columns' => $this->hideTimestampColumns($this->columnsFromRows($rows), $question),
             'rows' => $rows,
             'cards' => $type === 'card' ? $this->cardsFromRows($rows) : [],
         ];

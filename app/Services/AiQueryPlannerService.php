@@ -226,8 +226,8 @@ class AiQueryPlannerService
                         'expected_plan' => [
                             'answer_type' => 'card',
                             'intent' => 'finance_summary',
-                            'tables' => ['project_finances', 'projects'],
-                            'columns' => ['project_id', 'finance_option', 'financing_status', 'contract_amount', 'dealer_fee_amount', 'commission_amount'],
+                            'tables' => ['projects', 'customers', 'customer_finances', 'finance_options'],
+                            'columns' => ['project_name', 'code', 'finance_option_id', 'contract_amount', 'dealer_fee_amount', 'commission'],
                             'group_by' => [],
                             'filters' => [],
                             'requires_finance_access' => true,
@@ -281,8 +281,8 @@ class AiQueryPlannerService
                         'expected_plan' => [
                             'answer_type' => 'table',
                             'intent' => 'customer_revenue',
-                            'tables' => ['project_revenue', 'customers'],
-                            'columns' => ['customer_id', 'first_name', 'last_name', 'revenue_amount'],
+                            'tables' => ['projects', 'customers', 'customer_finances'],
+                            'columns' => ['customer_id', 'first_name', 'last_name', 'contract_amount'],
                             'group_by' => ['customer_id', 'first_name', 'last_name'],
                             'filters' => [],
                             'requires_finance_access' => true,
@@ -722,7 +722,7 @@ Do NOT set a fallback_message for unsupported — leave it null so the router ca
 - "Solar installations this month" → tables: ["projects"], columns: ["project_name", "solar_install_date"], filter: solar_install_date this month
 - "How many permits submitted?" → tables: ["projects"], columns: ["id", "permitting_submittion_date"], intent: "permit_count", answer_type: "count"
 - "PTO pending projects" → tables: ["projects"], columns: ["project_name", "pto_submission_date", "pto_approval_date"], filter: pto_approval_date IS NULL
-- "HOA pending list" → tables: ["projects"], columns: ["project_name", "hoa_approval_date", "hoa_approval_request_date"], filter: hoa_approval_date IS NULL
+- "HOA pending list" → tables: ["projects"], columns: ["project_name", "hoa", "hoa_approval_date"], filter: hoa = 'yes' AND hoa_approval_date IS NULL. IMPORTANT: only projects that REQUIRE HOA (hoa = 'yes') can be HOA-pending; projects with hoa = 'no' are NOT pending and must be excluded.
 - "Follow ups this week" → tables: ["project_follow_ups", "projects"], columns: ["project_id", "project_name", "created_at"]
 - "Call logs today" → tables: ["project_call_logs", "projects"], columns: ["project_id", "project_name", "created_at"]
 - "Acceptance pending" → tables: ["project_acceptances", "projects"], columns: ["project_id", "status", "approved_date"], filter: status = 0
@@ -1380,6 +1380,16 @@ PROMPT;
             $hasCondition = $acceptanceCondition !== null && ! isset($acceptanceCondition['fallback']);
             $statusFilter = $hasCondition ? [$acceptanceCondition] : [];
 
+            // "not in Archived department" / "exclude archived" → drop archived-dept projects.
+            if (preg_match('/\bnot\s+(?:in\s+)?(?:the\s+)?archived?\b|exclude[ds]?\s+archived|without\s+archived|except\s+archived|non[- ]?archived/i', $normalized)) {
+                $statusFilter[] = [
+                    'table'    => 'projects',
+                    'column'   => 'department_id',
+                    'operator' => '!=',
+                    'value'    => (int) config('ai.schema.archived_department_id', 9),
+                ];
+            }
+
             return [
                 'answer_type' => $hasCondition ? 'count' : 'table',
                 'intent'      => 'project_acceptance_count',
@@ -1501,6 +1511,24 @@ PROMPT;
         }
 
         if ($mentionsTransaction) {
+            $txFilters = $dateRange ? [
+                ['table' => 'account_transactions', 'column' => 'transaction_date', 'operator' => '>=', 'value' => $dateRange['from']],
+                ['table' => 'account_transactions', 'column' => 'transaction_date', 'operator' => '<=', 'value' => $dateRange['to']],
+            ] : [];
+
+            // Payee filter: "only Sales Partner" / "sub-contractor" / "others".
+            $payee = null;
+            if (str_contains($normalized, 'sales partner')) {
+                $payee = 'sales_partner';
+            } elseif (str_contains($normalized, 'sub-contractor') || str_contains($normalized, 'sub contractor') || str_contains($normalized, 'subcontractor')) {
+                $payee = 'sub_contractor';
+            } elseif (str_contains($normalized, 'others') || str_contains($normalized, 'other payee')) {
+                $payee = 'others';
+            }
+            if ($payee) {
+                $txFilters[] = ['table' => 'account_transactions', 'column' => 'payee', 'operator' => '=', 'value' => $payee];
+            }
+
             return [
                 'answer_type' => 'table',
                 'intent' => $dateRange ? 'transaction_report_by_date_range' : 'transaction_report',
@@ -1516,20 +1544,7 @@ PROMPT;
                     'transaction_details',
                 ],
                 'group_by' => [],
-                'filters' => $dateRange ? [
-                    [
-                        'table' => 'account_transactions',
-                        'column' => 'transaction_date',
-                        'operator' => '>=',
-                        'value' => $dateRange['from'],
-                    ],
-                    [
-                        'table' => 'account_transactions',
-                        'column' => 'transaction_date',
-                        'operator' => '<=',
-                        'value' => $dateRange['to'],
-                    ],
-                ] : [],
+                'filters' => $txFilters,
                 'requires_finance_access' => true,
                 'sql' => null,
                 'fallback_message' => null,
@@ -1537,6 +1552,25 @@ PROMPT;
         }
 
         if ($mentionsProfitability) {
+            // Meta-question about HOW the report is filtered → explain, don't run it.
+            foreach (['kis column', 'which column', 'konsa column', 'konse column', 'kaunsa column', 'kaun se column', 'column se filter', 'filter kis', 'filter kaise', 'how is it filtered', 'how does the filter'] as $metaCue) {
+                if (str_contains($normalized, $metaCue)) {
+                    return array_merge($this->unknownPlan(), [
+                        'fallback_message' => 'The profitability report filters by the project solar install date (projects.solar_install_date) — give a date range like "from 1 April 2026 to 30 April 2026". You can also scope it to a sales partner, e.g. "profitability report of Sales Partner <name>". Profit is calculated as (redline costs + adders) minus actual material, labor, permit and office costs.',
+                    ]);
+                }
+            }
+
+            $profitFilters = $dateRange ? [
+                ['table' => 'projects', 'column' => 'solar_install_date', 'operator' => '>=', 'value' => $dateRange['from']],
+                ['table' => 'projects', 'column' => 'solar_install_date', 'operator' => '<=', 'value' => $dateRange['to']],
+            ] : [];
+
+            // Scope to a named sales partner when the question asks for one.
+            if ($partner = $this->extractSalesPartnerName($question)) {
+                $profitFilters[] = ['table' => 'sales_partners', 'column' => 'name', 'operator' => 'like', 'value' => $partner];
+            }
+
             return [
                 'answer_type' => 'table',
                 'intent' => $dateRange ? 'profitability_report_by_date_range' : 'profitability_report',
@@ -1556,20 +1590,7 @@ PROMPT;
                     'office_cost',
                 ],
                 'group_by' => [],
-                'filters' => $dateRange ? [
-                    [
-                        'table' => 'projects',
-                        'column' => 'solar_install_date',
-                        'operator' => '>=',
-                        'value' => $dateRange['from'],
-                    ],
-                    [
-                        'table' => 'projects',
-                        'column' => 'solar_install_date',
-                        'operator' => '<=',
-                        'value' => $dateRange['to'],
-                    ],
-                ] : [],
+                'filters' => $profitFilters,
                 'requires_finance_access' => true,
                 'sql' => null,
                 'fallback_message' => null,
@@ -1595,6 +1616,11 @@ PROMPT;
         }
 
         if ($mentionsProject && $mentionsFinance) {
+            // Scope to a specific project when the question names one ("code 1149",
+            // "SS-1149", a quoted/hyphenated name). Without this the curated finance
+            // report ignored the reference and listed EVERY project's financing.
+            $projectFilter = $this->extractProjectReferenceFilter($question);
+
             return [
                 'answer_type' => 'table',
                 'intent' => 'project_financing_summary',
@@ -1615,15 +1641,48 @@ PROMPT;
                     'updated_at',
                 ],
                 'group_by' => [],
-                'filters' => [],
+                'filters' => $projectFilter ? [$projectFilter] : [],
                 'requires_finance_access' => true,
                 'sql' => null,
                 'fallback_message' => null,
             ];
         }
 
-        // Priority-wise ticket summary — must come BEFORE user-ticket check
-        if ($mentionsTicket && (str_contains($normalized, 'priority') || str_contains($normalized, 'priority wise'))) {
+        // Tickets by priority. If the user names a specific priority ("High priority
+        // tickets", "details of urgent tickets") return the actual LIST (or a count
+        // for "how many"); only fall back to the grouped summary for "priority wise".
+        if ($mentionsTicket && str_contains($normalized, 'priorit')) {
+            $priorityValue = $this->extractTicketPriority($normalized);
+            $wantsSummary  = str_contains($normalized, 'wise')
+                || str_contains($normalized, 'summary')
+                || str_contains($normalized, 'group')
+                || str_contains($normalized, 'breakdown');
+
+            if ($priorityValue && ! $wantsSummary) {
+                $isCount = $mentionsCount
+                    || str_contains($normalized, 'how many')
+                    || str_contains($normalized, 'kitne')
+                    || str_contains($normalized, 'kitni')
+                    || str_contains($normalized, 'count');
+
+                return [
+                    'answer_type' => $isCount ? 'count' : 'table',
+                    'intent'      => $isCount ? 'crm_count' : 'crm_list',
+                    'tables'      => ['service_tickets'],
+                    'columns'     => $isCount ? ['id'] : ['subject', 'priority', 'status', 'created_at'],
+                    'group_by'    => [],
+                    'filters'     => [[
+                        'table'    => 'service_tickets',
+                        'column'   => 'priority',
+                        'operator' => '=',
+                        'value'    => $priorityValue,
+                    ]],
+                    'requires_finance_access' => false,
+                    'sql'          => null,
+                    'fallback_message' => null,
+                ];
+            }
+
             return [
                 'answer_type' => 'table',
                 'intent'      => 'crm_group_summary',
@@ -2037,6 +2096,74 @@ PROMPT;
         }
 
         return null;
+    }
+
+    /**
+     * Detect a concrete project reference in the question and return it as a plan
+     * filter. Codes (explicit "code 1149", "SS-1149", or a bare 3-6 digit number)
+     * match `projects.code` exactly; a quoted or hyphenated proper name matches
+     * `projects.project_name`. Returns null when no specific project is named, so
+     * the caller keeps its existing "list all" behaviour.
+     *
+     * @return array{column:string,operator:string,value:string}|null
+     */
+    private function extractProjectReferenceFilter(string $question): ?array
+    {
+        // Explicit "code <X>" / "project code <X>" — most reliable signal.
+        if (preg_match('/\bcode\s*#?\s*([A-Za-z]{0,4}-?\d{2,6})\b/i', $question, $m)) {
+            return ['column' => 'code', 'operator' => '=', 'value' => trim($m[1])];
+        }
+
+        // Prefixed code anywhere (e.g. SS-001, AB-12345).
+        if (preg_match('/\b([A-Za-z]{1,4}-\d{3,6})\b/', $question, $m)) {
+            return ['column' => 'code', 'operator' => '=', 'value' => $m[1]];
+        }
+
+        // Quoted name or hyphenated proper name (e.g. "Annie Ewing", Annie-Ewing).
+        if (preg_match('/["\']([A-Za-z][A-Za-z0-9\s\-]{1,40})["\']/', $question, $m)
+            || preg_match('/\b([A-Z][a-zA-Z]+-[A-Z][a-zA-Z]+)\b/', $question, $m)) {
+            return ['column' => 'project_name', 'operator' => 'like', 'value' => trim($m[1])];
+        }
+
+        // Bare 3-6 digit number as a last resort (a lone code in the question).
+        if (preg_match('/\b(\d{3,6})\b/', $question, $m)) {
+            return ['column' => 'code', 'operator' => '=', 'value' => $m[1]];
+        }
+
+        return null;
+    }
+
+    /**
+     * Map a ticket-priority word in the question to its stored value, or null.
+     */
+    private function extractTicketPriority(string $normalized): ?string
+    {
+        foreach (['urgent' => 'Urgent', 'critical' => 'Critical', 'high' => 'High', 'medium' => 'Medium', 'low' => 'Low'] as $needle => $value) {
+            if (preg_match('/\b' . $needle . '\b/', $normalized)) {
+                return $value;
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * Extract a sales-partner name when a report question scopes to one
+     * ("... of Sales Partner Solen Energy Construction"). Returns null when none.
+     */
+    private function extractSalesPartnerName(string $question): ?string
+    {
+        if (! preg_match('/\b(?:sales\s+partner|partner)\b[:\s]+(.+)/i', $question, $m)) {
+            return null;
+        }
+
+        $name = $m[1];
+
+        // Cut at trailing clauses/noise so we keep just the partner name.
+        $name = preg_split('/\b(?:from|between|for the|report|profitability|profit|transaction|forecast|override|in\s+\d|of\s+\w+\s+20\d\d)\b/i', $name)[0] ?? $name;
+        $name = trim(preg_replace('/\s+/', ' ', trim($name, " \t\n\r.,:;\"'")));
+
+        return ($name !== '' && mb_strlen($name) >= 3 && mb_strlen($name) <= 60) ? $name : null;
     }
 
     private function extractProjectSummaryName(string $question): ?string

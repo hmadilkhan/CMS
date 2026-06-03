@@ -1019,171 +1019,14 @@ return [
         ],
 
         /*
-         * Placeholder finance/report tables.
-         * Map these entries to your real CRM finance tables before relying on live answers.
-         * If your current CRM table is customer_finances/account_transactions/project_acceptances,
-         * either update the "table" value and relationships here or replace these placeholders
-         * with model-backed mappings.
+         * NOTE: project_finances, project_expenses, project_revenue and
+         * profitability_reports were placeholder tables that never existed in the
+         * database — they only caused "Base table not found" errors. The real data
+         * lives in customer_finances (financing, contract amount = revenue),
+         * account_transactions (payments/remittances) and the projects.actual_*
+         * cost columns. The finance_summary, customer_revenue and profitability_report
+         * intents now map to those real tables, so these placeholders were removed.
          */
-        'project_finances' => [
-            'model' => null,
-            'table' => 'project_finances',
-            'allowed_columns' => [
-                'id',
-                'project_id',
-                'customer_id',
-                'finance_option',
-                'financing_status',
-                'contract_amount',
-                'dealer_fee_amount',
-                'commission_amount',
-                'created_at',
-                'updated_at',
-            ],
-            'searchable_columns' => [
-                'finance_option',
-                'financing_status',
-                'project_id',
-                'customer_id',
-            ],
-            'relationships' => [
-                'project' => [
-                    'table' => 'projects',
-                    'local_key' => 'project_id',
-                    'foreign_key' => 'id',
-                ],
-                'customer' => [
-                    'table' => 'customers',
-                    'local_key' => 'customer_id',
-                    'foreign_key' => 'id',
-                ],
-            ],
-            'sensitive_columns' => [
-                'contract_amount',
-                'dealer_fee_amount',
-                'commission_amount',
-            ],
-            'default_sort_column' => 'created_at',
-            'access_rule' => 'finance_access',
-            'manual_mapping_required' => true,
-            'mapping_note' => 'Placeholder. Map to customer_finances or your real project finance table.',
-        ],
-
-        'project_expenses' => [
-            'model' => null,
-            'table' => 'project_expenses',
-            'allowed_columns' => [
-                'id',
-                'project_id',
-                'expense_type',
-                'expense_amount',
-                'expense_date',
-                'notes',
-                'created_at',
-                'updated_at',
-            ],
-            'searchable_columns' => [
-                'project_id',
-                'expense_type',
-                'notes',
-            ],
-            'relationships' => [
-                'project' => [
-                    'table' => 'projects',
-                    'local_key' => 'project_id',
-                    'foreign_key' => 'id',
-                ],
-            ],
-            'sensitive_columns' => [
-                'expense_amount',
-            ],
-            'default_sort_column' => 'expense_date',
-            'access_rule' => 'finance_access',
-            'manual_mapping_required' => true,
-            'mapping_note' => 'Placeholder. Map to account_transactions, office_costs, labor_costs, or your real expense table.',
-        ],
-
-        'project_revenue' => [
-            'model' => null,
-            'table' => 'project_revenue',
-            'allowed_columns' => [
-                'id',
-                'project_id',
-                'customer_id',
-                'revenue_type',
-                'revenue_amount',
-                'revenue_date',
-                'created_at',
-                'updated_at',
-            ],
-            'searchable_columns' => [
-                'project_id',
-                'customer_id',
-                'revenue_type',
-            ],
-            'relationships' => [
-                'project' => [
-                    'table' => 'projects',
-                    'local_key' => 'project_id',
-                    'foreign_key' => 'id',
-                ],
-                'customer' => [
-                    'table' => 'customers',
-                    'local_key' => 'customer_id',
-                    'foreign_key' => 'id',
-                ],
-            ],
-            'sensitive_columns' => [
-                'revenue_amount',
-            ],
-            'default_sort_column' => 'revenue_date',
-            'access_rule' => 'finance_access',
-            'manual_mapping_required' => true,
-            'mapping_note' => 'Placeholder. Map to account_transactions or your real project revenue table.',
-        ],
-
-        'profitability_reports' => [
-            'model' => null,
-            'table' => 'profitability_reports',
-            'allowed_columns' => [
-                'id',
-                'project_id',
-                'customer_id',
-                'total_revenue',
-                'total_expense',
-                'gross_profit',
-                'margin_percent',
-                'report_date',
-                'created_at',
-                'updated_at',
-            ],
-            'searchable_columns' => [
-                'project_id',
-                'customer_id',
-            ],
-            'relationships' => [
-                'project' => [
-                    'table' => 'projects',
-                    'local_key' => 'project_id',
-                    'foreign_key' => 'id',
-                ],
-                'customer' => [
-                    'table' => 'customers',
-                    'local_key' => 'customer_id',
-                    'foreign_key' => 'id',
-                ],
-            ],
-            'sensitive_columns' => [
-                'total_revenue',
-                'total_expense',
-                'gross_profit',
-                'margin_percent',
-            ],
-            'default_sort_column' => 'report_date',
-            'access_rule' => 'profitability_access',
-            'manual_mapping_required' => true,
-            'mapping_note' => 'Placeholder. Map to project_acceptances or your real profitability report table.',
-        ],
 
         'roles' => [
             'model' => \Spatie\Permission\Models\Role::class,
@@ -1733,10 +1576,6 @@ return [
         'customer_finances',
         'project_acceptances',
         'account_transactions',
-        'project_finances',
-        'project_expenses',
-        'project_revenue',
-        'profitability_reports',
         'users',
         'roles',
         'permissions',
