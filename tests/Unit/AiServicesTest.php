@@ -1221,6 +1221,126 @@ class AiServicesTest extends TestCase
         ], $preview['columns']);
     }
 
+    public function test_planner_resolves_followup_from_previous_context(): void
+    {
+        $user    = $this->userWithRole('Admin');
+        $planner = app(AiQueryPlannerService::class);
+
+        $previous = [
+            'intent'                  => 'project_count',
+            'tables'                  => ['projects', 'departments'],
+            'columns'                 => ['id', 'name'],
+            'filters'                 => [['column' => 'name', 'operator' => 'like', 'value' => 'deal review']],
+            'requires_finance_access' => false,
+        ];
+
+        $plan = $planner->plan('can you share the details of those projects?', $user, $previous)['plan'];
+
+        // "those projects" inherits the previous department filter as a project list.
+        $this->assertSame('crm_list', $plan['intent']);
+        $this->assertSame('table', $plan['answer_type']);
+        $this->assertContains('projects', $plan['tables']);
+        $this->assertNotEmpty($plan['filters']);
+        $this->assertSame('deal review', $plan['filters'][0]['value']);
+    }
+
+    public function test_planner_ignores_followup_without_previous_context(): void
+    {
+        $user    = $this->userWithRole('Admin');
+        $planner = app(AiQueryPlannerService::class);
+
+        // A self-contained question must NOT be treated as a follow-up even when a
+        // previous context exists (no back-reference words).
+        $previous = [
+            'intent'  => 'project_count',
+            'tables'  => ['projects'],
+            'filters' => [],
+        ];
+
+        $plan = $planner->plan('How many projects are there in total?', $user, $previous)['plan'];
+
+        $this->assertNotSame('crm_list', $plan['intent']);
+    }
+
+    public function test_ai_row_scope_service_scopes_projects_per_role(): void
+    {
+        \Illuminate\Support\Facades\Schema::create('customers', function (\Illuminate\Database\Schema\Blueprint $table) {
+            $table->id();
+            $table->unsignedBigInteger('sales_partner_id')->nullable();
+            $table->unsignedBigInteger('sub_contractor_id')->nullable();
+            $table->timestamps();
+            $table->softDeletes();
+        });
+
+        \Illuminate\Support\Facades\Schema::create('projects', function (\Illuminate\Database\Schema\Blueprint $table) {
+            $table->id();
+            $table->unsignedBigInteger('customer_id')->nullable();
+            $table->unsignedBigInteger('department_id')->nullable();
+            $table->unsignedBigInteger('sub_contractor_user_id')->nullable();
+            $table->timestamps();
+            $table->softDeletes();
+        });
+
+        \Illuminate\Support\Facades\Schema::create('tasks', function (\Illuminate\Database\Schema\Blueprint $table) {
+            $table->id();
+            $table->unsignedBigInteger('project_id');
+            $table->unsignedBigInteger('employee_id')->nullable();
+            $table->string('status')->nullable();
+            $table->timestamps();
+            $table->softDeletes();
+        });
+
+        $scope = app(\App\Services\AiRowScopeService::class);
+
+        // --- Admin: fully unscoped -------------------------------------------------
+        $admin = $this->userWithRole('Admin');
+        $this->assertNull($scope->allowedProjectIds($admin));
+        $this->assertNull($scope->projectScopeSql($admin));
+
+        // --- Sales Person: projects of customers they own --------------------------
+        $sales = $this->userWithRole('Sales Person');
+        \Illuminate\Support\Facades\DB::table('customers')->insert([
+            ['id' => 1, 'sales_partner_id' => $sales->id, 'sub_contractor_id' => 77],
+            ['id' => 2, 'sales_partner_id' => 999, 'sub_contractor_id' => null],
+        ]);
+        \Illuminate\Support\Facades\DB::table('projects')->insert([
+            ['id' => 10, 'customer_id' => 1, 'department_id' => 5, 'sub_contractor_user_id' => 555],
+            ['id' => 20, 'customer_id' => 2, 'department_id' => 6, 'sub_contractor_user_id' => null],
+        ]);
+        $this->assertSame([10], $scope->allowedProjectIds($sales));
+        $this->assertSame('projects.id in (10)', $scope->projectScopeSql($sales));
+
+        // --- Manager: projects in their employee departments -----------------------
+        $manager = $this->userWithRole('Manager');
+        \Illuminate\Support\Facades\DB::table('employees')->insert(['id' => 100, 'user_id' => $manager->id]);
+        \Illuminate\Support\Facades\DB::table('employee_departments')->insert(['employee_id' => 100, 'department_id' => 6]);
+        $this->assertSame([20], $scope->allowedProjectIds($manager));
+
+        // --- Employee: projects whose latest active task is theirs ------------------
+        $employee = $this->userWithRole('Employee');
+        \Illuminate\Support\Facades\DB::table('employees')->insert(['id' => 200, 'user_id' => $employee->id]);
+        \Illuminate\Support\Facades\DB::table('tasks')->insert([
+            ['id' => 1, 'project_id' => 10, 'employee_id' => 200, 'status' => 'In-Progress'],
+            ['id' => 2, 'project_id' => 20, 'employee_id' => 999, 'status' => 'In-Progress'],
+        ]);
+        $this->assertSame([10], $scope->allowedProjectIds($employee));
+
+        // --- Sub-Contractor User: projects directly assigned to them ----------------
+        $subUser = $this->userWithRole('Sub-Contractor User');
+        \Illuminate\Support\Facades\DB::table('projects')->where('id', 10)->update(['sub_contractor_user_id' => $subUser->id]);
+        $this->assertSame([10], $scope->allowedProjectIds($subUser));
+
+        // --- Sub-Contractor Manager: projects of their sub-contracted customers -----
+        $subManager = $this->userWithRole('Sub-Contractor Manager');
+        $subManager->forceFill(['sales_partner_id' => 77])->save();
+        $this->assertSame([10], $scope->allowedProjectIds($subManager->fresh()));
+
+        // --- Unknown scoped role: deny all -----------------------------------------
+        $viewer = $this->userWithRole('Viewer');
+        $this->assertSame([], $scope->allowedProjectIds($viewer));
+        $this->assertSame('projects.id in (0)', $scope->projectScopeSql($viewer));
+    }
+
     private function userWithRole(string $role): User
     {
         $user = User::factory()->create();

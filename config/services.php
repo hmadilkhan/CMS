@@ -34,6 +34,10 @@ return [
     'openai' => [
         'api_key' => env('OPENAI_API_KEY'),
         'model' => env('OPENAI_MODEL', 'gpt-4.1-mini'),
+        // Stronger GPT-4-class model used only for the reasoning-heavy steps
+        // (query planning + Text-to-SQL generation) where accuracy matters most.
+        // Falls back to the default model when OPENAI_SQL_MODEL is not set.
+        'sql_model' => env('OPENAI_SQL_MODEL', 'gpt-4.1'),
         'max_output_tokens' => env('OPENAI_MAX_OUTPUT_TOKENS', 1200),
         'timeout' => env('OPENAI_TIMEOUT', 60),
     ],

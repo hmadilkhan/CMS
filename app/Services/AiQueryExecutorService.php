@@ -70,6 +70,9 @@ class AiQueryExecutorService
                 'row_count' => 0,
                 'connection' => $resolvedConnection,
                 'error_message' => $message,
+                // Raw DB error — used internally for the Text-to-SQL self-correction
+                // retry. Never surfaced directly to the end user.
+                'raw_error' => $exception->getMessage(),
                 'cached' => false,
             ];
         } finally {

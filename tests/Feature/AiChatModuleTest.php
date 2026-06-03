@@ -370,23 +370,39 @@ class AiChatModuleTest extends TestCase
 
     public function test_department_subdepartment_project_count_question_is_mapped_safely(): void
     {
+        // Department group-summaries are no longer keyword-routed — the AI planner
+        // maps them to a generic group intent and the structured pipeline executes
+        // them. (mode=fixed_action keeps this deterministic on the structured path.)
         $user = $this->userWithRole('Admin');
         $this->mockPlannerResponse([
-            'answer_type' => 'text',
-            'intent' => 'unknown',
-            'tables' => [],
-            'columns' => [],
+            'mode' => 'fixed_action',
+            'confidence' => 0.9,
+            'answer_type' => 'table',
+            'intent' => 'crm_group_summary',
+            'entities' => ['projects', 'departments'],
+            'selected_columns' => [
+                ['table' => 'departments', 'columns' => ['name']],
+                ['table' => 'projects', 'columns' => ['id']],
+            ],
+            'tables' => ['projects', 'departments'],
+            'columns' => ['name', 'id'],
+            'group_by' => [['table' => 'departments', 'column' => 'name']],
             'filters' => [],
+            'relationships' => [],
+            'sort' => [],
+            'limit' => 50,
+            'needs_clarification' => false,
+            'clarification_question' => null,
             'requires_finance_access' => false,
             'sql' => null,
-            'fallback_message' => 'I cannot map this question safely.',
+            'fallback_message' => null,
         ]);
 
         $this->mock(AiQueryExecutorService::class, function ($mock) {
             $mock->shouldReceive('execute')->once()->andReturn([
                 'success' => true,
                 'rows' => [
-                    ['department_name' => 'Permitting', 'sub_department_name' => 'Review', 'aggregate' => 3],
+                    ['department_name' => 'Permitting', 'aggregate' => 3],
                 ],
                 'row_count' => 1,
                 'connection' => 'testing',
@@ -398,9 +414,9 @@ class AiChatModuleTest extends TestCase
             $mock->shouldReceive('format')->once()->andReturn([
                 'type' => 'table',
                 'message' => 'Here is the project count by department and subdepartment.',
-                'columns' => ['department_name', 'sub_department_name', 'aggregate'],
+                'columns' => ['department_name', 'aggregate'],
                 'rows' => [
-                    ['department_name' => 'Permitting', 'sub_department_name' => 'Review', 'aggregate' => 3],
+                    ['department_name' => 'Permitting', 'aggregate' => 3],
                 ],
                 'cards' => [],
             ]);
@@ -410,7 +426,7 @@ class AiChatModuleTest extends TestCase
             'message' => 'total project count department or subdepartment name ke sath show karo',
         ])->assertOk()
             ->assertJsonPath('messages.1.content', 'Here is the project count by department and subdepartment.')
-            ->assertJsonPath('messages.1.metadata.query_plan.intent', 'project_department_summary');
+            ->assertJsonPath('messages.1.metadata.query_plan.intent', 'crm_group_summary');
     }
 
     public function test_named_department_project_count_adds_department_filter(): void
@@ -1206,6 +1222,7 @@ class AiChatModuleTest extends TestCase
     private function mockPlannerResponse(array $plan): void
     {
         $this->mock(OpenAiService::class, function ($mock) use ($plan) {
+            $mock->shouldReceive('sqlModel')->zeroOrMoreTimes()->andReturn('gpt-test');
             $mock->shouldReceive('createJsonResponse')->zeroOrMoreTimes()->andReturn([
                 'id' => 'resp_plan',
                 'model' => 'gpt-test',

@@ -16,6 +16,12 @@ return [
         ],
     ],
 
+    'project_detail' => [
+        // A single department lane taking more than this many days is flagged as
+        // the likely bottleneck in a project-detail summary.
+        'lane_delay_days' => env('AI_LANE_DELAY_DAYS', 30),
+    ],
+
     'security' => [
         'max_daily_requests_per_user' => env('AI_MAX_DAILY_REQUESTS_PER_USER', 100),
         'per_minute_requests_per_user' => env('AI_MAX_REQUESTS_PER_MINUTE_PER_USER', 60),

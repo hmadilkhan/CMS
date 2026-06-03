@@ -24,6 +24,7 @@ class AiChatService
         private readonly AiAnswerFormatterService $aiAnswerFormatterService,
         private readonly AiProjectLaneService $aiProjectLaneService,
         private readonly AiTextToSqlService $aiTextToSqlService,
+        private readonly AiPermissionService $aiPermissionService,
     ) {
     }
 
@@ -155,6 +156,18 @@ class AiChatService
                 return $this->handleGeneralChat($chat, $user, $message, $log, $startedAt);
             }
 
+            // 2.5 Named project detail — "details/summary of <project>" → a formatted
+            //      text summary + per-department table (assignment, age, days in each
+            //      lane, status, delay reason, notes). Only when a project is named or
+            //      carried from the previous turn; otherwise fall through.
+            if ($this->isProjectDetailRequest($message)) {
+                $search = $this->resolveProjectSearch($message, $chat);
+
+                if ($search !== '') {
+                    return $this->handleProjectDetailSummary($chat, $user, $message, $search, $log, $startedAt);
+                }
+            }
+
             // 3. CRM-first: route everything through the query pipeline.
             //    The planner will return intent="unknown"/mode="unsupported" for
             //    non-CRM questions and we gracefully fall through to general chat.
@@ -270,7 +283,7 @@ class AiChatService
 
     private function handleQueryPlan(AiChat $chat, User $user, string $message, AiQueryLog $log, float $startedAt): AiChat
     {
-        $planned = $this->aiQueryPlannerService->plan($message, $user);
+        $planned = $this->aiQueryPlannerService->plan($message, $user, $this->previousCrmContext($chat));
         $plan = $planned['plan'];
         $response = $planned['openai'];
         $usage = $response['usage'];
@@ -293,37 +306,109 @@ class AiChatService
 
         $textToSqlUsed = false;
 
+        // "fixed_action" plans come from the curated keyword router (named reports
+        // with bespoke formatting). Everything else is an open-ended data question
+        // the planner mapped dynamically — those go through AI Text-to-SQL first.
+        $isDataExplorer = ($plan['mode'] ?? '') !== 'fixed_action';
+
         if ($plan['intent'] !== 'unknown') {
-            $planValidation = $this->aiPlanValidatorService->validate($plan, $user);
+            // 1. Open-ended questions → let the GPT-4-class model write SQL directly.
+            //    It is far more flexible than the structured builder and honours every
+            //    filter in the question (location, date range, status, person, …),
+            //    which is what makes different prompts return different answers.
+            if ($isDataExplorer) {
+                $tts = $this->attemptTextToSql($message, $user);
 
-            if ($planValidation['approved'] ?? false) {
-                $entityResolution = $this->aiEntityResolverService->resolve($plan);
+                if ($tts['ok']) {
+                    $textToSqlUsed  = true;
+                    $sqlPreview     = $tts['sql'];
+                    $execution      = $tts['execution'];
+                    $answer         = $this->aiAnswerFormatterService->format($message, $plan, $execution);
+                    // Text-to-SQL enforces its own table/column/finance permission
+                    // checks and SELECT-only validation, so the structured-plan
+                    // validators are not re-run here.
+                    $planValidation = ['approved' => true, 'reason' => null, 'status' => 'text_to_sql'];
+                    $validation     = ['approved' => true, 'reason' => null, 'status' => 'text_to_sql'];
+                }
+            }
 
-                if (in_array($entityResolution['status'] ?? null, ['clarification_required', 'not_found'], true)) {
-                    $plan['intent']           = 'unknown';
-                    $plan['mode']             = $entityResolution['status'];
-                    $plan['fallback_message'] = $entityResolution['message'] ?? 'I need one more detail before I can answer safely.';
-                } else {
-                    $plan       = $entityResolution['plan'] ?? $plan;
-                    $sqlPreview = $this->aiSafeQueryBuilderService->build($plan, $user);
-                    $validation = $this->aiSqlValidatorService->validate($sqlPreview, $plan, $user);
+            // 2. Structured pipeline: curated reports, or a fallback when Text-to-SQL
+            //    did not run or could not produce a working query.
+            if (! $textToSqlUsed) {
+                $planValidation = $this->aiPlanValidatorService->validate($plan, $user);
 
-                    if ($validation['approved'] ?? false) {
-                        $execution = $this->aiQueryExecutorService->execute($sqlPreview, $user->id);
-                        $answer    = $this->aiAnswerFormatterService->format($message, $plan, $execution);
-                    } else {
-                        // --- TEXT-TO-SQL FALLBACK ---
-                        // Structured plan couldn't be validated (complex query, unsupported pattern).
-                        // Ask AI to write safe SQL directly and execute it.
-                        $textSql = $this->aiTextToSqlService->generate($message, $user);
+                if ($planValidation['approved'] ?? false) {
+                    $entityResolution = $this->aiEntityResolverService->resolve($plan);
 
-                        if ($textSql['success']) {
+                    if (in_array($entityResolution['status'] ?? null, ['clarification_required', 'not_found'], true)) {
+                        // Before asking for clarification, give Text-to-SQL a chance on
+                        // open-ended questions — it can frequently answer them directly.
+                        $tts = $isDataExplorer ? $this->attemptTextToSql($message, $user) : ['ok' => false];
+
+                        if ($tts['ok']) {
                             $textToSqlUsed = true;
-                            $sqlPreview    = $textSql;
-                            $execution     = $this->aiQueryExecutorService->execute($textSql, $user->id);
+                            $sqlPreview    = $tts['sql'];
+                            $execution     = $tts['execution'];
                             $answer        = $this->aiAnswerFormatterService->format($message, $plan, $execution);
-                            // Mark validation as approved so the response path proceeds normally
-                            $validation = ['approved' => true, 'reason' => null, 'status' => 'text_to_sql'];
+                            $validation    = ['approved' => true, 'reason' => null, 'status' => 'text_to_sql'];
+                        } else {
+                            $plan['intent']           = 'unknown';
+                            $plan['mode']             = $entityResolution['status'];
+                            $plan['fallback_message'] = $entityResolution['message'] ?? 'I need one more detail before I can answer safely.';
+                        }
+                    } else {
+                        $plan       = $entityResolution['plan'] ?? $plan;
+                        $sqlPreview = $this->aiSafeQueryBuilderService->build($plan, $user);
+                        $validation = $this->aiSqlValidatorService->validate($sqlPreview, $plan, $user);
+
+                        if ($validation['approved'] ?? false) {
+                            $execution = $this->aiQueryExecutorService->execute($sqlPreview, $user->id);
+                            $answer    = $this->aiAnswerFormatterService->format($message, $plan, $execution);
+
+                            $executionFailed = ! ($execution['success'] ?? false);
+
+                            // A curated query that returns NOTHING for a full-access
+                            // (admin/finance) user is almost always a builder/routing
+                            // limitation rather than genuinely-empty data — the same
+                            // question via Text-to-SQL returns rows. Give the reliable
+                            // engine a second attempt. Gated to unscoped users so scoped
+                            // roles (Manager/Employee/…) never gain wider row visibility.
+                            // "Empty" includes a count query whose only row is 0 — a
+                            // common symptom of a mis-routed keyword plan.
+                            $curatedEmptyForFullAccess = ! $isDataExplorer
+                                && ($execution['success'] ?? false)
+                                && $this->resultIsEmpty($plan, $execution)
+                                && $this->userHasUnscopedAccess($user);
+
+                            if ($executionFailed || $curatedEmptyForFullAccess) {
+                                $tts = $this->attemptTextToSql($message, $user);
+
+                                // On a hard failure accept any working result; on the
+                                // empty-but-should-have-data case only swap when
+                                // Text-to-SQL actually found data (otherwise keep the
+                                // legitimate "no records" answer).
+                                if (($tts['ok'] ?? false)
+                                    && ($executionFailed || ! $this->resultIsEmpty($plan, $tts['execution'] ?? []))) {
+                                    $textToSqlUsed = true;
+                                    $sqlPreview    = $tts['sql'];
+                                    $execution     = $tts['execution'];
+                                    $answer        = $this->aiAnswerFormatterService->format($message, $plan, $execution);
+                                }
+                            }
+                        } else {
+                            // --- TEXT-TO-SQL FALLBACK ---
+                            // Structured plan couldn't be validated (complex query, unsupported pattern).
+                            // Ask AI to write safe SQL directly and execute it.
+                            $tts = $this->attemptTextToSql($message, $user);
+
+                            if ($tts['ok']) {
+                                $textToSqlUsed = true;
+                                $sqlPreview    = $tts['sql'];
+                                $execution     = $tts['execution'];
+                                $answer        = $this->aiAnswerFormatterService->format($message, $plan, $execution);
+                                // Mark validation as approved so the response path proceeds normally
+                                $validation    = ['approved' => true, 'reason' => null, 'status' => 'text_to_sql'];
+                            }
                         }
                     }
                 }
@@ -419,6 +504,124 @@ class AiChatService
         return $chat->fresh('messages');
     }
 
+    /**
+     * Whether a successful query result carries no usable data. Covers both an
+     * empty row set and a count query whose only value is 0 — the latter being a
+     * common symptom of a mis-routed keyword plan (a single count of 0 still has
+     * row_count = 1, so it would otherwise look "non-empty").
+     */
+    private function resultIsEmpty(array $plan, array $execution): bool
+    {
+        $rows = $execution['rows'] ?? [];
+
+        if ((int) ($execution['row_count'] ?? count($rows)) === 0) {
+            return true;
+        }
+
+        if (($plan['answer_type'] ?? null) === 'count') {
+            $first = is_array($rows[0] ?? null) ? $rows[0] : [];
+            $value = $first['aggregate'] ?? $first['value'] ?? $first['count'] ?? null;
+
+            if ($value !== null && is_numeric($value) && (int) $value === 0) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * True when the user sees CRM data without row-level scoping (Super Admin,
+     * Admin, or any finance-capable role). Mirrors the early-return condition in
+     * AiSqlBuilderService::applyRoleScope so the Text-to-SQL safety net never
+     * widens visibility for scoped roles.
+     */
+    private function userHasUnscopedAccess(User $user): bool
+    {
+        return $user->hasAnyRole(['Super Admin', 'Admin'])
+            || $this->aiPermissionService->canAccessFinance($user);
+    }
+
+    /**
+     * The previous successful CRM query plan in this chat, used to resolve
+     * conversational follow-ups ("details of those projects"). Returns the prior
+     * turn's intent/tables/filters, or null when there is no usable prior query.
+     */
+    private function previousCrmContext(AiChat $chat): ?array
+    {
+        $lastAssistant = $chat->messages()
+            ->where('role', 'assistant')
+            ->latest('id')
+            ->first();
+
+        if (! $lastAssistant) {
+            return null;
+        }
+
+        $meta = is_array($lastAssistant->metadata) ? $lastAssistant->metadata : [];
+        $plan = $meta['query_plan'] ?? null;
+
+        if (! is_array($plan) || ($plan['intent'] ?? 'unknown') === 'unknown') {
+            return null;
+        }
+
+        return [
+            'intent'                  => $plan['intent'] ?? null,
+            'tables'                  => $plan['tables'] ?? [],
+            'columns'                 => $plan['columns'] ?? [],
+            'filters'                 => $plan['filters'] ?? [],
+            'requires_finance_access' => $plan['requires_finance_access'] ?? false,
+        ];
+    }
+
+    /**
+     * Generate SQL from natural language, run it on the read-only connection, and
+     * self-correct once if the database rejects the query. The retry feeds the real
+     * DB error back to the model, which recovers most "query failed" cases (wrong
+     * column/table name, ambiguous column, bad join, type mismatch).
+     *
+     * @return array{ok:bool,sql:?array,execution:?array}
+     */
+    private function attemptTextToSql(string $message, User $user): array
+    {
+        // SECURITY: row-level scoping is enforced inside AiTextToSqlService —
+        // scoped (non-admin/non-finance) users get a mandatory projects.id IN (...)
+        // predicate mirroring ProjectService::projectQuery, and any query that
+        // can't carry that scope is refused (we then fall back to the structured
+        // pipeline). Full-access users (admin/finance) are unscoped by design.
+        $textSql = $this->aiTextToSqlService->generate($message, $user);
+
+        if (! ($textSql['success'] ?? false)) {
+            return ['ok' => false, 'sql' => $textSql, 'execution' => null];
+        }
+
+        $execution = $this->aiQueryExecutorService->execute($textSql, $user->id);
+
+        if ($execution['success'] ?? false) {
+            return ['ok' => true, 'sql' => $textSql, 'execution' => $execution];
+        }
+
+        // Self-correction: one retry with the real database error as feedback.
+        $retry = $this->aiTextToSqlService->regenerate(
+            $message,
+            $user,
+            (string) ($textSql['sql'] ?? ''),
+            (string) ($execution['raw_error'] ?? $execution['error_message'] ?? 'Query execution failed.')
+        );
+
+        if ($retry['success'] ?? false) {
+            $retryExecution = $this->aiQueryExecutorService->execute($retry, $user->id);
+
+            if ($retryExecution['success'] ?? false) {
+                return ['ok' => true, 'sql' => $retry, 'execution' => $retryExecution];
+            }
+
+            return ['ok' => false, 'sql' => $retry, 'execution' => $retryExecution];
+        }
+
+        return ['ok' => false, 'sql' => $textSql, 'execution' => $execution];
+    }
+
     private function handleLaneMovementQuery(AiChat $chat, User $user, string $message, array $plan, AiQueryLog $log, float $startedAt, array $openAiResponse): AiChat
     {
         $searchTerm  = $this->extractProjectSearchTerm($message);
@@ -502,6 +705,222 @@ class AiChatService
                 'openai_response_id' => $openAiResponse['id'],
                 'last_message_at'    => now(),
             ]);
+        });
+
+        return $chat->fresh('messages');
+    }
+
+    /**
+     * True for "details/summary of <project>" style requests. Triggers when the
+     * message asks for detail/summary AND has a project signal — either the word
+     * "project" or an explicit project reference (hyphenated name / quoted / code).
+     * This avoids hijacking non-project summaries (e.g. "summary of tickets").
+     */
+    private function isProjectDetailRequest(string $message): bool
+    {
+        $lower = mb_strtolower($message);
+
+        $hasDetailWord = false;
+        foreach (['detail', 'summary', 'summarize', 'summarise', 'overview', 'full info', 'complete info', 'mukammal', 'tafseel'] as $word) {
+            if (str_contains($lower, $word)) {
+                $hasDetailWord = true;
+                break;
+            }
+        }
+
+        if (! $hasDetailWord) {
+            return false;
+        }
+
+        // Exclude generic project reports/summaries (finance, status, department,
+        // group-bys, …) — those are handled by the report/AI pipeline, not the
+        // single-named-project detail handler.
+        foreach (['financ', 'status', 'department', 'acceptance', 'forecast', 'override',
+                  'transaction', 'revenue', 'profit', 'commission', 'contract', 'holdback',
+                  'loan', 'payment', 'wise', ' by '] as $aspect) {
+            if (str_contains($lower, $aspect)) {
+                return false;
+            }
+        }
+
+        // Require a concrete project reference (a name/code), not just a keyword.
+        return $this->stripToProjectName($message) !== '' || $this->extractProjectSearchTerm($message) !== '';
+    }
+
+    /**
+     * Resolve which project a detail request is about. Rather than guess by word
+     * position (brittle), strip the command/intent words and use whatever remains
+     * as the project name/code; then fall back to an explicit reference, then to
+     * the project carried from the previous turn. Empty string when unresolved.
+     */
+    private function resolveProjectSearch(string $message, AiChat $chat): string
+    {
+        $stripped = $this->stripToProjectName($message);
+
+        if ($stripped !== '') {
+            return $stripped;
+        }
+
+        // Hyphenated proper name / quoted name / code.
+        $term = $this->extractProjectSearchTerm($message);
+
+        if ($term !== '') {
+            return $term;
+        }
+
+        // Follow-up: a project carried from a previous lane/detail turn.
+        return $this->getPreviousLaneSearchTerm($chat);
+    }
+
+    /**
+     * Remove command/intent words from a detail request, leaving the project
+     * name/code. Word-order independent, so it handles "details of X project",
+     * "project detail of X", and "X project details" alike.
+     */
+    private function stripToProjectName(string $message): string
+    {
+        $text = ' ' . trim($message) . ' ';
+
+        // Multi-word phrases first (longest match wins).
+        $phrases = [
+            'can you share', 'could you share', 'can you show', 'please show me', 'show me',
+            'give me', 'tell me', 'i want to see', 'i would like', 'i want', 'i need',
+            'the project details of', 'the project detail of', 'project details of', 'project detail of',
+            'the project summary of', 'project summary of', 'project overview of',
+            'the details of', 'the detail of', 'details of', 'detail of',
+            'the summary of', 'summary of', 'overview of', 'full info of',
+            'complete details of', 'complete detail of', 'info of',
+        ];
+        foreach ($phrases as $p) {
+            $text = preg_replace('/\b' . preg_quote($p, '/') . '\b/iu', ' ', $text);
+        }
+
+        // Remaining standalone keywords (English + Roman Urdu).
+        $words = [
+            'project', 'projects', 'details', 'detail', 'summary', 'summarize', 'summarise',
+            'overview', 'info', 'information', 'show', 'me', 'the', 'of', 'for', 'about',
+            'please', 'give', 'tell', 'can', 'you', 'share', 'want', 'kindly', 'complete', 'full',
+            'dikhao', 'dikha', 'batao', 'bata', 'mujhe', 'ki', 'ka', 'ke', 'nikalo',
+        ];
+        $text = preg_replace('/\b(' . implode('|', array_map(fn ($w) => preg_quote($w, '/'), $words)) . ')\b/iu', ' ', $text);
+
+        $text = trim(preg_replace('/\s+/u', ' ', (string) $text));
+        $text = trim($text, " -:,.\t");
+
+        return (mb_strlen($text) >= 2 && mb_strlen($text) <= 60) ? $text : '';
+    }
+
+    private function handleProjectDetailSummary(AiChat $chat, User $user, string $message, string $search, AiQueryLog $log, float $startedAt): AiChat
+    {
+        $detail     = $this->aiProjectLaneService->getProjectDetail($user, $search);
+        $projects   = $detail['projects'] ?? [];
+        $matchCount = (int) ($detail['project_count'] ?? count($projects));
+
+        if ($projects === []) {
+            $assistantMessage = "I couldn't find a project matching \"{$search}\". Please check the name or code and try again.";
+            $answer = ['type' => 'text', 'message' => $assistantMessage, 'columns' => [], 'rows' => [], 'cards' => []];
+
+            return $this->storeProjectDetailMessage($chat, $message, $assistantMessage, $answer, $log, $startedAt, 'no_data', $search);
+        }
+
+        // Multiple matches → ask which one (by code), with a compact table.
+        if ($matchCount > 1) {
+            $rows = array_map(fn (array $p) => [
+                'Project'            => $p['project_name'],
+                'Code'               => $p['code'],
+                'Customer'           => $p['customer_name'],
+                'Current Department' => $p['current_department'],
+                'Status'             => $p['current_status'],
+                'Age (days)'         => $p['age_days'],
+            ], $projects);
+
+            $assistantMessage = "I found {$matchCount} projects matching \"{$search}\". Tell me which one (by code) and I'll show the full details:";
+            $answer = [
+                'type'    => 'table',
+                'message' => $assistantMessage,
+                'columns' => ['Project', 'Code', 'Customer', 'Current Department', 'Status', 'Age (days)'],
+                'rows'    => $rows,
+                'cards'   => [],
+            ];
+
+            return $this->storeProjectDetailMessage($chat, $message, $assistantMessage, $answer, $log, $startedAt, 'success', $search);
+        }
+
+        // Single project → formatted text summary + per-department table.
+        $project          = $projects[0];
+        $assistantMessage = $this->formatProjectDetailText($project);
+        $answer = [
+            'type'    => 'table',
+            'message' => $assistantMessage,
+            'columns' => ['Department', 'Days', 'Status', 'Entry', 'Exit', 'Notes', 'Action By'],
+            'rows'    => $project['departments'],
+            'cards'   => [],
+        ];
+
+        return $this->storeProjectDetailMessage($chat, $message, $assistantMessage, $answer, $log, $startedAt, 'success', $search);
+    }
+
+    private function formatProjectDetailText(array $p): string
+    {
+        $delayThreshold = (int) config('ai.project_detail.lane_delay_days', 30);
+
+        $lines = [
+            "{$p['project_name']} ({$p['code']})",
+            '',
+            'Customer:        ' . $p['customer_name'],
+            'Assigned to:     ' . $p['assigned_employee'],
+            'Current status:  ' . $p['current_status'] . ' — currently in ' . $p['current_department'],
+            'Project age:     ' . $p['age_days'] . ' days (created ' . $p['created_at'] . ')',
+            'Total time across departments: ' . $p['total_days'] . ' days',
+            '',
+        ];
+
+        if ($p['bottleneck_days'] > $delayThreshold) {
+            $issue = "Heads up: this project spent {$p['bottleneck_days']} days in {$p['bottleneck_dept']} — its longest stage.";
+            $issue .= ($p['bottleneck_notes'] ?? '') !== ''
+                ? ' Notes there: ' . $p['bottleneck_notes']
+                : ' No notes were recorded for that stage.';
+            $lines[] = $issue;
+        } elseif (in_array($p['current_status'], ['Hold', 'Cancelled'], true)) {
+            $lines[] = "This project is currently {$p['current_status']} in {$p['current_department']}.";
+        } else {
+            $lines[] = 'Progress looks normal — no single department is taking unusually long.';
+        }
+
+        $lines[] = '';
+        $lines[] = 'Time spent in each department:';
+
+        return implode("\n", $lines);
+    }
+
+    private function storeProjectDetailMessage(AiChat $chat, string $message, string $assistantMessage, array $answer, AiQueryLog $log, float $startedAt, string $status, string $search): AiChat
+    {
+        DB::transaction(function () use ($chat, $message, $assistantMessage, $answer, $log, $startedAt, $status, $search) {
+            $chat->messages()->create([
+                'role'     => 'assistant',
+                'content'  => $assistantMessage,
+                'metadata' => [
+                    'type'        => 'query_plan',
+                    'query_plan'  => [
+                        'intent'  => 'project_detail_summary',
+                        'tables'  => ['projects', 'tasks', 'departments'],
+                        'filters' => [['column' => 'project_name', 'operator' => 'like', 'value' => $search]],
+                    ],
+                    'answer'      => $answer,
+                    'search_term' => $search,
+                    'status'      => $status,
+                    'retryable'   => false,
+                ],
+            ]);
+
+            $log->update([
+                'status'           => $status === 'no_data' ? 'no_data' : 'executed',
+                'duration_ms'      => (int) ((microtime(true) - $startedAt) * 1000),
+                'request_payload'  => ['message' => $message],
+                'response_payload' => ['answer' => $answer],
+            ]);
+
+            $chat->update(['last_message_at' => now()]);
         });
 
         return $chat->fresh('messages');

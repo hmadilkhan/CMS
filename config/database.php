@@ -65,14 +65,22 @@ return [
             ]) : [],
         ],
 
+        // Hardened connection the AI assistant uses to run generated SQL.
+        // If you have a real read-only MySQL user (VPS/dedicated), set AI_DB_USERNAME
+        // / AI_DB_PASSWORD to it. On shared hosting (e.g. Hostinger) where a
+        // read-only user is not available, it falls back to the main DB credentials
+        // but disables stacked queries at the PDO level, so a generated
+        // "SELECT ...; DROP ..." can never run a second statement. Combined with the
+        // SELECT-only parser/validator, this gives effective read-only behaviour.
+        // Enable it by setting AI_READONLY_DB_CONNECTION=ai_readonly in .env.
         'ai_readonly' => [
             'driver' => 'mysql',
             'url' => env('DATABASE_URL'),
             'host' => env('AI_DB_HOST', env('DB_HOST', '127.0.0.1')),
             'port' => env('AI_DB_PORT', env('DB_PORT', '3306')),
             'database' => env('AI_DB_DATABASE', env('DB_DATABASE', 'forge')),
-            'username' => env('AI_DB_USERNAME', 'ai_readonly_user'),
-            'password' => env('AI_DB_PASSWORD', ''),
+            'username' => env('AI_DB_USERNAME', env('DB_USERNAME', 'forge')),
+            'password' => env('AI_DB_PASSWORD', env('DB_PASSWORD', '')),
             'unix_socket' => env('AI_DB_SOCKET', env('DB_SOCKET', '')),
             'charset' => 'utf8mb4',
             'collation' => 'utf8mb4_unicode_ci',
@@ -80,9 +88,15 @@ return [
             'prefix_indexes' => true,
             'strict' => true,
             'engine' => 'InnoDB',
-            'options' => extension_loaded('pdo_mysql') ? array_filter([
-                PDO::MYSQL_ATTR_SSL_CA => env('MYSQL_ATTR_SSL_CA'),
-            ]) : [],
+            'options' => extension_loaded('pdo_mysql')
+                ? array_filter([
+                    PDO::MYSQL_ATTR_SSL_CA => env('MYSQL_ATTR_SSL_CA'),
+                ]) + [
+                    // Defence in depth: never allow multiple statements in one query.
+                    PDO::MYSQL_ATTR_MULTI_STATEMENTS => false,
+                    PDO::ATTR_EMULATE_PREPARES => false,
+                ]
+                : [],
         ],
 
         'wordpress' => [

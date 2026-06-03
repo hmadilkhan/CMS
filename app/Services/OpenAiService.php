@@ -46,7 +46,7 @@ class OpenAiService
         ];
     }
 
-    public function createJsonResponse(string $instructions, array|string $input, int $maxOutputTokens = 1200, ?array $jsonSchema = null): array
+    public function createJsonResponse(string $instructions, array|string $input, int $maxOutputTokens = 1200, ?array $jsonSchema = null, ?string $model = null): array
     {
         $apiKey = config('services.openai.api_key');
 
@@ -55,7 +55,7 @@ class OpenAiService
         }
 
         $payload = [
-            'model' => config('services.openai.model', 'gpt-4.1-mini'),
+            'model' => $model ?: config('services.openai.model', 'gpt-4.1-mini'),
             'instructions' => $instructions,
             'input' => is_array($input) ? json_encode($input, JSON_PRETTY_PRINT) : $input,
             'text' => [
@@ -68,6 +68,7 @@ class OpenAiService
 
         $lastData = null;
         $lastText = null;
+        $fallbackModel = config('services.openai.model', 'gpt-4.1-mini');
 
         for ($attempt = 1; $attempt <= 2; $attempt++) {
             $response = Http::withToken($apiKey)
@@ -77,6 +78,14 @@ class OpenAiService
                 ->post('https://api.openai.com/v1/responses', $payload);
 
             if ($response->failed()) {
+                // Resilience: if a stronger/custom model is unavailable for this
+                // account (e.g. no access to gpt-4.1), retry once on the default
+                // model rather than failing the whole request.
+                if ($payload['model'] !== $fallbackModel) {
+                    $payload['model'] = $fallbackModel;
+                    continue;
+                }
+
                 throw new RuntimeException($response->json('error.message') ?? 'OpenAI request failed.');
             }
 
@@ -100,6 +109,15 @@ class OpenAiService
         }
 
         throw new RuntimeException('OpenAI did not return valid JSON.');
+    }
+
+    /**
+     * The stronger GPT-4-class model reserved for query planning and SQL generation.
+     */
+    public function sqlModel(): string
+    {
+        return (string) config('services.openai.sql_model')
+            ?: (string) config('services.openai.model', 'gpt-4.1-mini');
     }
 
     private function buildAssistantInstructions(array $context): string

@@ -4,7 +4,6 @@ namespace App\Services;
 
 use App\Models\Employee;
 use App\Models\EmployeeDepartment;
-use App\Models\Task;
 use App\Models\User;
 use Illuminate\Database\Query\Builder;
 use Illuminate\Support\Facades\DB;
@@ -15,7 +14,8 @@ class AiSqlBuilderService
     public function __construct(
         private readonly AiSchemaService $aiSchemaService,
         private readonly AiPermissionService $aiPermissionService,
-        private readonly AiGenericQueryBuilderService $aiGenericQueryBuilderService
+        private readonly AiGenericQueryBuilderService $aiGenericQueryBuilderService,
+        private readonly AiRowScopeService $aiRowScopeService
     ) {
     }
 
@@ -836,39 +836,12 @@ class AiSqlBuilderService
         }
 
         if ($baseTable === 'projects') {
-            if ($user->hasRole('Sales Person')) {
-                $query->where('projects.sales_partner_user_id', $user->id);
-                return;
-            }
+            // Single source of truth (mirrors ProjectService::projectQuery) so the
+            // structured builder and Text-to-SQL apply identical row scoping.
+            // Uses lazy subqueries — no DB round-trips while building the preview.
+            $this->aiRowScopeService->applyProjectScope($query, $user);
 
-            if ($user->hasRole('Sub-Contractor User')) {
-                $query->where('projects.sub_contractor_user_id', $user->id);
-                return;
-            }
-
-            if ($user->hasRole('Employee')) {
-                $employeeIds = Employee::where('user_id', $user->id)->select('id');
-                $query->whereIn('projects.id', Task::whereIn('employee_id', $employeeIds)->select('project_id'));
-                return;
-            }
-
-            if ($user->hasRole('Manager')) {
-                $departmentIds = EmployeeDepartment::whereIn('employee_id', Employee::where('user_id', $user->id)->select('id'))->select('department_id');
-                $query->whereIn('projects.department_id', $departmentIds);
-                return;
-            }
-
-            if ($user->hasRole('Sales Manager')) {
-                $query->join('customers as access_customers', 'access_customers.id', '=', 'projects.customer_id')
-                    ->where('access_customers.sales_partner_id', $user->sales_partner_id);
-                return;
-            }
-
-            if ($user->hasRole('Sub-Contractor Manager')) {
-                $query->join('customers as access_customers', 'access_customers.id', '=', 'projects.customer_id')
-                    ->where('access_customers.sub_contractor_id', $user->sales_partner_id);
-                return;
-            }
+            return;
         }
 
         if ($baseTable === 'service_tickets') {

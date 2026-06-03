@@ -24,7 +24,7 @@ class AiQueryPlannerService
     ) {
     }
 
-    public function plan(string $question, User $user): array
+    public function plan(string $question, User $user, ?array $previousContext = null): array
     {
         if ($this->isWriteOperationQuestion($question)) {
             return [
@@ -33,6 +33,20 @@ class AiQueryPlannerService
                 ]),
                 'openai' => $this->syntheticOpenAiResponse(),
             ];
+        }
+
+        // Conversational follow-up: "details of those projects", "list them",
+        // "show more" etc. inherit the previous turn's filters/tables so the
+        // reference resolves instead of asking the user to clarify.
+        if ($previousContext && $this->isFollowUpReference($question)) {
+            $followUp = $this->buildFollowUpPlan($question, $previousContext);
+
+            if ($followUp) {
+                return [
+                    'plan' => $this->sanitizePlan($this->withHybridMetadata($followUp, 'fixed_action', 1.0), $user),
+                    'openai' => $this->syntheticOpenAiResponse(),
+                ];
+            }
         }
 
         $inferredPlan = $this->inferKnownPlan($question);
@@ -324,7 +338,8 @@ class AiQueryPlannerService
                 ],
             ],
             1200,
-            $this->jsonSchema()
+            $this->jsonSchema(),
+            $this->openAiService->sqlModel()
         );
 
         $plan = $this->sanitizePlan($this->legacyPlanFromHybrid($response['json']), $user);
@@ -341,7 +356,8 @@ class AiQueryPlannerService
                     'required_json_format' => $this->unknownPlan(),
                 ],
                 1200,
-                $this->jsonSchema()
+                $this->jsonSchema(),
+                $this->openAiService->sqlModel()
             );
 
             $retryPlan = $this->sanitizePlan($this->legacyPlanFromHybrid($retryResponse['json']), $user);
@@ -362,6 +378,76 @@ class AiQueryPlannerService
         return [
             'plan' => $plan,
             'openai' => $response,
+        ];
+    }
+
+    /**
+     * True when the question refers back to the previous result instead of naming
+     * its own subject — "details of those projects", "list them", "the same", etc.
+     * Kept conservative (requires a clear back-reference) so it never hijacks a new,
+     * self-contained question.
+     */
+    private function isFollowUpReference(string $question): bool
+    {
+        $q = mb_strtolower($question);
+
+        return (bool) preg_match(
+            '/\b(those|these|them|they|their)\b'
+            . '|\bthe same\b'
+            . '|\b(above|previous|last)\s+(result|results|query|one|ones|projects|records|data|list|report)\b'
+            . '|\b(in|un)\s*(mein|me)\s+se\b'
+            . '|\b(inka|inki|inko|unka|unki|unko)\b/u',
+            $q
+        );
+    }
+
+    /**
+     * Build a plan for a follow-up by inheriting the previous turn's tables and
+     * filters, converting a count/summary into a detailed list. Returns null when
+     * there is nothing usable to inherit (caller then plans normally).
+     *
+     * @param  array{tables?:array,filters?:array,requires_finance_access?:bool}  $previousContext
+     */
+    private function buildFollowUpPlan(string $question, array $previousContext): ?array
+    {
+        $tables  = array_values(array_filter((array) ($previousContext['tables'] ?? [])));
+        $filters = array_values(array_filter((array) ($previousContext['filters'] ?? []), 'is_array'));
+
+        if ($tables === []) {
+            return null;
+        }
+
+        $requiresFinance = (bool) ($previousContext['requires_finance_access'] ?? false);
+
+        // Project-centric follow-up → list the matching projects with their customer
+        // details. We keep the previous tables (so the inherited filters still resolve
+        // to the same columns) and only add `customers`, which has no `name` column
+        // and therefore cannot make a department/sub-department name filter ambiguous.
+        if (in_array('projects', $tables, true)) {
+            return [
+                'answer_type'             => 'table',
+                'intent'                  => 'crm_list',
+                'tables'                  => array_values(array_unique(array_merge($tables, ['customers']))),
+                'columns'                 => ['project_name', 'code', 'first_name', 'last_name'],
+                'group_by'                => [],
+                'filters'                 => $filters,
+                'requires_finance_access' => $requiresFinance,
+                'sql'                     => null,
+                'fallback_message'        => null,
+            ];
+        }
+
+        // Generic follow-up → re-list the same entity with the same filters.
+        return [
+            'answer_type'             => 'table',
+            'intent'                  => 'crm_list',
+            'tables'                  => $tables,
+            'columns'                 => array_values(array_filter((array) ($previousContext['columns'] ?? []))),
+            'group_by'                => [],
+            'filters'                 => $filters,
+            'requires_finance_access' => $requiresFinance,
+            'sql'                     => null,
+            'fallback_message'        => null,
         ];
     }
 
@@ -1094,7 +1180,17 @@ PROMPT;
         $mentionsDaysInLane = (str_contains($normalized, 'days') || str_contains($normalized, 'how long') || str_contains($normalized, 'time') || str_contains($normalized, 'duration') || str_contains($normalized, 'kitne din'))
             && (str_contains($normalized, 'lane') || str_contains($normalized, 'department'));
 
-        if ($mentionsLane || ($mentionsMovement && str_contains($normalized, 'department')) || $mentionsDaysInLane) {
+        // "Ghost" / "Pre-Inspection Lane" questions are a project LIST (handled by the
+        // dedicated pre-inspection/ghost detection below), not a lane-movement report.
+        // Without this guard the bare word "lane" in "Pre-Inspection Lane" would wrongly
+        // route them here.
+        $isGhostOrPreInspectionList = str_contains($normalized, 'ghost')
+            || str_contains($normalized, 'pre-inspection')
+            || str_contains($normalized, 'pre inspection')
+            || str_contains($normalized, 'preinspection');
+
+        if (! $isGhostOrPreInspectionList
+            && ($mentionsLane || ($mentionsMovement && str_contains($normalized, 'department')) || $mentionsDaysInLane)) {
             // Summary only when user explicitly asks for aggregate/overview
             $wantsSummary = str_contains($normalized, 'summary')
                 || str_contains($normalized, 'average')
@@ -1116,57 +1212,12 @@ PROMPT;
                 'fallback_message' => null,
             ];
         }
-        // ── Simple total-count fast-paths ────────────────────────────────────────
-        // ($mentionsCount is not defined yet here — define it locally)
-        $isTotalCount = str_contains($normalized, 'count')
-            || str_contains($normalized, 'total')
-            || str_contains($normalized, 'how many')
-            || str_contains($normalized, 'kitne')
-            || str_contains($normalized, 'kitni')
-            || str_contains($normalized, 'wise');
-
-        if ($isTotalCount && preg_match('/\b(project|projects)\b/i', $normalized) && ! preg_match('/\b(department|customer|status|subdepartment|sub_department|ticket|task|lane|acceptance)\b/i', $normalized)) {
-            return [
-                'answer_type' => 'count',
-                'intent'      => 'crm_count',
-                'tables'      => ['projects'],
-                'columns'     => ['id'],
-                'group_by'    => [],
-                'filters'     => [],
-                'requires_finance_access' => false,
-                'sql'          => null,
-                'fallback_message' => null,
-            ];
-        }
-
-        if ($isTotalCount && preg_match('/\b(ticket|tickets)\b/i', $normalized) && ! preg_match('/\b(users?|status|priority|pending|resolved|department|created by)\b/i', $normalized)) {
-            return [
-                'answer_type' => 'count',
-                'intent'      => 'crm_count',
-                'tables'      => ['service_tickets'],
-                'columns'     => ['id'],
-                'group_by'    => [],
-                'filters'     => [],
-                'requires_finance_access' => false,
-                'sql'          => null,
-                'fallback_message' => null,
-            ];
-        }
-
-        if ($isTotalCount && preg_match('/\b(customer|customers)\b/i', $normalized) && ! preg_match('/\b(city|state|project|phone|email|wise)\b/i', $normalized)) {
-            return [
-                'answer_type' => 'count',
-                'intent'      => 'crm_count',
-                'tables'      => ['customers'],
-                'columns'     => ['id'],
-                'group_by'    => [],
-                'filters'     => [],
-                'requires_finance_access' => false,
-                'sql'          => null,
-                'fallback_message' => null,
-            ];
-        }
-        // ─────────────────────────────────────────────────────────────────────────
+        // NOTE: Simple total-count questions (projects/tickets/customers) are
+        // intentionally NOT fast-pathed here. Those blind counts ignored any
+        // filter in the question ("how many projects in California",
+        // "tickets created this month"), so every variation returned the same
+        // number. They now flow to the AI planner + Text-to-SQL, which respect
+        // the filters the user actually asked for.
 
         $mentionsProject = str_contains($normalized, 'project');
         $mentionsTicket = str_contains($normalized, 'ticket');
@@ -1208,76 +1259,14 @@ PROMPT;
         $acceptanceCondition = $this->extractAcceptanceCondition($normalized);
         $dateRange = $this->extractDateRange($question);
 
-        // ── Customer project count (customer name + no of projects) ──────────────
-        if ($mentionsProject && str_contains($normalized, 'customer') && ($mentionsCount || $mentionsSummary || str_contains($normalized, 'wise') || str_contains($normalized, 'grouped'))) {
-            return [
-                'answer_type' => 'table',
-                'intent'      => 'customer_project_count',
-                'tables'      => ['projects', 'customers'],
-                'columns'     => ['customer_name', 'no_of_projects'],
-                'group_by'    => [],
-                'filters'     => [],
-                'requires_finance_access' => false,
-                'sql' => null, 'fallback_message' => null,
-            ];
-        }
-
-        // ── Department top projects (ordered by count DESC) ───────────────────────
-        if ($mentionsProject && $mentionsDepartment && (str_contains($normalized, 'most') || str_contains($normalized, 'highest') || str_contains($normalized, 'top') || str_contains($normalized, 'zyada'))) {
-            return [
-                'answer_type' => 'table',
-                'intent'      => 'department_project_top',
-                'tables'      => ['projects', 'departments'],
-                'columns'     => ['department_name', 'no_of_projects'],
-                'group_by'    => [],
-                'filters'     => [],
-                'requires_finance_access' => false,
-                'sql' => null, 'fallback_message' => null,
-            ];
-        }
-
-        // ── City-wise customers ────────────────────────────────────────────────────
-        if (str_contains($normalized, 'customer') && str_contains($normalized, 'city') && ($mentionsCount || $mentionsSummary || str_contains($normalized, 'wise') || str_contains($normalized, 'grouped'))) {
-            return [
-                'answer_type' => 'table',
-                'intent'      => 'customer_city_count',
-                'tables'      => ['customers'],
-                'columns'     => ['city', 'customer_count'],
-                'group_by'    => [],
-                'filters'     => [],
-                'requires_finance_access' => false,
-                'sql' => null, 'fallback_message' => null,
-            ];
-        }
-
-        // ── State-wise customers ──────────────────────────────────────────────────
-        if (str_contains($normalized, 'customer') && str_contains($normalized, 'state') && ($mentionsCount || $mentionsSummary || str_contains($normalized, 'wise') || str_contains($normalized, 'grouped'))) {
-            return [
-                'answer_type' => 'table',
-                'intent'      => 'customer_state_count',
-                'tables'      => ['customers'],
-                'columns'     => ['state', 'customer_count'],
-                'group_by'    => [],
-                'filters'     => [],
-                'requires_finance_access' => false,
-                'sql' => null, 'fallback_message' => null,
-            ];
-        }
-
-        // ── Project status wise count ─────────────────────────────────────────────
-        if ($mentionsProject && str_contains($normalized, 'status') && ($mentionsSummary || $mentionsCount || str_contains($normalized, 'wise') || str_contains($normalized, 'grouped'))) {
-            return [
-                'answer_type' => 'table',
-                'intent'      => 'project_status_count',
-                'tables'      => ['projects', 'tasks'],
-                'columns'     => ['project_status', 'no_of_projects'],
-                'group_by'    => [],
-                'filters'     => [],
-                'requires_finance_access' => false,
-                'sql' => null, 'fallback_message' => null,
-            ];
-        }
-        // ─────────────────────────────────────────────────────────────────────────
+        // NOTE: Generic group-summary questions (customer-wise / city-wise /
+        // state-wise / status-wise / department top projects / project count by
+        // department) are intentionally NOT keyword-routed here anymore. They flow
+        // to the AI planner + Text-to-SQL, which read the actual phrasing and
+        // respect every filter — removing the brittle keyword matching that caused
+        // mis-routing bugs (e.g. "department-wise" returning 0). The financial /
+        // named reports below stay curated. The empty/count-0 safety net in
+        // AiChatService backstops any mis-route for full-access users.
 
         if ($mentionsUser && $mentionsRole) {
             $wantsCount = $mentionsCount
@@ -1801,25 +1790,9 @@ PROMPT;
             ];
         }
 
-        if ($mentionsProject && $mentionsDepartment && $mentionsCount) {
-            $includeSubDepartment = $this->wantsSubDepartmentSummary($normalized);
-
-            return [
-                'answer_type' => 'table',
-                'intent' => 'project_department_summary',
-                'tables' => $includeSubDepartment
-                    ? ['projects', 'departments', 'sub_departments']
-                    : ['projects', 'departments'],
-                'columns' => $includeSubDepartment
-                    ? ['department_id', 'sub_department_id', 'name']
-                    : ['department_id', 'name'],
-                'group_by' => ['name'],
-                'filters' => [],
-                'requires_finance_access' => false,
-                'sql' => null,
-                'fallback_message' => null,
-            ];
-        }
+        // "Project count/numbers by department" (no specific department named) is a
+        // generic group-summary — handled by the AI planner + Text-to-SQL, not a
+        // keyword fast-path.
 
         return null;
     }
@@ -1833,26 +1806,6 @@ PROMPT;
         $mentionsLane = str_contains($question, 'lane');
 
         return $mentionsGhost || ($mentionsPreInspection && $mentionsLane);
-    }
-
-    private function wantsSubDepartmentSummary(string $question): bool
-    {
-        $mentionsSubDepartment = str_contains($question, 'subdepartment')
-            || str_contains($question, 'sub department')
-            || str_contains($question, 'sub_department');
-
-        if (! $mentionsSubDepartment) {
-            return false;
-        }
-
-        return ! (
-            str_contains($question, 'sub department wise ni')
-            || str_contains($question, 'sub department wise nahi')
-            || str_contains($question, 'subdepartment wise ni')
-            || str_contains($question, 'subdepartment wise nahi')
-            || str_contains($question, 'sub department wise not')
-            || str_contains($question, 'not sub department')
-        );
     }
 
     private function inferredPlanIsMoreSpecific(array $plan, array $inferredPlan): bool
@@ -1872,6 +1825,14 @@ PROMPT;
 
     private function extractDepartmentName(string $question): ?string
     {
+        // Group-by phrasings ("department-wise", "by/per/each/as per department",
+        // "department breakdown") are NOT a specific named department — bail out so
+        // the question falls through to the per-department summary handler instead
+        // of becoming a single count filtered by a bogus department name.
+        if (preg_match('/\b(?:department[-\s]?wise|department\s+breakdown|(?:by|per|each|every|as\s+per)\s+(?:sub[\s_-]?)?departments?)\b/u', $question)) {
+            return null;
+        }
+
         if (! preg_match('/([a-z0-9\s&-]+?)\s+department\b/u', $question, $matches)) {
             return null;
         }
@@ -1892,6 +1853,15 @@ PROMPT;
             'me',
             'main',
             'mein',
+            'the',
+            'as',
+            'per',
+            'wise',
+            'each',
+            'every',
+            'by',
+            'number',
+            'numbers',
         ];
 
         foreach ($stopWords as $word) {
@@ -1906,6 +1876,13 @@ PROMPT;
     private function extractAssignedEmployeeName(string $question): ?string
     {
         if (! str_contains($question, 'assigned') && ! str_contains($question, 'assign')) {
+            return null;
+        }
+
+        // Group-by / "all employees" phrasings are aggregation requests, not a
+        // specific person — bail out so they are not turned into a name filter
+        // (e.g. "assigned to each employee" must not become name LIKE '%each%').
+        if (preg_match('/\b(?:employee[-\s]?wise|(?:each|every|all|any|per)\s+employees?|employees?\s+wise)\b/u', $question)) {
             return null;
         }
 
@@ -1955,7 +1932,12 @@ PROMPT;
 
         $name = trim(preg_replace('/\s+/u', ' ', $name));
 
-        if (in_array($name, ['me', 'my', 'mine', 'mujhe', 'mujhy', 'mere', 'meri', 'mera'], true)) {
+        if (in_array($name, ['me', 'my', 'mine', 'mujhe', 'mujhy', 'mere', 'meri', 'mera', 'each', 'every', 'all', 'any', 'per', 'wise'], true)) {
+            return null;
+        }
+
+        // Must look like a real name: short, few words, starts with a letter.
+        if (mb_strlen($name) > 40 || str_word_count($name) > 4) {
             return null;
         }
 

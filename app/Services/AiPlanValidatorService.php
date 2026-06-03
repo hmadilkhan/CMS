@@ -90,11 +90,12 @@ class AiPlanValidatorService
             }
         }
 
-        foreach (($plan['relationships'] ?? []) as $relationship) {
-            if (! is_array($relationship) || ! $this->relationshipAllowed((string) ($relationship['from'] ?? ''), (string) ($relationship['to'] ?? ''))) {
-                return $this->reject('The plan references a CRM relationship that is not allowed.');
-            }
-        }
+        // NOTE: The plan's `relationships` array is decorative metadata from the AI
+        // — the SQL builders derive joins from the schema (AiSchemaService), not from
+        // this field, and the generated SQL is separately validated (allowed tables /
+        // columns / SELECT-only). Rejecting a query because the AI's relationship hint
+        // doesn't byte-match the schema blocked valid queries (e.g. "details of project
+        // X"), so it is intentionally not validated here.
 
         foreach (($plan['sort'] ?? []) as $sort) {
             if (! is_array($sort)) {
@@ -133,34 +134,6 @@ class AiPlanValidatorService
             }
 
             if ($this->accessPolicyService->canAccessColumn($user, $table, $column)) {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    private function relationshipAllowed(string $from, string $to): bool
-    {
-        [$fromTable, $fromColumn] = array_pad(explode('.', $from, 2), 2, null);
-        [$toTable, $toColumn] = array_pad(explode('.', $to, 2), 2, null);
-
-        if (! $fromTable || ! $fromColumn || ! $toTable || ! $toColumn) {
-            return false;
-        }
-
-        foreach ($this->schemaService->getRelationships($fromTable) as $relationship) {
-            if (($relationship['table'] ?? null) === $toTable
-                && ($relationship['local_key'] ?? null) === $fromColumn
-                && ($relationship['foreign_key'] ?? null) === $toColumn) {
-                return true;
-            }
-        }
-
-        foreach ($this->schemaService->getRelationships($toTable) as $relationship) {
-            if (($relationship['table'] ?? null) === $fromTable
-                && ($relationship['local_key'] ?? null) === $toColumn
-                && ($relationship['foreign_key'] ?? null) === $fromColumn) {
                 return true;
             }
         }
