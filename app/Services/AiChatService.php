@@ -25,6 +25,7 @@ class AiChatService
         private readonly AiProjectLaneService $aiProjectLaneService,
         private readonly AiTextToSqlService $aiTextToSqlService,
         private readonly AiPermissionService $aiPermissionService,
+        private readonly AiFieldDictionaryService $aiFieldDictionaryService,
     ) {
     }
 
@@ -136,14 +137,41 @@ class AiChatService
 
     private function respondToMessage(AiChat $chat, User $user, string $message, bool $storeUserMessage): AiChat
     {
-        $startedAt = microtime(true);
-        $log       = $this->createQueryLog($chat, $user, $message);
-
         if ($storeUserMessage) {
             $chat->messages()->create(['role' => 'user', 'content' => $message]);
         }
 
         $chat->update(['last_message_at' => now()]);
+
+        // Multi-intent: let the LLM split a message that asks for several things
+        // ("financing details of this project AND also the logs") into separate,
+        // self-contained questions, then answer each one in its own reply.
+        if ($this->looksCompound($message)) {
+            $parts = $this->decompose($message);
+
+            if (count($parts) > 1) {
+                foreach ($parts as $part) {
+                    $this->routeSingle($chat, $user, $part);
+                }
+
+                return $chat->fresh('messages');
+            }
+        }
+
+        return $this->routeSingle($chat, $user, $message);
+    }
+
+    /**
+     * Route ONE self-contained question through the gate chain and answer it.
+     * Cheap, unambiguous fast-paths (help, greetings, bare codes, field
+     * explanations, named project detail) are tried first; anything else — and
+     * anything a gate cannot confidently resolve — falls through to the LLM
+     * query pipeline.
+     */
+    private function routeSingle(AiChat $chat, User $user, string $message): AiChat
+    {
+        $startedAt = microtime(true);
+        $log       = $this->createQueryLog($chat, $user, $message);
 
         try {
             // 1. Help request — always fast-path
@@ -151,9 +179,34 @@ class AiChatService
                 return $this->handleHelpRequest($chat, $user, $log, $startedAt, $message);
             }
 
+            // 1.5 Bare project code / number ("1048", "SS-001") — almost always a
+            //     lookup (often the reply to a "which one? give the code" prompt).
+            //     Route to the clean project-detail summary; fall through if it
+            //     matches nothing, so a stray number never dead-ends.
+            if ($this->looksLikeBareProjectReference($message)) {
+                $detail = $this->handleProjectDetailSummary($chat, $user, $message, trim($message), $log, $startedAt);
+
+                if ($detail !== null) {
+                    return $detail;
+                }
+            }
+
             // 2. Obvious greetings / one-word non-CRM — skip planner to save cost
             if ($this->isObviouslyGeneralChat($message)) {
                 return $this->handleGeneralChat($chat, $user, $message, $log, $startedAt);
+            }
+
+            // 2.2 Field / term explanation — "meter_spot_result kya hai?", "what
+            //     values can ticket status have?", "what is PTO?". Answered from
+            //     the data dictionary (no OpenAI cost, always accurate, and
+            //     permission-aware). Only fires for genuine explanation requests
+            //     that resolve to a known field/term; otherwise falls through.
+            if ($this->aiFieldDictionaryService->isExplanationRequest($message)) {
+                $explained = $this->aiFieldDictionaryService->explain($message, $user);
+
+                if ($explained['handled']) {
+                    return $this->storeDictionaryMessage($chat, $message, $explained['message'], $log, $startedAt);
+                }
             }
 
             // 2.5 Named project detail — "details/summary of <project>" → a formatted
@@ -164,7 +217,14 @@ class AiChatService
                 $search = $this->resolveProjectSearch($message, $chat);
 
                 if ($search !== '') {
-                    return $this->handleProjectDetailSummary($chat, $user, $message, $search, $log, $startedAt);
+                    $detail = $this->handleProjectDetailSummary($chat, $user, $message, $search, $log, $startedAt);
+
+                    // No project matched the term — it was probably a non-project
+                    // request ("high priority ticket details"). Fall through to the
+                    // LLM pipeline instead of dead-ending with "couldn't find...".
+                    if ($detail !== null) {
+                        return $detail;
+                    }
                 }
             }
 
@@ -185,6 +245,70 @@ class AiChatService
     }
 
     /**
+     * Cheap pre-check: does the message look like it bundles more than one
+     * request? Only when this is true do we spend an LLM call to actually split
+     * it — so simple messages never pay for decomposition.
+     */
+    private function looksCompound(string $message): bool
+    {
+        $lower = ' ' . mb_strtolower($message) . ' ';
+
+        foreach ([' also ', ' and also ', ' as well', '; ', ' plus ', ' aur ', ' bhi ', ' saath ', ' along with '] as $cue) {
+            if (str_contains($lower, $cue)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Ask the LLM to split a multi-intent message into independent, SELF-CONTAINED
+     * questions (shared context like "this project" is carried into each). Returns
+     * one element (the original message) when it is a single request or on any
+     * failure, so the caller can always proceed safely.
+     *
+     * @return array<int,string>
+     */
+    private function decompose(string $message): array
+    {
+        try {
+            $response = $this->openAiService->createJsonResponse(
+                'You split a user\'s CRM chat message into the distinct, independent questions it contains. '
+                . 'Return JSON {"questions": [...]}. Each question MUST be self-contained: carry over shared '
+                . 'context so each stands alone (e.g. resolve "this project" / "also" so both questions keep the '
+                . 'subject). If the message is really a single request, return exactly one question (the original). '
+                . 'Keep the user\'s wording and language (English/Roman-Urdu). Maximum 4 questions.',
+                $message,
+                400,
+                [
+                    'type'   => 'json_schema',
+                    'name'   => 'message_decomposition',
+                    'strict' => true,
+                    'schema' => [
+                        'type'                 => 'object',
+                        'additionalProperties' => false,
+                        'required'             => ['questions'],
+                        'properties'           => [
+                            'questions' => ['type' => 'array', 'items' => ['type' => 'string']],
+                        ],
+                    ],
+                ]
+            );
+
+            $questions = array_values(array_filter(
+                array_map('trim', (array) ($response['json']['questions'] ?? [])),
+                fn ($q) => $q !== ''
+            ));
+
+            return $questions !== [] ? array_slice($questions, 0, 4) : [$message];
+        } catch (Throwable) {
+            // Decomposition is best-effort — never let it break a normal answer.
+            return [$message];
+        }
+    }
+
+    /**
      * Pure general-chat path — used for greetings and as a fallback from the
      * CRM pipeline when the planner returns "unsupported".
      */
@@ -196,6 +320,14 @@ class AiChatService
         float       $startedAt
     ): AiChat {
         $enrichedMessage = $this->enrichWithPreviousCrmContext($message, $chat);
+
+        // Ground the model with relevant data-dictionary snippets so it explains
+        // CRM fields/terms accurately instead of guessing, and can guide users
+        // who ask about the structure or mention a field by name.
+        $fieldContext = $this->aiFieldDictionaryService->contextFor($message, $user);
+        if ($fieldContext !== '') {
+            $enrichedMessage = $fieldContext . "\n\nUser question: " . $enrichedMessage;
+        }
 
         $response = $this->openAiService->createResponse(
             $enrichedMessage,
@@ -283,7 +415,8 @@ class AiChatService
 
     private function handleQueryPlan(AiChat $chat, User $user, string $message, AiQueryLog $log, float $startedAt): AiChat
     {
-        $planned = $this->aiQueryPlannerService->plan($message, $user, $this->previousCrmContext($chat));
+        $memory  = $this->buildConversationMemory($chat, $message);
+        $planned = $this->aiQueryPlannerService->plan($message, $user, $this->previousCrmContext($chat), $memory);
         $plan = $planned['plan'];
         $response = $planned['openai'];
         $usage = $response['usage'];
@@ -317,7 +450,7 @@ class AiChatService
             //    filter in the question (location, date range, status, person, …),
             //    which is what makes different prompts return different answers.
             if ($isDataExplorer) {
-                $tts = $this->attemptTextToSql($message, $user);
+                $tts = $this->attemptTextToSql($message, $user, $memory);
 
                 if ($tts['ok']) {
                     $textToSqlUsed  = true;
@@ -343,7 +476,7 @@ class AiChatService
                     if (in_array($entityResolution['status'] ?? null, ['clarification_required', 'not_found'], true)) {
                         // Before asking for clarification, give Text-to-SQL a chance on
                         // open-ended questions — it can frequently answer them directly.
-                        $tts = $isDataExplorer ? $this->attemptTextToSql($message, $user) : ['ok' => false];
+                        $tts = $isDataExplorer ? $this->attemptTextToSql($message, $user, $memory) : ['ok' => false];
 
                         if ($tts['ok']) {
                             $textToSqlUsed = true;
@@ -381,7 +514,7 @@ class AiChatService
                                 && $this->userHasUnscopedAccess($user);
 
                             if ($executionFailed || $curatedEmptyForFullAccess) {
-                                $tts = $this->attemptTextToSql($message, $user);
+                                $tts = $this->attemptTextToSql($message, $user, $memory);
 
                                 // On a hard failure accept any working result; on the
                                 // empty-but-should-have-data case only swap when
@@ -399,7 +532,7 @@ class AiChatService
                             // --- TEXT-TO-SQL FALLBACK ---
                             // Structured plan couldn't be validated (complex query, unsupported pattern).
                             // Ask AI to write safe SQL directly and execute it.
-                            $tts = $this->attemptTextToSql($message, $user);
+                            $tts = $this->attemptTextToSql($message, $user, $memory);
 
                             if ($tts['ok']) {
                                 $textToSqlUsed = true;
@@ -421,7 +554,9 @@ class AiChatService
             if (! $fallback || $fallback === '') {
                 return $this->handleGeneralChat($chat, $user, $message, $log, $startedAt);
             }
-            $assistantMessage = $fallback;
+            // Pair the clarification/fallback with proactive guidance so the user
+            // knows what they CAN ask and which fields are closest to their words.
+            $assistantMessage = $fallback . "\n\n" . $this->aiFieldDictionaryService->guidanceFor($message, $user);
         } elseif (! ($planValidation['approved'] ?? false)) {
             $assistantMessage = $planValidation['reason']
                 ?? "You don't have permission to access that data. Contact your administrator if you think this is a mistake.";
@@ -431,7 +566,8 @@ class AiChatService
         } elseif (! ($execution['success'] ?? false)) {
             $assistantMessage = $execution['error_message'] ?? 'I ran into an issue executing that query. Please try again or rephrase your question.';
         } elseif (($execution['row_count'] ?? 0) === 0) {
-            $assistantMessage = 'No records found for that request. The data may not exist yet, or try adjusting your filters.';
+            $assistantMessage = "No records found for that request. The data may not exist yet, or try adjusting your filters.\n\n"
+                . $this->aiFieldDictionaryService->guidanceFor($message, $user);
             $answer = ['type' => 'text', 'message' => $assistantMessage, 'columns' => [], 'rows' => [], 'cards' => []];
         } else {
             $assistantMessage = $answer['message'] ?? 'Here are the CRM results.';
@@ -547,6 +683,78 @@ class AiChatService
      * conversational follow-ups ("details of those projects"). Returns the prior
      * turn's intent/tables/filters, or null when there is no usable prior query.
      */
+    /**
+     * Build a compact transcript of the recent conversation so the planner and
+     * Text-to-SQL can resolve references ("those", "them", "inko", "wahi wale")
+     * and compound a previous query with new constraints — instead of relying on
+     * brittle regex. Includes, per assistant turn, the intent/filters/SQL it used
+     * and the result size, which is exactly what the model needs to build on the
+     * last answer. Returns '' when there is no usable prior context.
+     */
+    private function buildConversationMemory(AiChat $chat, string $currentMessage, int $maxMessages = 6): string
+    {
+        $messages = $chat->messages()->orderBy('id')->get();
+
+        if ($messages->isEmpty()) {
+            return '';
+        }
+
+        // The current question is passed to the model separately — drop it here.
+        $last = $messages->last();
+        if ($last && $last->role === 'user' && trim((string) $last->content) === trim($currentMessage)) {
+            $messages = $messages->slice(0, -1);
+        }
+
+        $window = $messages->slice(-$maxMessages);
+
+        if ($window->isEmpty()) {
+            return '';
+        }
+
+        $lines = [];
+
+        foreach ($window as $m) {
+            if ($m->role === 'user') {
+                $lines[] = 'User: ' . Str::limit(trim((string) $m->content), 200);
+
+                continue;
+            }
+
+            $meta   = is_array($m->metadata) ? $m->metadata : [];
+            $plan   = is_array($meta['query_plan'] ?? null) ? $meta['query_plan'] : [];
+            $intent = $plan['intent'] ?? null;
+
+            if ($intent && $intent !== 'unknown') {
+                $parts = ['intent=' . $intent];
+
+                $filters = $plan['filters'] ?? [];
+                if (is_array($filters) && $filters !== []) {
+                    $parts[] = 'filters=' . Str::limit((string) json_encode(array_values($filters), JSON_UNESCAPED_UNICODE), 240);
+                }
+
+                $sql = $meta['sql_preview']['sql'] ?? null;
+                if (is_string($sql) && $sql !== '') {
+                    $parts[] = 'sql=' . Str::limit($sql, 300);
+                }
+
+                $answer = is_array($meta['answer'] ?? null) ? $meta['answer'] : [];
+                if (is_array($answer['rows'] ?? null)) {
+                    $cols = is_array($answer['columns'] ?? null) ? $answer['columns'] : [];
+                    $parts[] = 'result=' . count($answer['rows']) . ' rows'
+                        . ($cols !== [] ? ' [' . implode(', ', array_slice($cols, 0, 8)) . ']' : '');
+                }
+
+                $lines[] = 'Assistant answered (' . implode('; ', $parts) . ')';
+
+                continue;
+            }
+
+            $lines[] = 'Assistant: ' . Str::limit(trim((string) $m->content), 160);
+        }
+
+        return implode("\n", $lines);
+    }
+
     private function previousCrmContext(AiChat $chat): ?array
     {
         $lastAssistant = $chat->messages()
@@ -582,14 +790,14 @@ class AiChatService
      *
      * @return array{ok:bool,sql:?array,execution:?array}
      */
-    private function attemptTextToSql(string $message, User $user): array
+    private function attemptTextToSql(string $message, User $user, string $conversationMemory = ''): array
     {
         // SECURITY: row-level scoping is enforced inside AiTextToSqlService —
         // scoped (non-admin/non-finance) users get a mandatory projects.id IN (...)
         // predicate mirroring ProjectService::projectQuery, and any query that
         // can't carry that scope is refused (we then fall back to the structured
         // pipeline). Full-access users (admin/finance) are unscoped by design.
-        $textSql = $this->aiTextToSqlService->generate($message, $user);
+        $textSql = $this->aiTextToSqlService->generate($message, $user, $conversationMemory);
 
         if (! ($textSql['success'] ?? false)) {
             return ['ok' => false, 'sql' => $textSql, 'execution' => null];
@@ -606,7 +814,8 @@ class AiChatService
             $message,
             $user,
             (string) ($textSql['sql'] ?? ''),
-            (string) ($execution['raw_error'] ?? $execution['error_message'] ?? 'Query execution failed.')
+            (string) ($execution['raw_error'] ?? $execution['error_message'] ?? 'Query execution failed.'),
+            $conversationMemory
         );
 
         if ($retry['success'] ?? false) {
@@ -732,19 +941,24 @@ class AiChatService
             return false;
         }
 
-        // Exclude generic project reports/summaries (finance, status, department,
-        // group-bys, …) — those are handled by the report/AI pipeline, not the
-        // single-named-project detail handler.
+        // Exclude requests that are clearly about another entity or a generic
+        // report (finance, tickets, logs, tasks, group-bys, …) — those belong to
+        // the LLM pipeline, not the single-named-project detail handler. This is
+        // what stops "high priority ticket details" being treated as a project.
         foreach (['financ', 'status', 'department', 'acceptance', 'forecast', 'override',
                   'transaction', 'revenue', 'profit', 'commission', 'contract', 'holdback',
-                  'loan', 'payment', 'wise', ' by '] as $aspect) {
+                  'loan', 'payment', 'wise', ' by ',
+                  'ticket', 'log', 'task', 'customer', 'employee', 'survey', 'note',
+                  'call', 'email', 'invoice', 'report'] as $aspect) {
             if (str_contains($lower, $aspect)) {
                 return false;
             }
         }
 
-        // Require a concrete project reference (a name/code), not just a keyword.
-        return $this->stripToProjectName($message) !== '' || $this->extractProjectSearchTerm($message) !== '';
+        // Whether a concrete project (name/code/"this project") can be resolved is
+        // decided by resolveProjectSearch at the call site, which also handles the
+        // "no match → fall through" case — so we don't hard-require it here.
+        return true;
     }
 
     /**
@@ -768,8 +982,61 @@ class AiChatService
             return $term;
         }
 
-        // Follow-up: a project carried from a previous lane/detail turn.
-        return $this->getPreviousLaneSearchTerm($chat);
+        // Follow-up ("this project", "is project ki summary") → the most recent
+        // project discussed anywhere in the conversation.
+        return $this->getRecentProjectSearch($chat);
+    }
+
+    /**
+     * True when the whole message is just a project code/number (e.g. "1048",
+     * "SS-001") — typically the reply to a "which one? give me the code" prompt.
+     */
+    private function looksLikeBareProjectReference(string $message): bool
+    {
+        return (bool) preg_match('/^\s*([A-Za-z]{1,4}-)?\d{3,6}\s*$/', $message);
+    }
+
+    /**
+     * The most recent project referenced in the conversation, so "this project"
+     * style follow-ups resolve to it. Looks back through recent assistant turns
+     * for: a stored search term, a project_name/code filter, or a single-project
+     * result row carrying a code. Returns '' when none is found.
+     */
+    private function getRecentProjectSearch(AiChat $chat): string
+    {
+        $messages = $chat->messages()
+            ->where('role', 'assistant')
+            ->latest('id')
+            ->limit(8)
+            ->get();
+
+        foreach ($messages as $msg) {
+            $meta = is_array($msg->metadata) ? $msg->metadata : [];
+
+            if (! empty($meta['search_term'])) {
+                return (string) $meta['search_term'];
+            }
+
+            foreach (($meta['query_plan']['filters'] ?? []) as $filter) {
+                if (is_array($filter)
+                    && in_array($filter['column'] ?? '', ['project_name', 'code'], true)
+                    && ! blank($filter['value'] ?? null)
+                    && ! is_array($filter['value'])) {
+                    return (string) $filter['value'];
+                }
+            }
+
+            $rows = $meta['answer']['rows'] ?? [];
+            if (is_array($rows) && count($rows) === 1 && is_array($rows[0])) {
+                foreach (['code', 'Code'] as $key) {
+                    if (! empty($rows[0][$key])) {
+                        return (string) $rows[0][$key];
+                    }
+                }
+            }
+        }
+
+        return '';
     }
 
     /**
@@ -801,6 +1068,10 @@ class AiChatService
             'overview', 'info', 'information', 'show', 'me', 'the', 'of', 'for', 'about',
             'please', 'give', 'tell', 'can', 'you', 'share', 'want', 'kindly', 'complete', 'full',
             'dikhao', 'dikha', 'batao', 'bata', 'mujhe', 'ki', 'ka', 'ke', 'nikalo',
+            // Back-reference words — these point at the previous result, not a name,
+            // so strip them out (a leftover "this"/"these" must not become a search).
+            'this', 'these', 'those', 'them', 'they', 'it', 'its', 'their',
+            'ye', 'yeh', 'in', 'inn', 'un', 'unn', 'wo', 'woh', 'sab', 'sare', 'saare', 'all',
         ];
         $text = preg_replace('/\b(' . implode('|', array_map(fn ($w) => preg_quote($w, '/'), $words)) . ')\b/iu', ' ', $text);
 
@@ -810,17 +1081,16 @@ class AiChatService
         return (mb_strlen($text) >= 2 && mb_strlen($text) <= 60) ? $text : '';
     }
 
-    private function handleProjectDetailSummary(AiChat $chat, User $user, string $message, string $search, AiQueryLog $log, float $startedAt): AiChat
+    private function handleProjectDetailSummary(AiChat $chat, User $user, string $message, string $search, AiQueryLog $log, float $startedAt): ?AiChat
     {
         $detail     = $this->aiProjectLaneService->getProjectDetail($user, $search);
         $projects   = $detail['projects'] ?? [];
         $matchCount = (int) ($detail['project_count'] ?? count($projects));
 
+        // No project matched — return null so the caller can fall through to the
+        // LLM pipeline (the request may not have been about a project at all).
         if ($projects === []) {
-            $assistantMessage = "I couldn't find a project matching \"{$search}\". Please check the name or code and try again.";
-            $answer = ['type' => 'text', 'message' => $assistantMessage, 'columns' => [], 'rows' => [], 'cards' => []];
-
-            return $this->storeProjectDetailMessage($chat, $message, $assistantMessage, $answer, $log, $startedAt, 'no_data', $search);
+            return null;
         }
 
         // Multiple matches → ask which one (by code), with a compact table.
@@ -891,6 +1161,36 @@ class AiChatService
         $lines[] = 'Time spent in each department:';
 
         return implode("\n", $lines);
+    }
+
+    /**
+     * Persist a deterministic data-dictionary answer (field/term explanation).
+     * No OpenAI call is made, so no token usage is recorded.
+     */
+    private function storeDictionaryMessage(AiChat $chat, string $message, string $assistantMessage, AiQueryLog $log, float $startedAt): AiChat
+    {
+        DB::transaction(function () use ($chat, $message, $assistantMessage, $log, $startedAt) {
+            $chat->messages()->create([
+                'role'     => 'assistant',
+                'content'  => $assistantMessage,
+                'metadata' => [
+                    'type'      => 'field_explanation',
+                    'status'    => 'success',
+                    'retryable' => false,
+                ],
+            ]);
+
+            $log->update([
+                'status'           => 'success',
+                'duration_ms'      => (int) ((microtime(true) - $startedAt) * 1000),
+                'request_payload'  => ['message' => $message],
+                'response_payload' => ['answer' => ['type' => 'text', 'message' => $assistantMessage]],
+            ]);
+
+            $chat->update(['last_message_at' => now()]);
+        });
+
+        return $chat->fresh('messages');
     }
 
     private function storeProjectDetailMessage(AiChat $chat, string $message, string $assistantMessage, array $answer, AiQueryLog $log, float $startedAt, string $status, string $search): AiChat

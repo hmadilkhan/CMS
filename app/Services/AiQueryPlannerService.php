@@ -24,7 +24,7 @@ class AiQueryPlannerService
     ) {
     }
 
-    public function plan(string $question, User $user, ?array $previousContext = null): array
+    public function plan(string $question, User $user, ?array $previousContext = null, string $conversationMemory = ''): array
     {
         if ($this->isWriteOperationQuestion($question)) {
             return [
@@ -36,14 +36,16 @@ class AiQueryPlannerService
         }
 
         // Conversational follow-up: "details of those projects", "list them",
-        // "show more" etc. inherit the previous turn's filters/tables so the
-        // reference resolves instead of asking the user to clarify.
+        // "in me se sirf hold wale", "sort by date". We mark it data_explorer so
+        // the pipeline routes to Text-to-SQL, which — given the conversation
+        // memory — resolves the reference AND applies any new constraint the user
+        // adds. The structured plan below remains as a fallback if SQL fails.
         if ($previousContext && $this->isFollowUpReference($question)) {
             $followUp = $this->buildFollowUpPlan($question, $previousContext);
 
             if ($followUp) {
                 return [
-                    'plan' => $this->sanitizePlan($this->withHybridMetadata($followUp, 'fixed_action', 1.0), $user),
+                    'plan' => $this->sanitizePlan($this->withHybridMetadata($followUp, 'data_explorer', 1.0), $user),
                     'openai' => $this->syntheticOpenAiResponse(),
                 ];
             }
@@ -62,6 +64,7 @@ class AiQueryPlannerService
             $this->instructions(),
             [
                 'question' => $question,
+                'conversation_memory' => $conversationMemory !== '' ? $conversationMemory : '(no prior conversation)',
                 'user_role' => $this->userRole($user),
                 'allowed_schema' => $this->schemaForPlanner(),
                 'crm_module_hints' => $this->moduleHints(),
@@ -349,6 +352,7 @@ class AiQueryPlannerService
                 $this->instructions() . "\n\nSECOND PASS: The previous plan was unsupported. Re-check allowed_schema and crm_module_hints carefully. If the question is about any allowed CRM module, return mode data_explorer with generic intent crm_list, crm_count, crm_group_summary, or crm_detail. Return unsupported only when no allowed table or column can answer it.",
                 [
                     'question' => $question,
+                    'conversation_memory' => $conversationMemory !== '' ? $conversationMemory : '(no prior conversation)',
                     'user_role' => $this->userRole($user),
                     'allowed_schema' => $this->schemaForPlanner(),
                     'crm_module_hints' => $this->moduleHints(),
@@ -392,11 +396,22 @@ class AiQueryPlannerService
         $q = mb_strtolower($question);
 
         return (bool) preg_match(
+            // Bare back-reference pronouns (NOT "this"/"that" — those are only a
+            // back-reference when followed by a record noun, handled below, so we
+            // don't hijack phrases like "created this month").
             '/\b(those|these|them|they|their)\b'
             . '|\bthe same\b'
             . '|\b(above|previous|last)\s+(result|results|query|one|ones|projects|records|data|list|report)\b'
+            // "this/those + (optional one word/number) + record noun":
+            // matches "those projects", "this 4 projects", "these top tickets",
+            // but not "this month" (month is not a record noun) or longer phrases.
+            . '|\b(this|that|these|those)\s+(?:\w+\s+){0,1}(project|projects|record|records|customer|customers|ticket|tickets|data|result|results|list|report|ones)\b'
+            // Roman-Urdu demonstratives "in/un/inn/unn + (optional word) + noun":
+            // "in projects", "un tickets", "inn 4 customers".
+            . '|\b(in|un|inn|unn)\s+(?:\w+\s+){0,1}(project|projects|record|records|customer|customers|ticket|tickets|log|logs)\b'
             . '|\b(in|un)\s*(mein|me)\s+se\b'
-            . '|\b(inka|inki|inko|unka|unki|unko)\b/u',
+            // Roman-Urdu pronouns: inka/inki/inko/inhe/inhein (+ un- variants).
+            . '|\b(inka|inki|inko|inhe|inhein|unka|unki|unko|unhe|unhein)\b/u',
             $q
         );
     }
@@ -575,6 +590,10 @@ You are a safe CRM query planner for a solar installation company's Laravel CRM.
 Return structured JSON only. Do not return markdown. Do not answer the user's question directly.
 Do not generate SQL. Never include a raw SQL string.
 Use only the supplied allowed_schema tables and allowed columns.
+
+## CONVERSATION MEMORY
+- The input includes `conversation_memory`: the recent turns with the intent, filters, SQL and result size the assistant used.
+- If the new question is a follow-up (e.g. "those projects", "in me se", "show their customers", "only the hold ones", "sort by date"), resolve the reference against that memory and KEEP the previous filters/tables, adding any new constraint the user now asks for. Do not ask the user to repeat what they already said.
 
 ## CORE RULES
 - Be FLEXIBLE and HELPFUL. If the question can be answered using allowed_schema, answer it.
@@ -1157,6 +1176,31 @@ PROMPT;
                 'common_columns' => ['log_name', 'description', 'event', 'subject_id', 'causer_id', 'properties', 'created_at'],
                 'common_questions' => ['project activity log', 'who moved project', 'department move history', 'project changes', 'action history'],
                 'note' => 'Use event="move" for lane/department movement. properties JSON has old_lane and new_lane.',
+            ],
+            'site_surveys' => [
+                'tables' => ['site_surveys', 'projects', 'users', 'technician_schedules'],
+                'common_columns' => ['project_id', 'technician_id', 'survey_date', 'status', 'customer_address'],
+                'common_questions' => ['scheduled surveys', 'surveys by technician', 'pending site surveys', 'technician availability'],
+            ],
+            'adders_catalogue' => [
+                'tables' => ['adder_types', 'adder_sub_types', 'adder_units', 'adders', 'customer_adders', 'customers'],
+                'common_columns' => ['name', 'tag', 'price', 'amount', 'adder_type_id'],
+                'common_questions' => ['adder types', 'adder prices', 'adders on a customer deal'],
+            ],
+            'product_catalogue' => [
+                'tables' => ['inverter_types', 'module_types', 'battery_types', 'utility_companies', 'inverter_type_rates'],
+                'common_columns' => ['name', 'value', 'tags', 'base_cost'],
+                'common_questions' => ['inverter types', 'module types', 'battery types', 'utility companies', 'equipment catalogue'],
+            ],
+            'partners' => [
+                'tables' => ['sales_partners', 'sub_contractors', 'customers', 'projects'],
+                'common_columns' => ['name', 'email', 'phone'],
+                'common_questions' => ['sales partners list', 'sub-contractors list', 'partner contact details'],
+            ],
+            'project_notes' => [
+                'tables' => ['department_notes', 'project_call_logs', 'projects', 'departments', 'users'],
+                'common_columns' => ['project_id', 'department_id', 'notes', 'call_no', 'show_to_customer'],
+                'common_questions' => ['project notes', 'department notes', 'call logs on a project'],
             ],
         ];
     }

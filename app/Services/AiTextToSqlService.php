@@ -38,9 +38,9 @@ class AiTextToSqlService
      *   ['success' => true,  'sql' => '...', 'bindings' => [], 'tables' => [...], 'limit' => N]
      *   ['success' => false, 'error' => '...']
      */
-    public function generate(string $question, User $user): array
+    public function generate(string $question, User $user, string $conversationMemory = ''): array
     {
-        return $this->run($question, $user, null);
+        return $this->run($question, $user, null, $conversationMemory);
     }
 
     /**
@@ -50,18 +50,18 @@ class AiTextToSqlService
      * can correct itself (wrong column/table name, bad join, type mismatch, etc.).
      * This single retry recovers the large majority of "query failed" cases.
      */
-    public function regenerate(string $question, User $user, string $failedSql, string $dbError): array
+    public function regenerate(string $question, User $user, string $failedSql, string $dbError, string $conversationMemory = ''): array
     {
         return $this->run($question, $user, [
             'failed_sql' => $failedSql,
             'db_error'   => $dbError,
-        ]);
+        ], $conversationMemory);
     }
 
     /**
      * @param  array{failed_sql:string,db_error:string}|null  $correction
      */
-    private function run(string $question, User $user, ?array $correction): array
+    private function run(string $question, User $user, ?array $correction, string $conversationMemory = ''): array
     {
         try {
             $allowedSchema = $this->buildAllowedSchemaForUser($user);
@@ -76,7 +76,7 @@ class AiTextToSqlService
 
             $response = $this->openAiService->createJsonResponse(
                 $this->buildInstructions($allowedSchema, $user, $isScoped),
-                $this->buildInput($question, $correction, $isScoped),
+                $this->buildInput($question, $correction, $isScoped, $conversationMemory),
                 900,
                 $this->jsonSchema(),
                 $this->openAiService->sqlModel()
@@ -158,6 +158,12 @@ class AiTextToSqlService
                 return $this->fail('You do not have permission to access financial data.');
             }
 
+            // GUARANTEE soft-delete filtering. The structured builder always adds
+            // `deleted_at IS NULL`; an AI-written query often forgets it, which
+            // leaks soft-deleted rows (e.g. a department "project count" of 4 but a
+            // "project list" of 10). We enforce it server-side so the model can't.
+            $sql = $this->enforceSoftDeletes($sql, $referencedTables);
+
             return [
                 'success'               => true,
                 'sql'                   => $sql,
@@ -181,6 +187,15 @@ class AiTextToSqlService
         $roleNames   = $user->roles->pluck('name')->join(', ');
         $schemaJson  = json_encode($allowedSchema, JSON_PRETTY_PRINT);
         $today       = now()->toDateString();
+
+        // Tables that use soft deletes — the model must exclude deleted rows.
+        $softDeleteTables = collect($allowedSchema)
+            ->filter(fn ($cfg) => in_array('deleted_at', (array) ($cfg['columns'] ?? []), true))
+            ->keys()
+            ->implode(', ');
+        $softDeleteRule = $softDeleteTables !== ''
+            ? "\n- SOFT DELETES: these tables hide deleted rows via deleted_at — ALWAYS add `<table>.deleted_at IS NULL` for each one you query: {$softDeleteTables}."
+            : '';
         $scopeRules  = $scoped ? $this->scopeRules() : '';
         $scopeNote   = $scoped
             ? "\n- Today's date and row-access scope rules in the ROW ACCESS section are MANDATORY."
@@ -204,7 +219,8 @@ You are a safe SQL generator for a solar-installation company CRM (MySQL).
 - For name searches prefer LIKE '%term%' (case-insensitive) rather than exact '=' so partial names match.
 - When the question implies counting/grouping ("how many", "count", "X wise", "per X"), use COUNT(...) with GROUP BY and give aggregates a clear alias.
 - Resolve relative dates against today ({$today}). e.g. "this month", "last 30 days", "in April 2026".
-- Read the FULL question: apply every filter the user mentions (location, status, date range, person, etc.). Do not return a generic list when the user asked for a filtered/aggregated result.{$scopeNote}
+- Read the FULL question: apply every filter the user mentions (location, status, date range, person, etc.). Do not return a generic list when the user asked for a filtered/aggregated result.{$softDeleteRule}
+- If a "Conversation so far" block is present, treat the new question as a follow-up: reuse the previous query's filters/joins to resolve references like "those", "them", "their", "in me se", and ADD any new constraint the user now asks for (e.g. "only the hold ones", "sort by install date", "just California"). Switch a count into a list (or vice-versa) when the user now asks for the other.{$scopeNote}
 {$scopeRules}
 ## Current User
 - Name: {$user->name}
@@ -249,17 +265,24 @@ PROMPT;
      *
      * @param  array{failed_sql:string,db_error:string}|null  $correction
      */
-    private function buildInput(string $question, ?array $correction, bool $scoped = false): string
+    private function buildInput(string $question, ?array $correction, bool $scoped = false, string $conversationMemory = ''): string
     {
         $scopeReminder = $scoped
             ? "\n\nReminder: keep the query project-centric and keep the " . self::SCOPE_TOKEN . ' token in the WHERE clause.'
             : '';
 
+        // Prior turns let the model resolve follow-up references ("those", "them",
+        // "inko", "their customers") and compound the previous query with any new
+        // constraint the user now adds.
+        $memoryBlock = $conversationMemory !== ''
+            ? "Conversation so far (resolve references against this; keep previous filters unless the user changes them, and add any new constraint they ask for):\n{$conversationMemory}\n\n"
+            : '';
+
         if ($correction === null) {
-            return $question . $scopeReminder;
+            return $memoryBlock . 'New question: ' . $question . $scopeReminder;
         }
 
-        return implode("\n", [
+        return $memoryBlock . implode("\n", [
             'Your previous SQL for this question failed when executed. Fix it and return corrected JSON.',
             '',
             'Question: ' . $question,
@@ -337,6 +360,56 @@ PROMPT;
             [(string) $user->id, (string) $employeeId],
             $sql
         );
+    }
+
+    /**
+     * Inject `<table>.deleted_at IS NULL` for every referenced soft-delete table
+     * the model did not already filter, so AI-written SQL can never return
+     * soft-deleted rows. Inserts into the existing WHERE (or starts one) just
+     * before any GROUP BY / HAVING / ORDER BY / LIMIT clause.
+     *
+     * @param array<int,string> $tables
+     */
+    private function enforceSoftDeletes(string $sql, array $tables): string
+    {
+        $needed = [];
+
+        foreach (array_unique($tables) as $table) {
+            // Only tables that actually have a soft-delete column.
+            if (! in_array('deleted_at', $this->aiSchemaService->getAllowedColumns($table), true)) {
+                continue;
+            }
+
+            // Respect a filter the model already wrote for this table.
+            if (preg_match('/\b' . preg_quote($table, '/') . '\.deleted_at\b/i', $sql)) {
+                continue;
+            }
+
+            $needed[] = $table . '.deleted_at is null';
+        }
+
+        if ($needed === []) {
+            return $sql;
+        }
+
+        $predicate = implode(' and ', $needed);
+
+        // Insert before the first trailing clause (GROUP BY/HAVING/ORDER BY/LIMIT).
+        $boundary = strlen($sql);
+        foreach (['group\s+by', 'having', 'order\s+by', 'limit'] as $kw) {
+            if (preg_match('/\b' . $kw . '\b/i', $sql, $m, PREG_OFFSET_CAPTURE)) {
+                $boundary = min($boundary, $m[0][1]);
+            }
+        }
+
+        $head = rtrim(substr($sql, 0, $boundary));
+        $tail = substr($sql, $boundary);
+
+        $head .= preg_match('/\bwhere\b/i', $head)
+            ? ' and ' . $predicate
+            : ' where ' . $predicate;
+
+        return rtrim($head . ' ' . $tail);
     }
 
     private function ensureLimit(string $sql, int $limit): string
