@@ -50,7 +50,7 @@ class AiEvalCommand extends Command
         $failed = 0;
 
         foreach ($cases as $case) {
-            $question = (string) ($case['q'] ?? '');
+            $question = $this->caseLabel($case);
 
             if ($question === '') {
                 continue;
@@ -84,57 +84,152 @@ class AiEvalCommand extends Command
     }
 
     /**
+     * A short display label for a case (single or multi-turn).
+     */
+    private function caseLabel(array $case): string
+    {
+        if (! empty($case['q'])) {
+            return (string) $case['q'];
+        }
+
+        if (! empty($case['name'])) {
+            return (string) $case['name'];
+        }
+
+        $steps = (array) ($case['steps'] ?? []);
+        $first = $steps[0]['q'] ?? '';
+        $label = (string) $first;
+
+        return $label === '' ? '' : '[chain] ' . $label . ' → …';
+    }
+
+    /**
+     * Run a case. A case is either a single question (`q` + expectations) or a
+     * multi-turn conversation (`steps` => [ {q, expectations}, ... ]) executed in
+     * ONE chat so follow-ups ("show details of these", "filter by California
+     * too") carry context — exactly how a real user chats.
+     *
      * @return array{0: bool, 1: string, 2: ?callable, 3: array}
      */
     private function runCase(AiChatService $chat, User $user, array $case): array
     {
-        $question = (string) $case['q'];
+        $steps = isset($case['steps']) && is_array($case['steps']) ? $case['steps'] : [$case];
 
-        try {
-            $result = $chat->send($user, $question);
-        } catch (Throwable $e) {
-            return [false, 'send() threw: ' . Str::limit($e->getMessage(), 80), null, []];
+        $chatModel = null;
+        $cleanup   = null;
+        $lastRows  = [];
+        $summaries = [];
+
+        foreach (array_values($steps) as $index => $step) {
+            $question = (string) ($step['q'] ?? '');
+
+            if ($question === '') {
+                continue;
+            }
+
+            try {
+                $chatModel = $chat->send($user, $question, $chatModel?->id);
+            } catch (Throwable $e) {
+                $cleanup ??= $chatModel ? fn () => $chat->delete($chatModel) : null;
+
+                return [false, $this->stepLabel($steps, $index, $question) . 'send() threw: ' . Str::limit($e->getMessage(), 80), $cleanup, $lastRows];
+            }
+
+            $cleanup = fn () => $chat->delete($chatModel);
+
+            $message = $chatModel->messages->last();
+            $meta    = is_array($message->metadata) ? $message->metadata : [];
+            $content = (string) ($message->content ?? '');
+
+            $intent   = (string) Arr::get($meta, 'query_plan.intent', '');
+            $rows     = (array) Arr::get($meta, 'answer.rows', []);
+            $lastRows = $rows;
+            $rowCount = count($rows);
+            $countVal = $this->countValue($meta);
+
+            $summary = "intent={$intent} rows={$rowCount}" . ($countVal !== null ? " count={$countVal}" : '');
+            $summaries[] = $summary;
+
+            [$ok, $detail] = $this->evaluateStep($step, $intent, $rowCount, $countVal, $content, $summary);
+
+            if (! $ok) {
+                return [false, $this->stepLabel($steps, $index, $question) . $detail, $cleanup, $rows];
+            }
         }
 
-        $message = $result->messages->last();
-        $meta    = is_array($message->metadata) ? $message->metadata : [];
-        $cleanup = fn () => $chat->delete($result);
+        return [true, implode(' | ', $summaries), $cleanup, $lastRows];
+    }
 
-        $intent   = (string) Arr::get($meta, 'query_plan.intent', '');
-        $rows     = (array) Arr::get($meta, 'answer.rows', []);
-        $rowCount = count($rows);
-        $countVal = $this->countValue($meta);
-
-        $summary = "intent={$intent} rows={$rowCount}" . ($countVal !== null ? " count={$countVal}" : '');
-
-        // --- Evaluate expectations ---------------------------------------------
-        if (isset($case['intent']) && ! str_contains($intent, (string) $case['intent'])) {
-            return [false, "expected intent~'{$case['intent']}' but got '{$intent}'", $cleanup, $rows];
+    /**
+     * Evaluate one step's expectations.
+     *
+     * @return array{0: bool, 1: string}
+     */
+    private function evaluateStep(array $step, string $intent, int $rowCount, ?int $countVal, string $content, string $summary): array
+    {
+        if (isset($step['intent']) && ! str_contains($intent, (string) $step['intent'])) {
+            return [false, "expected intent~'{$step['intent']}' but got '{$intent}'"];
         }
 
-        if (isset($case['count_min'])) {
+        if (isset($step['count_min'])) {
             if ($countVal === null) {
-                return [false, "expected a count >= {$case['count_min']} but no count value; {$summary}", $cleanup, $rows];
+                return [false, "expected a count >= {$step['count_min']} but no count value; {$summary}"];
             }
-            if ($countVal < (int) $case['count_min']) {
-                return [false, "count {$countVal} < expected {$case['count_min']}", $cleanup, $rows];
+            if ($countVal < (int) $step['count_min']) {
+                return [false, "count {$countVal} < expected {$step['count_min']}"];
             }
         }
 
-        if (isset($case['min_rows']) && $rowCount < (int) $case['min_rows']) {
-            return [false, "rows {$rowCount} < expected {$case['min_rows']}; {$summary}", $cleanup, $rows];
+        if (isset($step['min_rows']) && $rowCount < (int) $step['min_rows']) {
+            return [false, "rows {$rowCount} < expected {$step['min_rows']}; {$summary}"];
+        }
+
+        if (isset($step['max_rows']) && $rowCount > (int) $step['max_rows']) {
+            return [false, "rows {$rowCount} > expected max {$step['max_rows']} (filter likely lost); {$summary}"];
+        }
+
+        if (isset($step['contains'])) {
+            foreach ((array) $step['contains'] as $needle) {
+                if (stripos($content, (string) $needle) === false) {
+                    return [false, "answer missing expected text '{$needle}'; got: " . Str::limit($content, 90)];
+                }
+            }
+        }
+
+        if (isset($step['not_contains'])) {
+            foreach ((array) $step['not_contains'] as $needle) {
+                if (stripos($content, (string) $needle) !== false) {
+                    return [false, "answer wrongly contains '{$needle}'; got: " . Str::limit($content, 90)];
+                }
+            }
         }
 
         // Default expectation when none specified: the answer must carry data.
-        $hasExplicitExpectation = isset($case['intent']) || isset($case['count_min']) || isset($case['min_rows']);
-        if (! $hasExplicitExpectation) {
+        $hasExplicit = isset($step['intent']) || isset($step['count_min'])
+            || isset($step['min_rows']) || isset($step['contains']) || isset($step['not_contains']);
+
+        if (! $hasExplicit) {
             $hasData = $rowCount > 0 || ($countVal !== null && $countVal > 0);
             if (! $hasData) {
-                return [false, "no data returned; {$summary}", $cleanup, $rows];
+                return [false, "no data returned; {$summary}"];
             }
         }
 
-        return [true, $summary, $cleanup, $rows];
+        return [true, $summary];
+    }
+
+    /**
+     * "step 2/3 'question': " prefix for multi-turn cases, empty for single.
+     *
+     * @param array<int,array> $steps
+     */
+    private function stepLabel(array $steps, int $index, string $question): string
+    {
+        if (count($steps) <= 1) {
+            return '';
+        }
+
+        return 'step ' . ($index + 1) . '/' . count($steps) . " '" . Str::limit($question, 40) . "': ";
     }
 
     /**

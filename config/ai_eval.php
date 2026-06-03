@@ -5,70 +5,199 @@
 | AI Chat evaluation cases
 |--------------------------------------------------------------------------
 |
-| A small regression suite for the AI assistant. Each case is a question plus
-| the outcome we expect. Run it with:  php artisan ai:eval
+| A regression + coverage suite for the AI assistant. Run it with:
+|     php artisan ai:eval                # as first admin
+|     php artisan ai:eval --user=12      # as a specific user
+|     php artisan ai:eval --show         # also print a few result rows
 |
-| Supported expectations (all optional — omit for "must return some data"):
-|   'min_rows'   => N   The answer must contain at least N rows.
-|   'count_min'  => N   For a count answer, the value must be >= N.
-|   'intent'     => 's' The planned intent must contain this substring.
-|   'note'       => '…' Human description (e.g. the bug it guards against).
+| A case is EITHER a single question or a multi-turn conversation:
 |
-| Seed this list from real questions in the ai_query_logs table — especially
-| any that returned 0/empty in production.
+|   Single:  ['q' => '...', <expectations>]
+|   Chain:   ['name' => '...', 'steps' => [ ['q'=>'...', <exp>], ['q'=>'...', <exp>] ]]
+|            (steps run in ONE chat, so follow-ups carry context)
+|
+| Expectations (all optional — omit for "must return some data"):
+|   'min_rows'     => N            answer must contain >= N rows
+|   'count_min'    => N            count answer value must be >= N
+|   'intent'       => 'substr'     planned intent must contain this
+|   'contains'     => 'str'|[...]  assistant text must contain all of these
+|   'not_contains' => 'str'|[...]  assistant text must contain none of these
+|   'note'         => '...'        human description / the bug it guards
+|
+| Seed new cases from real questions in ai_query_logs — especially any that
+| returned 0/empty in production, and any follow-up the user reports.
 |
 */
 
 return [
     'cases' => [
-        // --- Regressions we have already fixed (guard against re-breaking) -------
+
+        // =====================================================================
+        // MULTI-TURN FOLLOW-UPS  (context must carry between turns)
+        // =====================================================================
         [
-            'q'        => 'How many projects are in the Deal Review department?',
-            'count_min' => 1,
-            'note'     => 'Named department count (returned 4).',
+            'name'  => 'Department count then details of those projects',
+            'note'  => 'Reported bug: "details of this projects" said "couldn\'t find a project matching this".',
+            'steps' => [
+                ['q' => 'How many projects are in the Deal Review department?', 'count_min' => 1],
+                ['q' => 'Show me the details of this projects', 'min_rows' => 1, 'not_contains' => ["couldn't find", 'could not find', 'matching "this"']],
+            ],
         ],
         [
-            'q'        => 'Show the project count department-wise',
-            'min_rows' => 2,
-            'note'     => 'Bug: "department-wise" extracted a bogus dept name -> count 0. Now via Text-to-SQL.',
+            'name'  => 'Deal review (no "department" word) then "this N projects"',
+            'note'  => 'Real failing logs: "How many total projects in deal review?" + "tell me the details of this 4 projects".',
+            'steps' => [
+                ['q' => 'How many total projects in deal review?', 'count_min' => 1],
+                ['q' => 'tell me the details of this 4 projects', 'min_rows' => 1, 'not_contains' => ["couldn't find", 'could not find', 'matching "this"']],
+            ],
         ],
         [
-            'q'        => 'Show the project count as per department',
-            'min_rows' => 2,
-            'note'     => 'Bug: "as per department" -> count 0. Now via Text-to-SQL.',
+            'name'  => 'Customer-wise projects then show those',
+            'steps' => [
+                ['q' => 'Customer wise projects', 'min_rows' => 1],
+                ['q' => 'show me details of these', 'not_contains' => ["couldn't find", 'could not find']],
+            ],
         ],
         [
-            'q'        => 'Show the project total numbers department-wise',
-            'min_rows' => 2,
-            'note'     => 'Bug: "department-wise" -> count 0. Now via Text-to-SQL.',
+            'name'  => 'All customers then how many',
+            'steps' => [
+                ['q' => 'Show me all customers', 'min_rows' => 1],
+                ['q' => 'how many are they in total?', 'not_contains' => ["couldn't", 'could not', 'I can plan CRM']],
+            ],
+        ],
+        [
+            'name'  => 'In-progress projects then their customers',
+            'steps' => [
+                ['q' => 'Show in-progress projects', 'min_rows' => 1],
+                ['q' => 'who are the customers for these projects?', 'not_contains' => ["couldn't find", 'could not find']],
+            ],
+        ],
+        [
+            'name'  => 'Pending tickets then sort/filter follow-up',
+            'steps' => [
+                ['q' => 'Show pending tickets', 'min_rows' => 1],
+                ['q' => 'only the high priority ones', 'not_contains' => ["couldn't", 'could not']],
+            ],
         ],
 
-        // --- Common queries that should always return data ----------------------
+        // --- Project-detail gate must not hijack non-project / bare-code / refs ---
         [
-            'q'        => 'Show me all customers',
+            'name'  => 'Ticket request not hijacked by project-detail gate',
+            'note'  => 'Bug: "details of High priority ticket" said "couldn\'t find a project matching...".',
+            'steps' => [
+                ['q' => 'Show me the details of High priority ticket details', 'min_rows' => 1, 'not_contains' => ["couldn't find", 'could not find', 'matching "', 'check the name or code']],
+            ],
+        ],
+        [
+            'name'  => 'Disambiguation then bare code reply resolves the project',
+            'note'  => 'Bug: replying "1048" was treated as chit-chat ("what is 1048?").',
+            'steps' => [
+                ['q' => 'Show me the project details of Yunjiao Guan', 'min_rows' => 1],
+                ['q' => '1048', 'min_rows' => 1, 'not_contains' => ['what is', 'could you tell me', 'what you need', "couldn't"]],
+            ],
+        ],
+        [
+            'name'  => '"this project" resolves to the project just discussed',
+            'note'  => 'Bug: "complete details of this project" dumped raw columns / "No records".',
+            'steps' => [
+                ['q' => 'Show me the summary of Yunjiao-Guan - 61st Ave', 'min_rows' => 1],
+                ['q' => 'complete details of this project', 'min_rows' => 1, 'not_contains' => ['No records', "couldn't find", 'could not find']],
+            ],
+        ],
+
+        [
+            'name'  => 'Multi-intent message is split into separate answers',
+            'note'  => 'Bug: "financing details of this project ALSO logs details" was one query. LLM now splits it.',
+            'steps' => [
+                ['q' => 'Show me the summary of Yunjiao-Guan - 61st Ave', 'min_rows' => 1],
+                ['q' => 'Show me the financing details of this project also show the logs details', 'min_rows' => 1, 'not_contains' => ['No records', "couldn't find"]],
+            ],
+        ],
+
+        // --- COMPOUND follow-ups (new constraint added on top of prior query) ---
+        [
+            'name'  => 'Count then switch to a list of the same',
+            'note'  => 'count -> "ab inki list do" must list ONLY those deal-review projects (not all). max_rows guards filter loss.',
+            'steps' => [
+                ['q' => 'How many projects are in the Deal Review department?', 'count_min' => 1],
+                ['q' => 'ab in projects ki list do', 'min_rows' => 1, 'max_rows' => 50, 'not_contains' => ["couldn't find", 'could not find']],
+            ],
+        ],
+        [
+            'name'  => 'List then sort follow-up',
+            'steps' => [
+                ['q' => 'Show all projects', 'min_rows' => 1],
+                ['q' => 'sort them by created date', 'min_rows' => 1, 'not_contains' => ["couldn't", 'could not']],
+            ],
+        ],
+        [
+            'name'  => 'List then narrow columns follow-up',
+            'steps' => [
+                ['q' => 'show all employees', 'min_rows' => 1],
+                ['q' => 'sirf unke naam aur email dikhao', 'min_rows' => 1, 'not_contains' => ["couldn't", 'could not']],
+            ],
+        ],
+        [
+            'name'  => 'Status summary then refine to one status as a list',
+            'steps' => [
+                ['q' => 'Tickets status wise', 'min_rows' => 1],
+                ['q' => 'ab sirf resolved wale tickets ki list do', 'not_contains' => ["couldn't", 'could not']],
+            ],
+        ],
+
+        // =====================================================================
+        // FIELD / TERM EXPLANATIONS  (deterministic, no data needed)
+        // =====================================================================
+        ['q' => 'What is PTO?', 'contains' => 'Permission', 'note' => 'Glossary term.'],
+        ['q' => 'What is NTP?', 'contains' => 'Notice'],
+        ['q' => 'meter_spot_result kya hai?', 'contains' => 'meter'],
+        ['q' => 'What values can ticket status have?', 'contains' => ['Pending', 'Resolved']],
+        ['q' => 'explain the contract amount field', 'contains' => 'contract'],
+        ['q' => 'acceptance status ki values kya hain?', 'contains' => ['Approved', 'Rejected']],
+        ['q' => 'what does the field solar_install_date mean?', 'contains' => 'install'],
+
+        // =====================================================================
+        // CORE DATA QUERIES  (varied phrasings — should always return data)
+        // =====================================================================
+        ['q' => 'How many projects are there in total?', 'count_min' => 1],
+        ['q' => 'Show me all customers', 'min_rows' => 1],
+        ['q' => 'list all departments', 'min_rows' => 1],
+        ['q' => 'show all sub departments', 'min_rows' => 1],
+        ['q' => 'show all employees', 'min_rows' => 1],
+        ['q' => 'list sales partners', 'min_rows' => 1],
+        ['q' => 'Tickets status wise', 'min_rows' => 1],
+        ['q' => 'projects by status', 'min_rows' => 1],
+
+        // --- Phrasing variants that previously mis-routed to count 0 ----------
+        ['q' => 'Show the project count department-wise', 'min_rows' => 2, 'note' => 'Was count 0; now Text-to-SQL.'],
+        ['q' => 'Show the project count as per department', 'min_rows' => 2],
+        ['q' => 'project total numbers department wise', 'min_rows' => 2],
+        ['q' => 'How many projects in the Deal Review department?', 'count_min' => 1],
+        [
+            // Soft-delete guard: list must match the active count (4), not include
+            // soft-deleted rows (was 10). max_rows tolerates small data growth.
+            'q'        => 'Show me the details of all deal review department projects',
             'min_rows' => 1,
-            'note'     => 'Basic customer list.',
+            'max_rows' => 6,
+            'note'     => 'Bug: list included soft-deleted projects (10) while count was 4. Now deleted_at filtered.',
         ],
+
+        // =====================================================================
+        // NEWLY-EXPOSED MODULES  (added to the schema in this work)
+        // =====================================================================
+        ['q' => 'list all utility companies', 'min_rows' => 1, 'note' => 'Newly exposed lookup table.'],
+        ['q' => 'show all inverter types', 'min_rows' => 1],
+        ['q' => 'show all module types', 'min_rows' => 1],
+        ['q' => 'list sub contractors', 'intent' => 'sub_contractor', 'note' => 'Routing check (table may be small/empty).'],
+        ['q' => 'show scheduled site surveys', 'intent' => 'site_survey', 'note' => 'Routing check — 0 "scheduled" rows is a valid answer.'],
+
+        // =====================================================================
+        // NAMED PROJECT DETAIL  (deterministic handler)
+        // =====================================================================
         [
-            'q'        => 'Tickets status wise',
-            'min_rows' => 1,
-            'note'     => 'Ticket status grouping.',
-        ],
-        [
-            'q'        => 'Customer wise projects',
-            'min_rows' => 1,
-            'note'     => 'Projects grouped per customer.',
-        ],
-        [
-            'q'         => 'How many projects are there in total?',
-            'count_min' => 1,
-            'note'      => 'Total project count.',
-        ],
-        [
-            // Deterministic project-detail handler (no LLM) — update name if removed.
             'q'        => 'Show me the details of Yunjiao-Guan - 61st Ave project',
             'min_rows' => 1,
-            'note'     => 'Project detail summary: formatted text + per-department days table.',
+            'note'     => 'Project detail: formatted text + per-department days table. Update name if removed.',
         ],
     ],
 ];
