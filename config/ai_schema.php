@@ -31,6 +31,7 @@ return [
                 'start_date',
                 'end_date',
                 'completion_date',
+                'budget',
                 'description',
                 'utility_company',
                 'ntp_approval_date',
@@ -67,6 +68,9 @@ return [
                 'actual_material_cost',
                 'overwrite_base_price',
                 'overwrite_panel_price',
+                'pre_estimated_material_costs',
+                'pre_estimated_labor_costs',
+                'pre_estimated_permit_costs',
                 'created_at',
                 'updated_at',
                 'deleted_at',
@@ -280,6 +284,14 @@ return [
                 'reason',
                 'panel_qty',
                 'inverter_name',
+                'inverter_base_price',
+                'dealer_fee_amount',
+                'module_qty_price',
+                'modules_amount',
+                'contract_amount',
+                'redline_costs',
+                'adders_amount',
+                'commission_amount',
                 'adders_list',
                 'notes',
                 'created_at',
@@ -1278,6 +1290,441 @@ return [
             'default_sort_column' => 'created_at',
             'access_rule' => 'project_access',
         ],
+
+        /*
+        |----------------------------------------------------------------------
+        | Configuration / lookup tables (global, non-row-scoped)
+        |----------------------------------------------------------------------
+        */
+
+        'adder_types' => [
+            'model' => \App\Models\AdderType::class,
+            'table' => 'adder_types',
+            'allowed_columns' => ['id', 'name', 'tag', 'created_at', 'updated_at', 'deleted_at'],
+            'searchable_columns' => ['name', 'tag'],
+            'relationships' => [
+                'subTypes' => ['table' => 'adder_sub_types', 'local_key' => 'id', 'foreign_key' => 'adder_type_id'],
+            ],
+            'sensitive_columns' => [],
+            'default_sort_column' => 'name',
+            'access_rule' => 'department_access',
+        ],
+
+        'adder_sub_types' => [
+            'model' => \App\Models\AdderSubType::class,
+            'table' => 'adder_sub_types',
+            'allowed_columns' => ['id', 'adder_type_id', 'name', 'created_at', 'updated_at', 'deleted_at'],
+            'searchable_columns' => ['name'],
+            'relationships' => [
+                'adderType' => ['table' => 'adder_types', 'local_key' => 'adder_type_id', 'foreign_key' => 'id'],
+            ],
+            'sensitive_columns' => [],
+            'default_sort_column' => 'name',
+            'access_rule' => 'department_access',
+        ],
+
+        'adder_units' => [
+            'model' => \App\Models\AdderUnit::class,
+            'table' => 'adder_units',
+            'allowed_columns' => ['id', 'name', 'created_at', 'updated_at', 'deleted_at'],
+            'searchable_columns' => ['name'],
+            'relationships' => [],
+            'sensitive_columns' => [],
+            'default_sort_column' => 'name',
+            'access_rule' => 'department_access',
+        ],
+
+        'adders' => [
+            'model' => \App\Models\Adder::class,
+            'table' => 'adders',
+            'allowed_columns' => ['id', 'adder_type_id', 'adder_unit_id', 'price', 'created_at', 'updated_at', 'deleted_at'],
+            'searchable_columns' => [],
+            'relationships' => [
+                'adderType' => ['table' => 'adder_types', 'local_key' => 'adder_type_id', 'foreign_key' => 'id'],
+                'adderUnit' => ['table' => 'adder_units', 'local_key' => 'adder_unit_id', 'foreign_key' => 'id'],
+            ],
+            'sensitive_columns' => ['price'],
+            'default_sort_column' => 'created_at',
+            'access_rule' => 'department_access',
+        ],
+
+        'customer_adders' => [
+            'model' => \App\Models\CustomerAdder::class,
+            'table' => 'customer_adders',
+            'allowed_columns' => ['id', 'customer_id', 'adder_type_id', 'adder_sub_type_id', 'adder_unit_id', 'amount', 'created_at', 'updated_at', 'deleted_at'],
+            'searchable_columns' => [],
+            'relationships' => [
+                'customer' => ['table' => 'customers', 'local_key' => 'customer_id', 'foreign_key' => 'id'],
+                'adderType' => ['table' => 'adder_types', 'local_key' => 'adder_type_id', 'foreign_key' => 'id'],
+                'adderSubType' => ['table' => 'adder_sub_types', 'local_key' => 'adder_sub_type_id', 'foreign_key' => 'id'],
+                'adderUnit' => ['table' => 'adder_units', 'local_key' => 'adder_unit_id', 'foreign_key' => 'id'],
+            ],
+            'sensitive_columns' => ['amount'],
+            'default_sort_column' => 'created_at',
+            'access_rule' => 'customer_access',
+        ],
+
+        'battery_types' => [
+            'model' => \App\Models\BatteryType::class,
+            'table' => 'battery_types',
+            'allowed_columns' => ['id', 'name', 'created_at', 'updated_at', 'deleted_at'],
+            'searchable_columns' => ['name'],
+            'relationships' => [],
+            'sensitive_columns' => [],
+            'default_sort_column' => 'name',
+            'access_rule' => 'department_access',
+        ],
+
+        'inverter_types' => [
+            'model' => \App\Models\InverterType::class,
+            'table' => 'inverter_types',
+            'allowed_columns' => ['id', 'name', 'tags', 'created_at', 'updated_at', 'deleted_at'],
+            'searchable_columns' => ['name', 'tags'],
+            'relationships' => [
+                'rates' => ['table' => 'inverter_type_rates', 'local_key' => 'id', 'foreign_key' => 'inverter_type_id'],
+                'modules' => ['table' => 'module_types', 'local_key' => 'id', 'foreign_key' => 'inverter_type_id'],
+            ],
+            'sensitive_columns' => [],
+            'default_sort_column' => 'name',
+            'access_rule' => 'department_access',
+        ],
+
+        'inverter_type_rates' => [
+            'model' => \App\Models\InverterTypeRate::class,
+            'table' => 'inverter_type_rates',
+            'allowed_columns' => ['id', 'inverter_type_id', 'base_cost', 'internal_base_cost', 'internal_labor_cost', 'created_at', 'updated_at', 'deleted_at'],
+            'searchable_columns' => [],
+            'relationships' => [
+                'inverterType' => ['table' => 'inverter_types', 'local_key' => 'inverter_type_id', 'foreign_key' => 'id'],
+            ],
+            'sensitive_columns' => ['base_cost', 'internal_base_cost', 'internal_labor_cost'],
+            'default_sort_column' => 'created_at',
+            'access_rule' => 'finance_access',
+        ],
+
+        'module_types' => [
+            'model' => \App\Models\ModuleType::class,
+            'table' => 'module_types',
+            'allowed_columns' => ['id', 'inverter_type_id', 'name', 'value', 'amount', 'internal_module_cost', 'created_at', 'updated_at', 'deleted_at'],
+            'searchable_columns' => ['name'],
+            'relationships' => [
+                'inverterType' => ['table' => 'inverter_types', 'local_key' => 'inverter_type_id', 'foreign_key' => 'id'],
+            ],
+            'sensitive_columns' => ['amount', 'internal_module_cost'],
+            'default_sort_column' => 'name',
+            'access_rule' => 'department_access',
+        ],
+
+        'utility_companies' => [
+            'model' => \App\Models\UtilityCompany::class,
+            'table' => 'utility_companies',
+            'allowed_columns' => ['id', 'name', 'created_at', 'updated_at', 'deleted_at'],
+            'searchable_columns' => ['name'],
+            'relationships' => [],
+            'sensitive_columns' => [],
+            'default_sort_column' => 'name',
+            'access_rule' => 'department_access',
+        ],
+
+        'sub_contractors' => [
+            'model' => \App\Models\SubContractor::class,
+            'table' => 'sub_contractors',
+            'allowed_columns' => ['id', 'name', 'email', 'phone', 'image', 'created_at', 'updated_at', 'deleted_at'],
+            'searchable_columns' => ['name', 'email', 'phone'],
+            'relationships' => [],
+            'sensitive_columns' => [],
+            'default_sort_column' => 'name',
+            'access_rule' => 'customer_access',
+        ],
+
+        'user_types' => [
+            'model' => \App\Models\UserType::class,
+            'table' => 'user_types',
+            'allowed_columns' => ['id', 'name', 'created_at', 'updated_at', 'deleted_at'],
+            'searchable_columns' => ['name'],
+            'relationships' => [],
+            'sensitive_columns' => [],
+            'default_sort_column' => 'name',
+            'access_rule' => 'user_access',
+        ],
+
+        'tools' => [
+            'model' => \App\Models\Tool::class,
+            'table' => 'tools',
+            'allowed_columns' => ['id', 'department_id', 'name', 'description', 'file', 'created_at', 'updated_at', 'deleted_at'],
+            'searchable_columns' => ['name', 'description'],
+            'relationships' => [
+                'department' => ['table' => 'departments', 'local_key' => 'department_id', 'foreign_key' => 'id'],
+            ],
+            'sensitive_columns' => [],
+            'default_sort_column' => 'name',
+            'access_rule' => 'department_access',
+        ],
+
+        'calls' => [
+            'model' => \App\Models\Call::class,
+            'table' => 'calls',
+            'allowed_columns' => ['id', 'name', 'created_at', 'updated_at', 'deleted_at'],
+            'searchable_columns' => ['name'],
+            'relationships' => [],
+            'sensitive_columns' => [],
+            'default_sort_column' => 'name',
+            'access_rule' => 'department_access',
+        ],
+
+        'call_scripts' => [
+            'model' => \App\Models\CallScript::class,
+            'table' => 'call_scripts',
+            'allowed_columns' => ['id', 'call_id', 'department_id', 'script', 'extra_filter', 'created_at', 'updated_at', 'deleted_at'],
+            'searchable_columns' => ['script'],
+            'relationships' => [
+                'call' => ['table' => 'calls', 'local_key' => 'call_id', 'foreign_key' => 'id'],
+                'department' => ['table' => 'departments', 'local_key' => 'department_id', 'foreign_key' => 'id'],
+            ],
+            'sensitive_columns' => [],
+            'default_sort_column' => 'created_at',
+            'access_rule' => 'department_access',
+        ],
+
+        'assign_departments' => [
+            'model' => \App\Models\AssignDepartment::class,
+            'table' => 'assign_departments',
+            'allowed_columns' => ['id', 'department_id', 'employee_id', 'created_at', 'updated_at', 'deleted_at'],
+            'searchable_columns' => [],
+            'relationships' => [
+                'department' => ['table' => 'departments', 'local_key' => 'department_id', 'foreign_key' => 'id'],
+                'employee' => ['table' => 'employees', 'local_key' => 'employee_id', 'foreign_key' => 'id'],
+            ],
+            'sensitive_columns' => [],
+            'default_sort_column' => 'created_at',
+            'access_rule' => 'department_access',
+        ],
+
+        'project_department_fields' => [
+            'model' => \App\Models\ProjectDepartmentField::class,
+            'table' => 'project_department_fields',
+            'allowed_columns' => ['id', 'department_id', 'field_name', 'created_at', 'updated_at'],
+            'searchable_columns' => ['field_name'],
+            'relationships' => [
+                'department' => ['table' => 'departments', 'local_key' => 'department_id', 'foreign_key' => 'id'],
+            ],
+            'sensitive_columns' => [],
+            'default_sort_column' => 'department_id',
+            'access_rule' => 'department_access',
+        ],
+
+        'technician_schedules' => [
+            'model' => \App\Models\TechnicianSchedule::class,
+            'table' => 'technician_schedules',
+            'allowed_columns' => ['id', 'technician_id', 'date', 'start_time', 'end_time', 'start_location_address', 'start_lat', 'start_lng', 'current_lat', 'current_lng', 'is_available', 'created_at', 'updated_at'],
+            'searchable_columns' => ['start_location_address'],
+            'relationships' => [
+                'technician' => ['table' => 'users', 'local_key' => 'technician_id', 'foreign_key' => 'id'],
+            ],
+            'sensitive_columns' => [],
+            'default_sort_column' => 'date',
+            'access_rule' => 'user_access',
+        ],
+
+        /*
+        |----------------------------------------------------------------------
+        | Project-linked operational tables (row-scoped for non-admin roles)
+        |----------------------------------------------------------------------
+        */
+
+        'department_notes' => [
+            'model' => \App\Models\DepartmentNote::class,
+            'table' => 'department_notes',
+            'allowed_columns' => ['id', 'project_id', 'task_id', 'department_id', 'notes', 'show_to_customer', 'user_id', 'created_at', 'updated_at'],
+            'searchable_columns' => ['notes'],
+            'relationships' => [
+                'project' => ['table' => 'projects', 'local_key' => 'project_id', 'foreign_key' => 'id'],
+                'department' => ['table' => 'departments', 'local_key' => 'department_id', 'foreign_key' => 'id'],
+                'user' => ['table' => 'users', 'local_key' => 'user_id', 'foreign_key' => 'id'],
+            ],
+            'sensitive_columns' => [],
+            'default_sort_column' => 'created_at',
+            'access_rule' => 'project_access',
+        ],
+
+        'notes_mentions' => [
+            'model' => \App\Models\NotesMention::class,
+            'table' => 'notes_mentions',
+            'allowed_columns' => ['id', 'project_id', 'department_id', 'employee_id', 'created_at', 'updated_at'],
+            'searchable_columns' => [],
+            'relationships' => [
+                'project' => ['table' => 'projects', 'local_key' => 'project_id', 'foreign_key' => 'id'],
+                'department' => ['table' => 'departments', 'local_key' => 'department_id', 'foreign_key' => 'id'],
+                'employee' => ['table' => 'employees', 'local_key' => 'employee_id', 'foreign_key' => 'id'],
+            ],
+            'sensitive_columns' => [],
+            'default_sort_column' => 'created_at',
+            'access_rule' => 'project_access',
+        ],
+
+        'project_adders_locks' => [
+            'model' => \App\Models\ProjectAddersLock::class,
+            'table' => 'project_adders_locks',
+            'allowed_columns' => ['id', 'project_id', 'user_id', 'status', 'created_at', 'updated_at'],
+            'searchable_columns' => ['status'],
+            'relationships' => [
+                'project' => ['table' => 'projects', 'local_key' => 'project_id', 'foreign_key' => 'id'],
+                'user' => ['table' => 'users', 'local_key' => 'user_id', 'foreign_key' => 'id'],
+            ],
+            'sensitive_columns' => [],
+            'default_sort_column' => 'created_at',
+            'access_rule' => 'project_access',
+        ],
+
+        'site_surveys' => [
+            'model' => \App\Models\SiteSurvey::class,
+            'table' => 'site_surveys',
+            'allowed_columns' => ['id', 'project_id', 'technician_id', 'survey_date', 'start_time', 'end_time', 'customer_address', 'customer_lat', 'customer_lng', 'estimated_travel_time', 'estimated_distance', 'status', 'actual_start_time', 'actual_end_time', 'actual_lat', 'actual_lng', 'notes', 'created_at', 'updated_at'],
+            'searchable_columns' => ['customer_address', 'status', 'notes'],
+            'relationships' => [
+                'project' => ['table' => 'projects', 'local_key' => 'project_id', 'foreign_key' => 'id'],
+                'technician' => ['table' => 'users', 'local_key' => 'technician_id', 'foreign_key' => 'id'],
+            ],
+            'sensitive_columns' => [],
+            'default_sort_column' => 'survey_date',
+            'access_rule' => 'project_access',
+        ],
+
+        'service_ticket_files' => [
+            'model' => \App\Models\ServiceTicketFile::class,
+            'table' => 'service_ticket_files',
+            'allowed_columns' => ['id', 'service_ticket_id', 'comment_id', 'file_name', 'file_path', 'file_type', 'file_size', 'uploaded_by', 'created_at', 'updated_at'],
+            'searchable_columns' => ['file_name', 'file_type'],
+            'relationships' => [
+                'ticket' => ['table' => 'service_tickets', 'local_key' => 'service_ticket_id', 'foreign_key' => 'id'],
+                'uploader' => ['table' => 'users', 'local_key' => 'uploaded_by', 'foreign_key' => 'id'],
+            ],
+            'sensitive_columns' => [],
+            'default_sort_column' => 'created_at',
+            'access_rule' => 'ticket_access',
+        ],
+
+        /*
+        |----------------------------------------------------------------------
+        | Email module + admin-only tables
+        |----------------------------------------------------------------------
+        */
+
+        'email_types' => [
+            'model' => \App\Models\EmailType::class,
+            'table' => 'email_types',
+            'allowed_columns' => ['id', 'name', 'created_at', 'updated_at'],
+            'searchable_columns' => ['name'],
+            'relationships' => [],
+            'sensitive_columns' => [],
+            'default_sort_column' => 'name',
+            'access_rule' => 'department_access',
+        ],
+
+        'email_scripts' => [
+            'model' => \App\Models\EmailScript::class,
+            'table' => 'email_scripts',
+            'allowed_columns' => ['id', 'email_type_id', 'department_id', 'script', 'extra_filter', 'created_at', 'updated_at', 'deleted_at'],
+            'searchable_columns' => ['script'],
+            'relationships' => [
+                'emailType' => ['table' => 'email_types', 'local_key' => 'email_type_id', 'foreign_key' => 'id'],
+                'department' => ['table' => 'departments', 'local_key' => 'department_id', 'foreign_key' => 'id'],
+            ],
+            'sensitive_columns' => [],
+            'default_sort_column' => 'created_at',
+            'access_rule' => 'department_access',
+        ],
+
+        'emails' => [
+            'model' => \App\Models\Email::class,
+            'table' => 'emails',
+            'allowed_columns' => ['id', 'project_id', 'department_id', 'customer_id', 'subject', 'body', 'user_id', 'received_date', 'is_view', 'created_at', 'updated_at', 'deleted_at'],
+            'searchable_columns' => ['subject', 'body'],
+            'relationships' => [
+                'project' => ['table' => 'projects', 'local_key' => 'project_id', 'foreign_key' => 'id'],
+                'department' => ['table' => 'departments', 'local_key' => 'department_id', 'foreign_key' => 'id'],
+                'customer' => ['table' => 'customers', 'local_key' => 'customer_id', 'foreign_key' => 'id'],
+            ],
+            'sensitive_columns' => [],
+            'default_sort_column' => 'received_date',
+            'access_rule' => 'admin_only',
+        ],
+
+        'email_attachments' => [
+            'model' => \App\Models\EmailAttachment::class,
+            'table' => 'email_attachments',
+            'allowed_columns' => ['id', 'email_id', 'file', 'created_at', 'updated_at'],
+            'searchable_columns' => ['file'],
+            'relationships' => [
+                'email' => ['table' => 'emails', 'local_key' => 'email_id', 'foreign_key' => 'id'],
+            ],
+            'sensitive_columns' => [],
+            'default_sort_column' => 'created_at',
+            'access_rule' => 'admin_only',
+        ],
+
+        'new_tickets' => [
+            'model' => \App\Models\NewTicket::class,
+            'table' => 'new_tickets',
+            'allowed_columns' => ['id', 'name', 'email', 'address', 'phone', 'message', 'status', 'created_at', 'updated_at'],
+            'searchable_columns' => ['name', 'email', 'phone', 'message', 'status'],
+            'relationships' => [],
+            'sensitive_columns' => [],
+            'default_sort_column' => 'created_at',
+            'access_rule' => 'admin_only',
+        ],
+
+        'saved_reports' => [
+            'model' => \App\Models\SavedReport::class,
+            'table' => 'saved_reports',
+            'allowed_columns' => ['id', 'name', 'report_type', 'user_id', 'created_at', 'updated_at'],
+            'searchable_columns' => ['name', 'report_type'],
+            'relationships' => [
+                'user' => ['table' => 'users', 'local_key' => 'user_id', 'foreign_key' => 'id'],
+            ],
+            'sensitive_columns' => [],
+            'default_sort_column' => 'created_at',
+            'access_rule' => 'admin_only',
+        ],
+
+        'deploy_logs' => [
+            'model' => \App\Models\DeployLog::class,
+            'table' => 'deploy_logs',
+            'allowed_columns' => ['id', 'action', 'run_by', 'status', 'created_at'],
+            'searchable_columns' => ['action', 'run_by', 'status'],
+            'relationships' => [],
+            'sensitive_columns' => [],
+            'default_sort_column' => 'created_at',
+            'access_rule' => 'admin_only',
+        ],
+
+        'model_has_permissions' => [
+            'model' => null,
+            'table' => 'model_has_permissions',
+            'allowed_columns' => ['permission_id', 'model_type', 'model_id'],
+            'searchable_columns' => ['model_type'],
+            'relationships' => [
+                'permission' => ['table' => 'permissions', 'local_key' => 'permission_id', 'foreign_key' => 'id'],
+                'user' => ['table' => 'users', 'local_key' => 'model_id', 'foreign_key' => 'id'],
+            ],
+            'sensitive_columns' => [],
+            'default_sort_column' => 'permission_id',
+            'access_rule' => 'admin_only',
+        ],
+
+        'role_has_permissions' => [
+            'model' => null,
+            'table' => 'role_has_permissions',
+            'allowed_columns' => ['permission_id', 'role_id'],
+            'searchable_columns' => [],
+            'relationships' => [
+                'permission' => ['table' => 'permissions', 'local_key' => 'permission_id', 'foreign_key' => 'id'],
+                'role' => ['table' => 'roles', 'local_key' => 'role_id', 'foreign_key' => 'id'],
+            ],
+            'sensitive_columns' => [],
+            'default_sort_column' => 'role_id',
+            'access_rule' => 'admin_only',
+        ],
     ],
 
     'manual_review' => [
@@ -1293,5 +1740,16 @@ return [
         'users',
         'roles',
         'permissions',
+        'inverter_type_rates',
+        'module_types',
+        'adders',
+        'customer_adders',
+        'emails',
+        'email_attachments',
+        'new_tickets',
+        'saved_reports',
+        'deploy_logs',
+        'model_has_permissions',
+        'role_has_permissions',
     ],
 ];
