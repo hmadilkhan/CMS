@@ -189,7 +189,7 @@ return [
         ['q' => 'show all inverter types', 'min_rows' => 1],
         ['q' => 'show all module types', 'min_rows' => 1],
         ['q' => 'list sub contractors', 'intent' => 'sub_contractor', 'note' => 'Routing check (table may be small/empty).'],
-        ['q' => 'show scheduled site surveys', 'intent' => 'site_survey', 'note' => 'Routing check — 0 "scheduled" rows is a valid answer.'],
+        ['q' => 'show scheduled site surveys', 'intent' => 'survey', 'note' => 'Routing check — 0 "scheduled" rows is a valid answer. Intent label is free-form (site_surveys_scheduled_list / survey_scheduled_list), so match the stable "survey" substring.'],
 
         // =====================================================================
         // NAMED PROJECT DETAIL  (deterministic handler)

@@ -22,12 +22,19 @@ use Throwable;
  */
 class AiEvalCommand extends Command
 {
-    protected $signature = 'ai:eval {--user= : Run as this user id (defaults to first admin)} {--keep : Keep the chats created during evaluation} {--show : Print the first few answer rows for each case}';
+    protected $signature = 'ai:eval {--user= : Run as this user id (defaults to first admin)} {--keep : Keep the chats created during evaluation} {--show : Print the first few answer rows for each case} {--profile : Print per-case latency / OpenAI round-trip profiling}';
 
     protected $description = 'Run the AI chat evaluation suite and report routing/quality regressions';
 
     public function handle(AiChatService $chat): int
     {
+        // Turn on profiling for this benchmark run (the shared AiProfiler instance
+        // is already resolved, so flip it directly as well as via config).
+        if ($this->option('profile')) {
+            config(['ai.profiling.enabled' => true]);
+            app(\App\Services\AiProfiler::class)->setEnabled(true);
+        }
+
         $user = $this->resolveUser();
 
         if (! $user) {
@@ -70,6 +77,10 @@ class AiEvalCommand extends Command
                 foreach (array_slice($rows, 0, 6) as $row) {
                     $this->line('       <fg=gray>' . Str::limit(json_encode($row), 150) . '</>');
                 }
+            }
+
+            if ($this->option('profile')) {
+                $this->printProfile();
             }
 
             if ($cleanup && ! $this->option('keep')) {
@@ -249,6 +260,31 @@ class AiEvalCommand extends Command
         $value = $first['value'] ?? $first['aggregate'] ?? $first['count'] ?? null;
 
         return is_numeric($value) ? (int) $value : null;
+    }
+
+    /**
+     * Print the profiling row captured for the most recent question of a case.
+     */
+    private function printProfile(): void
+    {
+        $log = \App\Models\AiQueryLog::query()->latest('id')->first();
+
+        if (! $log || $log->openai_calls === null) {
+            return;
+        }
+
+        $php = (int) ($log->stage_timings['php_ms'] ?? max(0, (int) $log->duration_ms - (int) $log->openai_ms - (int) $log->db_ms));
+
+        $this->line(sprintf(
+            '       <fg=gray>engine=%s  calls=%d  total=%dms  (openai=%dms db=%dms php=%dms)  fallbacks=%d</>',
+            $log->engine ?? '?',
+            (int) $log->openai_calls,
+            (int) $log->duration_ms,
+            (int) $log->openai_ms,
+            (int) $log->db_ms,
+            $php,
+            (int) $log->fallbacks,
+        ));
     }
 
     private function resolveUser(): ?User

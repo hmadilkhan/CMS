@@ -8,6 +8,10 @@ use RuntimeException;
 
 class OpenAiService
 {
+    public function __construct(private readonly AiProfiler $profiler)
+    {
+    }
+
     public function createResponse(string $message, ?string $previousResponseId = null, array $context = []): array
     {
         $apiKey = config('services.openai.api_key');
@@ -24,25 +28,32 @@ class OpenAiService
             'max_output_tokens' => (int) config('services.openai.max_output_tokens', 1200),
         ], fn ($value) => ! is_null($value));
 
+        $startedAt = microtime(true);
         $response = Http::withToken($apiKey)
             ->acceptJson()
             ->asJson()
             ->timeout((int) config('services.openai.timeout', 60))
             ->post('https://api.openai.com/v1/responses', $payload);
+        $durationMs = (int) round((microtime(true) - $startedAt) * 1000);
 
         if ($response->failed()) {
             throw new RuntimeException($response->json('error.message') ?? 'OpenAI request failed.');
         }
 
         $data = $response->json();
+        $usage = Arr::get($data, 'usage', []);
+
+        $this->profiler->recordOpenAi($durationMs, $usage, 1);
 
         return [
             'id' => Arr::get($data, 'id'),
             'model' => Arr::get($data, 'model', $payload['model']),
             'text' => $this->extractText($data),
-            'usage' => Arr::get($data, 'usage', []),
+            'usage' => $usage,
             'payload' => $payload,
             'raw' => $data,
+            'duration_ms' => $durationMs,
+            'attempts' => 1,
         ];
     }
 
@@ -54,10 +65,21 @@ class OpenAiService
             throw new RuntimeException('OpenAI API key is not configured.');
         }
 
+        $inputString = is_array($input) ? json_encode($input, JSON_PRETTY_PRINT) : $input;
+
+        // The Responses API rejects `text.format` of type `json_object` unless the
+        // word "json" appears in the INPUT (the `instructions` field does not
+        // count). Callers that pass a `json_schema` are exempt. Guarantee it so the
+        // bare json_object path (e.g. the answer formatter) does not 400 on every
+        // call and silently fall back to canned text.
+        if ($jsonSchema === null && stripos($inputString, 'json') === false) {
+            $inputString = "Respond with a single valid JSON object.\n\n" . $inputString;
+        }
+
         $payload = [
             'model' => $model ?: config('services.openai.model', 'gpt-4.1-mini'),
             'instructions' => $instructions,
-            'input' => is_array($input) ? json_encode($input, JSON_PRETTY_PRINT) : $input,
+            'input' => $inputString,
             'text' => [
                 'format' => $jsonSchema ?? [
                     'type' => 'json_object',
@@ -69,6 +91,8 @@ class OpenAiService
         $lastData = null;
         $lastText = null;
         $fallbackModel = config('services.openai.model', 'gpt-4.1-mini');
+        $startedAt = microtime(true);
+        $httpCalls = 0;
 
         for ($attempt = 1; $attempt <= 2; $attempt++) {
             $response = Http::withToken($apiKey)
@@ -76,6 +100,7 @@ class OpenAiService
                 ->asJson()
                 ->timeout((int) config('services.openai.timeout', 60))
                 ->post('https://api.openai.com/v1/responses', $payload);
+            $httpCalls++;
 
             if ($response->failed()) {
                 // Resilience: if a stronger/custom model is unavailable for this
@@ -94,14 +119,21 @@ class OpenAiService
             $decoded = json_decode($lastText, true);
 
             if (is_array($decoded)) {
+                $usage = Arr::get($lastData, 'usage', []);
+                $durationMs = (int) round((microtime(true) - $startedAt) * 1000);
+
+                $this->profiler->recordOpenAi($durationMs, $usage, $httpCalls);
+
                 return [
                     'id' => Arr::get($lastData, 'id'),
                     'model' => Arr::get($lastData, 'model', $payload['model']),
                     'json' => $decoded,
                     'text' => $lastText,
-                    'usage' => Arr::get($lastData, 'usage', []),
+                    'usage' => $usage,
                     'payload' => $payload,
                     'raw' => $lastData,
+                    'duration_ms' => $durationMs,
+                    'attempts' => $httpCalls,
                 ];
             }
 

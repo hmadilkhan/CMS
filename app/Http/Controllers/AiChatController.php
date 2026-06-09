@@ -7,11 +7,13 @@ use App\Models\AiChatMessage;
 use App\Models\AiQueryExample;
 use App\Models\AiQueryFeedback;
 use App\Services\AiChatService;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 use Illuminate\View\View;
+use Symfony\Component\HttpFoundation\Response;
 
 class AiChatController extends Controller
 {
@@ -156,6 +158,52 @@ class AiChatController extends Controller
         }
 
         return response()->json(['success' => true]);
+    }
+
+    /**
+     * Download an assistant answer's table as CSV or PDF. Reads the already-stored,
+     * already-scoped answer rows from the message metadata — no query is re-run, so
+     * the export can never expose more than what the user already saw.
+     */
+    public function export(Request $request, AiChatMessage $message, string $format): Response
+    {
+        $message->load('chat');
+
+        abort_unless($message->role === 'assistant', 404);
+        abort_unless($message->chat?->user_id === $request->user()->id, 403);
+        abort_unless(in_array($format, ['csv', 'pdf'], true), 404);
+
+        $answer = is_array($message->metadata['answer'] ?? null) ? $message->metadata['answer'] : [];
+        $columns = array_values($answer['columns'] ?? []);
+        $rows = array_values($answer['rows'] ?? []);
+
+        abort_if($columns === [] || $rows === [], 404, 'This answer has no table to export.');
+
+        $headers = array_map(fn ($c) => ucwords(str_replace('_', ' ', (string) $c)), $columns);
+        $filename = 'solenassist-'.$message->id.'-'.now()->format('Ymd_His');
+
+        if ($format === 'pdf') {
+            return Pdf::loadView('ai-chat.export', [
+                'title' => Str::limit(trim((string) $message->content), 140, ''),
+                'headers' => $headers,
+                'columns' => $columns,
+                'rows' => $rows,
+                'generatedAt' => now()->format('M d, Y H:i'),
+            ])->download($filename.'.pdf');
+        }
+
+        return response()->streamDownload(function () use ($headers, $columns, $rows) {
+            $out = fopen('php://output', 'w');
+            fputcsv($out, $headers);
+
+            foreach ($rows as $row) {
+                fputcsv($out, array_map(fn ($c) => (string) ($row[$c] ?? ''), $columns));
+            }
+
+            fclose($out);
+        }, $filename.'.csv', [
+            'Content-Type' => 'text/csv; charset=UTF-8',
+        ]);
     }
 
     private function backUrl(Request $request): string

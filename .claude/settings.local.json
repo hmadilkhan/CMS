@@ -2,7 +2,12 @@
   "permissions": {
     "allow": [
       "PowerShell(wsl -e bash -lc \"cd /home/hmadilkhan/CMS && php _act_probe.php; rm -f _act_probe.php\")",
-      "PowerShell(wsl -e bash -lc \"cd /home/hmadilkhan/CMS && php -l app/Services/OpenAiService.php\")"
+      "PowerShell(wsl -e bash -lc \"cd /home/hmadilkhan/CMS && php -l app/Services/OpenAiService.php\")",
+      "Bash(sed -n '1,60p' config/ai_schema.php)",
+      "Bash(sed -n '1,60p' app/Models/AiChat.php)",
+      "Bash(php artisan *)",
+      "Bash(php -l app/Services/OpenAiService.php)",
+      "Bash(./vendor/bin/pint app/Services/OpenAiService.php)"
     ]
   }
 }

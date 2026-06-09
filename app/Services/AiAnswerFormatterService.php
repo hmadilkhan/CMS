@@ -6,34 +6,128 @@ use Throwable;
 
 class AiAnswerFormatterService
 {
-    public function __construct(private readonly OpenAiService $openAiService)
-    {
+    public function __construct(
+        private readonly OpenAiService $openAiService,
+        private readonly AiProfiler $profiler
+    ) {
     }
 
     public function format(string $question, array $plan, array $execution): array
     {
+        $this->profiler->stage('formatter');
+
         if (! ($execution['success'] ?? false)) {
             return $this->safeAnswer('text', $execution['error_message'] ?? 'I could not safely run this CRM query.');
         }
 
-        try {
-            $response = $this->openAiService->createJsonResponse(
-                $this->instructions(),
-                [
-                    'question' => $question,
-                    'query_plan' => $plan,
-                    'rows' => $execution['rows'] ?? [],
-                    'row_count' => $execution['row_count'] ?? 0,
-                    'required_format' => $this->emptyAnswer($plan['answer_type'] ?? 'text'),
-                    'examples' => $this->examples(),
-                ],
-                1600
-            );
+        // 1. Build the answer deterministically (instant, never wrong). Rows,
+        //    columns and cards always come straight from the executed query — this
+        //    is the same logic that produced correct results while the LLM
+        //    formatter was offline, and it costs no OpenAI call.
+        $answer = $this->fallbackAnswer($plan, $execution, $question);
 
-            return $this->normalizeAnswer($response['json'], $plan, $execution, $question);
-        } catch (Throwable) {
-            return $this->fallbackAnswer($plan, $execution, $question);
+        // 2. Reports already carry a rich deterministic summary, and empty results
+        //    need no polish → return immediately, no OpenAI round-trip.
+        if ($answer['rows'] === [] || $this->hasDeterministicSummary($plan)) {
+            return $answer;
         }
+
+        // 3. Otherwise spend ONE cheap call on a friendlier one-line message. Only
+        //    the row count + a few sample rows are sent (never the full result
+        //    set), so the call stays fast regardless of how many rows came back.
+        try {
+            $generated = $this->generateMessage($question, $answer);
+
+            if (($generated['message'] ?? '') !== '') {
+                $answer['message'] = $generated['message'];
+            }
+
+            if (! empty($generated['suggestions'])) {
+                $answer['suggestions'] = $generated['suggestions'];
+            }
+        } catch (Throwable) {
+            // Keep the deterministic message on any failure — the answer (rows,
+            // columns, cards) is already correct, only the wording is affected.
+        }
+
+        return $answer;
+    }
+
+    /**
+     * Intents whose deterministic summary (totals, highest-profit project, …) is
+     * already richer than a one-line LLM message would be, so the OpenAI call is
+     * skipped entirely for them.
+     */
+    private function hasDeterministicSummary(array $plan): bool
+    {
+        return in_array($plan['intent'] ?? null, [
+            'profitability_report', 'profitability_report_by_date_range',
+            'forecast_report', 'forecast_report_by_date_range',
+            'override_report', 'override_report_by_date_range',
+            'transaction_report', 'transaction_report_by_date_range',
+        ], true);
+    }
+
+    /**
+     * Ask the model for ONE short friendly sentence describing the result AND 2-3
+     * natural follow-up questions — both in a single call (no extra round-trip).
+     * Only a small sample of rows is sent (the full table is rendered separately),
+     * and a strict json_schema guarantees a tiny, valid response, so this stays
+     * fast and cheap no matter how large the result set is.
+     *
+     * @return array{message:string,suggestions:array<int,string>}
+     */
+    private function generateMessage(string $question, array $answer): array
+    {
+        $rows = $answer['rows'] ?? [];
+
+        $response = $this->openAiService->createJsonResponse(
+            'You summarise a CRM query result for a chat UI. Return JSON {"message": "...", "suggestions": ["...", "..."]}. '
+            .'"message" is ONE short, friendly sentence (under 25 words) using the provided count and sample exactly — never '
+            .'invent numbers or rows, and do not list every row (a table is shown separately). '
+            .'"suggestions" is 2-3 SHORT, standalone follow-up questions the user would naturally ask next about this result '
+            .'(a useful filter, sort, breakdown, count, or drill-down). Each must make sense on its own and use '
+            .'business-meaningful attributes (status, department, location, dates, amounts, counts, top/bottom). '
+            .'Do NOT reference technical or internal columns (ids, tokens, image, link, length, slug, raw flags). '
+            .'If the user wrote in Roman-Urdu, reply in the same style.',
+            [
+                'question' => $question,
+                'answer_type' => $answer['type'] ?? 'table',
+                'row_count' => count($rows),
+                'columns' => $answer['columns'] ?? [],
+                'sample_rows' => array_slice($rows, 0, 5),
+            ],
+            300,
+            [
+                'type' => 'json_schema',
+                'name' => 'answer_message',
+                'strict' => true,
+                'schema' => [
+                    'type' => 'object',
+                    'additionalProperties' => false,
+                    'required' => ['message', 'suggestions'],
+                    'properties' => [
+                        'message' => ['type' => 'string'],
+                        'suggestions' => [
+                            'type' => 'array',
+                            'items' => ['type' => 'string'],
+                        ],
+                    ],
+                ],
+            ]
+        );
+
+        $json = is_array($response['json'] ?? null) ? $response['json'] : [];
+
+        $suggestions = array_values(array_filter(
+            array_map(fn ($s) => trim((string) $s), (array) ($json['suggestions'] ?? [])),
+            fn ($s) => $s !== ''
+        ));
+
+        return [
+            'message' => trim((string) ($json['message'] ?? '')),
+            'suggestions' => array_slice($suggestions, 0, 3),
+        ];
     }
 
     /**
@@ -61,54 +155,6 @@ class AiAnswerFormatterService
         ));
     }
 
-    private function instructions(): string
-    {
-        return <<<'PROMPT'
-You format CRM query results for a professional CRM chat UI.
-Return JSON only. Do not include SQL. Do not invent rows or totals.
-Use the result rows exactly as provided.
-Keep the message concise and useful for CRM users.
-PROMPT;
-    }
-
-    private function normalizeAnswer(array $answer, array $plan, array $execution, string $question = ''): array
-    {
-        $type = in_array($answer['type'] ?? null, ['text', 'table', 'card', 'count'], true)
-            ? $answer['type']
-            : ($plan['answer_type'] ?? 'text');
-
-        $executionRows = array_values($execution['rows'] ?? []);
-        $rows = $type === 'card'
-            ? array_values($answer['rows'] ?? $executionRows)
-            : $executionRows;
-        $rows = $this->appendTotalRowIfNeeded($plan, $rows);
-        $message = $this->summaryMessage($plan, $rows)
-            ?? (string) ($answer['message'] ?? 'Here are the results.');
-        $rows = $this->formatRowsForDisplay($rows);
-        $cards = array_values($answer['cards'] ?? []);
-
-        if ($type === 'count' && empty($cards)) {
-            $cards = [
-                [
-                    'label' => 'Count',
-                    'value' => $rows[0]['value'] ?? $rows[0]['aggregate'] ?? 0,
-                ],
-            ];
-        }
-
-        $columns = $type === 'card'
-            ? array_values($answer['columns'] ?? $this->columnsFromRows($executionRows))
-            : $this->columnsFromRows($executionRows);
-
-        return [
-            'type' => $type,
-            'message' => $message,
-            'columns' => $this->hideTimestampColumns($columns, $question),
-            'rows' => $rows,
-            'cards' => $cards,
-        ];
-    }
-
     private function fallbackAnswer(array $plan, array $execution, string $question = ''): array
     {
         $rows = $execution['rows'] ?? [];
@@ -116,7 +162,7 @@ PROMPT;
         $rows = $this->formatRowsForDisplay($rows);
 
         if (($plan['answer_type'] ?? null) === 'count') {
-            $count = $rows[0]['aggregate'] ?? 0;
+            $count = $this->extractCountValue($rows[0] ?? []);
             $label = ($plan['intent'] ?? null) === 'project_acceptance_count'
                 ? 'Projects'
                 : 'Count';
@@ -174,20 +220,40 @@ PROMPT;
         ];
     }
 
-    private function emptyAnswer(string $type): array
-    {
-        return [
-            'type' => $type,
-            'message' => '',
-            'columns' => [],
-            'rows' => [],
-            'cards' => [],
-        ];
-    }
-
     private function columnsFromRows(array $rows): array
     {
         return isset($rows[0]) && is_array($rows[0]) ? array_keys($rows[0]) : [];
+    }
+
+    /**
+     * Pull the numeric count out of a count query's single row, regardless of how
+     * the column was aliased. The structured builder aliases it `aggregate`, but
+     * Text-to-SQL picks arbitrary names (project_count, total, count, …); reading a
+     * single fixed key returned 0 and wrongly reported "no records" for a non-zero
+     * count.
+     */
+    private function extractCountValue(array $row): int|float
+    {
+        foreach (['aggregate', 'value', 'count', 'total'] as $key) {
+            if (isset($row[$key]) && is_numeric($row[$key])) {
+                return $row[$key] + 0;
+            }
+        }
+
+        foreach ($row as $key => $val) {
+            if (is_numeric($val) && preg_match('/count|total|aggregate|qty|number|sum/i', (string) $key)) {
+                return $val + 0;
+            }
+        }
+
+        // A COUNT query returns a single numeric column — fall back to the first.
+        foreach ($row as $val) {
+            if (is_numeric($val)) {
+                return $val + 0;
+            }
+        }
+
+        return 0;
     }
 
     private function appendTotalRowIfNeeded(array $plan, array $rows): array
@@ -546,70 +612,6 @@ PROMPT;
             })
             ->values()
             ->all();
-    }
-
-    private function examples(): array
-    {
-        return [
-            'assigned_projects_count' => [
-                'type' => 'count',
-                'message' => 'You have 12 assigned projects.',
-                'columns' => ['label', 'value'],
-                'rows' => [['label' => 'Assigned Projects', 'value' => 12]],
-                'cards' => [['label' => 'Assigned Projects', 'value' => 12]],
-            ],
-            'projects_by_status' => [
-                'type' => 'table',
-                'message' => 'Here is your project count by status.',
-                'columns' => ['status', 'aggregate'],
-                'rows' => [['status' => 'In-Progress', 'aggregate' => 5]],
-                'cards' => [],
-            ],
-            'projects_by_department' => [
-                'type' => 'table',
-                'message' => 'Here is the project count by department and subdepartment.',
-                'columns' => ['department_name', 'sub_department_name', 'aggregate'],
-                'rows' => [['department_name' => 'Permitting', 'sub_department_name' => 'Review', 'aggregate' => 12]],
-                'cards' => [],
-            ],
-            'finance_summary' => [
-                'type' => 'card',
-                'message' => 'Here is the project financing summary.',
-                'columns' => [],
-                'rows' => [],
-                'cards' => [
-                    ['label' => 'Financing Status', 'value' => 'Approved'],
-                    ['label' => 'Contract Amount', 'value' => '$25,000'],
-                ],
-            ],
-            'ticket_creator_status_summary' => [
-                'type' => 'table',
-                'message' => 'Here is the ticket status summary by user.',
-                'columns' => ['user_name', 'pending_count', 'resolved_count', 'total_tickets'],
-                'rows' => [
-                    ['user_name' => 'Jane Doe', 'pending_count' => 3, 'resolved_count' => 7, 'total_tickets' => 10],
-                ],
-                'cards' => [],
-            ],
-            'profitability_report' => [
-                'type' => 'table',
-                'message' => 'Here is the profitability report.',
-                'columns' => ['project_name', 'total_revenue', 'total_expense', 'gross_profit', 'margin_percent'],
-                'rows' => [
-                    ['project_name' => 'Project A', 'total_revenue' => 50000, 'total_expense' => 35000, 'gross_profit' => 15000, 'margin_percent' => 30],
-                ],
-                'cards' => [],
-            ],
-            'customer_revenue' => [
-                'type' => 'table',
-                'message' => 'Here is customer-wise revenue.',
-                'columns' => ['first_name', 'last_name', 'revenue_amount'],
-                'rows' => [
-                    ['first_name' => 'Jane', 'last_name' => 'Doe', 'revenue_amount' => 50000],
-                ],
-                'cards' => [],
-            ],
-        ];
     }
 
 }

@@ -24,11 +24,19 @@ class AiQueryLog extends Model
         'request_payload',
         'response_payload',
         'error_message',
+        'openai_calls',
+        'openai_ms',
+        'db_ms',
+        'engine',
+        'fallbacks',
+        'stage_timings',
+        'question_hash',
     ];
 
     protected $casts = [
         'request_payload' => 'array',
         'response_payload' => 'array',
+        'stage_timings' => 'array',
     ];
 
     public function chat(): BelongsTo

@@ -14,7 +14,10 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        //
+        // One shared AI profiler per request / console command, so OpenAiService,
+        // AiQueryExecutorService and the chat orchestrator all record into the
+        // same collector. No-op overhead when ai.profiling.enabled is false.
+        $this->app->scoped(\App\Services\AiProfiler::class);
     }
 
     /**

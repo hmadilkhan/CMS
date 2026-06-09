@@ -9,8 +9,14 @@ use Throwable;
 
 class AiQueryExecutorService
 {
+    public function __construct(private readonly AiProfiler $profiler)
+    {
+    }
+
     public function execute(array $sqlPreview, ?int $userId = null): array
     {
+        $this->profiler->stage('db_execute');
+
         $cacheKey = $this->cacheKey($sqlPreview, $userId);
         $ttl = (int) config('ai.security.query_cache_ttl', 300);
 
@@ -39,7 +45,9 @@ class AiQueryExecutorService
                 }
             }
 
+            $dbStartedAt = microtime(true);
             $rows = $connection->select($sqlPreview['sql'], $sqlPreview['bindings'] ?? []);
+            $this->profiler->recordDb((int) round((microtime(true) - $dbStartedAt) * 1000));
 
             $result = [
                 'success' => true,

@@ -140,6 +140,10 @@
                                             <span class="solen-gradient-text text-xs font-bold uppercase tracking-wider">SolenAssist</span>
                                         @endif
                                         <div class="flex gap-2">
+                                            @if (is_array($answer) && ($answer['type'] ?? '') === 'table' && ! empty($answer['rows']))
+                                                <a href="{{ route('ai-chat.export', ['message' => $message, 'format' => 'csv']) }}" class="rounded-lg border border-solen-border px-2.5 py-1 text-xs font-semibold text-solen-muted transition hover:border-solen hover:text-solen" title="Download CSV">CSV</a>
+                                                <a href="{{ route('ai-chat.export', ['message' => $message, 'format' => 'pdf']) }}" class="rounded-lg border border-solen-border px-2.5 py-1 text-xs font-semibold text-solen-muted transition hover:border-solen hover:text-solen" title="Download PDF">PDF</a>
+                                            @endif
                                             <button type="button" class="copy-answer rounded-lg border border-solen-border px-2.5 py-1 text-xs font-semibold text-solen-muted transition hover:border-solen hover:text-solen" data-copy="{{ e($message->content) }}">Copy</button>
                                             @if (($message->metadata['retryable'] ?? false) && $activeChat)
                                                 <button type="button" class="retry-response rounded-lg border border-solen/40 bg-solen/5 px-2.5 py-1 text-xs font-semibold text-solen-deep transition hover:bg-solen/10" data-retry-url="{{ route('ai-chat.retry', $activeChat) }}">Retry</button>
@@ -186,6 +190,16 @@
                                                 @endforeach
                                             </tbody>
                                         </table>
+                                    </div>
+                                @endif
+                                @if ($answer && ($answer['type'] ?? '') === 'table' && count($answer['rows'] ?? []) >= 2 && count($answer['rows'] ?? []) <= 30)
+                                    <div class="ai-chart-mount mt-3"><script type="application/json">@json(['columns' => $answer['columns'] ?? [], 'rows' => $answer['rows'] ?? []], JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT)</script></div>
+                                @endif
+                                @if ($answer && ! empty($answer['suggestions']))
+                                    <div class="mt-3 flex flex-wrap gap-2">
+                                        @foreach ($answer['suggestions'] as $suggestion)
+                                            <button type="button" class="followup-chip rounded-full border border-solen-border bg-white px-3 py-1.5 text-xs font-semibold text-solen-muted transition hover:border-solen hover:bg-[#fff7ef] hover:text-solen" data-question="{{ $suggestion }}">{{ $suggestion }}</button>
+                                        @endforeach
                                     </div>
                                 @endif
                                 @if ($message->role === 'assistant')
@@ -305,7 +319,7 @@
             typing.classList.add('hidden');
         }
 
-        function actionBar(content, metadata = {}) {
+        function actionBar(content, metadata = {}, messageId = null, answer = null) {
             const bar = document.createElement('div');
             bar.className = 'mb-2 flex items-center justify-between gap-3 border-b border-solen-border pb-2';
 
@@ -321,6 +335,18 @@
 
             const actions = document.createElement('div');
             actions.className = 'flex gap-2';
+
+            // CSV / PDF export when the answer carries a table.
+            if (messageId && answer && answer.type === 'table' && Array.isArray(answer.rows) && answer.rows.length) {
+                ['csv', 'pdf'].forEach((fmt) => {
+                    const link = document.createElement('a');
+                    link.href = `{{ url('/ai-chat/messages') }}/${messageId}/export/${fmt}`;
+                    link.className = 'rounded-lg border border-solen-border px-2.5 py-1 text-xs font-semibold text-solen-muted transition hover:border-solen hover:text-solen';
+                    link.textContent = fmt.toUpperCase();
+                    link.title = `Download ${fmt.toUpperCase()}`;
+                    actions.appendChild(link);
+                });
+            }
 
             const copy = document.createElement('button');
             copy.type = 'button';
@@ -428,6 +454,98 @@
             return panel;
         }
 
+        function toChartNumber(value) {
+            if (value === null || value === undefined || value === '') return null;
+            const n = parseFloat(String(value).replace(/[$,%\s]/g, ''));
+            return Number.isNaN(n) ? null : n;
+        }
+
+        // Decide whether a table is chartable: one numeric column (the measure) and
+        // one label column, 2–30 rows. A "Total" summary row is excluded so it does
+        // not distort the bars.
+        function detectChart(columns, rows) {
+            if (!Array.isArray(columns) || !Array.isArray(rows) || !columns.length) return null;
+            const numeric = columns.filter((c) => rows.every((r) => toChartNumber(r[c]) !== null));
+            const labels = columns.filter((c) => !numeric.includes(c));
+            if (!numeric.length || !labels.length) return null;
+            const valueCol = numeric[0];
+            const labelCol = labels[0];
+            const clean = rows.filter((r) => String(r[labelCol] ?? '').trim().toLowerCase() !== 'total');
+            if (clean.length < 2 || clean.length > 30) return null;
+            return {
+                valueCol,
+                categories: clean.map((r) => String(r[labelCol] ?? '')),
+                values: clean.map((r) => toChartNumber(r[valueCol]) ?? 0),
+            };
+        }
+
+        // Render any not-yet-rendered chart mounts within root (used for both the
+        // server-rendered messages on load and freshly appended ones). Fully
+        // defensive: a non-chartable or malformed mount is silently removed.
+        function initCharts(root) {
+            if (typeof ApexCharts === 'undefined') return;
+            (root || document).querySelectorAll('.ai-chart-mount:not([data-rendered])').forEach((mount) => {
+                mount.setAttribute('data-rendered', '1');
+                const dataEl = mount.querySelector('script[type="application/json"]');
+                let payload;
+                try {
+                    payload = JSON.parse(dataEl ? dataEl.textContent : '{}');
+                } catch (e) {
+                    mount.remove();
+                    return;
+                }
+                const d = detectChart(payload.columns || [], payload.rows || []);
+                if (!d) {
+                    mount.remove();
+                    return;
+                }
+                try {
+                    if (dataEl) dataEl.remove();
+                    mount.classList.add('rounded-xl', 'border', 'border-solen-border', 'bg-white', 'p-2');
+                    new ApexCharts(mount, {
+                        chart: { type: 'bar', height: 240, toolbar: { show: false }, fontFamily: 'inherit' },
+                        series: [{ name: d.valueCol.replaceAll('_', ' '), data: d.values }],
+                        xaxis: { categories: d.categories, labels: { rotate: -45, trim: true, hideOverlappingLabels: true, style: { fontSize: '10px' } } },
+                        colors: ['#e6962e'],
+                        plotOptions: { bar: { borderRadius: 4, columnWidth: '55%' } },
+                        dataLabels: { enabled: d.values.length <= 12 },
+                        grid: { borderColor: '#f1e7d8' },
+                        tooltip: { theme: 'light' },
+                    }).render();
+                } catch (e) {
+                    mount.remove();
+                }
+            });
+        }
+
+        function chartMount(answer) {
+            if (!answer || answer.type !== 'table') return null;
+            const rows = answer.rows || [];
+            if (rows.length < 2 || rows.length > 30) return null;
+            const mount = document.createElement('div');
+            mount.className = 'ai-chart-mount mt-3';
+            const data = document.createElement('script');
+            data.type = 'application/json';
+            data.textContent = JSON.stringify({ columns: answer.columns || [], rows });
+            mount.appendChild(data);
+            return mount;
+        }
+
+        function followupChips(answer) {
+            if (!answer || !Array.isArray(answer.suggestions) || !answer.suggestions.length) return null;
+            const wrap = document.createElement('div');
+            wrap.className = 'mt-3 flex flex-wrap gap-2';
+            answer.suggestions.forEach((question) => {
+                const chip = document.createElement('button');
+                chip.type = 'button';
+                chip.className = 'followup-chip rounded-full border border-solen-border bg-white px-3 py-1.5 text-xs font-semibold text-solen-muted transition hover:border-solen hover:bg-[#fff7ef] hover:text-solen';
+                chip.dataset.question = question;
+                chip.textContent = question;
+                wrap.appendChild(chip);
+            });
+            return wrap;
+        }
+
         function appendMessage(role, content, answer = null, metadata = {}, messageId = null) {
             const wrapper = document.createElement('div');
             wrapper.className = `solen-rise mx-auto flex max-w-4xl ${role === 'user' ? 'justify-end' : 'justify-start'}`;
@@ -449,7 +567,7 @@
             text.textContent = content;
 
             if (role === 'assistant') {
-                bubble.appendChild(actionBar(content, metadata));
+                bubble.appendChild(actionBar(content, metadata, messageId, answer));
             }
 
             bubble.appendChild(text);
@@ -457,12 +575,17 @@
             if (answerElement) {
                 bubble.appendChild(answerElement);
             }
+            const chart = chartMount(answer);
+            if (chart) bubble.appendChild(chart);
+            const chips = followupChips(answer);
+            if (chips) bubble.appendChild(chips);
             if (role === 'assistant') {
                 const panel = feedbackPanel(messageId);
                 if (panel) bubble.appendChild(panel);
             }
             wrapper.appendChild(bubble);
             messages.appendChild(wrapper);
+            initCharts(wrapper);
             scrollMessages(role === 'user' ? 260 : 120);
         }
 
@@ -494,6 +617,14 @@
         });
 
         document.addEventListener('click', async (event) => {
+            const followupChip = event.target.closest('.followup-chip');
+            if (followupChip) {
+                input.value = followupChip.dataset.question || '';
+                input.dispatchEvent(new Event('input'));
+                form.requestSubmit();
+                return;
+            }
+
             const copyButton = event.target.closest('.copy-answer');
             if (copyButton) {
                 await navigator.clipboard.writeText(copyButton.dataset.copy || '');
@@ -668,5 +799,6 @@
         }
 
         scrollMessages();
+        initCharts(document);
     </script>
 @endsection

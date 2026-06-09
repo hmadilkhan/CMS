@@ -134,6 +134,7 @@
 <body class="min-h-screen overflow-hidden text-solen-ink antialiased">
     @yield('content')
 
+    <script src="{{ asset('assets/bundles/apexcharts.bundle.js') }}"></script>
     @yield('scripts')
 </body>
 

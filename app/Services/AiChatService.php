@@ -26,6 +26,7 @@ class AiChatService
         private readonly AiTextToSqlService $aiTextToSqlService,
         private readonly AiPermissionService $aiPermissionService,
         private readonly AiFieldDictionaryService $aiFieldDictionaryService,
+        private readonly AiProfiler $profiler,
     ) {
     }
 
@@ -170,6 +171,8 @@ class AiChatService
      */
     private function routeSingle(AiChat $chat, User $user, string $message): AiChat
     {
+        $this->profiler->reset();
+
         $startedAt = microtime(true);
         $log       = $this->createQueryLog($chat, $user, $message);
 
@@ -246,11 +249,11 @@ class AiChatService
             return $this->handleQueryPlan($chat, $user, $message, $log, $startedAt);
 
         } catch (Throwable $exception) {
-            $log->update([
+            $log->update(array_merge([
                 'status'       => 'failed',
                 'duration_ms'  => (int) ((microtime(true) - $startedAt) * 1000),
                 'error_message' => $exception->getMessage(),
-            ]);
+            ], $this->profileColumns($startedAt, 'error')));
 
             return $this->storeFailureMessage($chat, $exception);
         }
@@ -285,6 +288,7 @@ class AiChatService
     private function decompose(string $message): array
     {
         try {
+            $this->profiler->stage('decompose');
             $response = $this->openAiService->createJsonResponse(
                 'You split a user\'s CRM chat message into the distinct, independent questions it contains. '
                 . 'Return JSON {"questions": [...]}. Each question MUST be self-contained: carry over shared '
@@ -341,6 +345,7 @@ class AiChatService
             $enrichedMessage = $fieldContext . "\n\nUser question: " . $enrichedMessage;
         }
 
+        $this->profiler->stage('general_chat');
         $response = $this->openAiService->createResponse(
             $enrichedMessage,
             $chat->openai_response_id,
@@ -358,7 +363,7 @@ class AiChatService
             ]);
 
             $usage = $response['usage'];
-            $log->update([
+            $log->update(array_merge([
                 'status'            => 'success',
                 'response_id'       => $response['id'],
                 'model'             => $response['model'],
@@ -368,7 +373,7 @@ class AiChatService
                 'duration_ms'       => (int) ((microtime(true) - $startedAt) * 1000),
                 'request_payload'   => $response['payload'],
                 'response_payload'  => $response['raw'],
-            ]);
+            ], $this->profileColumns($startedAt, 'general_chat')));
 
             $chat->update([
                 'openai_response_id' => $response['id'],
@@ -387,11 +392,39 @@ class AiChatService
             'provider' => 'openai',
             'status' => 'pending',
             'model' => config('services.openai.model', 'gpt-4.1-mini'),
+            'question_hash' => $this->questionHash($message),
             'request_payload' => [
                 'message' => $message,
                 'previous_response_id' => $chat->openai_response_id,
             ],
         ]);
+    }
+
+    /**
+     * Stable hash of a normalized question (lowercased, whitespace-collapsed),
+     * used by ai:profile-report to estimate the repeat-question rate (caching
+     * potential). Always set — it is cheap and does not depend on profiling.
+     */
+    private function questionHash(string $message): string
+    {
+        $normalized = trim(preg_replace('/\s+/u', ' ', mb_strtolower($message)));
+
+        return md5($normalized);
+    }
+
+    /**
+     * Profiling column values for an ai_query_logs row, or [] when profiling is
+     * disabled. Merged into the existing $log->update() payloads so persistence
+     * stays in one transaction and adds nothing when the flag is off.
+     *
+     * @return array<string,mixed>
+     */
+    private function profileColumns(float $startedAt, string $engine): array
+    {
+        return $this->profiler->toColumns(
+            (int) ((microtime(true) - $startedAt) * 1000),
+            $engine
+        );
     }
 
     private function userContext(User $user): array
@@ -474,6 +507,10 @@ class AiChatService
                     // validators are not re-run here.
                     $planValidation = ['approved' => true, 'reason' => null, 'status' => 'text_to_sql'];
                     $validation     = ['approved' => true, 'reason' => null, 'status' => 'text_to_sql'];
+                } else {
+                    // Open-ended Text-to-SQL did not produce a working query →
+                    // we drop back to the structured builder below.
+                    $this->profiler->incrementFallback('text_to_sql_to_structured');
                 }
             }
 
@@ -488,6 +525,9 @@ class AiChatService
                     if (in_array($entityResolution['status'] ?? null, ['clarification_required', 'not_found'], true)) {
                         // Before asking for clarification, give Text-to-SQL a chance on
                         // open-ended questions — it can frequently answer them directly.
+                        if ($isDataExplorer) {
+                            $this->profiler->incrementFallback('entity_resolution_to_text_to_sql');
+                        }
                         $tts = $isDataExplorer ? $this->attemptTextToSql($message, $user, $memory) : ['ok' => false];
 
                         if ($tts['ok']) {
@@ -526,6 +566,7 @@ class AiChatService
                                 && $this->userHasUnscopedAccess($user);
 
                             if ($executionFailed || $curatedEmptyForFullAccess) {
+                                $this->profiler->incrementFallback($executionFailed ? 'execution_failed_to_text_to_sql' : 'curated_empty_to_text_to_sql');
                                 $tts = $this->attemptTextToSql($message, $user, $memory);
 
                                 // On a hard failure accept any working result; on the
@@ -544,6 +585,7 @@ class AiChatService
                             // --- TEXT-TO-SQL FALLBACK ---
                             // Structured plan couldn't be validated (complex query, unsupported pattern).
                             // Ask AI to write safe SQL directly and execute it.
+                            $this->profiler->incrementFallback('sql_validation_to_text_to_sql');
                             $tts = $this->attemptTextToSql($message, $user, $memory);
 
                             if ($tts['ok']) {
@@ -585,7 +627,12 @@ class AiChatService
             $assistantMessage = $answer['message'] ?? 'Here are the CRM results.';
         }
 
-        DB::transaction(function () use ($chat, $plan, $response, $usage, $log, $startedAt, $assistantMessage, $sqlPreview, $planValidation, $entityResolution, $validation, $message, $execution, $answer, $textToSqlUsed) {
+        $engine = $textToSqlUsed
+            ? 'text_to_sql'
+            : ($plan['intent'] === 'unknown' ? 'clarification' : 'structured');
+        $profileColumns = $this->profileColumns($startedAt, $engine);
+
+        DB::transaction(function () use ($chat, $plan, $response, $usage, $log, $startedAt, $assistantMessage, $sqlPreview, $planValidation, $entityResolution, $validation, $message, $execution, $answer, $textToSqlUsed, $profileColumns) {
             $chat->messages()->create([
                 'role'     => 'assistant',
                 'content'  => $assistantMessage,
@@ -608,7 +655,7 @@ class AiChatService
                 ],
             ]);
 
-            $log->update([
+            $log->update(array_merge([
                 'status' => $plan['intent'] === 'unknown'
                     ? 'planned_unknown'
                     : (! ($planValidation['approved'] ?? false)
@@ -639,7 +686,7 @@ class AiChatService
                     : (! ($validation['approved'] ?? true)
                     ? ($validation['reason'] ?? 'Query rejected by validator.')
                     : ((! ($execution['success'] ?? true)) ? ($execution['error_message'] ?? 'Query execution failed.') : null)),
-            ]);
+            ], $profileColumns));
 
             $chat->update([
                 'openai_response_id' => $response['id'],
@@ -893,8 +940,9 @@ class AiChatService
         }
 
         $usage = $openAiResponse['usage'] ?? [];
+        $profileColumns = $this->profileColumns($startedAt, 'lane');
 
-        DB::transaction(function () use ($chat, $plan, $openAiResponse, $usage, $log, $startedAt, $assistantMessage, $answer, $message, $rowCount, $searchTerm) {
+        DB::transaction(function () use ($chat, $plan, $openAiResponse, $usage, $log, $startedAt, $assistantMessage, $answer, $message, $rowCount, $searchTerm, $profileColumns) {
             $chat->messages()->create([
                 'role'     => 'assistant',
                 'content'  => $assistantMessage,
@@ -910,7 +958,7 @@ class AiChatService
                 ],
             ]);
 
-            $log->update([
+            $log->update(array_merge([
                 'status'            => $rowCount > 0 ? 'executed' : 'no_data',
                 'response_id'       => $openAiResponse['id'],
                 'model'             => $openAiResponse['model'],
@@ -920,7 +968,7 @@ class AiChatService
                 'duration_ms'       => (int) ((microtime(true) - $startedAt) * 1000),
                 'request_payload'   => ['message' => $message],
                 'response_payload'  => ['answer' => $answer, 'openai_raw' => $openAiResponse['raw']],
-            ]);
+            ], $profileColumns));
 
             $chat->update([
                 'openai_response_id' => $openAiResponse['id'],
@@ -1265,12 +1313,12 @@ class AiChatService
                 ],
             ]);
 
-            $log->update([
+            $log->update(array_merge([
                 'status'           => 'success',
                 'duration_ms'      => (int) ((microtime(true) - $startedAt) * 1000),
                 'request_payload'  => ['message' => $message],
                 'response_payload' => ['answer' => ['type' => 'text', 'message' => $assistantMessage]],
-            ]);
+            ], $this->profileColumns($startedAt, 'dictionary')));
 
             $chat->update(['last_message_at' => now()]);
         });
@@ -1298,12 +1346,12 @@ class AiChatService
                 ],
             ]);
 
-            $log->update([
+            $log->update(array_merge([
                 'status'           => $status === 'no_data' ? 'no_data' : 'executed',
                 'duration_ms'      => (int) ((microtime(true) - $startedAt) * 1000),
                 'request_payload'  => ['message' => $message],
                 'response_payload' => ['answer' => $answer],
-            ]);
+            ], $this->profileColumns($startedAt, 'project_detail')));
 
             $chat->update(['last_message_at' => now()]);
         });
@@ -1498,11 +1546,11 @@ class AiChatService
             'metadata' => ['type' => 'help_response', 'status' => 'success'],
         ]);
 
-        $log->update([
+        $log->update(array_merge([
             'status' => 'success',
             'duration_ms' => (int) ((microtime(true) - $startedAt) * 1000),
             'request_payload' => ['message' => $message],
-        ]);
+        ], $this->profileColumns($startedAt, 'help')));
 
         $chat->update(['last_message_at' => now()]);
 

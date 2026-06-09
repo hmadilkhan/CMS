@@ -79,6 +79,7 @@ Route::middleware('auth')->group(function () {
         Route::post('/ai-chat/send', [AiChatController::class, 'send'])->middleware('ai.daily.limit')->name('ai-chat.send');
         Route::post('/ai-chat/{chat}/retry', [AiChatController::class, 'retry'])->middleware('ai.daily.limit')->name('ai-chat.retry');
         Route::post('/ai-chat/messages/{message}/feedback', [AiChatController::class, 'feedback'])->name('ai-chat.feedback');
+        Route::get('/ai-chat/messages/{message}/export/{format}', [AiChatController::class, 'export'])->whereIn('format', ['csv', 'pdf'])->name('ai-chat.export');
         Route::patch('/ai-chat/{chat}', [AiChatController::class, 'rename'])->name('ai-chat.rename');
         Route::delete('/ai-chat/{chat}', [AiChatController::class, 'destroy'])->name('ai-chat.destroy');
         Route::get('/ai-chat/{chat}', [AiChatController::class, 'show'])->name('ai-chat.show');

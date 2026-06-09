@@ -3,7 +3,10 @@
 namespace App\Services;
 
 use App\Models\User;
+use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use Throwable;
 
 /**
@@ -21,7 +24,8 @@ class AiTextToSqlService
         private readonly AiSchemaService      $aiSchemaService,
         private readonly AiPermissionService  $aiPermissionService,
         private readonly AiSqlParserService   $aiSqlParserService,
-        private readonly AiRowScopeService    $aiRowScopeService
+        private readonly AiRowScopeService    $aiRowScopeService,
+        private readonly AiProfiler           $profiler
     ) {}
 
     /**
@@ -40,7 +44,52 @@ class AiTextToSqlService
      */
     public function generate(string $question, User $user, string $conversationMemory = ''): array
     {
-        return $this->run($question, $user, null, $conversationMemory);
+        $this->profiler->stage('text_to_sql');
+
+        $cacheKey = $this->sqlCacheKey($question, $user, $conversationMemory);
+
+        if ($cacheKey !== null) {
+            $cached = Cache::get($cacheKey);
+
+            if (is_array($cached) && ($cached['success'] ?? false)) {
+                return $cached;
+            }
+        }
+
+        $result = $this->run($question, $user, null, $conversationMemory);
+
+        if ($cacheKey !== null && ($result['success'] ?? false)) {
+            Cache::put($cacheKey, $result, (int) config('ai.text_to_sql.cache_ttl', 21600));
+        }
+
+        return $result;
+    }
+
+    /**
+     * Cache key for generated SQL — only for UNSCOPED users (admin/finance),
+     * whose SQL carries no row-scope predicate and is identical for the same
+     * permission signature. Scoped users splice user-specific project IDs into the
+     * SQL, so their SQL is never cached. Gated to empty conversation memory so a
+     * follow-up's context can never be served a stale standalone query. Returns
+     * null (no caching) when disabled, scoped, or in a follow-up.
+     */
+    private function sqlCacheKey(string $question, User $user, string $conversationMemory): ?string
+    {
+        if ((int) config('ai.text_to_sql.cache_ttl', 0) <= 0 || $conversationMemory !== '') {
+            return null;
+        }
+
+        // Scoped users get inline, user-specific project IDs in their SQL — never cache.
+        if ($this->aiRowScopeService->projectScopeSql($user) !== null) {
+            return null;
+        }
+
+        $normalized = trim(preg_replace('/\s+/u', ' ', mb_strtolower($question)));
+        $signature = implode(',', $user->getRoleNames()->sort()->values()->all())
+            .'|fin:'.($this->aiPermissionService->canAccessFinance($user) ? 1 : 0)
+            .'|prof:'.($this->aiPermissionService->canAccessProfitability($user) ? 1 : 0);
+
+        return 'ai_tts_sql:'.md5($normalized.'||'.$signature);
     }
 
     /**
@@ -52,6 +101,8 @@ class AiTextToSqlService
      */
     public function regenerate(string $question, User $user, string $failedSql, string $dbError, string $conversationMemory = ''): array
     {
+        $this->profiler->stage('text_to_sql_retry');
+
         return $this->run($question, $user, [
             'failed_sql' => $failedSql,
             'db_error'   => $dbError,
@@ -200,6 +251,7 @@ class AiTextToSqlService
         $scopeNote   = $scoped
             ? "\n- Today's date and row-access scope rules in the ROW ACCESS section are MANDATORY."
             : '';
+        $deptGrounding = $this->domainGrounding();
 
         return <<<PROMPT
 You are a safe SQL generator for a solar-installation company CRM (MySQL).
@@ -229,6 +281,7 @@ You are a safe SQL generator for a solar-installation company CRM (MySQL).
 
 ## Allowed Schema (tables → allowed columns, access rule, relationships)
 {$schemaJson}
+{$deptGrounding}
 
 ## Output JSON shape
 {
@@ -237,6 +290,72 @@ You are a safe SQL generator for a solar-installation company CRM (MySQL).
   "limit": N
 }
 PROMPT;
+    }
+
+    /**
+     * Grounds the model with real values for the CRM's two most ambiguous query
+     * terms so it stops guessing:
+     *  - "department"/"lane" → departments.name vs sub_departments.name (e.g. it
+     *    looked for the "Deal Review" DEPARTMENT inside sub_departments → 0).
+     *  - "status" → tasks.status (In-Progress/Hold/…) and NOT the department/lane
+     *    (e.g. "projects by status" was grouping by departments.name).
+     * Cached because these reference tables are tiny and rarely change.
+     */
+    private function domainGrounding(): string
+    {
+        return Cache::remember('ai_tts_domain_grounding_v2', 1800, function () {
+            $departments = $this->distinctColumn('departments', 'name');
+            $subDepartments = $this->distinctColumn('sub_departments', 'name');
+            $statuses = $this->distinctColumn('tasks', 'status');
+
+            $lines = [];
+
+            if ($departments->isNotEmpty() || $subDepartments->isNotEmpty()) {
+                $lines[] = '';
+                $lines[] = '## Department vs sub-department names (ground stage/lane filters against these)';
+                $lines[] = "- A project's main workflow stage/\"lane\" is `projects.department_id` → `departments.name`; finer stages are `projects.sub_department_id` → `sub_departments.name`.";
+
+                if ($departments->isNotEmpty()) {
+                    $lines[] = '- departments.name values: '.$departments->implode(', ').'.';
+                }
+
+                if ($subDepartments->isNotEmpty()) {
+                    $lines[] = '- sub_departments.name values: '.$subDepartments->implode(', ').'.';
+                }
+
+                $lines[] = '- When a question names a stage/lane (e.g. "Deal Review", "Permitting") without saying which table, match it against the lists above and filter whichever table actually contains that value. These lane names live in `departments` (join on `projects.department_id = departments.id`), NOT `sub_departments`, unless the value only appears in the sub-department list.';
+            }
+
+            if ($statuses->isNotEmpty()) {
+                $lines[] = '';
+                $lines[] = '## Project status (the WORK status — never the department/lane)';
+                $lines[] = '- A project has no status column of its own. Its status is the work status of its tasks: `tasks.status`, with values: '.$statuses->implode(', ').'.';
+                $lines[] = "- Join tasks via `tasks.project_id = projects.id`. A project's CURRENT status is the task at its current department: add `AND tasks.department_id = projects.department_id` (this yields exactly one task per project).";
+                $lines[] = '- NEVER treat a department/lane name as a status and NEVER alias `departments.name` as "status". For "projects by status" GROUP BY `tasks.status` and COUNT(DISTINCT projects.id) using the current-department task join above.';
+            }
+
+            return $lines === [] ? '' : implode("\n", $lines);
+        });
+    }
+
+    /**
+     * Distinct, non-deleted values of a column for a small reference table.
+     * Defensive: skips the soft-delete filter when the column is absent and returns
+     * an empty collection on any error, so grounding never breaks SQL generation.
+     */
+    private function distinctColumn(string $table, string $column): Collection
+    {
+        try {
+            $query = DB::table($table);
+
+            if (Schema::hasColumn($table, 'deleted_at')) {
+                $query->whereNull('deleted_at');
+            }
+
+            return $query->whereNotNull($column)->orderBy($column)->pluck($column)->filter()->unique()->values();
+        } catch (Throwable) {
+            return collect();
+        }
     }
 
     /**

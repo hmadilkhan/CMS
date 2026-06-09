@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Support\Arr;
+use Illuminate\Support\Facades\Cache;
 
 class AiQueryPlannerService
 {
@@ -20,12 +21,15 @@ class AiQueryPlannerService
     public function __construct(
         private readonly OpenAiService $openAiService,
         private readonly AiSchemaService $aiSchemaService,
-        private readonly AiPermissionService $aiPermissionService
+        private readonly AiPermissionService $aiPermissionService,
+        private readonly AiProfiler $profiler
     ) {
     }
 
     public function plan(string $question, User $user, ?array $previousContext = null, string $conversationMemory = ''): array
     {
+        $this->profiler->stage('planner');
+
         if ($this->isWriteOperationQuestion($question)) {
             return [
                 'plan' => array_merge($this->unknownPlan(), [
@@ -60,6 +64,23 @@ class AiQueryPlannerService
             ];
         }
 
+        // Plan cache: for a self-contained question (no conversation memory) an
+        // identical question from a user with the same permissions yields the same
+        // sanitized plan. Reuse it to skip the expensive gpt-4.1 planner call. The
+        // plan carries no user-specific row data — row scoping is applied later —
+        // so this never widens access. Keyed by permission signature so scoped
+        // roles never see another permission class's plan.
+        $cacheKey = $conversationMemory === '' ? $this->planCacheKey($question, $user) : null;
+
+        if ($cacheKey !== null && ($cachedPlan = $this->cachedPlan($cacheKey)) !== null) {
+            $cachedPlan['original_question'] = $question;
+
+            return [
+                'plan' => $cachedPlan,
+                'openai' => $this->syntheticOpenAiResponse(),
+            ];
+        }
+
         $response = $this->openAiService->createJsonResponse(
             $this->instructions(),
             [
@@ -70,20 +91,6 @@ class AiQueryPlannerService
                 'crm_module_hints' => $this->moduleHints(),
                 'required_json_format' => $this->unknownPlan(),
                 'examples' => [
-                    [
-                        'question' => 'Employees ki list show kro or ye bhi btao k kis employee ko kitne departments allowed hain',
-                        'expected_plan' => [
-                            'answer_type' => 'table',
-                            'intent' => 'employee_department_list',
-                            'tables' => ['employees', 'employee_departments'],
-                            'columns' => ['name', 'email', 'phone'],
-                            'group_by' => ['name', 'email', 'phone'],
-                            'filters' => [],
-                            'requires_finance_access' => false,
-                            'sql' => null,
-                            'fallback_message' => null,
-                        ],
-                    ],
                     [
                         'question' => 'Mere assigned projects kitne hain?',
                         'expected_plan' => [
@@ -379,10 +386,54 @@ class AiQueryPlannerService
             $plan = $this->sanitizePlan($this->withHybridMetadata($inferredPlan, 'fixed_action', 1.0), $user);
         }
 
+        // Only cache a usable plan (a real intent). Never cache unknown /
+        // clarification / permission-denied outcomes, so a transient miss is not
+        // frozen in for everyone with the same permissions.
+        if ($cacheKey !== null && ($plan['intent'] ?? 'unknown') !== 'unknown') {
+            $this->storePlan($cacheKey, $plan);
+        }
+
         return [
             'plan' => $plan,
             'openai' => $response,
         ];
+    }
+
+    /**
+     * Cache key for a planned question: the normalized question plus a signature of
+     * everything sanitizePlan() depends on (roles + finance/profitability access).
+     * Users with the same signature share a sanitized plan; row-level scoping is
+     * applied downstream, so no user-specific data is ever shared via the cache.
+     */
+    private function planCacheKey(string $question, User $user): string
+    {
+        $normalized = trim(preg_replace('/\s+/u', ' ', mb_strtolower($question)));
+
+        $signature = implode(',', $user->getRoleNames()->sort()->values()->all())
+            .'|fin:'.($this->aiPermissionService->canAccessFinance($user) ? 1 : 0)
+            .'|prof:'.($this->aiPermissionService->canAccessProfitability($user) ? 1 : 0);
+
+        return 'ai_plan:'.md5($normalized.'||'.$signature);
+    }
+
+    private function cachedPlan(string $cacheKey): ?array
+    {
+        if ((int) config('ai.planner.cache_ttl', 0) <= 0) {
+            return null;
+        }
+
+        $plan = Cache::get($cacheKey);
+
+        return is_array($plan) ? $plan : null;
+    }
+
+    private function storePlan(string $cacheKey, array $plan): void
+    {
+        $ttl = (int) config('ai.planner.cache_ttl', 0);
+
+        if ($ttl > 0) {
+            Cache::put($cacheKey, $plan, $ttl);
+        }
     }
 
     /**
@@ -1047,7 +1098,16 @@ PROMPT;
         });
 
         return [
-            'mode' => $mode,
+            // LLM-planned (free-form) questions always run Text-to-SQL first: it
+            // reads the raw question and applies every filter, whereas the
+            // structured builder only sees plan['filters'] — which the LLM planner
+            // sometimes leaves empty (e.g. "deal review department projects" → no
+            // filter → all rows). Curated inferKnownPlan reports keep fixed_action
+            // (tagged separately in withHybridMetadata), so this only affects the
+            // generic LLM path; the structured builder stays as the fallback if
+            // Text-to-SQL can't answer. This removes the non-deterministic
+            // fixed_action↔data_explorer routing that caused dropped filters.
+            'mode' => 'data_explorer',
             'confidence' => (float) ($plan['confidence'] ?? 0.75),
             'entities' => $tables,
             'selected_columns' => $this->selectedColumnsPayload($select),
