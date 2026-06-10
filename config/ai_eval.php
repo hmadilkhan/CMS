@@ -107,10 +107,16 @@ return [
 
         [
             'name'  => 'Multi-intent message is split into separate answers',
-            'note'  => 'Bug: "financing details of this project ALSO logs details" was one query. LLM now splits it.',
+            // Bug: "financing details of this project ALSO X" was treated as one query;
+            // the LLM now splits it AND resolves "this project" to the named project in
+            // BOTH parts. The eval asserts the LAST split answer, so both clauses use a
+            // part that has data for this project (financing + tasks) — the previous
+            // "logs" clause is legitimately empty for Yunjiao-Guan, which used to mask a
+            // false pass (unresolved "this project" returned unfiltered logs).
+            'note'  => 'Multi-intent split + "this project" resolved into each part.',
             'steps' => [
                 ['q' => 'Show me the summary of Yunjiao-Guan - 61st Ave', 'min_rows' => 1],
-                ['q' => 'Show me the financing details of this project also show the logs details', 'min_rows' => 1, 'not_contains' => ['No records', "couldn't find"]],
+                ['q' => 'Show me the financing details of this project and also its tasks', 'min_rows' => 1, 'not_contains' => ['No records', "couldn't find"]],
             ],
         ],
 

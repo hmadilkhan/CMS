@@ -148,7 +148,7 @@ class AiChatService
         // ("financing details of this project AND also the logs") into separate,
         // self-contained questions, then answer each one in its own reply.
         if ($this->looksCompound($message)) {
-            $parts = $this->decompose($message);
+            $parts = $this->decompose($message, $this->buildConversationMemory($chat, $message));
 
             if (count($parts) > 1) {
                 foreach ($parts as $part) {
@@ -285,17 +285,34 @@ class AiChatService
      *
      * @return array<int,string>
      */
-    private function decompose(string $message): array
+    private function decompose(string $message, string $conversationMemory = ''): array
     {
         try {
             $this->profiler->stage('decompose');
+
+            // Give the splitter the prior turns so it can resolve back-references
+            // ("this project", "those", "isko") to the CONCRETE subject and bake the
+            // real name into each split question. Without this the split parts kept
+            // an unresolved "this project", leaving resolution to the downstream
+            // planner — which was non-deterministic (the follow-up sometimes came
+            // back with 0 rows). Substituting the name up front makes each
+            // sub-question self-contained and the result deterministic.
+            $input = $conversationMemory !== ''
+                ? "Conversation so far (use it ONLY to resolve references — replace \"this project\", \"these\", \"those\", \"isko\", \"inki\" with the concrete subject, e.g. the actual project name):\n{$conversationMemory}\n\nMessage to split: {$message}"
+                : $message;
+
             $response = $this->openAiService->createJsonResponse(
                 'You split a user\'s CRM chat message into the distinct, independent questions it contains. '
-                . 'Return JSON {"questions": [...]}. Each question MUST be self-contained: carry over shared '
-                . 'context so each stands alone (e.g. resolve "this project" / "also" so both questions keep the '
-                . 'subject). If the message is really a single request, return exactly one question (the original). '
-                . 'Keep the user\'s wording and language (English/Roman-Urdu). Maximum 4 questions.',
-                $message,
+                . 'Return JSON {"questions": [...]}. Each question MUST be self-contained: when a "Conversation so far" '
+                . 'block is provided, RESOLVE references like "this project", "these", "those", "isko", "inki" by '
+                . 'REPLACING them with the concrete subject so every question stands alone WITHOUT needing prior '
+                . 'context. Use the EXACT, COMPLETE subject as it appeared earlier — include the full project name '
+                . 'with any address/unit suffix (e.g. "Yunjiao-Guan - 61st Ave", NOT just "Yunjiao-Guan") and never '
+                . 'shorten or paraphrase it. Carry the shared subject across all split parts '
+                . '(e.g. "financing of this project AND its logs" → "financing details of <Project Name>" + '
+                . '"logs of <Project Name>"). If the message is really a single request, return exactly one question. '
+                . 'Keep the user\'s language (English/Roman-Urdu). Maximum 4 questions.',
+                $input,
                 400,
                 [
                     'type'   => 'json_schema',

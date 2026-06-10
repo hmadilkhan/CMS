@@ -36,6 +36,23 @@ class AiTextToSqlService
     private const SCOPE_TOKEN = '__PROJECT_ACCESS_SCOPE__';
 
     /**
+     * Credential columns that must never appear in a generated query, even
+     * unqualified (e.g. a bare `SELECT password`). These are never in any
+     * table's allowed_columns, so the qualified-reference check below already
+     * blocks `users.password`; this denylist is the backstop for an unqualified
+     * reference that carries no table prefix.
+     */
+    private const SECRET_COLUMN_DENYLIST = [
+        'password',
+        'remember_token',
+        'api_token',
+        'two_factor_secret',
+        'two_factor_recovery_codes',
+        'access_token',
+        'refresh_token',
+    ];
+
+    /**
      * Generate SQL for the given question and validate it is safe to run.
      *
      * Returns:
@@ -196,6 +213,16 @@ class AiTextToSqlService
                 }
             }
 
+            // SECURITY: enforce the COLUMN allowlist. The structured engine validates
+            // columns via AiSqlValidatorService; the Text-to-SQL path must do the same
+            // so the model can never select a column outside the user's permitted set
+            // — secrets (password/token), or finance/profitability columns a non-finance
+            // user cannot see. On a violation we refuse and the caller falls back to the
+            // structured pipeline.
+            if ($columnError = $this->validateColumns($sql, $referencedTables, $user)) {
+                return $this->fail($columnError);
+            }
+
             // Finance / profitability guard
             $requiresFinance = collect($referencedTables)->contains(
                 fn ($t) => in_array(
@@ -268,6 +295,7 @@ You are a safe SQL generator for a solar-installation company CRM (MySQL).
 - Do not use subqueries in FROM clause. Do not use UNION. Do not use SQL comments.
 - Always add explicit JOIN ... ON conditions using the relationships listed in the schema. Never rely on implicit/comma joins.
 - Use the "relationships" entry on each table to choose correct join keys.
+- Do NOT alias the main/outer query tables — reference them by full name and qualify every column as `table_name.column` (e.g. `customers.name`, `tasks.status` — not `c.name` or `t.status`). This is required for the server-side row-access and soft-delete guards. You MAY alias a table ONLY inside a correlated subquery (e.g. `(SELECT MAX(lt.id) FROM tasks lt WHERE lt.project_id = projects.id)`).
 - For name searches prefer LIKE '%term%' (case-insensitive) rather than exact '=' so partial names match.
 - When the question implies counting/grouping ("how many", "count", "X wise", "per X"), use COUNT(...) with GROUP BY and give aggregates a clear alias.
 - Resolve relative dates against today ({$today}). e.g. "this month", "last 30 days", "in April 2026".
@@ -303,7 +331,7 @@ PROMPT;
      */
     private function domainGrounding(): string
     {
-        return Cache::remember('ai_tts_domain_grounding_v2', 1800, function () {
+        return Cache::remember('ai_tts_domain_grounding_v3', 1800, function () {
             $departments = $this->distinctColumn('departments', 'name');
             $subDepartments = $this->distinctColumn('sub_departments', 'name');
             $statuses = $this->distinctColumn('tasks', 'status');
@@ -324,14 +352,15 @@ PROMPT;
                 }
 
                 $lines[] = '- When a question names a stage/lane (e.g. "Deal Review", "Permitting") without saying which table, match it against the lists above and filter whichever table actually contains that value. These lane names live in `departments` (join on `projects.department_id = departments.id`), NOT `sub_departments`, unless the value only appears in the sub-department list.';
+                $lines[] = '- To LIST or COUNT projects in a given lane/stage, filter the project\'s own `projects.department_id` → `departments.name` directly. Do NOT join `tasks` for this — a project has MANY tasks, so joining them produces DUPLICATE project rows. Only join `tasks` when you actually need a work status, and then use `SELECT DISTINCT` / `COUNT(DISTINCT projects.id)`.';
             }
 
             if ($statuses->isNotEmpty()) {
                 $lines[] = '';
                 $lines[] = '## Project status (the WORK status — never the department/lane)';
-                $lines[] = '- A project has no status column of its own. Its status is the work status of its tasks: `tasks.status`, with values: '.$statuses->implode(', ').'.';
-                $lines[] = "- Join tasks via `tasks.project_id = projects.id`. A project's CURRENT status is the task at its current department: add `AND tasks.department_id = projects.department_id` (this yields exactly one task per project).";
-                $lines[] = '- NEVER treat a department/lane name as a status and NEVER alias `departments.name` as "status". For "projects by status" GROUP BY `tasks.status` and COUNT(DISTINCT projects.id) using the current-department task join above.';
+                $lines[] = '- A project has no status column of its own. Its status is the status of its LATEST task: `tasks.status`, with values: '.$statuses->implode(', ').'.';
+                $lines[] = "- A project has MANY tasks, so a plain JOIN to tasks OVER-COUNTS (one project lands in several status buckets and the totals exceed the real project count). Pin to exactly ONE (the latest) task per project: `JOIN tasks ON tasks.project_id = projects.id AND tasks.deleted_at IS NULL` AND in the WHERE add `tasks.id = (SELECT MAX(lt.id) FROM tasks lt WHERE lt.project_id = projects.id AND lt.deleted_at IS NULL)`.";
+                $lines[] = '- NEVER treat a department/lane name as a status and NEVER alias a department as "status". For "projects by status": `SELECT tasks.status, COUNT(DISTINCT projects.id) AS project_count FROM projects JOIN tasks ON tasks.project_id = projects.id AND tasks.deleted_at IS NULL WHERE tasks.id = (SELECT MAX(lt.id) FROM tasks lt WHERE lt.project_id = projects.id AND lt.deleted_at IS NULL) AND projects.deleted_at IS NULL GROUP BY tasks.status` — the latest-task pin makes the counts sum to the real project total.';
             }
 
             return $lines === [] ? '' : implode("\n", $lines);
@@ -466,6 +495,57 @@ PROMPT;
         }
 
         return $schema;
+    }
+
+    /**
+     * Reject any column the user is not permitted to read, mirroring the
+     * structured engine's column allowlist for the Text-to-SQL path.
+     *
+     *  1. Every qualified `table.column` reference whose table is one of the
+     *     query's referenced allowed tables must pass canAccessColumn(). This
+     *     blocks non-allowlisted columns AND finance/profitability-gated ones in
+     *     a single check (`table.*` is ignored — it is not a column).
+     *  2. A small credential denylist backstops an UNqualified secret column
+     *     (e.g. a bare `SELECT password`) that carries no table prefix and so is
+     *     not caught by step 1.
+     *
+     * Returns an error string on violation, or null when every column is allowed.
+     * Aliased references (`c.email`) are intentionally not resolved here — the
+     * prompt forbids aliases (so real table names are used), and the denylist
+     * still catches aliased credentials.
+     *
+     * @param  array<int,string>  $tables
+     */
+    private function validateColumns(string $sql, array $tables, User $user): ?string
+    {
+        // Drop string literals so values (e.g. an address containing a column-like
+        // word) are never mistaken for column references.
+        $stripped = preg_replace("/'([^'\\\\]|\\\\.)*'/", "''", $sql) ?? $sql;
+
+        // 1. Qualified column references: table.column (table.* is skipped because
+        //    `*` is not matched by the identifier pattern).
+        if (preg_match_all('/\b([a-zA-Z_][a-zA-Z0-9_]*)\s*\.\s*([a-zA-Z_][a-zA-Z0-9_]*)\b/', $stripped, $matches, PREG_SET_ORDER)) {
+            foreach ($matches as [, $table, $column]) {
+                // Only enforce against the query's real, allowed tables. Unknown
+                // qualifiers (aliases, derived tables) fall to the denylist below.
+                if (! in_array($table, $tables, true) || ! $this->aiSchemaService->isTableAllowed($table)) {
+                    continue;
+                }
+
+                if (! $this->aiPermissionService->canAccessColumn($user, $table, $column)) {
+                    return "Generated query references a column you cannot access: {$table}.{$column}.";
+                }
+            }
+        }
+
+        // 2. Credential backstop for unqualified secret columns.
+        foreach (self::SECRET_COLUMN_DENYLIST as $secret) {
+            if (preg_match('/\b' . preg_quote($secret, '/') . '\b/i', $stripped)) {
+                return 'Generated query references a restricted column.';
+            }
+        }
+
+        return null;
     }
 
     private function replacePlaceholders(string $sql, User $user): string

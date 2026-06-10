@@ -171,28 +171,44 @@
                                     </div>
                                 @endif
                                 @if ($answer && ($answer['type'] ?? '') === 'table')
-                                    <div class="mt-3 max-w-full overflow-x-auto rounded-xl border border-solen-border">
-                                        <table class="min-w-full divide-y divide-solen-border text-left text-xs">
-                                            <thead class="bg-solen-cream text-solen-muted">
-                                                <tr>
+                                    {{-- Wide-but-short results (e.g. one project's financing) read better as stacked label/value cards than a horizontally-scrolling table. --}}
+                                    @if (count($answer['columns'] ?? []) > 5 && count($answer['rows'] ?? []) > 0 && count($answer['rows'] ?? []) <= 3)
+                                        <div class="mt-3 grid gap-3 sm:grid-cols-2">
+                                            @foreach (($answer['rows'] ?? []) as $row)
+                                                <div class="rounded-xl border border-solen-border bg-gradient-to-br from-white to-[#fff8f0] p-4 shadow-solen-sm">
                                                     @foreach (($answer['columns'] ?? []) as $column)
-                                                        <th class="px-3 py-2.5 font-bold uppercase tracking-wide">{{ ucwords(str_replace('_', ' ', $column)) }}</th>
+                                                        <div class="flex items-start justify-between gap-4 border-b border-solen-border/40 py-1.5 last:border-0">
+                                                            <span class="shrink-0 text-xs font-semibold uppercase tracking-wide text-solen-muted">{{ ucwords(str_replace('_', ' ', $column)) }}</span>
+                                                            <span class="text-right text-sm font-semibold text-solen-ink">{{ ($row[$column] ?? '') !== '' ? $row[$column] : '-' }}</span>
+                                                        </div>
                                                     @endforeach
-                                                </tr>
-                                            </thead>
-                                            <tbody class="divide-y divide-[#f1e7d8] bg-white text-solen-ink">
-                                                @foreach (($answer['rows'] ?? []) as $row)
-                                                    <tr class="transition hover:bg-solen-cream/60">
+                                                </div>
+                                            @endforeach
+                                        </div>
+                                    @else
+                                        <div class="mt-3 max-w-full overflow-x-auto rounded-xl border border-solen-border">
+                                            <table class="min-w-full divide-y divide-solen-border text-left text-xs">
+                                                <thead class="bg-solen-cream text-solen-muted">
+                                                    <tr>
                                                         @foreach (($answer['columns'] ?? []) as $column)
-                                                            <td class="whitespace-nowrap px-3 py-2.5">{{ $row[$column] ?? '' }}</td>
+                                                            <th class="px-3 py-2.5 font-bold uppercase tracking-wide">{{ ucwords(str_replace('_', ' ', $column)) }}</th>
                                                         @endforeach
                                                     </tr>
-                                                @endforeach
-                                            </tbody>
-                                        </table>
-                                    </div>
+                                                </thead>
+                                                <tbody class="divide-y divide-[#f1e7d8] bg-white text-solen-ink">
+                                                    @foreach (($answer['rows'] ?? []) as $row)
+                                                        <tr class="transition hover:bg-solen-cream/60">
+                                                            @foreach (($answer['columns'] ?? []) as $column)
+                                                                <td class="whitespace-nowrap px-3 py-2.5">{{ $row[$column] ?? '' }}</td>
+                                                            @endforeach
+                                                        </tr>
+                                                    @endforeach
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    @endif
                                 @endif
-                                @if ($answer && ($answer['type'] ?? '') === 'table' && count($answer['rows'] ?? []) >= 2 && count($answer['rows'] ?? []) <= 30)
+                                @if ($answer && ($answer['type'] ?? '') === 'table' && count($answer['rows'] ?? []) >= 2 && count($answer['rows'] ?? []) <= 30 && ! (count($answer['columns'] ?? []) > 5 && count($answer['rows'] ?? []) <= 3))
                                     <div class="ai-chart-mount mt-3"><script type="application/json">@json(['columns' => $answer['columns'] ?? [], 'rows' => $answer['rows'] ?? []], JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT)</script></div>
                                 @endif
                                 @if ($answer && ! empty($answer['suggestions']))
@@ -401,6 +417,16 @@
             }
 
             if (answer.type === 'table') {
+                const cols = answer.columns || [];
+                const rws = answer.rows || [];
+
+                // A wide-but-short result (e.g. one project's financing across many
+                // columns) reads far better as stacked label/value cards than a
+                // horizontally-scrolling table.
+                if (cols.length > 5 && rws.length > 0 && rws.length <= 3) {
+                    return renderRecordCards(cols, rws);
+                }
+
                 const wrap = document.createElement('div');
                 wrap.className = 'mt-3 max-w-full overflow-x-auto rounded-xl border border-solen-border';
                 const table = document.createElement('table');
@@ -435,6 +461,34 @@
             }
 
             return null;
+        }
+
+        // Render each record as a vertical label/value card — readable for wide
+        // single-entity results (e.g. a project's financing) that would otherwise be
+        // a hard-to-scan horizontally-scrolling table.
+        function renderRecordCards(columns, rows) {
+            const grid = document.createElement('div');
+            grid.className = 'mt-3 grid gap-3 sm:grid-cols-2';
+            rows.forEach((row) => {
+                const card = document.createElement('div');
+                card.className = 'rounded-xl border border-solen-border bg-gradient-to-br from-white to-[#fff8f0] p-4 shadow-solen-sm';
+                columns.forEach((col, i) => {
+                    const r = document.createElement('div');
+                    r.className = 'flex items-start justify-between gap-4 py-1.5' + (i < columns.length - 1 ? ' border-b border-solen-border/40' : '');
+                    const k = document.createElement('span');
+                    k.className = 'shrink-0 text-xs font-semibold uppercase tracking-wide text-solen-muted';
+                    k.textContent = col.replaceAll('_', ' ');
+                    const v = document.createElement('span');
+                    v.className = 'text-right text-sm font-semibold text-solen-ink';
+                    const raw = row[col];
+                    v.textContent = (raw === null || raw === undefined || raw === '') ? '—' : raw;
+                    r.appendChild(k);
+                    r.appendChild(v);
+                    card.appendChild(r);
+                });
+                grid.appendChild(card);
+            });
+            return grid;
         }
 
         function feedbackPanel(messageId) {
@@ -522,6 +576,8 @@
             if (!answer || answer.type !== 'table') return null;
             const rows = answer.rows || [];
             if (rows.length < 2 || rows.length > 30) return null;
+            // Skip the chart for wide single-entity results rendered as record cards.
+            if ((answer.columns || []).length > 5 && rows.length <= 3) return null;
             const mount = document.createElement('div');
             mount.className = 'ai-chart-mount mt-3';
             const data = document.createElement('script');
@@ -589,6 +645,30 @@
             scrollMessages(role === 'user' ? 260 : 120);
         }
 
+        // A multi-intent message (e.g. "financing details of this project AND its
+        // tasks") is answered as SEVERAL assistant replies in one turn. Render every
+        // assistant reply that came after the latest user message — not just the last
+        // one, which used to drop the financing answer and show only the tasks.
+        function appendNewAssistantMessages(serverMessages) {
+            const list = Array.isArray(serverMessages) ? serverMessages : [];
+            let lastUserIdx = -1;
+            for (let i = list.length - 1; i >= 0; i--) {
+                if (list[i].role === 'user') { lastUserIdx = i; break; }
+            }
+            let replies = list.slice(lastUserIdx + 1).filter((m) => m.role === 'assistant');
+            if (replies.length === 0 && list.length) {
+                const last = list[list.length - 1];
+                if (last && last.role === 'assistant') replies = [last];
+            }
+            replies.forEach((a) => appendMessage(
+                'assistant',
+                a.content,
+                a.metadata?.answer || null,
+                a.metadata || {},
+                a.id
+            ));
+        }
+
         input.addEventListener('input', () => {
             input.style.height = 'auto';
             input.style.height = `${input.scrollHeight}px`;
@@ -649,9 +729,8 @@
                     if (!response.ok) {
                         throw new Error(data.message || 'Unable to retry response.');
                     }
-                    const assistant = data.messages[data.messages.length - 1];
                     setTypingLabel('Rendering answer');
-                    appendMessage('assistant', assistant.content, assistant.metadata?.answer || null, assistant.metadata || {}, assistant.id);
+                    appendNewAssistantMessages(data.messages || []);
                 } catch (error) {
                     appendMessage('assistant', error.message || 'Retry failed. Please try again.', null, {status: 'failed', retryable: false});
                 } finally {
@@ -760,9 +839,8 @@
                 }
 
                 chatId.value = data.chat.id;
-                const assistant = data.messages[data.messages.length - 1];
                 setTypingLabel('Rendering answer');
-                appendMessage('assistant', assistant.content, assistant.metadata?.answer || null, assistant.metadata || {}, assistant.id);
+                appendNewAssistantMessages(data.messages || []);
 
                 if (window.location.pathname === '{{ route('ai-chat.index', [], false) }}') {
                     window.history.replaceState({}, '', data.chat.url);

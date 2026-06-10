@@ -187,6 +187,33 @@ Note: the ai-chat view renders messages in BOTH Blade (initial load) and JS (`ap
 
 **All optimization + enhancement items are DONE** (profiling, formatter fix+optimize+count-extraction, planner plan-cache, routing flake, Text-to-SQL department grounding + result caching, CSV/PDF export, follow-up chips, inline charts). Deliberately NOT done (by choice): streaming responses, and planner schema-pruning / model-downgrade (accuracy risk). Targeted fixes were verified individually; run a full `php artisan ai:eval` after OpenAI quota resets to confirm 40/40. Re-run `ai:eval` after any AI change to confirm no regression.
 
+### QA round — bug fixes & hardening (DONE, keep these)
+
+A QA pass (scan + live probing as different roles) found and fixed the following. All verified with `php artisan ai:eval` → **40/40**, and individually re-probed.
+
+**Security (the big one):**
+- **Text-to-SQL column allowlist (was missing).** `AiTextToSqlService::run()` validated tables but NOT columns — the "everything is allowlisted: columns" invariant held only for the structured engine, yet Text-to-SQL is the *primary* engine after the routing flake fix. Added `AiTextToSqlService::validateColumns()`: every qualified `table.column` ref must pass `AiPermissionService::canAccessColumn` (blocks secrets + finance/profitability cols a user can't see), plus a `SECRET_COLUMN_DENYLIST` backstop for unqualified credential columns. Verified the existing schema keeps `id`/FK columns in `allowed_columns`, so the check never false-rejects valid joins.
+- **No table aliases in Text-to-SQL** (`buildInstructions` rule). Aliases broke the server-side soft-delete + row-scope injection (which use real table names). Outer/main tables must use full names; aliases allowed ONLY inside correlated subqueries (needed for the latest-task pattern below). `AI_READONLY_DB_CONNECTION=ai_readonly` is already set in `.env` (write-protection is real, not just regex).
+
+**Accuracy bugs (all rooted in project↔task one-to-many + count-vs-list routing):**
+- **Status counts inflated** ("projects by status" summed 419 > 372 total). A project has many tasks, so a plain `JOIN tasks` over-counts. Fixed BOTH engines to pin to each project's LATEST task: structured `AiSqlBuilderService` (`project_status_count` + `project_status_summary`) adds `whereRaw('tasks.id = (select max(lt.id) from tasks as lt where lt.project_id = projects.id and lt.deleted_at is null)')`; Text-to-SQL `domainGrounding()` (status section, cache key bumped to `_v3`) instructs the same latest-task subquery. **Canonical rule: a project's status = the status of its latest (`MAX(id)`) task.**
+- **Duplicate rows in stage lists** ("projects in permitting stage" showed each project twice). Model spuriously joined `tasks`. Grounding now says: to LIST/COUNT projects in a lane/stage, filter `projects.department_id → departments.name` directly, do NOT join `tasks` (use `DISTINCT`/`COUNT(DISTINCT projects.id)` if you must).
+- **"Top N highest/lowest" ignored sort+limit** (curated `project_financing_summary` returned 100 unsorted). Added a ranking guard in `AiQueryPlannerService::inferKnownPlan`: finance questions containing a superlative (`highest|lowest|top|most|…`) skip the curated report and fall to Text-to-SQL (which writes `ORDER BY … LIMIT N`).
+- **"How many <status> projects" returned a capped list framed as a count** (said "100" when real = 319). Added `project_status_filter_count` intent: a tightly-guarded `inferKnownPlan` branch (only fires on a bare "how many/kitne + project + task-status"; defers anything with a date/department/location/milestone qualifier to the LLM/TTS) → structured builder does `count(*)` with the latest-task pin + `tasks.status` filter.
+
+**Multi-intent decompose (flaky → deterministic):** `AiChatService::decompose()` got NO conversation context, so split parts kept an unresolved "this project" and relied on probabilistic downstream resolution (≈50% flaky). Now `respondToMessage` passes `buildConversationMemory(...)` into `decompose()`, and the prompt resolves references to the concrete subject (real project name) up front → each sub-question is self-contained → deterministic.
+
+**UI rendering (`resources/views/ai-chat/index.blade.php`):**
+- **Multi-intent answers dropped in the UI.** The send (and retry) JS rendered only `data.messages[last]`, so a compound message's earlier reply (e.g. financing) was in the DB but never shown — only the last part (tasks). Added `appendNewAssistantMessages()` which renders EVERY assistant reply after the latest user message. (Blade initial-load already rendered all messages, so this only affected live append.)
+- **Wide single-entity results made readable.** A 1–3 row × >5 column result (e.g. one project's financing) rendered as a horizontally-scrolling table. Now rendered as stacked label/value cards via `renderRecordCards()` (JS) + matching Blade branch; the auto-chart is suppressed for these. Kept JS + Blade consistent (per the note above).
+
+**Gotchas / learnings (important):**
+- **`php artisan view:cache` does NOT lint the compiled PHP** — it only does the Blade→PHP transform, so a structural bug that produces invalid PHP still reports "cached successfully". To actually validate a Blade change, compile then `php -l` the files in `storage/framework/views/*.php`.
+- **Avoid `@php … @endphp` blocks containing a `//` comment** — it breaks Blade's `@php`→`<?php` conversion (opening `@php` stays literal), cascading into "unexpected endif". Prefer inline `@if(<expr>)` conditions and `{{-- --}}` Blade comments.
+- **Role reality:** `Employee` (and other scoped roles) have NO finance access, so financing/contract-amount answers are correctly blocked for them — "only tasks showed" is by-design scoping, not a bug. Finance data needs Admin/Super Admin/Finance.
+- **The eval asserts the LAST assistant message of a step**, so a multi-intent test's final clause must reference data that exists for the test project (Yunjiao-Guan has financing + tasks but no logs).
+- Added **`php artisan ai:eval --filter="<text>"`** to run only cases whose label contains the text (fast iteration on one case).
+
 ---
 
 ## General development notes

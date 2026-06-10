@@ -22,7 +22,7 @@ use Throwable;
  */
 class AiEvalCommand extends Command
 {
-    protected $signature = 'ai:eval {--user= : Run as this user id (defaults to first admin)} {--keep : Keep the chats created during evaluation} {--show : Print the first few answer rows for each case} {--profile : Print per-case latency / OpenAI round-trip profiling}';
+    protected $signature = 'ai:eval {--user= : Run as this user id (defaults to first admin)} {--keep : Keep the chats created during evaluation} {--show : Print the first few answer rows for each case} {--profile : Print per-case latency / OpenAI round-trip profiling} {--filter= : Only run cases whose label contains this text (case-insensitive)}';
 
     protected $description = 'Run the AI chat evaluation suite and report routing/quality regressions';
 
@@ -49,6 +49,19 @@ class AiEvalCommand extends Command
             $this->warn('No eval cases configured in config/ai_eval.php.');
 
             return self::SUCCESS;
+        }
+
+        if ($filter = $this->option('filter')) {
+            $cases = array_values(array_filter(
+                $cases,
+                fn ($case) => stripos($this->caseLabel((array) $case), (string) $filter) !== false
+            ));
+
+            if ($cases === []) {
+                $this->warn("No eval cases match filter \"{$filter}\".");
+
+                return self::SUCCESS;
+            }
         }
 
         $this->info("Running " . count($cases) . " eval case(s) as user #{$user->id} ({$user->name})\n");

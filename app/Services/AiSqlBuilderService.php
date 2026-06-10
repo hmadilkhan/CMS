@@ -80,6 +80,7 @@ class AiSqlBuilderService
             'customer_city_count',
             'customer_state_count',
             'project_status_count',
+            'project_status_filter_count',
         ];
         
         // Use hardcoded logic for known complex intents
@@ -253,18 +254,35 @@ class AiSqlBuilderService
 
         if (($plan['intent'] ?? null) === 'project_status_count') {
             $this->ensureJoin($query, 'tasks', 'tasks.project_id', '=', 'projects.id');
-            $query->select(
-                'tasks.status as project_status',
-                DB::raw('COUNT(DISTINCT projects.id) as no_of_projects')
-            )
+            // A project has MANY tasks; a plain join over-counts (a project lands in
+            // several status buckets). Pin to each project's LATEST task so every
+            // project is counted in exactly one status and the totals reconcile.
+            $query->whereRaw('tasks.id = (select max(lt.id) from tasks as lt where lt.project_id = projects.id and lt.deleted_at is null)')
+                ->select(
+                    'tasks.status as project_status',
+                    DB::raw('COUNT(DISTINCT projects.id) as no_of_projects')
+                )
                 ->groupBy('tasks.status')
                 ->orderByRaw('no_of_projects DESC');
         }
 
         if (($plan['intent'] ?? null) === 'project_status_summary') {
             $this->ensureJoin($query, 'tasks', 'tasks.project_id', '=', 'projects.id');
-            $query->select('tasks.status', DB::raw('count(distinct projects.id) as aggregate'))
+            // Latest-task pin (see project_status_count above) so status counts sum
+            // to the real project total instead of inflating past it.
+            $query->whereRaw('tasks.id = (select max(lt.id) from tasks as lt where lt.project_id = projects.id and lt.deleted_at is null)')
+                ->select('tasks.status', DB::raw('count(distinct projects.id) as aggregate'))
                 ->groupBy('tasks.status');
+        }
+
+        // COUNT of projects whose CURRENT (latest) task has a given status, e.g.
+        // "how many projects are in progress". applySelect already set
+        // `count(*) as aggregate` (answer_type=count) and applyFilters added the
+        // `tasks.status = ?` predicate; here we only join tasks and pin to each
+        // project's latest task so count(*) counts every project exactly once.
+        if (($plan['intent'] ?? null) === 'project_status_filter_count') {
+            $this->ensureJoin($query, 'tasks', 'tasks.project_id', '=', 'projects.id');
+            $query->whereRaw('tasks.id = (select max(lt.id) from tasks as lt where lt.project_id = projects.id and lt.deleted_at is null)');
         }
 
         if (($plan['intent'] ?? null) === 'project_department_summary') {

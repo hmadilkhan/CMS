@@ -1372,6 +1372,43 @@ PROMPT;
         // named reports below stay curated. The empty/count-0 safety net in
         // AiChatService backstops any mis-route for full-access users.
 
+        // "How many projects are in progress / on hold / completed / cancelled" →
+        // a COUNT of projects by their CURRENT (latest-task) status. Previously this
+        // fell through to a capped list and the formatter reported the LIMIT (e.g.
+        // "100") as if it were the real total. We handle ONLY the simple form here;
+        // any question carrying an extra qualifier (date, department, location,
+        // milestone) is deferred to the LLM planner / Text-to-SQL, which read the
+        // full question. The structured builder applies the latest-task pin so the
+        // count reflects each project exactly once.
+        $isCountQuestion = $mentionsCount
+            || str_contains($normalized, 'how many')
+            || str_contains($normalized, 'kitne')
+            || str_contains($normalized, 'kitni')
+            || str_contains($normalized, 'number of');
+
+        $taskStatus = in_array($status, ['In-Progress', 'Completed', 'Cancelled', 'Hold'], true) ? $status : null;
+
+        $hasExtraQualifier = $dateRange !== null
+            || $this->extractDepartmentName($normalized) !== null
+            || (bool) preg_match('/\b(department|sub[\s_-]?department|state|city|customer|installed?|permit|permitting|pto|hoa|ntp|survey|inspection|battery|mpu)\b/i', $normalized);
+
+        if ($mentionsProject && $isCountQuestion && $taskStatus !== null
+            && ! $mentionsTicket && ! $mentionsAcceptance && ! $hasExtraQualifier) {
+            return [
+                'answer_type'             => 'count',
+                'intent'                  => 'project_status_filter_count',
+                'tables'                  => ['projects', 'tasks'],
+                'columns'                 => ['id'],
+                'group_by'                => [],
+                'filters'                 => [
+                    ['table' => 'tasks', 'column' => 'status', 'operator' => '=', 'value' => $taskStatus],
+                ],
+                'requires_finance_access' => false,
+                'sql'                     => null,
+                'fallback_message'        => null,
+            ];
+        }
+
         if ($mentionsUser && $mentionsRole) {
             $wantsCount = $mentionsCount
                 || str_contains($normalized, 'count')
@@ -1675,7 +1712,14 @@ PROMPT;
             ];
         }
 
-        if ($mentionsProject && $mentionsFinance) {
+        // Ranking/superlative finance questions ("top 5 by highest contract amount",
+        // "lowest commission projects") need an ORDER BY + small LIMIT the curated
+        // financing summary does not apply. Let these fall through to the LLM planner
+        // → Text-to-SQL, which can sort and limit. Plain "financing details" (no
+        // ranking word) still uses the curated report below.
+        $wantsFinanceRanking = (bool) preg_match('/\b(highest|lowest|top|bottom|most|least|largest|smallest|maximum|minimum|max|min|biggest|expensive|cheapest)\b/i', $normalized);
+
+        if ($mentionsProject && $mentionsFinance && ! $wantsFinanceRanking) {
             // Scope to a specific project when the question names one ("code 1149",
             // "SS-1149", a quoted/hyphenated name). Without this the curated finance
             // report ignored the reference and listed EVERY project's financing.
@@ -2179,10 +2223,27 @@ PROMPT;
             return ['column' => 'code', 'operator' => '=', 'value' => $m[1]];
         }
 
-        // Quoted name or hyphenated proper name (e.g. "Annie Ewing", Annie-Ewing).
-        if (preg_match('/["\']([A-Za-z][A-Za-z0-9\s\-]{1,40})["\']/', $question, $m)
-            || preg_match('/\b([A-Z][a-zA-Z]+-[A-Z][a-zA-Z]+)\b/', $question, $m)) {
+        // Quoted name (e.g. "Annie Ewing").
+        if (preg_match('/["\']([A-Za-z][A-Za-z0-9\s\-]{1,40})["\']/', $question, $m)) {
             return ['column' => 'project_name', 'operator' => 'like', 'value' => trim($m[1])];
+        }
+
+        // Hyphenated proper name (e.g. Annie-Ewing), optionally followed by a
+        // " - <address/unit>" segment. Capturing that suffix targets the SPECIFIC
+        // project ("Yunjiao-Guan - 61st Ave") instead of every sibling project that
+        // shares the customer name ("Yunjiao-Guan - Burlwood", "… - Amador St").
+        if (preg_match('/\b([A-Z][a-zA-Z]+-[A-Z][a-zA-Z]+)\b/', $question, $m)) {
+            $name = $m[1];
+
+            if (preg_match('/' . preg_quote($name, '/') . '\s*-\s*([A-Za-z0-9][A-Za-z0-9. ]*?)(?=\s+(?:and|also|plus|or|with|task|tasks|finance|financing|detail|details|summary|project)\b|[,.?!]|$)/iu', $question, $m2)) {
+                $suffix = trim($m2[1], " \t.,?!");
+
+                if ($suffix !== '') {
+                    $name .= ' - ' . $suffix;
+                }
+            }
+
+            return ['column' => 'project_name', 'operator' => 'like', 'value' => $name];
         }
 
         // Bare 3-6 digit number as a last resort (a lone code in the question).
