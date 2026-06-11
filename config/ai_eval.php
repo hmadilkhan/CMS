@@ -198,6 +198,34 @@ return [
         ['q' => 'show scheduled site surveys', 'intent' => 'survey', 'note' => 'Routing check — 0 "scheduled" rows is a valid answer. Intent label is free-form (site_surveys_scheduled_list / survey_scheduled_list), so match the stable "survey" substring.'],
 
         // =====================================================================
+        // NULL / MISSING DATA FILTERS
+        // =====================================================================
+        [
+            'q'    => 'Show me those customers whose phone number data is missing',
+            'note' => 'IS NULL filter on customers.phone. Currently 0 results (all customers have phones) — correct answer is an empty result, not an error or wrong data.',
+            'not_contains' => ['error', 'exception', 'something went wrong'],
+        ],
+        [
+            'q'    => 'Customers whose phone is missing',
+            'note' => 'Short variant — same IS NULL filter. 0 rows is correct.',
+            'not_contains' => ['Did you mean', 'error', 'exception'],
+        ],
+        [
+            'q'    => 'Show projects where NTP date is missing',
+            'note' => 'IS NULL filter on projects.ntp_approval_date — should return rows (many projects have no NTP date yet).',
+            'min_rows' => 1,
+        ],
+
+        // =====================================================================
+        // FINANCING METHOD GROUPING
+        // =====================================================================
+        [
+            'q'        => 'Show the projects as per Financing methods',
+            'min_rows' => 1,
+            'note'     => 'Should GROUP BY finance_options.name and return one row per financing method with project count, NOT a flat per-project list.',
+        ],
+
+        // =====================================================================
         // NAMED PROJECT DETAIL  (deterministic handler)
         // =====================================================================
         [

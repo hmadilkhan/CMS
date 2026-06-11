@@ -215,6 +215,29 @@ A QA pass (scan + live probing as different roles) found and fixed the following
 - **Role reality:** `Employee` (and other scoped roles) have NO finance access, so financing/contract-amount answers are correctly blocked for them — "only tasks showed" is by-design scoping, not a bug. Finance data needs Admin/Super Admin/Finance.
 - **The eval asserts the LAST assistant message of a step**, so a multi-intent test's final clause must reference data that exists for the test project (Yunjiao-Guan has financing + tasks but no logs).
 - Added **`php artisan ai:eval --filter="<text>"`** to run only cases whose label contains the text (fast iteration on one case).
+- **phpMyAdmin shows ALL rows including soft-deleted ones** (`deleted_at IS NOT NULL`). The app always filters `deleted_at IS NULL`. When testing a "missing data" scenario by manually setting a value to NULL in phpMyAdmin, first confirm the row is not soft-deleted — otherwise the app correctly excludes it and returns 0 results, which looks like a bug but isn't.
+- **0-row result ≠ query failure.** When all records have the requested field filled, a "missing X" query correctly returns 0 rows. Always verify actual DB data before assuming the SQL is wrong.
+
+### Second QA pass — routing & filter bugs (DONE, keep these)
+
+**Financing method grouping mis-routed (DONE):**
+- `inferKnownPlan` in `AiQueryPlannerService` was too greedy: any question with both "project" + "financing" keywords was routed to the curated `project_financing_summary` flat-list report, even when the user asked for a *grouped* breakdown ("Show projects as per Financing methods").
+- **Fix:** added `$wantsFinanceGrouping` detection — regex for `method(s)`, `option wise`, `method wise`, `finance/financing wise`, `finance/financing type`, or `per/by financing` skips the curated route and falls to Text-to-SQL, which writes the correct `GROUP BY finance_options.name` query.
+- **Domain grounding added:** `AiTextToSqlService::domainGrounding()` now includes a "Financing method" section (cache key bumped to `_v4`): lists real `finance_options.name` values, the join path `projects → customers → customer_finances → finance_options`, and a canonical `GROUP BY` example with `COUNT(DISTINCT projects.id)`.
+
+**NULL / missing-data filter bug (DONE) — affects ALL "where X is missing" questions:**
+- `AiGenericQueryBuilderService::applyFilters` (handles `crm_list`, `crm_count`, `crm_group_summary` intents) had no null handling: `{operator:"=", value:null}` fell to the `default` match arm → `where('phone', '=', null)` → SQL `WHERE phone = NULL` (always false in MySQL). `AiSqlBuilderService` had the correct `whereNull` logic but it was never ported to the Generic builder.
+- **Fix (3 files):**
+  1. `AiGenericQueryBuilderService::applyFilters` — added explicit null guards BEFORE the match block: `is_null` operator or `= null` value → `whereNull`; `is_not_null` or `!= null` → `whereNotNull`.
+  2. `AiSqlBuilderService::applyFilters` — same guards extended to also handle the new explicit `is_null`/`is_not_null` operators.
+  3. `AiQueryPlannerService::jsonSchema()` — added `is_null` and `is_not_null` to the filter operator enum (was only `=, !=, >, >=, <, <=, like, in, between`). Added a **NULL / MISSING DATA FILTERS** instructions block with concrete examples so the LLM knows to use `operator:"is_null"` for "missing/empty/not filled" questions.
+
+**0-row result showed misleading "Did you mean these fields?" guidance (DONE):**
+- `AiChatService::handleQueryPlan` appended `AiFieldDictionaryService::guidanceFor()` to EVERY 0-row result. `guidanceFor()` scans the question for column names — so "Customers whose phone is missing" returned "Did you mean one of these fields? phone (Customers), phone (Employees)…" even though the query ran perfectly and correctly found 0 matches.
+- `guidanceFor()` is for intent-unknown failures (line ~630), NOT for successful queries with no matching data.
+- **Fix:** removed `guidanceFor()` from the 0-row branch (line ~639). A clean, honest message is shown instead: *"No records found matching your request. The data may not exist yet, or try adjusting your filters."*
+
+**Eval suite now at 44 cases** (was 40 → 41 after financing fix → 43 after null fixes → 44 after short-prompt variant). Run with `php artisan ai:eval --filter="<text>"` for a single case.
 
 ---
 

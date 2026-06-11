@@ -769,6 +769,13 @@ If the question cannot be answered from any table in allowed_schema AND it is no
 The system will then route the question to the general AI assistant automatically.
 Do NOT set a fallback_message for unsupported — leave it null so the router can fall back cleanly.
 
+## NULL / MISSING DATA FILTERS
+- Use operator "is_null" (value: null) when the user asks for records where a field is missing, empty, not set, or not filled.
+- Use operator "is_not_null" (value: null) when the user asks for records where a field is present, filled, or set.
+- Examples: "customers with no phone" → {table:"customers", column:"phone", operator:"is_null", value:null}
+- Examples: "projects missing NTP date" → {table:"projects", column:"ntp_approval_date", operator:"is_null", value:null}
+- Examples: "customers whose email is missing" → {table:"customers", column:"email", operator:"is_null", value:null}
+
 ## QUICK EXAMPLES
 - "Solar installations this month" → tables: ["projects"], columns: ["project_name", "solar_install_date"], filter: solar_install_date this month
 - "How many permits submitted?" → tables: ["projects"], columns: ["id", "permitting_submittion_date"], intent: "permit_count", answer_type: "count"
@@ -779,6 +786,7 @@ Do NOT set a fallback_message for unsupported — leave it null so the router ca
 - "Acceptance pending" → tables: ["project_acceptances", "projects"], columns: ["project_id", "status", "approved_date"], filter: status = 0
 - "Customers from California" → tables: ["customers"], columns: ["first_name", "last_name", "city", "state"], filter: state like "California"
 - "Show me all customers" → tables: ["customers"], columns: ["first_name", "last_name", "email", "phone", "city", "state"]
+- "Customers with missing phone" → tables: ["customers"], columns: ["first_name", "last_name", "phone", "email"], filter: {column:"phone", operator:"is_null", value:null}
 - "Tickets grouped by priority" → tables: ["service_tickets"], columns: ["priority"], group_by: ["priority"], answer_type: "table"
 - "Battery installations last month" → tables: ["projects"], columns: ["project_name", "battery_install_date"], filter: battery_install_date last month
 - "Who moved project Annie-Ewing last?" → tables: ["activity_log", "projects", "users"], columns: ["description", "created_at", "name"], filter: event = "move", subject matches project
@@ -901,7 +909,7 @@ PROMPT;
                                 'column' => ['type' => 'string'],
                                 'operator' => [
                                     'type' => 'string',
-                                    'enum' => ['=', '!=', '>', '>=', '<', '<=', 'like', 'in', 'between'],
+                                    'enum' => ['=', '!=', '>', '>=', '<', '<=', 'like', 'in', 'between', 'is_null', 'is_not_null'],
                                 ],
                                 'value' => [
                                     'anyOf' => [
@@ -1719,7 +1727,15 @@ PROMPT;
         // ranking word) still uses the curated report below.
         $wantsFinanceRanking = (bool) preg_match('/\b(highest|lowest|top|bottom|most|least|largest|smallest|maximum|minimum|max|min|biggest|expensive|cheapest)\b/i', $normalized);
 
-        if ($mentionsProject && $mentionsFinance && ! $wantsFinanceRanking) {
+        // "Projects as per / by / wise financing method(s)" wants a GROUP BY result,
+        // not a flat per-project list. The curated financing summary can't do that,
+        // so fall through to Text-to-SQL which writes the correct GROUP BY query.
+        $wantsFinanceGrouping = (bool) preg_match(
+            '/\b(method|methods|option\s*wise|method\s*wise|finance\s*wise|financing\s*wise|finance\s*type|financing\s*type)\b/i',
+            $normalized
+        ) || preg_match('/\b(per|by)\s+financ/i', $normalized);
+
+        if ($mentionsProject && $mentionsFinance && ! $wantsFinanceRanking && ! $wantsFinanceGrouping) {
             // Scope to a specific project when the question names one ("code 1149",
             // "SS-1149", a quoted/hyphenated name). Without this the curated finance
             // report ignored the reference and listed EVERY project's financing.

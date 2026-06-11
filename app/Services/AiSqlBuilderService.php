@@ -831,12 +831,12 @@ class AiSqlBuilderService
             $qualified = $this->qualify($baseTable, $column);
             $value = $filter['value'] ?? null;
 
-            if ($operator === '=' && is_null($value)) {
+            if ($operator === 'is_null' || ($operator === '=' && is_null($value))) {
                 $query->whereNull($qualified);
                 continue;
             }
 
-            if ($operator === '!=' && is_null($value)) {
+            if ($operator === 'is_not_null' || (in_array($operator, ['!=', '<>'], true) && is_null($value))) {
                 $query->whereNotNull($qualified);
                 continue;
             }

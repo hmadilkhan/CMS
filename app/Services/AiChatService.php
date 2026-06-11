@@ -637,8 +637,12 @@ class AiChatService
         } elseif (! ($execution['success'] ?? false)) {
             $assistantMessage = $execution['error_message'] ?? 'I ran into an issue executing that query. Please try again or rephrase your question.';
         } elseif (($execution['row_count'] ?? 0) === 0) {
-            $assistantMessage = "No records found for that request. The data may not exist yet, or try adjusting your filters.\n\n"
-                . $this->aiFieldDictionaryService->guidanceFor($message, $user);
+            // Query ran successfully but matched 0 rows — this is a valid result
+            // (e.g. "customers with missing phone" when all customers have phones).
+            // Do NOT append guidanceFor() here: that helper is for unknown-intent
+            // situations; appending it to a clean 0-row result misleads the user
+            // into thinking the system misunderstood them.
+            $assistantMessage = 'No records found matching your request. The data may not exist yet, or try adjusting your filters.';
             $answer = ['type' => 'text', 'message' => $assistantMessage, 'columns' => [], 'rows' => [], 'cards' => []];
         } else {
             $assistantMessage = $answer['message'] ?? 'Here are the CRM results.';

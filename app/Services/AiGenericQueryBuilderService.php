@@ -228,13 +228,24 @@ class AiGenericQueryBuilderService
                 continue;
             }
 
+            // IS NULL / IS NOT NULL — explicit operator or implicit (= / != with null value)
+            if ($operator === 'is_null' || ($operator === '=' && is_null($value))) {
+                $query->whereNull($resolvedColumn);
+                continue;
+            }
+
+            if ($operator === 'is_not_null' || (in_array($operator, ['!=', '<>'], true) && is_null($value))) {
+                $query->whereNotNull($resolvedColumn);
+                continue;
+            }
+
             // Apply filter based on operator
             match ($operator) {
                 'like' => $query->where($resolvedColumn, 'like', '%' . $value . '%'),
                 'not_like', 'not like' => $query->where($resolvedColumn, 'not like', '%' . $value . '%'),
                 'in' => is_array($value) ? $query->whereIn($resolvedColumn, $value) : null,
-                'between' => is_array($value) && count($value) === 2 
-                    ? $query->whereBetween($resolvedColumn, [$value[0], $value[1]]) 
+                'between' => is_array($value) && count($value) === 2
+                    ? $query->whereBetween($resolvedColumn, [$value[0], $value[1]])
                     : null,
                 '>', '>=', '<', '<=', '!=', '<>' => $query->where($resolvedColumn, $operator, $value),
                 default => $query->where($resolvedColumn, '=', $value),

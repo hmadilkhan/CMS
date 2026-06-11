@@ -331,10 +331,11 @@ PROMPT;
      */
     private function domainGrounding(): string
     {
-        return Cache::remember('ai_tts_domain_grounding_v3', 1800, function () {
+        return Cache::remember('ai_tts_domain_grounding_v4', 1800, function () {
             $departments = $this->distinctColumn('departments', 'name');
             $subDepartments = $this->distinctColumn('sub_departments', 'name');
             $statuses = $this->distinctColumn('tasks', 'status');
+            $financeOptions = $this->distinctColumn('finance_options', 'name');
 
             $lines = [];
 
@@ -361,6 +362,16 @@ PROMPT;
                 $lines[] = '- A project has no status column of its own. Its status is the status of its LATEST task: `tasks.status`, with values: '.$statuses->implode(', ').'.';
                 $lines[] = "- A project has MANY tasks, so a plain JOIN to tasks OVER-COUNTS (one project lands in several status buckets and the totals exceed the real project count). Pin to exactly ONE (the latest) task per project: `JOIN tasks ON tasks.project_id = projects.id AND tasks.deleted_at IS NULL` AND in the WHERE add `tasks.id = (SELECT MAX(lt.id) FROM tasks lt WHERE lt.project_id = projects.id AND lt.deleted_at IS NULL)`.";
                 $lines[] = '- NEVER treat a department/lane name as a status and NEVER alias a department as "status". For "projects by status": `SELECT tasks.status, COUNT(DISTINCT projects.id) AS project_count FROM projects JOIN tasks ON tasks.project_id = projects.id AND tasks.deleted_at IS NULL WHERE tasks.id = (SELECT MAX(lt.id) FROM tasks lt WHERE lt.project_id = projects.id AND lt.deleted_at IS NULL) AND projects.deleted_at IS NULL GROUP BY tasks.status` — the latest-task pin makes the counts sum to the real project total.';
+            }
+
+            if ($financeOptions->isNotEmpty()) {
+                $lines[] = '';
+                $lines[] = '## Financing method / finance option grouping';
+                $lines[] = '- "Financing method", "finance option", "finance type", "financing type" all refer to `finance_options.name`.';
+                $lines[] = '- finance_options.name values: '.$financeOptions->implode(', ').'.';
+                $lines[] = '- Join path to reach the financing option from projects: `JOIN customers ON customers.id = projects.customer_id JOIN customer_finances ON customer_finances.customer_id = customers.id AND customer_finances.deleted_at IS NULL JOIN finance_options ON finance_options.id = customer_finances.finance_option_id AND finance_options.deleted_at IS NULL`.';
+                $lines[] = '- For "projects per/by financing method" or "projects financing-method-wise": GROUP BY `finance_options.name` and COUNT(DISTINCT projects.id). Example: `SELECT finance_options.name AS financing_method, COUNT(DISTINCT projects.id) AS project_count FROM projects JOIN customers ON customers.id = projects.customer_id JOIN customer_finances ON customer_finances.customer_id = customers.id AND customer_finances.deleted_at IS NULL JOIN finance_options ON finance_options.id = customer_finances.finance_option_id AND finance_options.deleted_at IS NULL WHERE projects.deleted_at IS NULL GROUP BY finance_options.name ORDER BY project_count DESC LIMIT 100`.';
+                $lines[] = '- A customer may have more than one customer_finances record; always use COUNT(DISTINCT projects.id) to avoid inflating counts.';
             }
 
             return $lines === [] ? '' : implode("\n", $lines);
