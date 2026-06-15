@@ -268,7 +268,7 @@ class AiChatService
     {
         $lower = ' ' . mb_strtolower($message) . ' ';
 
-        foreach ([' also ', ' and also ', ' as well', '; ', ' plus ', ' aur ', ' bhi ', ' saath ', ' along with '] as $cue) {
+        foreach ([' also ', ' as well', '; ', ' plus ', ' aur ', ' bhi ', ' saath ', ' along with '] as $cue) {
             if (str_contains($lower, $cue)) {
                 return true;
             }
@@ -625,9 +625,14 @@ class AiChatService
             if (! $fallback || $fallback === '') {
                 return $this->handleGeneralChat($chat, $user, $message, $log, $startedAt);
             }
-            // Pair the clarification/fallback with proactive guidance so the user
-            // knows what they CAN ask and which fields are closest to their words.
-            $assistantMessage = $fallback . "\n\n" . $this->aiFieldDictionaryService->guidanceFor($message, $user);
+            // Append field-dictionary guidance ("Did you mean these fields?") only
+            // for genuinely unrecognised questions — NOT when we are asking the user
+            // to disambiguate a matched entity (clarification_required / not_found),
+            // where that guidance is irrelevant noise that clutters the prompt.
+            $isEntityClarification = in_array($plan['mode'] ?? '', ['clarification_required', 'not_found'], true);
+            $assistantMessage = $isEntityClarification
+                ? $fallback
+                : $fallback . "\n\n" . $this->aiFieldDictionaryService->guidanceFor($message, $user);
         } elseif (! ($planValidation['approved'] ?? false)) {
             $assistantMessage = $planValidation['reason']
                 ?? "You don't have permission to access that data. Contact your administrator if you think this is a mistake.";
@@ -1561,19 +1566,23 @@ class AiChatService
             'Just type your question naturally and I\'ll do my best to help!',
         ]);
 
-        $chat->messages()->create([
-            'role' => 'assistant',
-            'content' => $helpText,
-            'metadata' => ['type' => 'help_response', 'status' => 'success'],
-        ]);
+        // Persist all three writes atomically, mirroring the other handlers, so a
+        // failure can't leave the message stored while the query log stays 'pending'.
+        DB::transaction(function () use ($chat, $helpText, $log, $startedAt, $message) {
+            $chat->messages()->create([
+                'role' => 'assistant',
+                'content' => $helpText,
+                'metadata' => ['type' => 'help_response', 'status' => 'success'],
+            ]);
 
-        $log->update(array_merge([
-            'status' => 'success',
-            'duration_ms' => (int) ((microtime(true) - $startedAt) * 1000),
-            'request_payload' => ['message' => $message],
-        ], $this->profileColumns($startedAt, 'help')));
+            $log->update(array_merge([
+                'status' => 'success',
+                'duration_ms' => (int) ((microtime(true) - $startedAt) * 1000),
+                'request_payload' => ['message' => $message],
+            ], $this->profileColumns($startedAt, 'help')));
 
-        $chat->update(['last_message_at' => now()]);
+            $chat->update(['last_message_at' => now()]);
+        });
 
         return $chat->fresh('messages');
     }

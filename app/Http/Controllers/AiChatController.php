@@ -51,7 +51,11 @@ class AiChatController extends Controller
     {
         $validated = $request->validate([
             'message' => ['required', 'string', 'max:8000'],
-            'chat_id' => ['nullable', 'integer', 'exists:ai_chats,id'],
+            // No `exists` rule on purpose: findUserChat() scopes by user_id and
+            // 404s on a missing OR unowned chat. An `exists` check here would 422
+            // only when the id is absent, leaking whether another user's chat id
+            // exists. Letting it fall through keeps both cases an identical 404.
+            'chat_id' => ['nullable', 'integer'],
         ]);
 
         $chat = $this->aiChatService->send(
@@ -192,12 +196,21 @@ class AiChatController extends Controller
             ])->download($filename.'.pdf');
         }
 
-        return response()->streamDownload(function () use ($headers, $columns, $rows) {
+        // Guard against CSV/formula injection: a value starting with =, +, -, @,
+        // tab or CR is executed as a formula by Excel/Sheets. Prefix a single quote
+        // so the cell is always treated as text. Applied to headers too, defensively.
+        $sanitize = static function ($value): string {
+            $value = (string) $value;
+
+            return preg_match('/^[=+\-@\t\r]/', $value) === 1 ? "'".$value : $value;
+        };
+
+        return response()->streamDownload(function () use ($headers, $columns, $rows, $sanitize) {
             $out = fopen('php://output', 'w');
-            fputcsv($out, $headers);
+            fputcsv($out, array_map($sanitize, $headers));
 
             foreach ($rows as $row) {
-                fputcsv($out, array_map(fn ($c) => (string) ($row[$c] ?? ''), $columns));
+                fputcsv($out, array_map(fn ($c) => $sanitize($row[$c] ?? ''), $columns));
             }
 
             fclose($out);

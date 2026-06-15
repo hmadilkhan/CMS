@@ -18,6 +18,8 @@ class AiSqlParserService
         'exec',
         'execute',
         'union',
+        'intersect',
+        'except',
         'load_file',
         'outfile',
         'sleep',
@@ -84,7 +86,11 @@ class AiSqlParserService
 
     private function hasMultipleStatements(string $sql): bool
     {
-        $trimmed = trim($sql);
+        // Strip string literals first so a semicolon inside a value (e.g. a
+        // customer name like 'Smith; Inc') is not mistaken for a statement
+        // separator and the whole valid query rejected.
+        $stripped = preg_replace("/'([^'\\\\]|\\\\.)*'|\"([^\"\\\\]|\\\\.)*\"/", '', $sql) ?? $sql;
+        $trimmed = trim($stripped);
 
         return str_contains(rtrim($trimmed, ';'), ';');
     }

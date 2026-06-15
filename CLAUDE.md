@@ -138,6 +138,7 @@ soft-delete `deleted_at IS NULL`, `LIMIT`, SELECT-only, table/column allowlist, 
 ### When modifying the AI subsystem
 
 1. Adding a table/module → edit `config/ai_schema.php` (model, table, allowed/searchable columns, relationships, sensitive_columns, access_rule), then update planner `instructions()`/`moduleHints()` mappings, run `ai:schema-audit`, add an `ai_eval` case, run `ai:eval`.
+   - ⚠️ **Low-privilege roles use a hardcoded table list.** `AiPermissionService::canAccessTable` grants Manager-tier roles by `access_rule`, but **Employee / Sales Person / Sub-Contractor User** are gated by an explicit `in_array($table, [...])` allowlist (the `projects/tasks/service_tickets/...` block). A new `project_access` table is auto-visible to Managers but **NOT** to these roles unless you also add it to that hardcoded list. Update both places.
 2. Never add credential columns to `allowed_columns`; mark finance/profitability columns sensitive.
 3. Preserve the two invariants: *OpenAI never executes SQL* and *scoping is applied server-side*. Any new SQL path must go through the validators + `AiRowScopeService`.
 4. Keep English + Roman-Urdu handling — keyword lists and prompts are bilingual by design.
@@ -247,5 +248,17 @@ A QA pass (scan + live probing as different roles) found and fixed the following
 - Reporting/dashboards: `app/Livewire/*` (DynamicReportBuilder, charts, role dashboards).
 - Deploy helpers: `deploy.sh` / `rollback.sh`. Activity audit via spatie activitylog (`activity_log` table).
 - Tests live in `tests/` (PHPUnit + Dusk). The repo is on branch `main`.
-</content>
-</invoke>
+
+### ⚠️ Deployment gotcha — server shows old UI after `git push`
+
+`deploy.sh` only runs `git pull`. It does **NOT** clear compiled Blade views or rebuild JS/CSS assets. After any push that touches `.blade.php` files or frontend JS, the server will keep serving stale compiled views and stale JS bundles — so the new UI renders correctly on local but shows the old layout on production.
+
+**After every push that touches Blade views or frontend JS, run on the server:**
+```bash
+php artisan view:clear
+php artisan cache:clear
+php artisan config:clear
+npm run build        # only needed if JS/CSS changed
+```
+
+Root cause: shared Hostinger hosting — no CI/CD pipeline, no post-receive hook. Must be run manually via the hosting panel's terminal or SSH after each deploy. Consider adding these commands to `deploy.sh`.
