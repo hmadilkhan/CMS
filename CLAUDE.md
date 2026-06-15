@@ -242,6 +242,27 @@ A QA pass (scan + live probing as different roles) found and fixed the following
 
 ---
 
+### Third QA pass — security & correctness hardening (DONE, keep these)
+
+A focused QA + verification pass (commit `a9fed1e`) over the chatbot's controller / middleware / parser layers. Each finding was confirmed against the live code before fixing; two reported issues were retracted on verification (see notes).
+
+**Security:**
+- **CSV / formula injection in export (`AiChatController::export`).** The CSV stream wrote raw DB values via `fputcsv` with no escaping, so a cell beginning `=`, `+`, `-`, `@`, tab or CR would execute as a formula when the file is opened in Excel/Sheets (data exfiltration / DDE). **Fix:** a `$sanitize` closure prefixes a single quote `'` to any such value (applied to headers and rows). The PDF path is unaffected (dompdf renders, doesn't evaluate formulas).
+- **Daily-limit race condition (`AiDailyLimit`).** The cap was a read-then-write (`Cache::get` → check → `Cache::put`), a TOCTOU race: two concurrent requests both read the same count and slip past the limit. **Fix:** wrap the check-increment in an atomic per-user `Cache::lock(...)->block(3)`, released BEFORE `$next()` (so it never serialises the slow OpenAI call); fail-open on `LockTimeoutException`. Verified the `file` cache driver implements `LockProvider`, so locks are real here. NOTE: a plain `Cache::increment()` is NOT atomic on the file driver — the lock is required.
+- **Text-to-SQL parser gaps (`AiSqlParserService`).** (1) `hasMultipleStatements` checked the RAW sql for `;`, so a legit value like `'Smith; Inc'` was wrongly rejected as multi-statement — now strips string literals first (matching the keyword-check above it). (2) Added `intersect` / `except` to `BLOCKED_KEYWORDS` (MySQL 8 set operators; low risk, completeness).
+
+**Correctness / UX:**
+- **`handleHelpRequest` had no transaction (`AiChatService`).** Its three writes (message + log update + chat update) weren't wrapped, unlike every sibling handler — a mid-way failure could leave the message stored while the query log stayed `pending`. Now wrapped in `DB::transaction`.
+- **Field-dictionary guidance on entity clarification (`AiChatService::handleQueryPlan`).** When entity resolution asks the user to disambiguate (`clarification_required` / `not_found`, intent forced to `unknown`), `guidanceFor()` was still appending "Did you mean these fields?" noise. Now skipped for those two modes; still shown for genuinely unrecognised questions.
+- **Cleanups:** removed the redundant `' and also '` compound cue (already a superset of `' also '` in `looksCompound`); removed the `exists:ai_chats,id` rule on `send` (it 422'd only when absent, leaking whether another user's chat id exists — `findUserChat` already 404s on missing OR unowned, so both cases are now a uniform 404).
+- **Docs:** removed stray `</content>` / `</invoke>` tool-call tags accidentally committed at the end of this file; added the low-privilege hardcoded-table-list note under "When modifying the AI subsystem".
+
+**Retracted on verification (NOT bugs):** (a) "`profit_margin` formatted as currency" — no bare `profit_margin` column exists; the only one is `profit_margin_percent`, correctly caught by `isPercentColumn` first. (b) The daily-limit fix was initially proposed as `Cache::increment()` — corrected to a lock after confirming the file driver's increment isn't atomic.
+
+These fixes are controller/middleware/parser-level and don't change question→answer behaviour, so no new `ai_eval` cases were added (only Issue 8 alters a clarification message). `php -l` clean on all touched files.
+
+---
+
 ## General development notes
 
 - Email/IMAP: `EmailFetchService`, `app/Console/Commands/FetchEmails.php` / `FetchAllEmails.php`, jobs in `app/Jobs`.
