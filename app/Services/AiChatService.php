@@ -212,6 +212,20 @@ class AiChatService
                 }
             }
 
+            // 2.4 Estimated & Actual Project Costs — the CRM "Financial Ledger" panel.
+            //      Its estimated material/labor figures are COMPUTED from the catalogue
+            //      + customer specs (not stored columns), so Text-to-SQL cannot reproduce
+            //      them. Handle deterministically, mirroring the ProjectCost component,
+            //      gated on the same permission the CRM uses. Falls through when no
+            //      project resolves, so a non-cost question never dead-ends here.
+            if ($this->isProjectCostLedgerRequest($message)) {
+                $ledger = $this->handleProjectCostLedger($chat, $user, $message, $log, $startedAt);
+
+                if ($ledger !== null) {
+                    return $ledger;
+                }
+            }
+
             // 2.5 Named project detail — "details/summary of <project>" → a formatted
             //      text summary + per-department table (assignment, age, days in each
             //      lane, status, delay reason, notes). Only when a project is named or
@@ -1003,6 +1017,115 @@ class AiChatService
         });
 
         return $chat->fresh('messages');
+    }
+
+    /**
+     * True for "Estimated & Actual Project Costs" / "project cost" / "Financial
+     * Ledger" style questions. The handler still requires a resolvable project, so
+     * a broad aggregate cost question (no project named) falls through harmlessly.
+     */
+    private function isProjectCostLedgerRequest(string $message): bool
+    {
+        $lower = mb_strtolower($message);
+
+        foreach ([
+            'estimated & actual', 'estimated and actual',
+            'estimated project cost', 'actual project cost',
+            'project cost', 'project costs',
+            'financial ledger', 'pre and post project cost', 'pre and post cost',
+        ] as $cue) {
+            if (str_contains($lower, $cue)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Answer an "Estimated & Actual Project Costs" question deterministically,
+     * mirroring the CRM's Financial Ledger panel. Returns null (fall through) when
+     * no project resolves; a permission-denied message when the user lacks the
+     * 'Pre and Post Project Cost' permission the CRM gates that panel with.
+     */
+    private function handleProjectCostLedger(AiChat $chat, User $user, string $message, AiQueryLog $log, float $startedAt): ?AiChat
+    {
+        // Strip the cost/ledger vocabulary first so it never pollutes the project
+        // name (otherwise "Estimated & Actual Project Costs of <name>" leaves
+        // tokens like "estimated"/"actual"/"cost" that match no project).
+        $cleaned = preg_replace(
+            '/\b(estimated|actual|financial|ledger|pre|post|profit|profitability|material|labou?r|permit|internal|contract|realized|cost|costs)\b/iu',
+            ' ',
+            $message
+        ) ?? $message;
+
+        $search = $this->extractProjectSearchTerm($message);
+
+        if ($search === '') {
+            $search = $this->stripToProjectName($cleaned);
+        }
+
+        if ($search === '') {
+            $search = $this->getRecentProjectSearch($chat);
+        }
+
+        if ($search === '') {
+            return null;
+        }
+
+        $result = $this->aiProjectLaneService->getProjectCostLedger($user, $search);
+
+        if (! ($result['authorized'] ?? false)) {
+            $denied = "You don't have permission to view a project's Estimated & Actual Project Costs. Please contact your administrator if you think this is a mistake.";
+            $answer = ['type' => 'text', 'message' => $denied, 'columns' => [], 'rows' => [], 'cards' => []];
+
+            return $this->storeProjectDetailMessage($chat, $message, $denied, $answer, $log, $startedAt, 'permission_denied', $search);
+        }
+
+        $projects = $result['projects'] ?? [];
+        $count    = (int) ($result['project_count'] ?? count($projects));
+
+        if ($projects === []) {
+            return null;
+        }
+
+        // Multiple matches → ask which one (by code), like the project-detail handler.
+        if ($count > 1) {
+            $rows = array_map(fn (array $p) => [
+                'Project'  => $p['project_name'],
+                'Code'     => $p['code'],
+                'Customer' => $p['customer_name'],
+            ], $projects);
+
+            $msg    = "I found {$count} projects matching \"{$search}\". Tell me which one (by code) and I'll show its Estimated & Actual Project Costs:";
+            $answer = ['type' => 'table', 'message' => $msg, 'columns' => ['Project', 'Code', 'Customer'], 'rows' => $rows, 'cards' => []];
+
+            return $this->storeProjectDetailMessage($chat, $message, $msg, $answer, $log, $startedAt, 'success', $search);
+        }
+
+        $p = $projects[0];
+        $l = $result['ledger'];
+
+        $money = static fn ($v) => '$' . number_format((float) $v, 2);
+        $pct   = static fn ($v) => number_format((float) $v, 2) . '%';
+
+        $rows = [
+            ['Item' => 'Internal Contract Amount', 'Estimated' => $money($l['internal_contract']),    'Actual' => $money($l['internal_contract'])],
+            ['Item' => 'Material Cost',            'Estimated' => $money($l['estimated']['material']), 'Actual' => $money($l['actual']['material'])],
+            ['Item' => 'Labor Cost',               'Estimated' => $money($l['estimated']['labor']),    'Actual' => $money($l['actual']['labor'])],
+            ['Item' => 'Permit Cost',              'Estimated' => $money($l['estimated']['permit']),   'Actual' => $money($l['actual']['permit'])],
+            ['Item' => 'Profit',                   'Estimated' => $money($l['estimated']['profit']),   'Actual' => $money($l['actual']['profit'])],
+            ['Item' => 'Profit %',                 'Estimated' => $pct($l['estimated']['profit_pct']), 'Actual' => $pct($l['actual']['profit_pct'])],
+        ];
+
+        $label = $p['project_name'] . (($p['code'] ?? '-') !== '-' ? ' (' . $p['code'] . ')' : '');
+        $msg   = 'Estimated & Actual Project Costs for **' . $label . '** — Estimated profit '
+            . $money($l['estimated']['profit']) . ' (' . $pct($l['estimated']['profit_pct']) . '), Realized profit '
+            . $money($l['actual']['profit']) . ' (' . $pct($l['actual']['profit_pct']) . ').';
+
+        $answer = ['type' => 'table', 'message' => $msg, 'columns' => ['Item', 'Estimated', 'Actual'], 'rows' => $rows, 'cards' => []];
+
+        return $this->storeProjectDetailMessage($chat, $message, $msg, $answer, $log, $startedAt, 'success', $search);
     }
 
     /**

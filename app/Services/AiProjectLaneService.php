@@ -2,6 +2,8 @@
 
 namespace App\Services;
 
+use App\Models\LaborCost;
+use App\Models\Project;
 use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Database\Query\Builder;
@@ -363,6 +365,163 @@ class AiProjectLaneService
         }
 
         return ['projects' => $projects, 'project_count' => $grouped->count()];
+    }
+
+    /**
+     * Estimated & Actual Project Costs — the deterministic equivalent of the CRM's
+     * "Financial Ledger → Estimated & Actual Project Costs" panel
+     * (App\Livewire\Project\ProjectCost). The estimated material/labor figures are
+     * COMPUTED live from the catalogue + customer specs (not stored columns), so
+     * Text-to-SQL cannot reproduce them — this mirrors the Livewire formula EXACTLY
+     * by reusing the same Eloquent relations, keeping a single source of truth.
+     *
+     * Permission-gated identically to the CRM panel (`Pre and Post Project Cost`),
+     * since it exposes internal costs + profit. Row-access is also applied so a
+     * scoped user can only resolve their own projects.
+     *
+     * @return array{authorized:bool, projects:array<int,array>, project_count:int, ledger?:array}
+     */
+    public function getProjectCostLedger(User $user, string $search, int $maxProjects = 5): array
+    {
+        if (! $user->can('Pre and Post Project Cost')) {
+            return ['authorized' => false, 'projects' => [], 'project_count' => 0];
+        }
+
+        $query = DB::table('projects as p')
+            ->leftJoin('customers as c', 'c.id', '=', 'p.customer_id')
+            ->whereNull('p.deleted_at')
+            ->select([
+                'p.id',
+                'p.project_name',
+                'p.code',
+                DB::raw("TRIM(CONCAT(COALESCE(c.first_name,''),' ',COALESCE(c.last_name,''))) as customer_name"),
+            ])
+            ->orderBy('p.id');
+
+        $query = $this->applyProjectScope($query, $user);
+
+        if ($search !== '') {
+            $tokens = $this->nameTokens($search);
+
+            $query->where(function ($q) use ($search, $tokens) {
+                $q->where('p.project_name', 'like', '%' . $search . '%')
+                  ->orWhere('p.code', 'like', '%' . $search . '%')
+                  ->orWhere(DB::raw("CONCAT(COALESCE(c.first_name,''),' ',COALESCE(c.last_name,''))"), 'like', '%' . $search . '%');
+
+                // Token-wise fallback so a hyphenated/spaced name ("Yunjiao-Guan - 61st
+                // Ave") still matches a loosely-typed search ("Yunjiao Guan 61st Ave").
+                if ($tokens !== []) {
+                    $q->orWhere(function ($qq) use ($tokens) {
+                        foreach ($tokens as $token) {
+                            $qq->where('p.project_name', 'like', '%' . $token . '%');
+                        }
+                    });
+                }
+            });
+        }
+
+        $matches = $query->limit($maxProjects + 1)->get();
+
+        if ($matches->isEmpty()) {
+            return ['authorized' => true, 'projects' => [], 'project_count' => 0];
+        }
+
+        $summaries = $matches->take($maxProjects)->map(fn ($p) => [
+            'project_id'    => (int) $p->id,
+            'project_name'  => $p->project_name,
+            'code'          => $p->code ?: '-',
+            'customer_name' => trim((string) $p->customer_name) ?: 'N/A',
+        ])->values()->all();
+
+        // Multiple matches → let the caller ask which one (by code).
+        if ($matches->count() > 1) {
+            return ['authorized' => true, 'projects' => $summaries, 'project_count' => $matches->count()];
+        }
+
+        return [
+            'authorized'    => true,
+            'projects'      => [$summaries[0]],
+            'project_count' => 1,
+            'ledger'        => $this->computeCostLedger($summaries[0]['project_id']),
+        ];
+    }
+
+    /**
+     * Replicate App\Livewire\Project\ProjectCost::mount()+calculateProfit() exactly,
+     * with null-safe guards so a missing relation yields 0 instead of throwing.
+     */
+    private function computeCostLedger(int $projectId): array
+    {
+        $project  = Project::find($projectId);
+        $customer = $project ? $project->customer : null;
+        $finances = $customer ? $customer->finances : null;
+        $labor    = LaborCost::whereNull('deleted_at')->first();
+
+        $num = static fn ($v) => is_numeric($v) ? (float) $v : 0.0;
+
+        $internalContract = $num(optional($finances)->redline_costs)
+            + $num(optional($finances)->adders)
+            + $num(optional($finances)->holdback_amount);
+
+        $panelQty   = $num(optional($customer)->panel_qty);
+        $moduleCost = $num(optional(optional($customer)->module)->internal_module_cost);
+        $rate       = $customer ? optional($customer->inverter)->invertertyperates : null;
+        $invBase    = $num(optional($rate)->internal_base_cost);
+        $invLabor   = $num(optional($rate)->internal_labor_cost);
+        $laborRate  = $num(optional($labor)->cost);
+
+        $estMaterial = ($panelQty * $moduleCost) + $invBase;
+        $estLabor    = ($laborRate * $panelQty) + $invLabor;
+        $estPermit   = $num(optional($project)->pre_estimated_permit_costs);
+        $estProfit   = $internalContract - ($estMaterial + $estLabor + $estPermit);
+
+        $actMaterial = $num(optional($project)->actual_material_cost);
+        $actLabor    = $num(optional($project)->actual_labor_cost);
+        $actPermit   = $num(optional($project)->actual_permit_fee);
+        $actProfit   = $internalContract - ($actMaterial + $actLabor + $actPermit);
+
+        return [
+            'internal_contract' => $internalContract,
+            'estimated' => [
+                'material'   => $estMaterial,
+                'labor'      => $estLabor,
+                'permit'     => $estPermit,
+                'profit'     => $estProfit,
+                'profit_pct' => $internalContract != 0.0 ? ($estProfit / $internalContract) * 100 : 0.0,
+            ],
+            'actual' => [
+                'material'   => $actMaterial,
+                'labor'      => $actLabor,
+                'permit'     => $actPermit,
+                'profit'     => $actProfit,
+                'profit_pct' => $internalContract != 0.0 ? ($actProfit / $internalContract) * 100 : 0.0,
+            ],
+        ];
+    }
+
+    /**
+     * Distinctive lowercase tokens from a free-typed name, dropping generic filler
+     * (street suffixes, "project", "the", …) so a token-AND match stays specific.
+     *
+     * @return array<int,string>
+     */
+    private function nameTokens(string $search): array
+    {
+        $filler = ['the', 'of', 'project', 'for', 'and', 'a', 'an', 'ave', 'st', 'street',
+            'rd', 'road', 'dr', 'drive', 'blvd', 'ln', 'lane', 'ct', 'way'];
+
+        $parts  = preg_split('/[\s\-]+/u', mb_strtolower(trim($search))) ?: [];
+        $tokens = [];
+
+        foreach ($parts as $part) {
+            $part = trim($part);
+            if ($part === '' || mb_strlen($part) < 2 || in_array($part, $filler, true)) {
+                continue;
+            }
+            $tokens[] = $part;
+        }
+
+        return array_slice(array_values(array_unique($tokens)), 0, 5);
     }
 
     /**

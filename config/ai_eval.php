@@ -243,5 +243,15 @@ return [
             'not_contains' => ['No records found', 'data may not exist'],
             'note'         => 'Reported bug: name typed without hyphens ("Yunjiao Guan 61st Ave") vs stored "Yunjiao-Guan - 61st Ave" made a single-phrase LIKE return 0 rows. Must token-match the name (AND of per-token LIKEs) AND read the deal adders from customer_adders (not the adders price catalogue). Project 272 / customer 282 has 1 customer_adder.',
         ],
+
+        // =====================================================================
+        // ESTIMATED & ACTUAL PROJECT COSTS  (deterministic Financial Ledger)
+        // =====================================================================
+        [
+            'q'            => 'Show me the Estimated & Actual Project Costs of project Yunjiao Guan 61st Ave',
+            'contains'     => 'permission',
+            'not_contains' => ['$0.00', 'No records found'],
+            'note'         => 'Deterministic ledger handler mirroring the ProjectCost Livewire panel — estimated material/labor are COMPUTED from catalogue + customer specs (not stored columns), so Text-to-SQL returns wrong $0.00 stored cols. The DEFAULT eval admin (#102) lacks the "Pre and Post Project Cost" permission, so the handler must DENY (not leak internal costs, and not fall through to the $0.00 Text-to-SQL answer). SUCCESS path verified separately as Super Admin #1 (php artisan ai:eval --filter="Estimated" --user=1): 6-row Estimated/Actual table, Internal Contract $46,335.50, Est profit $15,714.70 (33.92%), Realized profit $46,335.50 (100%).',
+        ],
     ],
 ];
