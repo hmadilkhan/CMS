@@ -233,5 +233,15 @@ return [
             'min_rows' => 1,
             'note'     => 'Project detail: formatted text + per-department days table. Update name if removed.',
         ],
+
+        // =====================================================================
+        // ADDERS ON A PROJECT  (+ loose / token-wise name matching)
+        // =====================================================================
+        [
+            'q'            => 'show me the adders of project Yunjiao Guan 61st Ave',
+            'min_rows'     => 1,
+            'not_contains' => ['No records found', 'data may not exist'],
+            'note'         => 'Reported bug: name typed without hyphens ("Yunjiao Guan 61st Ave") vs stored "Yunjiao-Guan - 61st Ave" made a single-phrase LIKE return 0 rows. Must token-match the name (AND of per-token LIKEs) AND read the deal adders from customer_adders (not the adders price catalogue). Project 272 / customer 282 has 1 customer_adder.',
+        ],
     ],
 ];

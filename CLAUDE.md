@@ -261,6 +261,10 @@ A focused QA + verification pass (commit `a9fed1e`) over the chatbot's controlle
 
 These fixes are controller/middleware/parser-level and don't change question→answer behaviour, so no new `ai_eval` cases were added (only Issue 8 alters a clarification message). `php -l` clean on all touched files.
 
+**Adders-on-a-project + loose name matching (DONE).** Reported bug: "show me the adders of project Yunjiao Guan 61st Ave" returned 0 rows even though the project (id 272) has a `customer_adder`. Two root causes, both in `AiTextToSqlService`:
+- **Strict single-phrase name match.** Text-to-SQL wrote `project_name LIKE '%Yunjiao Guan 61st Ave%'`, but the stored name is `Yunjiao-Guan - 61st Ave` (hyphens + ` - ` suffix) → no match. **Fix:** `buildInstructions()` now tells the model to match a project/customer name **token-wise** — split into distinctive tokens and AND one `LIKE` per token (`project_name LIKE '%Yunjiao%' AND project_name LIKE '%61st%'`), skipping filler (the/of/project/ave/st). General fix — helps every name query, not just adders.
+- **Wrong adders table.** A project's adders live in `customer_adders` (the deal's adders + `amount`), reached via `projects → customers → customer_adders → adder_types/sub_types/units`; the `adders` table is the price CATALOGUE. **Fix:** new "Adders" section in `domainGrounding()` (cache key bumped `_v4` → `_v5`) with the join path + example. Verified: `ai:eval --filter="adders"` returns the real deal adder (Tesla Expansion Battery, $8,250). **Remember to `cache:clear` after a grounding change** — the previous (wrong) SQL was held in the Text-to-SQL result cache.
+
 ---
 
 ## General development notes

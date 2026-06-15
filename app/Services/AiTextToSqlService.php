@@ -296,7 +296,7 @@ You are a safe SQL generator for a solar-installation company CRM (MySQL).
 - Always add explicit JOIN ... ON conditions using the relationships listed in the schema. Never rely on implicit/comma joins.
 - Use the "relationships" entry on each table to choose correct join keys.
 - Do NOT alias the main/outer query tables — reference them by full name and qualify every column as `table_name.column` (e.g. `customers.name`, `tasks.status` — not `c.name` or `t.status`). This is required for the server-side row-access and soft-delete guards. You MAY alias a table ONLY inside a correlated subquery (e.g. `(SELECT MAX(lt.id) FROM tasks lt WHERE lt.project_id = projects.id)`).
-- For name searches prefer LIKE '%term%' (case-insensitive) rather than exact '=' so partial names match.
+- For name searches prefer LIKE '%term%' (case-insensitive) rather than exact '='. IMPORTANT: a stored project/customer name often contains hyphens, an address suffix, or different spacing than the user typed (the user writes "Yunjiao Guan 61st Ave" but the row is "Yunjiao-Guan - 61st Ave"). Do NOT match the user's whole phrase as one literal `LIKE '%whole phrase%'` — it misses on any punctuation/spacing difference. Instead split the name into its distinctive tokens and AND one LIKE per token, e.g. `projects.project_name LIKE '%Yunjiao%' AND projects.project_name LIKE '%61st%'`. Skip generic filler tokens (the, of, project, for, ave, st, street).
 - When the question implies counting/grouping ("how many", "count", "X wise", "per X"), use COUNT(...) with GROUP BY and give aggregates a clear alias.
 - Resolve relative dates against today ({$today}). e.g. "this month", "last 30 days", "in April 2026".
 - Read the FULL question: apply every filter the user mentions (location, status, date range, person, etc.). Do not return a generic list when the user asked for a filtered/aggregated result.{$softDeleteRule}
@@ -331,11 +331,12 @@ PROMPT;
      */
     private function domainGrounding(): string
     {
-        return Cache::remember('ai_tts_domain_grounding_v4', 1800, function () {
+        return Cache::remember('ai_tts_domain_grounding_v5', 1800, function () {
             $departments = $this->distinctColumn('departments', 'name');
             $subDepartments = $this->distinctColumn('sub_departments', 'name');
             $statuses = $this->distinctColumn('tasks', 'status');
             $financeOptions = $this->distinctColumn('finance_options', 'name');
+            $adderTypes = $this->distinctColumn('adder_types', 'name');
 
             $lines = [];
 
@@ -372,6 +373,16 @@ PROMPT;
                 $lines[] = '- Join path to reach the financing option from projects: `JOIN customers ON customers.id = projects.customer_id JOIN customer_finances ON customer_finances.customer_id = customers.id AND customer_finances.deleted_at IS NULL JOIN finance_options ON finance_options.id = customer_finances.finance_option_id AND finance_options.deleted_at IS NULL`.';
                 $lines[] = '- For "projects per/by financing method" or "projects financing-method-wise": GROUP BY `finance_options.name` and COUNT(DISTINCT projects.id). Example: `SELECT finance_options.name AS financing_method, COUNT(DISTINCT projects.id) AS project_count FROM projects JOIN customers ON customers.id = projects.customer_id JOIN customer_finances ON customer_finances.customer_id = customers.id AND customer_finances.deleted_at IS NULL JOIN finance_options ON finance_options.id = customer_finances.finance_option_id AND finance_options.deleted_at IS NULL WHERE projects.deleted_at IS NULL GROUP BY finance_options.name ORDER BY project_count DESC LIMIT 100`.';
                 $lines[] = '- A customer may have more than one customer_finances record; always use COUNT(DISTINCT projects.id) to avoid inflating counts.';
+            }
+
+            if ($adderTypes->isNotEmpty()) {
+                $lines[] = '';
+                $lines[] = '## Adders on a project / customer deal';
+                $lines[] = "- A project's (or customer's) adders are the rows in `customer_adders` (the deal's chosen adders + their `amount`). Do NOT use the `adders` table for this — `adders` is the generic price CATALOGUE, not a specific deal's adders.";
+                $lines[] = '- A project reaches its adders through the customer: `projects.customer_id = customers.id`, then `customer_adders.customer_id = customers.id`. The adders are NOT linked to projects directly.';
+                $lines[] = '- Join path: `JOIN customers ON customers.id = projects.customer_id AND customers.deleted_at IS NULL JOIN customer_adders ON customer_adders.customer_id = customers.id AND customer_adders.deleted_at IS NULL LEFT JOIN adder_types ON adder_types.id = customer_adders.adder_type_id LEFT JOIN adder_sub_types ON adder_sub_types.id = customer_adders.adder_sub_type_id LEFT JOIN adder_units ON adder_units.id = customer_adders.adder_unit_id`.';
+                $lines[] = '- Select readable names + amount: `adder_types.name`, `adder_sub_types.name`, `adder_units.name`, `customer_adders.amount`. adder_types.name values: '.$adderTypes->implode(', ').'.';
+                $lines[] = "- Example \"adders of project X\": `SELECT adder_types.name AS adder_type, adder_sub_types.name AS sub_type, adder_units.name AS unit, customer_adders.amount FROM projects JOIN customers ON customers.id = projects.customer_id AND customers.deleted_at IS NULL JOIN customer_adders ON customer_adders.customer_id = customers.id AND customer_adders.deleted_at IS NULL LEFT JOIN adder_types ON adder_types.id = customer_adders.adder_type_id LEFT JOIN adder_sub_types ON adder_sub_types.id = customer_adders.adder_sub_type_id LEFT JOIN adder_units ON adder_units.id = customer_adders.adder_unit_id WHERE projects.project_name LIKE '%X%' AND projects.deleted_at IS NULL LIMIT 50`.";
             }
 
             return $lines === [] ? '' : implode("\n", $lines);
