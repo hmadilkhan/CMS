@@ -423,7 +423,7 @@ $('#commentForm').on('submit', function(e) {
                 notes: {!! json_encode($ticket->notes) !!}
             },
             success: addComment
-        }
+        });
     @else
         addComment();
     @endif
