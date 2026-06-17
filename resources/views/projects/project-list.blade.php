@@ -85,6 +85,11 @@
         font-weight: 600;
     }
 
+    .badge-not-initiated {
+        background-color: #1d4ed8 !important;
+        color: #ffffff !important;
+    }
+
     .progress-modern {
         height: 8px;
         border-radius: 10px;
@@ -296,7 +301,7 @@
                                     </div>
                                 </div>
                                 <div class="card-body" style="overflow-wrap: break-word; word-wrap: break-word;">
-                                    <div class="info-row d-flex justify-content-between align-items-center">
+                                    {{-- <div class="info-row d-flex justify-content-between align-items-center">
                                         <span class="info-label"><i class="icofont-code-alt me-2"></i>Project
                                             Code</span>
                                         <span
@@ -307,6 +312,11 @@
                                             Partner</span>
                                         <span
                                             class="info-value text-success text-truncate ms-2">{{ $project->customer->salespartner->name }}</span>
+                                    </div> --}}
+                                    <div class="info-row d-flex justify-content-between align-items-center">
+                                        <span class="info-label"><i class="icofont-ui-user me-2"></i>Finance</span>
+                                        <span
+                                            class="info-value text-success text-truncate ms-2">{{ $project->customer->finances->finance->name }}</span>
                                     </div>
                                     <div class="info-row d-flex justify-content-between align-items-center">
                                         <span class="info-label"><i class="icofont-sand-clock me-2"></i>Status</span>
@@ -323,7 +333,7 @@
                                         <span class="info-label"><i
                                                 class="icofont-check-circled me-2"></i>Acceptance</span>
                                         <span
-                                            class="badge bg-{{ $acceptanceClass == 'text-success' ? 'success' : ($acceptanceClass == 'text-warning' ? 'warning' : 'secondary') }} text-truncate ms-2">{{ $acceptanceStatus }}</span>
+                                            class="badge {{ $acceptanceStatus == 'Not Initiated' ? 'badge-not-initiated' : 'bg-' . ($acceptanceClass == 'text-success' ? 'success' : ($acceptanceClass == 'text-warning' ? 'warning' : 'secondary')) }} text-truncate ms-2">{{ $acceptanceStatus }}</span>
                                     </div>
                                     <div class="mt-3">
                                         <div class="d-flex justify-content-between align-items-center mb-2">
@@ -491,7 +501,7 @@
                                             <span class="info-label"><i
                                                     class="icofont-check-circled me-2"></i>Acceptance</span>
                                             <span
-                                                class="badge bg-{{ $acceptanceClass == 'text-success' ? 'success' : ($acceptanceClass == 'text-warning' ? 'warning' : 'secondary') }} text-truncate ms-2">{{ $acceptanceStatus }}</span>
+                                                class="badge {{ $acceptanceStatus == 'Not Initiated' ? 'badge-not-initiated' : 'bg-' . ($acceptanceClass == 'text-success' ? 'success' : ($acceptanceClass == 'text-warning' ? 'warning' : 'secondary')) }} text-truncate ms-2">{{ $acceptanceStatus }}</span>
                                         </div>
                                         <div class="mt-3">
                                             <div class="d-flex justify-content-between align-items-center mb-2">
@@ -614,7 +624,7 @@
                                                 <span class="info-label"><i
                                                         class="icofont-check-circled me-2"></i>Acceptance</span>
                                                 <span
-                                                    class="badge bg-{{ $acceptanceClass == 'text-success' ? 'success' : ($acceptanceClass == 'text-warning' ? 'warning' : 'secondary') }} text-truncate ms-2">{{ $acceptanceStatus }}</span>
+                                                    class="badge {{ $acceptanceStatus == 'Not Initiated' ? 'badge-not-initiated' : 'bg-' . ($acceptanceClass == 'text-success' ? 'success' : ($acceptanceClass == 'text-warning' ? 'warning' : 'secondary')) }} text-truncate ms-2">{{ $acceptanceStatus }}</span>
                                             </div>
                                             <div class="mt-3">
                                                 <div class="d-flex justify-content-between align-items-center mb-2">

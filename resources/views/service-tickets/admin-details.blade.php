@@ -335,7 +335,12 @@
 </div>
 
 <hr>
-@if(auth()->user()->hasRole('Service Manager') && $ticket->assigned_to == auth()->id())
+@php
+    $isAssignedServiceManager = auth()->user()->hasRole('Service Manager') && (int) $ticket->assigned_to === (int) auth()->id();
+    $isTicketCreator = (int) $ticket->user_id === (int) auth()->id();
+    $canCommentOnTicket = $isAssignedServiceManager || $isTicketCreator;
+@endphp
+@if($canCommentOnTicket)
 <form id="commentForm" method="POST" action="{{ route('service-tickets.comment', $ticket->id) }}" enctype="multipart/form-data">
     @csrf
     <div class="row">
@@ -343,13 +348,15 @@
             <label for="comment" class="form-label fw-bold"><i class="icofont-comment me-2"></i>Add Comment</label>
             <textarea class="form-control" id="comment" name="comment" rows="3" style="border-radius: 10px; border: 2px solid #e9ecef;" placeholder="What are you working on? What's next?" required></textarea>
         </div>
-        <div class="col-md-6 mb-3">
-            <label for="status" class="form-label fw-bold"><i class="icofont-check-circled me-2"></i>Update Status</label>
-            <select class="form-select" id="status" name="status" style="border-radius: 10px; border: 2px solid #e9ecef; padding: 0.75rem;">
-                <option value="Pending" {{ $ticket->status == 'Pending' ? 'selected' : '' }}>Pending</option>
-                <option value="Resolved" {{ $ticket->status == 'Resolved' ? 'selected' : '' }}>Resolved</option>
-            </select>
-        </div>
+        @if($isAssignedServiceManager)
+            <div class="col-md-6 mb-3">
+                <label for="status" class="form-label fw-bold"><i class="icofont-check-circled me-2"></i>Update Status</label>
+                <select class="form-select" id="status" name="status" style="border-radius: 10px; border: 2px solid #e9ecef; padding: 0.75rem;">
+                    <option value="Pending" {{ $ticket->status == 'Pending' ? 'selected' : '' }}>Pending</option>
+                    <option value="Resolved" {{ $ticket->status == 'Resolved' ? 'selected' : '' }}>Resolved</option>
+                </select>
+            </div>
+        @endif
         <div class="col-12 mb-3">
             <label class="form-label fw-bold"><i class="icofont-attachment me-2"></i>Attach Files</label>
             <div class="premium-file-upload">
@@ -412,32 +419,38 @@ function removeCommentFile(index) {
 
 $('#commentForm').on('submit', function(e) {
     e.preventDefault();
-    
-    $.ajax({
-        url: '/service-tickets/{{ $ticket->id }}',
-        method: 'POST',
-        data: {
-            _token: '{{ csrf_token() }}',
-            _method: 'PUT',
-            status: $('#status').val(),
-            notes: {!! json_encode($ticket->notes) !!}
-        },
-        success: function() {
-            var formData = new FormData(document.getElementById('commentForm'));
-            $.ajax({
-                url: $(e.target).attr('action'),
-                method: 'POST',
-                data: formData,
-                processData: false,
-                contentType: false,
-                success: function(response) {
-                    location.reload();
-                },
-                error: function(error) {
-                    alert('Error adding comment');
-                }
-            });
+
+    const addComment = function() {
+        var formData = new FormData(document.getElementById('commentForm'));
+        $.ajax({
+            url: $(e.target).attr('action'),
+            method: 'POST',
+            data: formData,
+            processData: false,
+            contentType: false,
+            success: function(response) {
+                location.reload();
+            },
+            error: function(error) {
+                alert('Error adding comment');
+            }
+        });
+    };
+
+    @if($isAssignedServiceManager)
+        $.ajax({
+            url: '/service-tickets/{{ $ticket->id }}',
+            method: 'POST',
+            data: {
+                _token: '{{ csrf_token() }}',
+                _method: 'PUT',
+                status: $('#status').val(),
+                notes: {!! json_encode($ticket->notes) !!}
+            },
+            success: addComment
         }
-    });
+    @else
+        addComment();
+    @endif
 });
 </script>

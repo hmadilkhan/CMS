@@ -103,6 +103,11 @@ class ServiceTicketController extends Controller
 
     public function addComment(Request $request, ServiceTicket $ticket)
     {
+        $canComment = ((int) $ticket->user_id === (int) auth()->id())
+            || (auth()->user()->hasRole('Service Manager') && (int) $ticket->assigned_to === (int) auth()->id());
+
+        abort_unless($canComment, 403);
+
         $request->validate([
             'comment' => 'required|string',
             'files.*' => 'nullable|file|max:10240|mimes:jpg,jpeg,png,pdf,doc,docx,xls,xlsx,txt'

@@ -42,11 +42,16 @@ class AdminDashboard extends Component
     
     public function render()
     {
+        if (auth()->user()->id === 2) {
+            $employeeId = 42;
+        }else{
+            $employeeId = auth()->user()->employee->id ?? null;
+        }
         $followUps = collect();
 
         if (!empty(auth()->user()->employee)) {
             $followUps = ProjectFollowUp::with(['project.customer', 'employee'])
-                ->where('employee_id', auth()->user()->employee->id)
+                ->where('employee_id', $employeeId)
                 ->where('status', '!=', 'Resolved')
                 ->orderBy('follow_up_date', 'asc')
                 ->get();

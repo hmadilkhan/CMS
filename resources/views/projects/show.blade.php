@@ -1876,13 +1876,14 @@
             display: flex;
             flex-direction: column;
             gap: 1px;
-            overflow: hidden;
+            overflow: visible;
             background: var(--workspace-line);
             border: 1px solid var(--workspace-line);
             border-radius: 12px;
         }
 
         #project-show-page.project-workspace-redesign .project-detail-item {
+            position: relative;
             min-height: 68px;
             display: grid;
             grid-template-columns: 2.5rem minmax(0, 1fr);
@@ -1890,6 +1891,16 @@
             gap: 0.85rem;
             padding: 1rem;
             background: #ffffff;
+        }
+
+        #project-show-page.project-workspace-redesign .project-detail-item:first-child {
+            border-top-left-radius: 12px;
+            border-top-right-radius: 12px;
+        }
+
+        #project-show-page.project-workspace-redesign .project-detail-item:last-child {
+            border-bottom-left-radius: 12px;
+            border-bottom-right-radius: 12px;
         }
 
         #project-show-page.project-workspace-redesign .project-detail-icon {
@@ -1920,6 +1931,85 @@
             font-size: 0.9rem;
             font-weight: 600;
             line-height: 1.25;
+            overflow-wrap: anywhere;
+        }
+
+        #project-show-page.project-workspace-redesign .project-contact-popup {
+            position: absolute;
+            top: 50%;
+            right: calc(100% + 0.75rem);
+            z-index: 20;
+            width: 245px;
+            padding: 0.85rem;
+            border: 1px solid rgba(29, 78, 216, 0.16);
+            border-radius: 10px;
+            background: #ffffff;
+            box-shadow: 0 18px 38px rgba(15, 23, 42, 0.16);
+            opacity: 0;
+            pointer-events: none;
+            transform: translate(0.4rem, -50%) scale(0.96);
+            transition: opacity 0.16s ease, transform 0.16s ease;
+        }
+
+        #project-show-page.project-workspace-redesign .project-contact-popup::after {
+            content: "";
+            position: absolute;
+            top: 50%;
+            right: -7px;
+            width: 13px;
+            height: 13px;
+            border-top: 1px solid rgba(29, 78, 216, 0.16);
+            border-right: 1px solid rgba(29, 78, 216, 0.16);
+            background: #ffffff;
+            transform: translateY(-50%) rotate(45deg);
+        }
+
+        #project-show-page.project-workspace-redesign .project-detail-item:hover .project-contact-popup,
+        #project-show-page.project-workspace-redesign .project-detail-item:focus-within .project-contact-popup {
+            opacity: 1;
+            pointer-events: auto;
+            transform: translate(0, -50%) scale(1);
+        }
+
+        #project-show-page.project-workspace-redesign .project-contact-popup-title {
+            margin-bottom: 0.65rem;
+            color: var(--workspace-ink);
+            font-size: 0.8rem;
+            font-weight: 700;
+            line-height: 1.2;
+            overflow-wrap: anywhere;
+        }
+
+        #project-show-page.project-workspace-redesign .project-contact-popup-row {
+            display: grid;
+            grid-template-columns: 1.6rem minmax(0, 1fr);
+            align-items: center;
+            gap: 0.55rem;
+            padding-top: 0.5rem;
+            border-top: 1px solid rgba(15, 23, 42, 0.08);
+            color: var(--workspace-ink-40);
+            font-size: 0.78rem;
+            line-height: 1.25;
+        }
+
+        #project-show-page.project-workspace-redesign .project-contact-popup-row + .project-contact-popup-row {
+            margin-top: 0.5rem;
+        }
+
+        #project-show-page.project-workspace-redesign .project-contact-popup-row i {
+            width: 1.6rem;
+            height: 1.6rem;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 6px;
+            background: var(--workspace-soft);
+            color: #1d4ed8;
+            font-size: 0.82rem;
+        }
+
+        #project-show-page.project-workspace-redesign .project-contact-popup-row span {
+            min-width: 0;
             overflow-wrap: anywhere;
         }
 
@@ -2027,6 +2117,29 @@
 
             #project-show-page.project-workspace-redesign .project-primary-tabs .nav-link {
                 white-space: nowrap;
+            }
+
+            #project-show-page.project-workspace-redesign .project-contact-popup {
+                top: calc(100% + 0.6rem);
+                right: auto;
+                left: 1rem;
+                width: min(245px, calc(100% - 2rem));
+                transform: translateY(-0.35rem) scale(0.96);
+            }
+
+            #project-show-page.project-workspace-redesign .project-contact-popup::after {
+                top: -7px;
+                right: auto;
+                left: 1rem;
+                border-top: 1px solid rgba(29, 78, 216, 0.16);
+                border-right: 0;
+                border-left: 1px solid rgba(29, 78, 216, 0.16);
+                transform: rotate(45deg);
+            }
+
+            #project-show-page.project-workspace-redesign .project-detail-item:hover .project-contact-popup,
+            #project-show-page.project-workspace-redesign .project-detail-item:focus-within .project-contact-popup {
+                transform: translateY(0) scale(1);
             }
 
             #project-show-page.project-workspace-redesign .project-secondary-tabs {
@@ -2321,16 +2434,38 @@
         </div>
     </div>
     @php
+        $moduleValue = optional($project->customer)->module_value;
+        $soldProductionValue = optional($project->customer)->sold_production_value;
+        $systemSizeValue = is_numeric($moduleValue) && (float) $moduleValue > 0
+            ? rtrim(rtrim(number_format((float) $moduleValue / 1000, 2, '.', ''), '0'), '.') . ' kW'
+            : '-';
+        $soldProductionDisplayValue = is_numeric($soldProductionValue) && (float) $soldProductionValue > 0
+            ? $soldProductionValue . ' kWh'
+            : '-';
+
         $projectDetailItems = [
+            [
+                'icon' => 'icofont-code-alt',
+                'label' => 'Project Code',
+                'value' => $project->code ?? '-',
+            ],
             [
                 'icon' => 'icofont-briefcase',
                 'label' => 'Sales Partner',
                 'value' => optional($project->customer->salespartner)->name ?? '-',
+                'contact' => [
+                    'email' => optional($project->customer->salespartner)->email ?: '-',
+                    'phone' => optional($project->customer->salespartner)->phone ?: '-',
+                ],
             ],
             [
                 'icon' => 'icofont-user-alt-3',
                 'label' => 'Sales Person',
                 'value' => optional($project->salesPartnerUser)->name ?? '-',
+                'contact' => [
+                    'email' => optional($project->salesPartnerUser)->email ?: '-',
+                    'phone' => optional($project->salesPartnerUser)->phone ?: '-',
+                ],
             ],
             [
                 'icon' => 'icofont-calendar',
@@ -2342,7 +2477,7 @@
             [
                 'icon' => 'icofont-sun',
                 'label' => 'System Size',
-                'value' => $project->customer->module_value ?: '-',
+                'value' => $systemSizeValue,
             ],
             [
                 'icon' => 'icofont-solar-panel',
@@ -2367,7 +2502,7 @@
             [
                 'icon' => 'icofont-chart-line',
                 'label' => 'Sold Production',
-                'value' => $project->customer->sold_production_value ?: '-',
+                'value' => $soldProductionDisplayValue,
             ],
             [
                 'icon' => 'icofont-globe',
@@ -3483,7 +3618,7 @@
                 </div>
                 <div class="project-detail-list">
                     @foreach ($projectDetailItems as $detail)
-                        <div class="project-detail-item">
+                        <div class="project-detail-item" tabindex="{{ isset($detail['contact']) ? '0' : '-1' }}">
                             <span class="project-detail-icon">
                                 <i class="{{ $detail['icon'] }}"></i>
                             </span>
@@ -3491,6 +3626,19 @@
                                 <div class="project-detail-label">{{ $detail['label'] }}</div>
                                 <div class="project-detail-value">{{ $detail['value'] }}</div>
                             </div>
+                            @if (isset($detail['contact']))
+                                <div class="project-contact-popup" role="tooltip">
+                                    <div class="project-contact-popup-title">{{ $detail['value'] }}</div>
+                                    <div class="project-contact-popup-row">
+                                        <i class="icofont-email"></i>
+                                        <span>{{ $detail['contact']['email'] }}</span>
+                                    </div>
+                                    <div class="project-contact-popup-row">
+                                        <i class="icofont-phone"></i>
+                                        <span>{{ $detail['contact']['phone'] }}</span>
+                                    </div>
+                                </div>
+                            @endif
                         </div>
                     @endforeach
                 </div>

@@ -135,6 +135,60 @@
     .btn-primary {
         border-radius: 999px !important;
     }
+    .premium-card-header > .ticket-dashboard-tabs {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.75rem;
+        margin: 0.85rem 0 0 !important;
+        padding: 0 0 0.85rem !important;
+        border: 0 !important;
+        border-bottom: 1px solid rgba(238, 143, 69, 0.16) !important;
+    }
+    .premium-card-header > .ticket-dashboard-tabs .nav-item {
+        margin: 0 !important;
+    }
+    .premium-card-header > .ticket-dashboard-tabs .nav-link {
+        min-height: 42px;
+        display: inline-flex !important;
+        align-items: center;
+        gap: 0.45rem;
+        padding: 0.55rem 0.95rem !important;
+        margin: 0 !important;
+        border: 1px solid rgba(238, 143, 69, 0.28) !important;
+        border-radius: 999px !important;
+        background: #ffffff !important;
+        color: #7c2d12 !important;
+        font-size: 0.9rem;
+        font-weight: 700;
+        line-height: 1.2;
+        white-space: nowrap;
+    }
+    .premium-card-header > .ticket-dashboard-tabs .nav-link:hover,
+    .premium-card-header > .ticket-dashboard-tabs .nav-link:focus {
+        border-color: rgba(238, 143, 69, 0.52) !important;
+        background: #fff7ed !important;
+        color: #9a3412 !important;
+    }
+    .premium-card-header > .ticket-dashboard-tabs .nav-link.active {
+        border-color: #F19828 !important;
+        background: #F19828 !important;
+        color: #ffffff !important;
+    }
+    .premium-card-header > .ticket-dashboard-tabs .nav-link i {
+        color: inherit !important;
+    }
+    .premium-card-header > .ticket-dashboard-tabs .badge {
+        flex: 0 0 auto;
+        min-width: 1.6rem;
+        padding: 0.25rem 0.5rem;
+        border-radius: 999px;
+        background: #fff7ed !important;
+        color: #9a3412 !important;
+    }
+    .premium-card-header > .ticket-dashboard-tabs .nav-link.active .badge {
+        background: rgba(255, 255, 255, 0.24) !important;
+        color: #ffffff !important;
+    }
     .premium-widget {
         background: #ffffff !important;
         border-radius: 12px;
@@ -193,6 +247,37 @@
     }
 </style>
 
+@php
+    $ticketBaseQuery = \App\Models\ServiceTicket::with(['project', 'assignedUser', 'creator'])
+        ->withCount('comments')
+        ->where('status', '!=', 'Resolved');
+
+    $createdTickets = (clone $ticketBaseQuery)
+        ->where('user_id', auth()->id())
+        ->orderBy('created_at', 'desc')
+        ->get();
+
+    $assignedTickets = (clone $ticketBaseQuery)
+        ->where('assigned_to', auth()->id())
+        ->orderBy('created_at', 'desc')
+        ->get();
+
+    $serviceTickets = $assignedTickets;
+    $ticketGroups = [
+        'created-by-me' => [
+            'label' => 'Created By Me',
+            'icon' => 'icofont-user-alt-3',
+            'tickets' => $createdTickets,
+        ],
+        'assigned-to-me' => [
+            'label' => 'Assigned To Me',
+            'icon' => 'icofont-user-suited',
+            'tickets' => $assignedTickets,
+        ],
+    ];
+    $activeTicketTab = 'assigned-to-me';
+@endphp
+
 <div class="row mb-4">
     <div class="col-md-4">
         <div class="premium-widget">
@@ -222,79 +307,107 @@
         <div class="premium-card">
             <div class="premium-card-header">
                 <h3 class="mb-0"><i class="icofont-ticket me-2"></i>My Service Tickets</h3>
+                <ul class="nav nav-tabs ticket-dashboard-tabs" id="employeeServiceTicketDashboardTabs" role="tablist">
+                    @foreach($ticketGroups as $tabId => $ticketGroup)
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link {{ $tabId === $activeTicketTab ? 'active' : '' }}"
+                                id="employee-{{ $tabId }}-tab"
+                                data-bs-toggle="tab"
+                                data-bs-target="#employee-{{ $tabId }}"
+                                type="button"
+                                role="tab"
+                                aria-controls="employee-{{ $tabId }}"
+                                aria-selected="{{ $tabId === $activeTicketTab ? 'true' : 'false' }}">
+                                <i class="{{ $ticketGroup['icon'] }} me-2"></i>{{ $ticketGroup['label'] }}
+                                <span class="badge ms-2">{{ $ticketGroup['tickets']->count() }}</span>
+                            </button>
+                        </li>
+                    @endforeach
+                </ul>
             </div>
             <div class="card-body p-0">
-                <div class="table-responsive">
-                    <table class="table premium-table mb-0">
-                        <thead>
-                            <tr>
-                                <th><i class="icofont-folder me-2"></i>Project</th>
-                                <th><i class="icofont-ui-text-chat me-2"></i>Subject</th>
-                                <th><i class="icofont-user me-2"></i>Created By</th>
-                                <th><i class="icofont-flag me-2"></i>Priority</th>
-                                <th><i class="icofont-check-circled me-2"></i>Status</th>
-                                <th><i class="icofont-ui-note me-2"></i>Notes</th>
-                                <th><i class="icofont-clock-time me-2"></i>Created</th>
-                                <th><i class="icofont-history me-2"></i>Pending Time</th>
-                                <th><i class="icofont-eye me-2"></i>Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @forelse($serviceTickets as $ticket)
-                                <tr>
-                                    <td>
-                                        <a href="{{ route('projects.show', $ticket->project_id) }}" class="project-link">
-                                            <i class="icofont-folder-open me-2"></i>{{ $ticket->project->project_name }}
-                                        </a>
-                                    </td>
-                                    <td><strong>{{ $ticket->subject }}</strong></td>
-                                    <td>{{ $ticket->creator->name ?? 'N/A' }}</td>
-                                    <td>
-                                        <span class="premium-badge 
-                                            @if($ticket->priority == 'High') ticket-badge-high
-                                            @elseif($ticket->priority == 'Medium') ticket-badge-medium
-                                            @else ticket-badge-low
-                                            @endif">
-                                            {{ $ticket->priority }}
-                                        </span>
-                                    </td>
-                                    <td>
-                                        <span class="premium-badge {{ $ticket->status == 'Resolved' ? 'bg-success' : 'ticket-badge-status' }}">
-                                            <i class="icofont-{{ $ticket->status == 'Resolved' ? 'check' : 'clock-time' }} me-1"></i>{{ $ticket->status }}
-                                        </span>
-                                    </td>
-                                    <td>
-                                        {{ $ticket->notes }}
-                                        @if($ticket->comments_count > 0)
-                                            <span class="badge ticket-comment-badge ms-2" title="Comments">
-                                                <i class="icofont-comment"></i> {{ $ticket->comments_count }}
-                                            </span>
-                                        @endif
-                                    </td>
-                                    <td><i class="icofont-ui-calendar me-2"></i>{{ $ticket->created_at->format('M d, Y H:i') }}</td>
-                                    <td>
-                                        @if($ticket->status == 'Pending')
-                                            <span class="badge ticket-badge-pending-time">{{ $ticket->created_at->diffForHumans() }}</span>
-                                        @else
-                                            <span class="text-muted">-</span>
-                                        @endif
-                                    </td>
-                                    <td>
-                                        <button class="btn btn-sm btn-dark" onclick="viewEmployeeTicket({{ $ticket->id }})">
-                                            <i class="icofont-eye me-1"></i>View
-                                        </button>
-                                    </td>
-                                </tr>
-                            @empty
-                                <tr>
-                                    <td colspan="9" class="text-center py-5">
-                                        <i class="icofont-ticket" style="font-size: 3rem; opacity: 0.3;"></i>
-                                        <p class="text-muted mt-3">No service tickets assigned to you</p>
-                                    </td>
-                                </tr>
-                            @endforelse
-                        </tbody>
-                    </table>
+                <div class="tab-content">
+                    @foreach($ticketGroups as $tabId => $ticketGroup)
+                        <div class="tab-pane fade {{ $tabId === $activeTicketTab ? 'show active' : '' }}"
+                            id="employee-{{ $tabId }}"
+                            role="tabpanel"
+                            aria-labelledby="employee-{{ $tabId }}-tab">
+                            <div class="table-responsive">
+                                <table class="table premium-table mb-0">
+                                    <thead>
+                                        <tr>
+                                            <th><i class="icofont-folder me-2"></i>Project</th>
+                                            <th><i class="icofont-ui-text-chat me-2"></i>Subject</th>
+                                            <th><i class="icofont-user me-2"></i>Assigned To</th>
+                                            <th><i class="icofont-user me-2"></i>Created By</th>
+                                            <th><i class="icofont-flag me-2"></i>Priority</th>
+                                            <th><i class="icofont-check-circled me-2"></i>Status</th>
+                                            <th><i class="icofont-ui-note me-2"></i>Notes</th>
+                                            <th><i class="icofont-clock-time me-2"></i>Created</th>
+                                            <th><i class="icofont-history me-2"></i>Pending Time</th>
+                                            <th><i class="icofont-eye me-2"></i>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @forelse($ticketGroup['tickets'] as $ticket)
+                                            <tr>
+                                                <td>
+                                                    <a href="{{ route('projects.show', $ticket->project_id) }}" class="project-link">
+                                                        <i class="icofont-folder-open me-2"></i>{{ $ticket->project->project_name }}
+                                                    </a>
+                                                </td>
+                                                <td><strong>{{ $ticket->subject }}</strong></td>
+                                                <td>{{ $ticket->assignedUser->name ?? 'Unassigned' }}</td>
+                                                <td>{{ $ticket->creator->name ?? 'N/A' }}</td>
+                                                <td>
+                                                    <span class="premium-badge
+                                                        @if($ticket->priority == 'High') ticket-badge-high
+                                                        @elseif($ticket->priority == 'Medium') ticket-badge-medium
+                                                        @else ticket-badge-low
+                                                        @endif">
+                                                        {{ $ticket->priority }}
+                                                    </span>
+                                                </td>
+                                                <td>
+                                                    <span class="premium-badge {{ $ticket->status == 'Resolved' ? 'bg-success' : 'ticket-badge-status' }}">
+                                                        <i class="icofont-{{ $ticket->status == 'Resolved' ? 'check' : 'clock-time' }} me-1"></i>{{ $ticket->status }}
+                                                    </span>
+                                                </td>
+                                                <td>
+                                                    {{ $ticket->notes }}
+                                                    @if($ticket->comments_count > 0)
+                                                        <span class="badge ticket-comment-badge ms-2" title="Comments">
+                                                            <i class="icofont-comment"></i> {{ $ticket->comments_count }}
+                                                        </span>
+                                                    @endif
+                                                </td>
+                                                <td><i class="icofont-ui-calendar me-2"></i>{{ $ticket->created_at->format('M d, Y H:i') }}</td>
+                                                <td>
+                                                    @if($ticket->status == 'Pending')
+                                                        <span class="badge ticket-badge-pending-time">{{ $ticket->created_at->diffForHumans() }}</span>
+                                                    @else
+                                                        <span class="text-muted">-</span>
+                                                    @endif
+                                                </td>
+                                                <td>
+                                                    <button class="btn btn-sm btn-dark" onclick="viewEmployeeTicket({{ $ticket->id }})">
+                                                        <i class="icofont-eye me-1"></i>View
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                        @empty
+                                            <tr>
+                                                <td colspan="10" class="text-center py-5">
+                                                    <i class="icofont-ticket" style="font-size: 3rem; opacity: 0.3;"></i>
+                                                    <p class="text-muted mt-3">No service tickets found</p>
+                                                </td>
+                                            </tr>
+                                        @endforelse
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    @endforeach
                 </div>
             </div>
         </div>

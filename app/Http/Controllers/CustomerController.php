@@ -198,6 +198,7 @@ class CustomerController extends Controller
             "is_adu" => $request->adu,
             "loan_id" => $request->loanId,
             "sold_production_value" => $request->sold_production_value,
+            "preferred_language" => $request->preferred_language,
         ];
     }
 

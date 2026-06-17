@@ -47,7 +47,7 @@
                 </div>
                 <div class="card-body">
                     <div class="row g-3 mb-3">
-                        <div class="col-sm-6 mb-3">
+                        <div class="col-sm-4 mb-3">
                             <label for="exampleFormControlInput877" class="form-label">First Name</label>
                             <input type="text" class="form-control" id="first_name" name="first_name"
                                 placeholder="First Name" value="{{ old('first_name') }}">
@@ -55,7 +55,7 @@
                                 <div class="text-danger message mt-2">{{ $message }}</div>
                             @enderror
                         </div>
-                        <div class="col-sm-6 mb-3">
+                        <div class="col-sm-4 mb-3">
                             <label for="exampleFormControlInput877" class="form-label">Last Name</label>
                             <input type="text" class="form-control" id="last_name" name="last_name"
                                 placeholder="Last Name" value="{{ old('last_name') }}">
@@ -108,6 +108,14 @@
                             <input type="text" class="form-control" id="email" name="email"
                                 placeholder="Email" value="{{ old('email') }}">
                             @error('email')
+                                <div class="text-danger message mt-2">{{ $message }}</div>
+                            @enderror
+                        </div>
+                        <div class="col-sm-4 mb-3">
+                            <label for="exampleFormControlInput877" class="form-label">Preferred Language</label>
+                            <input type="text" class="form-control" id="preferred_language" name="preferred_language"
+                                placeholder="Preferred Language" value="{{ old('preferred_language') }}">
+                            @error('preferred_language')
                                 <div class="text-danger message mt-2">{{ $message }}</div>
                             @enderror
                         </div>

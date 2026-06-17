@@ -181,7 +181,7 @@
                             style="top: 100%; left: 0; right: 0; max-height: 200px; overflow-y: auto; margin-top: 0.5rem;">
                             <template x-for="(employee, index) in filteredEmployees" :key="employee.id">
                                 <li class="list-group-item list-group-item-action"
-                                    :class="index === selectedIndex ? 'active text-white' : 'text-black'"
+                                    :class="index === selectedIndex ? 'active text-black' : 'text-black'"
                                     x-text="employee.name" @click="selectEmployee(employee)">
                                 </li>
                             </template>
@@ -247,7 +247,7 @@
                                     style="top: 100%; left: 0; right: 0; max-height: 200px; overflow-y: auto; margin-top: 0.5rem;">
                                     <template x-for="(employee, index) in filteredEmployees" :key="employee.id">
                                         <li class="list-group-item list-group-item-action"
-                                            :class="index === selectedIndex ? 'active text-white' : 'text-black'"
+                                            :class="index === selectedIndex ? 'active text-black' : 'text-black'"
                                             x-text="employee.name" @click="selectEmployee(employee)">
                                         </li>
                                     </template>
