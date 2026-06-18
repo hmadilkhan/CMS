@@ -12,11 +12,21 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('module_types', function (Blueprint $table) {
-            $table->decimal('ptc_rating', 10, 2)->nullable()->after('internal_module_cost');
-            $table->decimal('voc_rating', 10, 2)->nullable()->after('ptc_rating');
-            $table->decimal('isc_rating', 10, 2)->nullable()->after('voc_rating');
-            $table->decimal('weight', 10, 2)->nullable()->after('isc_rating');
-            $table->decimal('square_footage', 10, 2)->nullable()->after('weight');
+            if (!Schema::hasColumn('module_types', 'ptc_rating')) {
+                $table->decimal('ptc_rating', 10, 2)->nullable()->after('internal_module_cost');
+            }
+            if (!Schema::hasColumn('module_types', 'voc_rating')) {
+                $table->decimal('voc_rating', 10, 2)->nullable()->after('ptc_rating');
+            }
+            if (!Schema::hasColumn('module_types', 'isc_rating')) {
+                $table->decimal('isc_rating', 10, 2)->nullable()->after('voc_rating');
+            }
+            if (!Schema::hasColumn('module_types', 'weight')) {
+                $table->decimal('weight', 10, 2)->nullable()->after('isc_rating');
+            }
+            if (!Schema::hasColumn('module_types', 'square_footage')) {
+                $table->decimal('square_footage', 10, 2)->nullable()->after('weight');
+            }
         });
     }
 
@@ -26,13 +36,17 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('module_types', function (Blueprint $table) {
-            $table->dropColumn([
+            foreach ([
                 'ptc_rating',
                 'voc_rating',
                 'isc_rating',
                 'weight',
                 'square_footage',
-            ]);
+            ] as $column) {
+                if (Schema::hasColumn('module_types', $column)) {
+                    $table->dropColumn($column);
+                }
+            }
         });
     }
 };
