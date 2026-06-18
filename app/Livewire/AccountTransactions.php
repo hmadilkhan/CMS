@@ -21,7 +21,7 @@ class AccountTransactions extends Component
     public $confirmingDeleteId = null;
 
     protected $rules = [
-        'payee' => 'required|string|max:255',
+        'payee' => 'required|in:sales_partner,sub_contractor,supplier,customer,others',
         'milestone' => 'required|string|max:255',
         'amount' => 'required|numeric',
         'deduction_amount' => 'required|numeric',

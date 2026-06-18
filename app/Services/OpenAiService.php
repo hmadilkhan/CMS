@@ -231,6 +231,7 @@ class OpenAiService
             '- Project Design: Technical design details (panel layout, specs)',
             '- Project Acceptance: Sales partner sign-off on project details',
             '- Account Transactions: Financial transactions / remittances',
+            '- Invoice Details: Labor/material invoices with dates, amounts, and uploaded files',
             '- Site Surveys: Scheduled technician visits to inspect the property (with schedules)',
             '- Sub-Contractors / Sales Partners: The companies/people who sell and install',
             '- Adders: Extra options/upgrades added to a deal (types, sub-types, units, prices)',

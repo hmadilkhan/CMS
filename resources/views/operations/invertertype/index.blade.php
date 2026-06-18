@@ -35,13 +35,22 @@
                 <div class="col-xl-4 col-lg-6 col-md-6 col-12">
                     <!-- <div class="form-group"> -->
                     <label>Inverter Type Name</label>
-                    <input type="text" class="form-control @error('name') is-invalid @enderror" id="name" name="name" placeholder="Enter Inverter Type Name" value="{{ !empty($inverterType) ? $inverterType->name : old('name') }}">
+                    <input type="text" class="form-control @error('name') is-invalid @enderror" id="name" name="name" placeholder="Enter Inverter Type Name" value="{{ old('name', !empty($inverterType) ? $inverterType->name : '') }}">
                     @error('name')
                     <span class="invalid-feedback" role="alert">
                         <strong>{{ $message }}</strong>
                     </span>
                     @enderror
                     <!-- </div> -->
+                </div>
+                <div class="col-xl-4 col-lg-6 col-md-6 col-12">
+                    <label>Inverter Efficiency Rating (%)</label>
+                    <input type="number" step="0.01" min="0" max="100" class="form-control @error('inverter_efficiency_rating') is-invalid @enderror" id="inverter_efficiency_rating" name="inverter_efficiency_rating" placeholder="0.00" value="{{ old('inverter_efficiency_rating', !empty($inverterType) ? $inverterType->inverter_efficiency_rating : '') }}">
+                    @error('inverter_efficiency_rating')
+                    <span class="invalid-feedback" role="alert">
+                        <strong>{{ $message }}</strong>
+                    </span>
+                    @enderror
                 </div>
                 <div class="col-xl-4 col-lg-6 col-md-6 col-12">
                     <label>Tags</label>
@@ -73,6 +82,7 @@
                 <tr>
                     <th>No.</th>
                     <th>Name</th>
+                    <th>Inverter Efficiency Rating (%)</th>
                     <th>Tags</th>
                     <th>Actions</th>
                 </tr>
@@ -82,6 +92,7 @@
                 <tr>
                     <td>{{ ++$key }}</td>
                     <td>{{ $list->name }}</td>
+                    <td class="cost-value">{{ $list->inverter_efficiency_rating !== null ? number_format($list->inverter_efficiency_rating, 2) : '-' }}</td>
                     <td>{{ count($list->tag_list) ? implode(', ', $list->tag_list) : '-' }}</td>
                     <td class="text-center">
                         <a class="action-link" data-toggle="tooltip" title="Edit" href="{{ route('view-inverter-type',$list->id)}}">

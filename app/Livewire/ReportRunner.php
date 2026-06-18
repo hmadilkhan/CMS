@@ -424,6 +424,7 @@ class ReportRunner extends Component
             'module_types.wattage' => 'Module Wattage',
             'inverter_types.name' => 'Inverter Type',
             'inverter_types.wattage' => 'Inverter Wattage',
+            'inverter_types.inverter_efficiency_rating' => 'Inverter Efficiency Rating (%)',
 
             // CustomerFinance fields
             'customer_finances.id' => 'Customer Finance ID',
@@ -478,6 +479,7 @@ class ReportRunner extends Component
             'sales_partners.commission_rate' => 'number',
             'module_types.wattage' => 'number',
             'inverter_types.wattage' => 'number',
+            'inverter_types.inverter_efficiency_rating' => 'number',
             'customer_finances.contract_amount' => 'number',
             'customer_finances.redline_costs' => 'number',
             'customer_finances.adders' => 'number',

@@ -702,6 +702,8 @@ This is a solar energy installation company CRM. Use these term-to-column mappin
 - "APR" / "interest rate" → table: loan_aprs
 - "transactions" / "remittance" / "payments" → table: account_transactions
 
+- "invoice" / "invoice details" / "labor invoice" / "material invoice" => table: project_invoice_details
+
 ### Customer Fields
 - "customer name" → customers.first_name + customers.last_name
 - "customer location" / "city" / "state" → customers.city, customers.state
@@ -1234,6 +1236,12 @@ PROMPT;
                 'requires_finance_access' => true,
                 'common_questions' => ['transaction report', 'remitted amount', 'deductions', 'payee summaries', 'milestone payments'],
             ],
+            'invoice_details' => [
+                'tables' => ['project_invoice_details', 'projects', 'users'],
+                'common_columns' => ['project_id', 'invoice_type', 'invoice_date', 'amount', 'original_file_name', 'uploaded_by'],
+                'date_filter_column' => 'project_invoice_details.invoice_date',
+                'common_questions' => ['invoice details', 'labor invoices', 'material invoices', 'invoice amount summaries', 'uploaded invoices'],
+            ],
             'project_acceptance' => [
                 'tables' => ['projects', 'customers', 'project_acceptances', 'users'],
                 'common_columns' => ['status', 'approved_date', 'reason', 'panel_qty', 'inverter_name', 'action_by'],
@@ -1621,12 +1629,16 @@ PROMPT;
                 ['table' => 'account_transactions', 'column' => 'transaction_date', 'operator' => '<=', 'value' => $dateRange['to']],
             ] : [];
 
-            // Payee filter: "only Sales Partner" / "sub-contractor" / "others".
+            // Payee filter: "only Sales Partner" / "sub-contractor" / "supplier" / "customer" / "others".
             $payee = null;
             if (str_contains($normalized, 'sales partner')) {
                 $payee = 'sales_partner';
             } elseif (str_contains($normalized, 'sub-contractor') || str_contains($normalized, 'sub contractor') || str_contains($normalized, 'subcontractor')) {
                 $payee = 'sub_contractor';
+            } elseif (str_contains($normalized, 'supplier')) {
+                $payee = 'supplier';
+            } elseif (str_contains($normalized, 'customer')) {
+                $payee = 'customer';
             } elseif (str_contains($normalized, 'others') || str_contains($normalized, 'other payee')) {
                 $payee = 'others';
             }

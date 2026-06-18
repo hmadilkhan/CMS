@@ -3118,6 +3118,9 @@
                 </div>
             </div>
         @endcan
+        @can('Invoice Details')
+            @livewire('project.invoice-details', ['projectId' => $project->id], key('invoice-details-' . $project->id))
+        @endcan
         @can('Pre and Post Project Cost')
             @livewire('project.project-cost', ['project' => $project], key($project->id))
         @endcan
@@ -3758,14 +3761,29 @@
 @if (auth()->user()->hasAnyRole(['Super Admin', 'Manager']) && (strcasecmp(optional($project->department)->name ?? '', 'Engineering') === 0 || !empty($designDetail)))
     @php
         $designCustomerName = trim(($project->customer->first_name ?? '') . ' ' . ($project->customer->last_name ?? ''));
+        $formatDesignCalculation = function ($value) {
+            return $value === null ? null : rtrim(rtrim(number_format((float) $value, 2, '.', ''), '0'), '.');
+        };
+        $moduleSquareFootage = optional($project->customer->module)->square_footage;
+        $modulePtcRating = optional($project->customer->module)->ptc_rating;
+        $inverterEfficiencyRating = optional($project->customer->inverter)->inverter_efficiency_rating;
+        $panelQty = $project->customer->panel_qty;
+        $arrayArea = is_numeric($moduleSquareFootage) && is_numeric($panelQty)
+            ? (float) $moduleSquareFootage * (float) $panelQty
+            : null;
+        $acCec = is_numeric($modulePtcRating) && is_numeric($inverterEfficiencyRating) && is_numeric($panelQty)
+            ? (float) $modulePtcRating * ((float) $inverterEfficiencyRating / 100) * (float) $panelQty
+            : null;
         $designAutoDefaults = [
             'name' => $designCustomerName,
             'phone' => $project->customer->phone,
             'address' => $customerAddress,
             'ahj' => $project->ahj,
             'mod' => optional($project->customer->module)->name,
+            'array_area' => $formatDesignCalculation($arrayArea),
             'inv' => optional($project->customer->inverter)->name,
             'kw_rating' => $project->customer->module_value,
+            'ac_cec' => $formatDesignCalculation($acCec),
         ];
         $designExistingData = $designDetail ? [
             'design_detail_id' => $designDetail->id,
@@ -3840,7 +3858,8 @@
                             </div>
                             <div class="col-md-6">
                                 <label class="form-label fw-bold">Array Area</label>
-                                <input type="text" class="form-control" name="array_area">
+                                <input type="text" class="form-control design-auto-field" name="array_area"
+                                    value="{{ $formatDesignCalculation($arrayArea) }}" readonly>
                             </div>
                             <div class="col-md-6">
                                 <label class="form-label fw-bold">INV</label>
@@ -3858,7 +3877,8 @@
                             </div>
                             <div class="col-md-6">
                                 <label class="form-label fw-bold">AC-CEC</label>
-                                <input type="text" class="form-control" name="ac_cec">
+                                <input type="text" class="form-control design-auto-field" name="ac_cec"
+                                    value="{{ $formatDesignCalculation($acCec) }}" readonly>
                             </div>
                             <div class="col-md-6">
                                 <label class="form-label fw-bold">APN</label>

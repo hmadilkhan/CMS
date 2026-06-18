@@ -187,6 +187,7 @@ class DynamicQueryBuilder
                 'module_types.wattage' => 'Module Wattage',
                 'inverter_types.name' => 'Inverter Type',
                 'inverter_types.wattage' => 'Inverter Wattage',
+                'inverter_types.inverter_efficiency_rating' => 'Inverter Efficiency Rating (%)',
             ],
             'Finance Fields' => [
                 'customer_finances.total_contract_value' => 'Total Contract Value',

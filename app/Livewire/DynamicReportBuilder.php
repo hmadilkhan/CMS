@@ -164,6 +164,7 @@ class DynamicReportBuilder extends Component
             'module_types.wattage' => 'Module Wattage',
             'inverter_types.name' => 'Inverter Type',
             'inverter_types.wattage' => 'Inverter Wattage',
+            'inverter_types.inverter_efficiency_rating' => 'Inverter Efficiency Rating (%)',
 
             // CustomerFinance fields (all fields from migration)
             'customer_finances.id' => 'Customer Finance ID',

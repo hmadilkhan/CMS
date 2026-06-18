@@ -55,6 +55,8 @@
                             <option value="">Select Payee</option>
                             <option value="sales_partner">Sales Partner</option>
                             <option value="sub_contractor">Sub-Contractor</option>
+                            <option value="supplier">Supplier</option>
+                            <option value="customer">Customer</option>
                             <option value="others">Others</option>
                         </select>
                         @error('payee')
@@ -70,7 +72,9 @@
                     </div>
                     <div class="col-md-2">
                         <label class="form-label">Amount</label>
-                        <input type="number" step="0.01" class="form-control" wire:model.defer="amount">
+                        <input type="number" step="0.01" class="form-control" wire:model.defer="amount"
+                            placeholder="Positive or negative">
+                        <small class="text-muted">Use positive or negative values for debit/credit.</small>
                         @error('amount')
                             <span class="text-danger">{{ $message }}</span>
                         @enderror
@@ -109,6 +113,11 @@
             </form>
         @endcan
         <div class="table-responsive">
+            @php
+                $totalAmount = $transactions->sum('amount');
+                $totalDeductionAmount = $transactions->sum('deduction_amount');
+                $totalRemittedAmount = $transactions->sum(fn($transaction) => $transaction->remitted_amount);
+            @endphp
             <table class="table table-bordered table-hover align-middle account-transactions-table">
                 <thead class="table-light">
                     <tr>
@@ -166,6 +175,15 @@
                         </tr>
                     @endforelse
                 </tbody>
+                <tfoot class="table-light">
+                    <tr>
+                        <th colspan="3" class="text-end">Totals</th>
+                        <th>${{ number_format($totalAmount, 2) }}</th>
+                        <th>${{ number_format($totalDeductionAmount, 2) }}</th>
+                        <th>${{ number_format($totalRemittedAmount, 2) }}</th>
+                        <th colspan="@can('Account Transactions Edit') 3 @else 2 @endcan"></th>
+                    </tr>
+                </tfoot>
             </table>
         </div>
     </div>

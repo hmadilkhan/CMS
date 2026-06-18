@@ -91,6 +91,51 @@
                     </span>
                     @enderror
                 </div>
+                <div class="col-xl-3 col-lg-4 col-md-6 col-12">
+                    <label>Module PTC Rating</label>
+                    <input type="number" step="0.01" min="0" class="form-control @error('ptc_rating') is-invalid @enderror" id="ptc_rating" name="ptc_rating" placeholder="0.00" value="{{ old('ptc_rating', !empty($type) ? $type->ptc_rating : '') }}">
+                    @error('ptc_rating')
+                    <span class="invalid-feedback" role="alert">
+                        <strong>{{ $message }}</strong>
+                    </span>
+                    @enderror
+                </div>
+                <div class="col-xl-3 col-lg-4 col-md-6 col-12">
+                    <label>Module VOC Rating</label>
+                    <input type="number" step="0.01" min="0" class="form-control @error('voc_rating') is-invalid @enderror" id="voc_rating" name="voc_rating" placeholder="0.00" value="{{ old('voc_rating', !empty($type) ? $type->voc_rating : '') }}">
+                    @error('voc_rating')
+                    <span class="invalid-feedback" role="alert">
+                        <strong>{{ $message }}</strong>
+                    </span>
+                    @enderror
+                </div>
+                <div class="col-xl-3 col-lg-4 col-md-6 col-12">
+                    <label>Module ISC Rating</label>
+                    <input type="number" step="0.01" min="0" class="form-control @error('isc_rating') is-invalid @enderror" id="isc_rating" name="isc_rating" placeholder="0.00" value="{{ old('isc_rating', !empty($type) ? $type->isc_rating : '') }}">
+                    @error('isc_rating')
+                    <span class="invalid-feedback" role="alert">
+                        <strong>{{ $message }}</strong>
+                    </span>
+                    @enderror
+                </div>
+                <div class="col-xl-3 col-lg-4 col-md-6 col-12">
+                    <label>Module Weight</label>
+                    <input type="number" step="0.01" min="0" class="form-control @error('weight') is-invalid @enderror" id="weight" name="weight" placeholder="0.00" value="{{ old('weight', !empty($type) ? $type->weight : '') }}">
+                    @error('weight')
+                    <span class="invalid-feedback" role="alert">
+                        <strong>{{ $message }}</strong>
+                    </span>
+                    @enderror
+                </div>
+                <div class="col-xl-3 col-lg-4 col-md-6 col-12">
+                    <label>Module Square Footage</label>
+                    <input type="number" step="0.01" min="0" class="form-control @error('square_footage') is-invalid @enderror" id="square_footage" name="square_footage" placeholder="0.00" value="{{ old('square_footage', !empty($type) ? $type->square_footage : '') }}">
+                    @error('square_footage')
+                    <span class="invalid-feedback" role="alert">
+                        <strong>{{ $message }}</strong>
+                    </span>
+                    @enderror
+                </div>
                 <div class="col-12">
                     <div class="operation-actions">
                         <button type="submit" class="btn btn-primary" value="save"><i class="icofont-save"></i> Save</button>
@@ -116,6 +161,11 @@
                     <th>Watt</th>
                     <th>Amount</th>
                     <th>Internal Module Cost</th>
+                    <th>PTC Rating</th>
+                    <th>VOC Rating</th>
+                    <th>ISC Rating</th>
+                    <th>Weight</th>
+                    <th>Square Footage</th>
                     <th>Actions</th>
                 </tr>
             </thead>
@@ -128,6 +178,11 @@
                     <td class="cost-value">{{ $type->value }}</td>
                     <td class="cost-value">$ {{ number_format($type->amount, 2) }}</td>
                     <td class="cost-value">$ {{ number_format($type->internal_module_cost, 2) }}</td>
+                    <td class="cost-value">{{ $type->ptc_rating !== null ? number_format($type->ptc_rating, 2) : '-' }}</td>
+                    <td class="cost-value">{{ $type->voc_rating !== null ? number_format($type->voc_rating, 2) : '-' }}</td>
+                    <td class="cost-value">{{ $type->isc_rating !== null ? number_format($type->isc_rating, 2) : '-' }}</td>
+                    <td class="cost-value">{{ $type->weight !== null ? number_format($type->weight, 2) : '-' }}</td>
+                    <td class="cost-value">{{ $type->square_footage !== null ? number_format($type->square_footage, 2) : '-' }}</td>
                     <td class="text-center">
                         <a class="action-link" data-toggle="tooltip" title="Edit" href="{{ route('module-types.edit',$type->id)}}">
                             <i class="icofont-pencil text-warning"></i></a>

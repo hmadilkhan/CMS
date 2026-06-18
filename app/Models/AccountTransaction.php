@@ -25,6 +25,8 @@ class AccountTransaction extends Model
         return [
             'sales_partner'  => 'Sales Partner',
             'sub_contractor' => 'Sub-Contractor',
+            'supplier'       => 'Supplier',
+            'customer'       => 'Customer',
             'others'         => 'Others',
         ][$this->payee] ?? $this->payee;
     }

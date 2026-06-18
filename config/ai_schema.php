@@ -792,6 +792,45 @@ return [
             'access_rule' => 'project_access',
         ],
 
+        'project_invoice_details' => [
+            'model' => \App\Models\ProjectInvoiceDetail::class,
+            'table' => 'project_invoice_details',
+            'allowed_columns' => [
+                'id',
+                'project_id',
+                'invoice_type',
+                'invoice_date',
+                'amount',
+                'file_name',
+                'original_file_name',
+                'file_path',
+                'uploaded_by',
+                'created_at',
+                'updated_at',
+                'deleted_at',
+            ],
+            'searchable_columns' => [
+                'invoice_type',
+                'file_name',
+                'original_file_name',
+            ],
+            'relationships' => [
+                'project' => [
+                    'table' => 'projects',
+                    'local_key' => 'project_id',
+                    'foreign_key' => 'id',
+                ],
+                'uploader' => [
+                    'table' => 'users',
+                    'local_key' => 'uploaded_by',
+                    'foreign_key' => 'id',
+                ],
+            ],
+            'sensitive_columns' => [],
+            'default_sort_column' => 'invoice_date',
+            'access_rule' => 'invoice_details_access',
+        ],
+
         'project_design_details' => [
             'model' => \App\Models\ProjectDesignDetail::class,
             'table' => 'project_design_details',
@@ -1221,7 +1260,7 @@ return [
         'inverter_types' => [
             'model' => \App\Models\InverterType::class,
             'table' => 'inverter_types',
-            'allowed_columns' => ['id', 'name', 'tags', 'created_at', 'updated_at', 'deleted_at'],
+            'allowed_columns' => ['id', 'name', 'tags', 'inverter_efficiency_rating', 'created_at', 'updated_at', 'deleted_at'],
             'searchable_columns' => ['name', 'tags'],
             'relationships' => [
                 'rates' => ['table' => 'inverter_type_rates', 'local_key' => 'id', 'foreign_key' => 'inverter_type_id'],
@@ -1248,7 +1287,7 @@ return [
         'module_types' => [
             'model' => \App\Models\ModuleType::class,
             'table' => 'module_types',
-            'allowed_columns' => ['id', 'inverter_type_id', 'name', 'value', 'amount', 'internal_module_cost', 'created_at', 'updated_at', 'deleted_at'],
+            'allowed_columns' => ['id', 'inverter_type_id', 'name', 'value', 'amount', 'internal_module_cost', 'ptc_rating', 'voc_rating', 'isc_rating', 'weight', 'square_footage', 'created_at', 'updated_at', 'deleted_at'],
             'searchable_columns' => ['name'],
             'relationships' => [
                 'inverterType' => ['table' => 'inverter_types', 'local_key' => 'inverter_type_id', 'foreign_key' => 'id'],
@@ -1576,6 +1615,7 @@ return [
         'customer_finances',
         'project_acceptances',
         'account_transactions',
+        'project_invoice_details',
         'users',
         'roles',
         'permissions',

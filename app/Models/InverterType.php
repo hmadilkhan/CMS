@@ -14,6 +14,7 @@ class InverterType extends Model
 
     protected $casts = [
         'tags' => 'array',
+        'inverter_efficiency_rating' => 'decimal:2',
     ];
 
     public function invertertyperates()

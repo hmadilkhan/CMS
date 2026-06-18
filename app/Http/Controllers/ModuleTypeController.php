@@ -78,6 +78,11 @@ class ModuleTypeController extends Controller
             $moduleType->amount = $validated["amount"];
             $moduleType->inverter_type_id = $validated["inverter_type_id"];
             $moduleType->internal_module_cost = $validated["internal_module_cost"] ?? 0;
+            $moduleType->ptc_rating = $validated["ptc_rating"] ?? null;
+            $moduleType->voc_rating = $validated["voc_rating"] ?? null;
+            $moduleType->isc_rating = $validated["isc_rating"] ?? null;
+            $moduleType->weight = $validated["weight"] ?? null;
+            $moduleType->square_footage = $validated["square_footage"] ?? null;
             $moduleType->save();
             return redirect()->route("module-types.index")->with("success", "Module type updated successfully");
         } catch (\Throwable $th) {
@@ -114,6 +119,11 @@ class ModuleTypeController extends Controller
             "value" => ["required", "numeric", "min:0"],
             "amount" => ["required", "numeric", "min:0"],
             "internal_module_cost" => ["nullable", "numeric", "min:0"],
+            "ptc_rating" => ["nullable", "numeric", "min:0"],
+            "voc_rating" => ["nullable", "numeric", "min:0"],
+            "isc_rating" => ["nullable", "numeric", "min:0"],
+            "weight" => ["nullable", "numeric", "min:0"],
+            "square_footage" => ["nullable", "numeric", "min:0"],
         ]);
     }
 }

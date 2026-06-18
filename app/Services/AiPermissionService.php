@@ -35,6 +35,10 @@ class AiPermissionService
             return $this->canAccessProfitability($user);
         }
 
+        if ($accessRule === 'invoice_details_access') {
+            return method_exists($user, 'can') && $user->can('Invoice Details');
+        }
+
         if ($accessRule === 'admin_only') {
             return false;
         }
@@ -63,6 +67,7 @@ class AiPermissionService
                 'project_call_logs',
                 'project_files',
                 'project_design_details',
+                'project_invoice_details',
             ], true);
         }
 
@@ -121,6 +126,7 @@ class AiPermissionService
 
             return match ($table) {
                 'projects', 'tasks', 'project_follow_ups', 'project_call_logs', 'project_files', 'project_design_details' => $query->whereIn('department_id', $departmentIds),
+                'project_invoice_details' => $query->whereHas('project', fn ($projectQuery) => $projectQuery->whereIn('department_id', $departmentIds)),
                 'service_tickets' => $query->whereHas('project', fn ($projectQuery) => $projectQuery->whereIn('department_id', $departmentIds)),
                 'customers' => $query->whereHas('project', fn ($projectQuery) => $projectQuery->whereIn('department_id', $departmentIds)),
                 default => $query,
@@ -133,6 +139,7 @@ class AiPermissionService
             return match ($table) {
                 'projects' => $query->whereIn('id', Task::whereIn('employee_id', $employeeIds)->select('project_id')),
                 'tasks', 'project_follow_ups', 'project_design_details' => $query->whereIn('employee_id', $employeeIds),
+                'project_invoice_details' => $query->whereIn('project_id', Task::whereIn('employee_id', $employeeIds)->select('project_id')),
                 'service_tickets' => $query->where('assigned_to', $user->id)->orWhere('user_id', $user->id),
                 'service_ticket_comments' => $query->where('user_id', $user->id),
                 'project_call_logs' => $query->where('user_id', $user->id),
@@ -143,6 +150,7 @@ class AiPermissionService
         if ($this->hasAnyRole($user, ['Sales Person'])) {
             return match ($table) {
                 'projects' => $query->where('sales_partner_user_id', $user->id),
+                'project_invoice_details' => $query->whereHas('project', fn ($projectQuery) => $projectQuery->where('sales_partner_user_id', $user->id)),
                 'service_tickets' => $query->where('user_id', $user->id)->orWhere('assigned_to', $user->id),
                 default => $query,
             };
@@ -151,6 +159,7 @@ class AiPermissionService
         if ($this->hasAnyRole($user, ['Sub-Contractor User'])) {
             return match ($table) {
                 'projects' => $query->where('sub_contractor_user_id', $user->id),
+                'project_invoice_details' => $query->whereHas('project', fn ($projectQuery) => $projectQuery->where('sub_contractor_user_id', $user->id)),
                 'service_tickets' => $query->where('user_id', $user->id)->orWhere('assigned_to', $user->id),
                 default => $query,
             };

@@ -104,6 +104,11 @@ class Project extends Model
         return $this->hasMany(ProjectAddersLock::class, 'project_id', 'id');
     }
 
+    public function invoiceDetails()
+    {
+        return $this->hasMany(ProjectInvoiceDetail::class, 'project_id', 'id');
+    }
+
     public function serviceTickets()
     {
         return $this->hasMany(ServiceTicket::class, 'project_id', 'id');

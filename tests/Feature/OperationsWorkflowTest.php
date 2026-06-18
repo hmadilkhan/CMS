@@ -41,6 +41,11 @@ class OperationsWorkflowTest extends TestCase
             'value' => 410,
             'amount' => 130,
             'internal_module_cost' => 90,
+            'ptc_rating' => 385.5,
+            'voc_rating' => 49.8,
+            'isc_rating' => 10.6,
+            'weight' => 52.7,
+            'square_footage' => 23.4,
         ]);
 
         $createResponse->assertRedirect(route('module-types.index'));
@@ -54,6 +59,11 @@ class OperationsWorkflowTest extends TestCase
             'value' => 420,
             'amount' => 140,
             'internal_module_cost' => 95,
+            'ptc_rating' => 390.5,
+            'voc_rating' => 50.8,
+            'isc_rating' => 11.6,
+            'weight' => 53.7,
+            'square_footage' => 24.4,
         ]);
 
         $updateResponse->assertRedirect(route('module-types.index'));
@@ -63,6 +73,11 @@ class OperationsWorkflowTest extends TestCase
             'value' => 420,
             'amount' => 140,
             'internal_module_cost' => 95,
+            'ptc_rating' => 390.5,
+            'voc_rating' => 50.8,
+            'isc_rating' => 11.6,
+            'weight' => 53.7,
+            'square_footage' => 24.4,
         ]);
 
         $deleteResponse = $this->actingAs($admin)->delete(route('module-types.destroy', $module));

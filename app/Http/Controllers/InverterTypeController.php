@@ -34,14 +34,16 @@ class InverterTypeController extends Controller
     {
         $validated = $request->validate([
             'name' => 'required',
+            'inverter_efficiency_rating' => 'nullable|numeric|min:0|max:100',
         ]);
 
         try {
             $count = InverterType::where("name", $request->name)->count();
             if ($count == 0) {
                 InverterType::create([
-                    "name" => $request->name,
+                    "name" => $validated["name"],
                     "tags" => $this->normalizeTags($request->tags),
+                    "inverter_efficiency_rating" => $validated["inverter_efficiency_rating"] ?? null,
                 ]);
                 return redirect()->route("view-inverter-type")->with("success", "Data Saved Successfully");
             } else {
@@ -54,10 +56,16 @@ class InverterTypeController extends Controller
 
     public function inverterTypeUpdate(Request $request)
     {
+        $validated = $request->validate([
+            'name' => 'required',
+            'inverter_efficiency_rating' => 'nullable|numeric|min:0|max:100',
+        ]);
+
         try {
             $inverterType = InverterType::find($request->id);
-            $inverterType->name = $request->name;
+            $inverterType->name = $validated["name"];
             $inverterType->tags = $this->normalizeTags($request->tags);
+            $inverterType->inverter_efficiency_rating = $validated["inverter_efficiency_rating"] ?? null;
             $inverterType->save();
             return redirect()->route("view-inverter-type");
         } catch (\Throwable $th) {

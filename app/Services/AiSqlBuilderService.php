@@ -22,6 +22,7 @@ class AiSqlBuilderService
         'project_follow_ups',
         'project_call_logs',
         'project_files',
+        'project_invoice_details',
         'project_design_details',
         'project_acceptances',
         'account_transactions',
@@ -615,7 +616,7 @@ class AiSqlBuilderService
 
             $query->select(
                 'projects.project_name',
-                DB::raw("case account_transactions.payee when 'sales_partner' then 'Sales Partner' when 'sub_contractor' then 'Sub-Contractor' when 'others' then 'Others' else account_transactions.payee end as payee_label"),
+                DB::raw("case account_transactions.payee when 'sales_partner' then 'Sales Partner' when 'sub_contractor' then 'Sub-Contractor' when 'supplier' then 'Supplier' when 'customer' then 'Customer' when 'others' then 'Others' else account_transactions.payee end as payee_label"),
                 'account_transactions.milestone',
                 'account_transactions.amount',
                 'account_transactions.deduction_amount',
