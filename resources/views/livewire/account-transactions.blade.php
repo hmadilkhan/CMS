@@ -36,6 +36,23 @@
             white-space: nowrap;
             font-size: 0.78rem;
         }
+
+        .account-amount-helper {
+            display: block;
+            margin-top: 0.3rem;
+            font-size: 0.72rem;
+            line-height: 1.25;
+        }
+
+        .account-transaction-action-col {
+            align-self: end;
+        }
+
+        @media (max-width: 991.98px) {
+            .account-transaction-action-col {
+                align-self: start;
+            }
+        }
     </style>
     <div class="card-header">
         <h3 class=" fw-bold flex-fill mb-0 mt-sm-0" data-bs-toggle="collapse" aria-expanded="false"
@@ -47,8 +64,8 @@
         @endif
         @can('Account Transactions Edit')
             <form wire:submit.prevent="{{ $isEditMode ? 'update' : 'save' }}" class="mb-4">
-                <div class="row g-3 align-items-end">
-                    <div class="col-md-3">
+                <div class="row g-3 align-items-start">
+                    <div class="col-xl-3 col-lg-4 col-md-6">
                         <label class="form-label">Payee</label>
                         <select class="form-select form-control" aria-label="Default select Payee"
                             wire:model.defer="payee">
@@ -63,44 +80,44 @@
                             <span class="text-danger">{{ $message }}</span>
                         @enderror
                     </div>
-                    <div class="col-md-3">
+                    <div class="col-xl-3 col-lg-4 col-md-6">
                         <label class="form-label">Milestone</label>
                         <input type="text" class="form-control" wire:model.defer="milestone">
                         @error('milestone')
                             <span class="text-danger">{{ $message }}</span>
                         @enderror
                     </div>
-                    <div class="col-md-2">
+                    <div class="col-xl-3 col-lg-4 col-md-6">
                         <label class="form-label">Amount</label>
                         <input type="number" step="0.01" class="form-control" wire:model.defer="amount"
                             placeholder="Positive or negative">
-                        <small class="text-muted">Use positive or negative values for debit/credit.</small>
+                        <small class="text-muted account-amount-helper">Use positive or negative values for debit/credit.</small>
                         @error('amount')
                             <span class="text-danger">{{ $message }}</span>
                         @enderror
                     </div>
-                    <div class="col-md-2">
+                    <div class="col-xl-3 col-lg-4 col-md-6">
                         <label class="form-label">Deduction Amount</label>
                         <input type="number" step="0.01" class="form-control" wire:model.defer="deduction_amount">
                         @error('deduction_amount')
                             <span class="text-danger">{{ $message }}</span>
                         @enderror
                     </div>
-                    <div class="col-md-2">
+                    <div class="col-xl-3 col-lg-4 col-md-6">
                         <label class="form-label">Transaction Date</label>
                         <input type="date" class="form-control" wire:model.defer="transaction_date">
                         @error('transaction_date')
                             <span class="text-danger">{{ $message }}</span>
                         @enderror
                     </div>
-                    <div class="col-md-3">
+                    <div class="col-xl-4 col-lg-4 col-md-6">
                         <label class="form-label">Details</label>
                         <input type="text" class="form-control" wire:model.defer="transaction_details">
                         @error('transaction_details')
                             <span class="text-danger">{{ $message }}</span>
                         @enderror
                     </div>
-                    <div class="col-md-2">
+                    <div class="col-xl-2 col-lg-4 col-md-6 account-transaction-action-col">
                         <button type="submit" class="btn btn-primary w-100">
                             {{ $isEditMode ? 'Update' : 'Add' }}
                         </button>
