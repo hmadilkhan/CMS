@@ -6,14 +6,9 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
-class FinanceOption extends Model
+class FinanceMilestoneEmailRecipient extends Model
 {
-    use HasFactory,SoftDeletes;
+    use HasFactory, SoftDeletes;
 
     protected $guarded = [];
-
-    public function milestones()
-    {
-        return $this->hasMany(FinanceOptionMilestone::class)->orderBy('sort_order');
-    }
 }

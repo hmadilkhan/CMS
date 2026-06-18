@@ -11,6 +11,8 @@ use App\Models\CallScript;
 use App\Models\Department;
 use App\Models\EmailScript;
 use App\Models\EmailType;
+use App\Models\FinanceMilestoneEmailRecipient;
+use App\Models\FinanceMilestoneSetting;
 use App\Models\FinanceOption;
 use App\Models\InverterType;
 use App\Models\InverterTypeRate;
@@ -21,6 +23,7 @@ use App\Models\SubContractor;
 use App\Models\SubDepartment;
 use App\Models\User;
 use App\Models\UtilityCompany;
+use App\Services\FinanceMilestoneService;
 use App\Traits\MediaTrait;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -265,20 +268,25 @@ class OperationController extends Controller
     public function financeOptionView(Request $request)
     {
         if ($request->id != "") {
-            $finance = FinanceOption::where("id", $request->id)->first();
+            $finance = FinanceOption::with("milestones")->where("id", $request->id)->first();
         }
         return view("operations/finance-options/index", [
-            "financeOptions" => FinanceOption::all(),
+            "financeOptions" => FinanceOption::with("milestones")->get(),
             "finance" => ($request->id != "" ? $finance : []),
+            "milestoneEmailRecipients" => FinanceMilestoneEmailRecipient::orderBy("mode")->orderBy("email")->get(),
+            "milestoneEmailMode" => FinanceMilestoneSetting::where("key", "email_mode")->value("value") ?: FinanceMilestoneService::MODE_TEST,
         ]);
     }
 
     public function financeOptionStore(Request $request)
     {
         $validated = $this->validateFinanceOption($request);
+        $milestoneAmountSource = strcasecmp(trim($validated["name"]), "Prepaid PPA") === 0
+            ? "customer_portion"
+            : $validated["milestone_amount_source"];
 
         try {
-            DB::transaction(function () use ($validated) {
+            DB::transaction(function () use ($validated, $milestoneAmountSource) {
                 $finance = FinanceOption::create([
                     "name" => $validated["name"],
                     "loan_id" => $validated["loan_id"],
@@ -290,7 +298,10 @@ class OperationController extends Controller
                     "no_of_days" => ($validated["pto_restriction"] == 0 ? 0 : $validated["no_of_days"]),
                     "holdback" => $validated["holdback"],
                     "dollar_watt_value" => ($validated["holdback"] == 0 ? 0 : $validated["dollar_watt_value"]),
+                    "milestone_enabled" => $validated["milestone_enabled"],
+                    "milestone_amount_source" => $milestoneAmountSource,
                 ]);
+                app(FinanceMilestoneService::class)->syncDefaultMilestones($finance);
                 LoanTerm::create([
                     "finance_option_id" => $finance->id,
                     "year" => '10 Years',
@@ -310,6 +321,9 @@ class OperationController extends Controller
     public function financeOptionUpdate(Request $request)
     {
         $validated = $this->validateFinanceOption($request, $request->id);
+        $milestoneAmountSource = strcasecmp(trim($validated["name"]), "Prepaid PPA") === 0
+            ? "customer_portion"
+            : $validated["milestone_amount_source"];
 
         try {
             $adder = FinanceOption::findOrFail($validated["id"]);
@@ -323,11 +337,74 @@ class OperationController extends Controller
             $adder->no_of_days = ($validated["pto_restriction"] == 0 ? 0 : $validated["no_of_days"]);
             $adder->holdback = $validated["holdback"];
             $adder->dollar_watt_value = ($validated["holdback"] == 0 ? 0 : $validated["dollar_watt_value"]);
+            $adder->milestone_enabled = $validated["milestone_enabled"];
+            $adder->milestone_amount_source = $milestoneAmountSource;
             $adder->save();
+            app(FinanceMilestoneService::class)->syncDefaultMilestones($adder);
             return redirect()->route("finance.option.types");
         } catch (\Throwable $th) {
             return redirect()->route("finance.option.types")->with('error', $th->getMessage());
         }
+    }
+
+    public function financeMilestoneRecipientStore(Request $request)
+    {
+        $validated = $request->validate([
+            "email" => ["required", "email", "max:255"],
+            "mode" => ["required", Rule::in([FinanceMilestoneService::MODE_TEST, FinanceMilestoneService::MODE_PRODUCTION])],
+            "is_active" => ["nullable", Rule::in([0, 1])],
+        ]);
+
+        FinanceMilestoneEmailRecipient::create([
+            "email" => $validated["email"],
+            "mode" => $validated["mode"],
+            "is_active" => $request->boolean("is_active", true),
+        ]);
+
+        return redirect()->route("finance.option.types")->with("success", "Milestone recipient added successfully");
+    }
+
+    public function financeMilestoneRecipientUpdate(Request $request)
+    {
+        $validated = $request->validate([
+            "id" => ["required", "exists:finance_milestone_email_recipients,id"],
+            "email" => ["required", "email", "max:255"],
+            "mode" => ["required", Rule::in([FinanceMilestoneService::MODE_TEST, FinanceMilestoneService::MODE_PRODUCTION])],
+            "is_active" => ["nullable", Rule::in([0, 1])],
+        ]);
+
+        FinanceMilestoneEmailRecipient::where("id", $validated["id"])->update([
+            "email" => $validated["email"],
+            "mode" => $validated["mode"],
+            "is_active" => $request->boolean("is_active"),
+        ]);
+
+        return redirect()->route("finance.option.types")->with("success", "Milestone recipient updated successfully");
+    }
+
+    public function financeMilestoneRecipientDelete(Request $request)
+    {
+        $request->validate([
+            "id" => ["required", "exists:finance_milestone_email_recipients,id"],
+        ]);
+
+        FinanceMilestoneEmailRecipient::where("id", $request->id)->delete();
+
+        return response()->json(["status" => 200]);
+    }
+
+    public function financeMilestoneEmailModeUpdate(Request $request)
+    {
+        $validated = $request->validate([
+            "email_mode" => ["required", Rule::in([FinanceMilestoneService::MODE_TEST, FinanceMilestoneService::MODE_PRODUCTION])],
+        ]);
+
+        FinanceMilestoneSetting::updateOrCreate(
+            ["key" => "email_mode"],
+            ["value" => $validated["email_mode"]]
+        );
+
+        return redirect()->route("finance.option.types")->with("success", "Milestone email mode updated successfully");
     }
 
     public function financeOptionDelete(Request $request)
@@ -1224,6 +1301,8 @@ class OperationController extends Controller
             "no_of_days" => ["required_if:pto_restriction,1", "nullable", "integer", "min:0"],
             "holdback" => ["required", Rule::in([0, 1])],
             "dollar_watt_value" => ["required_if:holdback,1", "nullable", "numeric", "min:0"],
+            "milestone_enabled" => ["required", Rule::in([0, 1])],
+            "milestone_amount_source" => ["required", Rule::in(["contract_amount", "customer_portion"])],
         ];
 
         if (!empty($ignoreId)) {

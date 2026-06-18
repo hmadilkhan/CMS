@@ -118,6 +118,10 @@
         <label for="final_inspection_date" class="form-label">Final Inspection Date</label>
         <input disabled class="form-control" type="date" value="{{$project->final_inspection_date}}">
     </div>
+    <div class="col-sm-6 mb-3 ">
+        <label for="inspection_approval_date" class="form-label">Inspection Approval Date</label>
+        <input disabled class="form-control" type="date" value="{{$project->inspection_approval_date}}">
+    </div>
     @endif
     @if($department->id == 7)
     <div class="col-sm-6 mb-3 ">

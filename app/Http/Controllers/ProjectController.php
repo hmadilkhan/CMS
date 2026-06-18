@@ -28,6 +28,7 @@ use App\Models\ProjectFollowUp;
 use App\Models\SubDepartment;
 use App\Models\Task;
 use App\Models\Tool;
+use App\Services\FinanceMilestoneService;
 use App\Services\ProjectAssignmentService;
 use App\Traits\MediaTrait;
 use Carbon\Carbon;
@@ -128,6 +129,7 @@ class ProjectController extends Controller
             ]);
             app(ProjectAssignmentService::class)->notifyAssignedEmployee($assignedEmployee, $project, $task);
             DB::commit();
+            app(FinanceMilestoneService::class)->triggerProjectCreated($project);
             return response()->json(["status" => 200, "messsage" => "Project created successfully"]);
         } catch (\Throwable $th) {
             DB::rollBack();
@@ -264,6 +266,12 @@ class ProjectController extends Controller
     {
         try {
             $project->update($request->toArray());
+            $project->refresh();
+            app(FinanceMilestoneService::class)->triggerDateMilestones($project, array_intersect(array_keys($request->toArray()), [
+                'permitting_approval_date',
+                'solar_install_date',
+                'inspection_approval_date',
+            ]));
             return response()->json(["status" => 200, "messsage" => "Project updated successfully"]);
         } catch (\Throwable $th) {
             return response()->json(["status" => 500, "messsage" => $th->getMessage()]);
@@ -344,6 +352,7 @@ class ProjectController extends Controller
                 }),
                 'rough_inspection_date' => 'required_if:forward,7',
                 'final_inspection_date' => 'required_if:forward,7',
+                'inspection_approval_date' => 'nullable|date',
                 'pto_submission_date' => 'required_if:forward,8',
                 'pto_approval_date' => 'required_if:forward,8',
                 'coc_packet_mailed_out_date' => 'required_if:forward,9',
@@ -432,6 +441,7 @@ class ProjectController extends Controller
                 $updateItems = array_merge($updateItems, [
                     "rough_inspection_date" => $request->rough_inspection_date,
                     "final_inspection_date" => $request->final_inspection_date,
+                    "inspection_approval_date" => $request->inspection_approval_date,
                 ]);
             }
 
@@ -467,6 +477,11 @@ class ProjectController extends Controller
             $project->refresh();
             app(ProjectAssignmentService::class)->notifyAssignedEmployee($emp, $project, $newTask);
             DB::commit();
+            app(FinanceMilestoneService::class)->triggerDateMilestones($project, array_intersect(array_keys($updateItems), [
+                'permitting_approval_date',
+                'solar_install_date',
+                'inspection_approval_date',
+            ]));
             return redirect()->route("projects.index");
         } catch (\Throwable $th) {
             DB::rollBack();

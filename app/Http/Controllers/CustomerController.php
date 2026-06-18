@@ -25,6 +25,7 @@ use App\Models\SubContractor;
 use App\Models\SubDepartment;
 use App\Models\Task;
 use App\Models\User;
+use App\Services\FinanceMilestoneService;
 use App\Services\ProjectAssignmentService;
 use App\Traits\MediaTrait;
 use Illuminate\Http\Request;
@@ -329,6 +330,7 @@ class CustomerController extends Controller
             ]);
             app(ProjectAssignmentService::class)->notifyAssignedEmployee($assignedEmployee, $project, $task);
             DB::commit();
+            app(FinanceMilestoneService::class)->triggerProjectCreated($project);
             return redirect()->route("customers.index");
         } catch (\Throwable $th) {
             DB::rollBack();

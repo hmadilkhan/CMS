@@ -322,6 +322,15 @@
                         </div>
                     @enderror
                 </div>
+                <div class="col-sm-4 mb-3 ">
+                    <label for="inspection_approval_date" class="form-label">Inspection Approval Date</label>
+                    <input class="form-control" type="date" id="inspection_approval_date"
+                        name="inspection_approval_date" wire:model="inspection_approval_date">
+                    @error('inspection_approval_date')
+                        <div id="inspection_approval_date_message" class="text-danger message mt-2">{{ $message }}
+                        </div>
+                    @enderror
+                </div>
                 @if ($project->fire_review_required == 1)
                     <div class="col-sm-4 mb-3 ">
                         <label for="final_inspection_date" class="form-label">Fire Inspection Date</label>

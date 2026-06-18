@@ -5,6 +5,7 @@ namespace App\Livewire\Project\ProjectFields;
 use App\Models\Project;
 use App\Models\SubContractor;
 use App\Models\UtilityCompany;
+use App\Services\FinanceMilestoneService;
 use Illuminate\Validation\Rule;
 use Livewire\Component;
 
@@ -58,6 +59,7 @@ class EditFields extends Component
     // SIXTH DEPARTMENT
     public $rough_inspection_date;
     public $final_inspection_date;
+    public $inspection_approval_date;
     public $fire_inspection_date;
 
     // SEVENTH DEPARTMENT
@@ -121,6 +123,7 @@ class EditFields extends Component
         // SIXTH DEPARTMENT
         $this->rough_inspection_date = $this->project->rough_inspection_date;
         $this->final_inspection_date = $this->project->final_inspection_date;
+        $this->inspection_approval_date = $this->project->inspection_approval_date;
         $this->fire_inspection_date  = $this->project->fire_inspection_date;
 
         // SEVENTH DEPARTMENT
@@ -355,6 +358,7 @@ class EditFields extends Component
             $updateItems = array_merge($updateItems, [
                 "rough_inspection_date" => $this->rough_inspection_date,
                 "final_inspection_date" => $this->final_inspection_date,
+                "inspection_approval_date" => $this->inspection_approval_date,
                 "fire_inspection_date" => $this->fire_inspection_date,
             ]);
         }
@@ -377,6 +381,12 @@ class EditFields extends Component
             if ($this->departmentId == 5) {
                 $this->project->customer()->update($customerUpdateItems);
             }
+            $this->project->refresh();
+            app(FinanceMilestoneService::class)->triggerDateMilestones($this->project, array_intersect(array_keys($updateItems), [
+                'permitting_approval_date',
+                'solar_install_date',
+                'inspection_approval_date',
+            ]));
             $username = auth()->user()->name;
             // Get the changed field names
             $changedFields = collect($updateItems)->keys()->implode(', ');

@@ -213,6 +213,14 @@
         @enderror
         <div id="final_inspection_date_message" class="text-danger message mt-2"></div>
     </div>
+    <div class="col-sm-3 mb-3 ">
+        <label for="inspection_approval_date" class="form-label">Inspection Approval Date</label>
+        <input class="form-control" type="date" id="inspection_approval_date" name="inspection_approval_date" value="{{$project->inspection_approval_date}}">
+        @error("inspection_approval_date")
+        <div id="inspection_approval_date_message" class="text-danger message mt-2">{{$message}}</div>
+        @enderror
+        <div id="inspection_approval_date_message" class="text-danger message mt-2"></div>
+    </div>
     @endif
     @if($department == 8)
     <div class="col-sm-3 mb-3 ">
