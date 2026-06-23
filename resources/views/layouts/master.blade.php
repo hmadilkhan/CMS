@@ -174,6 +174,15 @@
 </head>
 
 <body>
+    <div class="d-none" aria-hidden="true">
+        <div class="theme-switch">
+            <input type="checkbox" tabindex="-1">
+        </div>
+        <div class="theme-high-contrast">
+            <input type="checkbox" tabindex="-1">
+        </div>
+    </div>
+
     <div id="mytask-layout" class="theme-indigo">
         <!-- sidebar -->
         @include('layouts.sidebar')
