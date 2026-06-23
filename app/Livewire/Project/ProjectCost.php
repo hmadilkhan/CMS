@@ -7,7 +7,7 @@ use App\Models\InverterTypeRate;
 use App\Models\LaborCost;
 use App\Models\ModuleType;
 use App\Models\Project;
-use Livewire\Attributes\Computed;
+use Livewire\Attributes\On;
 use Livewire\Component;
 
 class ProjectCost extends Component
@@ -74,6 +74,22 @@ class ProjectCost extends Component
 
         $this->postEstimateProfit = $this->internalContractAmount - ($this->postEstimateMaterialCost + $this->postEstimateLaborCost + $this->postEstimatePermitCost);
         $this->postEstimateProfitPercentage = ($this->postEstimateProfit /  $this->internalContractAmount * 100);
+    }
+
+    #[On('project-invoice-costs-updated')]
+    public function refreshInvoiceCosts(int $projectId): void
+    {
+        if ((int) $projectId !== (int) $this->projectId) {
+            return;
+        }
+
+        $project = Project::findOrFail($this->projectId);
+
+        $this->project = $project;
+        $this->postEstimateMaterialCost = $project->actual_material_cost;
+        $this->postEstimateLaborCost = $project->actual_labor_cost;
+        $this->postEstimatePermitCost = $project->actual_permit_fee;
+        $this->calculateProfit();
     }
 
     public function updated($propertyName)

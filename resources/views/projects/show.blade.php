@@ -2717,176 +2717,7 @@
             </div>
         </div>
     </div>
-    {{-- <div class="tab-pane fade" id="customer" role="tabpanel">
-        <div class="card mt-1">
-            <div class="card-header">
-                <div class="card-header py-3 px-0 d-sm-flex align-items-center  justify-content-between border-bottom">
-                    <h3 class=" fw-bold flex-fill mb-0 mt-sm-0">Customer Details</h3>
-                </div>
-            </div>
-            <div class="card-body">
-                <div class="row g-3 mb-3">
-                    <div class="col-sm-3">
-                        <label for="first_name" class="form-label">First Name</label>
-                        <input disabled value="{{ $project->customer->first_name }}" type="text"
-                            class="form-control" id="first_name" name="first_name" placeholder="First Name">
-                    </div>
-                    <div class="col-sm-3">
-                        <label for="last_name" class="form-label">Last Name</label>
-                        <input disabled value="{{ $project->customer->last_name }}" type="text"
-                            class="form-control" id="last_name" name="last_name" placeholder="Last Name">
-                    </div>
-                    <div class="col-sm-3">
-                        <label for="street" class="form-label">Street</label>
-                        <input disabled value="{{ $project->customer->street }}" type="text" class="form-control"
-                            id="street" name="street" placeholder="Street">
-                    </div>
-                    <div class="col-sm-3">
-                        <label for="city" class="form-label">City</label>
-                        <input disabled value="{{ $project->customer->city }}" type="text" class="form-control"
-                            id="city" name="city" placeholder="City">
-                    </div>
-                    <div class="col-sm-3">
-                        <label for="state" class="form-label">State</label>
-                        <input disabled value="{{ $project->customer->state }}" type="text" class="form-control"
-                            id="state" name="state" placeholder="State">
-                    </div>
-                    <div class="col-sm-3">
-                        <label for="zipcode" class="form-label">Zip Code</label>
-                        <input disabled value="{{ $project->customer->zipcode }}" type="text"
-                            class="form-control" id="zipcode" name="zipcode" placeholder="Zip Code">
-                    </div>
-                    <div class="col-sm-3">
-                        <label for="phone" class="form-label">Phone</label>
-                        <input disabled value="{{ $project->customer->phone }}" type="text" class="form-control"
-                            id="phone" name="phone" placeholder="phone">
-                    </div>
-                    <div class="col-sm-3">
-                        <label for="email" class="form-label">Email</label>
-                        <input disabled value="{{ $project->customer->email }}" type="text" class="form-control"
-                            id="email" name="email" placeholder="Email">
-                    </div>
-
-                    <div class="col-sm-3">
-                        <label for="sold_date" class="form-label">Sold Date</label>
-                        <input disabled value="{{ $project->customer->sold_date }}" type="date"
-                            class="form-control" id="sold_date" name="sold_date" placeholder="Sold Date">
-                    </div>
-                    <div class="col-sm-3">
-                        <label class="form-label">Sales Partner</label>
-                        <input disabled value="{{ $project->customer->salespartner->name }}" type="text"
-                            class="form-control" />
-                    </div>
-                    <div class="col-sm-3">
-                        <label for="code" class="form-label">Panel Qty</label>
-                        <input disabled value="{{ $project->customer->panel_qty }}" type="text"
-                            class="form-control" id="panel_qty" name="panel_qty" placeholder="Panel Qty">
-                    </div>
-                    <div class="col-sm-3">
-                        <label class="form-label">Module Type</label>
-                        <input disabled value="{{ $project->customer->module->name }}" type="text"
-                            class="form-control" id="module_type_id" name="module_type_id"
-                            placeholder="Module Type">
-                    </div>
-                    <div class="col-sm-3">
-                        <label class="form-label">Inverter Type</label>
-                        <input disabled value="{{ $project->customer->inverter->name }}" type="text"
-                            class="form-control" id="inverter_type_id" name="inverter_type_id"
-                            placeholder="Inverter Type">
-                    </div>
-                    <div class="col-sm-3">
-                        <label for="module_qty" class="form-label">System Size</label>
-                        <input disabled value="{{ $project->customer->module_value }}" type="text"
-                            class="form-control" id="module_qty" name="module_qty" placeholder="System Size">
-                    </div>
-                    <div class="col-sm-3">
-                        <label for="inverter_qty" class="form-label">Inverter Qty</label>
-                        <input disabled value="{{ $project->customer->inverter_qty }}" type="text"
-                            class="form-control" id="inverter_qty" name="inverter_qty" placeholder="Inverter Qty">
-                    </div>
-                    @if ($project->customer->loan_id)
-                        <div class="col-sm-3">
-                            <label for="inverter_qty" class="form-label">Loan Id</label>
-                            <input disabled value="{{ $project->customer->loan_id }}" type="text"
-                                class="form-control" placeholder="Loan Id">
-                        </div>
-                    @endif
-                    @if ($project->customer->sold_production_value)
-                        <div class="col-sm-3">
-                            <label for="inverter_qty" class="form-label">Sold Production Value</label>
-                            <input disabled value="{{ $project->customer->sold_production_value }}" type="text"
-                                class="form-control" placeholder="Sold Production Value">
-                        </div>
-                    @endif
-                    <div class="col-sm-3">
-                            <label for="inverter_qty" class="form-label">Preferred Language</label>
-                            <input disabled value="{{ $project->customer->preferred_language }}" type="text"
-                                class="form-control" placeholder="Preferred Language">
-                        </div>
-                </div>
-            </div>
-        </div>
-        <div class="card mt-1">
-            <div class="card-header">
-                <div class="card-header py-3 px-0 d-sm-flex align-items-center  justify-content-between border-bottom">
-                    <h3 class=" fw-bold flex-fill mb-0 mt-sm-0">Sales Partner Details</h3>
-                </div>
-            </div>
-            <div class="card-body">
-                <div class="row g-3 mb-3 mt-1">
-                    <div
-                        class="col-sm-3d-flex align-items-center justify-content-between profile-av pe-xl-4 pe-md-2 pe-sm-4 pe-4 w220">
-                        <img src="{{ $project->customer->salespartner->image != '' ? asset('storage/users/' . $project->customer->salespartner->image) : asset('assets/images/profile_av.png') }}"
-                            alt="" class="avatar xl rounded-circle img-thumbnail shadow-sm">
-                    </div>
-                    <div class="col-sm-3 ">
-                        <label for="exampleFormControlInput877" class="form-label">Sales Partner Name</label>
-                        <input disabled value="{{ $project->customer->salespartner->name }}" type="text"
-                            class="form-control" id="first_name" name="first_name" placeholder="First Name">
-                    </div>
-                    <div class="col-sm-3 ">
-                        <label for="exampleFormControlInput877" class="form-label">Email</label>
-                        <input disabled value="{{ $project->customer->salespartner->email }}" type="text"
-                            class="form-control" id="last_name" name="last_name" placeholder="Last Name">
-                    </div>
-                    <div class="col-sm-3 ">
-                        <label for="exampleFormControlInput877" class="form-label">Phone</label>
-                        <input disabled value="{{ $project->customer->salespartner->phone }}" type="text"
-                            class="form-control" id="street" name="street" placeholder="Street">
-                    </div>
-                </div>
-            </div>
-        </div>
-        <div class="card mt-1">
-            <div class="card-body">
-                <div class="card-header py-3 px-0 d-sm-flex align-items-center  justify-content-between border-bottom">
-                    <h3 class=" fw-bold flex-fill mb-0 mt-sm-0">Sales Person</h3>
-                </div>
-                <div class="row g-3 mb-3 mt-1">
-                    <div
-                        class="col-sm-3d-flex align-items-center justify-content-between profile-av pe-xl-4 pe-md-2 pe-sm-4 pe-4 w220">
-                        <img src="{{ !empty($project->salesPartnerUser) && $project->salesPartnerUser->image != '' ? asset('storage/users/' . $project->salesPartnerUser->image) : asset('assets/images/profile_av.png') }}"
-                            alt="" class="avatar xl rounded-circle img-thumbnail shadow-sm">
-                    </div>
-                    <div class="col-sm-3 ">
-                        <label for="exampleFormControlInput877" class="form-label">Sales Person Name</label>
-                        <input disabled value="{{ $project->salesPartnerUser->name ?? '-' }}" type="text"
-                            class="form-control" id="first_name" name="first_name" placeholder="First Name">
-                    </div>
-                    <div class="col-sm-3 ">
-                        <label for="exampleFormControlInput877" class="form-label">Email</label>
-                        <input disabled value="{{ $project->salesPartnerUser->email ?? '-' }}" type="text"
-                            class="form-control" id="last_name" name="last_name" placeholder="Last Name">
-                    </div>
-                    <div class="col-sm-3 ">
-                        <label for="exampleFormControlInput877" class="form-label">Phone</label>
-                        <input disabled value="{{ $project->salesPartnerUser->phone ?? '-' }}" type="text"
-                            class="form-control" id="street" name="street" placeholder="Street">
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div> --}}
+    
 
     <div class="tab-pane fade" id="financial" role="tabpanel">
         <div class="card mt-1">
@@ -5232,12 +5063,55 @@
         'use strict';
 
         $(document).ready(function() {
-            // Restore active tab on page load
-            const activeTab = localStorage.getItem('activeTab');
-            if (activeTab) {
-                $('.nav-link[href="' + activeTab + '"]').tab('show');
-                localStorage.removeItem('activeTab');
+            const primaryTabSelector = '.project-primary-tabs .nav-link[data-bs-toggle="tab"]';
+
+            function showPrimaryTab(tabHash) {
+                if (!tabHash) {
+                    return;
+                }
+
+                const tabTrigger = document.querySelector(primaryTabSelector + '[href="' + tabHash + '"]');
+
+                if (!tabTrigger) {
+                    return;
+                }
+
+                if (window.bootstrap && bootstrap.Tab) {
+                    bootstrap.Tab.getOrCreateInstance(tabTrigger).show();
+                } else if (window.jQuery && typeof $(tabTrigger).tab === 'function') {
+                    $(tabTrigger).tab('show');
+                }
+
+                history.replaceState(null, '', tabHash);
             }
+
+            // Restore active primary tab on page load.
+            const activeTab = localStorage.getItem('activeTab') || window.location.hash;
+            showPrimaryTab(activeTab);
+            localStorage.removeItem('activeTab');
+
+            document.querySelectorAll(primaryTabSelector).forEach(function(tabTrigger) {
+                tabTrigger.addEventListener('click', function(event) {
+                    const tabHash = event.currentTarget.getAttribute('href');
+
+                    if (!tabHash) {
+                        return;
+                    }
+
+                    showPrimaryTab(tabHash);
+                    history.replaceState(null, '', tabHash);
+                });
+
+                tabTrigger.addEventListener('shown.bs.tab', function(event) {
+                    const tabHash = event.target.getAttribute('href');
+
+                    if (!tabHash) {
+                        return;
+                    }
+
+                    history.replaceState(null, '', tabHash);
+                });
+            });
 
             // Ticket form submission
             $('#ticketForm').off('submit').on('submit', function(e) {

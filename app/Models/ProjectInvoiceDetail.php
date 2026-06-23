@@ -15,6 +15,7 @@ class ProjectInvoiceDetail extends Model
         'invoice_type',
         'invoice_date',
         'amount',
+        'notes',
         'file_name',
         'original_file_name',
         'file_path',

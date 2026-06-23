@@ -44,7 +44,7 @@
 
                 <div class="col-md-3">
                     <label class="form-label">File Upload</label>
-                    <input type="file" class="form-control" wire:model="file"
+                    <input type="file" class="form-control text-white" wire:model="file"
                         accept=".pdf,.jpg,.jpeg,.png,.doc,.docx,.xls,.xlsx,.csv">
                     @error('file')
                         <span class="text-danger">{{ $message }}</span>
@@ -54,8 +54,16 @@
                     </div>
                 </div>
 
-                <div class="col-md-1">
-                    <button type="submit" class="btn btn-primary w-100" wire:loading.attr="disabled"
+                <div class="col-md-12">
+                    <label class="form-label">Notes</label>
+                    <textarea class="form-control" rows="3" wire:model.defer="notes" placeholder="Invoice notes"></textarea>
+                    @error('notes')
+                        <span class="text-danger">{{ $message }}</span>
+                    @enderror
+                </div>
+
+                <div class="col-md-12 text-end">
+                    <button type="submit" class="btn btn-primary px-4" wire:loading.attr="disabled"
                         wire:target="file,save">
                         Save
                     </button>
@@ -71,8 +79,10 @@
                         <th class="text-white">Invoice Type</th>
                         <th class="text-white">Date</th>
                         <th class="text-white">Amount</th>
+                        <th class="text-white">Notes</th>
                         <th class="text-white">File</th>
                         <th class="text-white">Uploaded By</th>
+                        <th class="text-white">Action</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -82,17 +92,25 @@
                             <td>{{ $invoice->invoice_type_label }}</td>
                             <td>{{ optional($invoice->invoice_date)->format('d M Y') }}</td>
                             <td>$ {{ number_format($invoice->amount, 2) }}</td>
+                            <td>{{ $invoice->notes ?: '-' }}</td>
                             <td>
                                 <a href="{{ asset('storage/' . $invoice->file_path) }}" target="_blank"
-                                    class="text-white text-decoration-underline">
+                                    class="text-primary text-decoration-underline">
                                     {{ $invoice->original_file_name }}
                                 </a>
                             </td>
                             <td>{{ optional($invoice->uploader)->name ?? '-' }}</td>
+                            <td>
+                                <button type="button" class="btn btn-danger btn-sm"
+                                    wire:click="deleteInvoice({{ $invoice->id }})"
+                                    wire:confirm="Are you sure you want to delete this invoice?">
+                                    Delete
+                                </button>
+                            </td>
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="6" class="text-center">No invoice details found.</td>
+                            <td colspan="8" class="text-center">No invoice details found.</td>
                         </tr>
                     @endforelse
                 </tbody>
