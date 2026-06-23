@@ -234,7 +234,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.3/js/select2.min.js"></script>
     <script src="{{ asset('assets/bundles/dataTables.bundle.js') }}"></script>
     <!-- Jquery Page Js -->
-    <script src="{{ asset('page/template.js') }}"></script>
+    <script src="{{ asset('page/template.js') }}?v={{ filemtime(public_path('page/template.js')) }}"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script type="text/javascript">
         $(document).ready(function() {
