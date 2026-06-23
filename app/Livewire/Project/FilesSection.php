@@ -25,7 +25,7 @@ class FilesSection extends Component
     protected $listeners = ['deleteConfirmation', 'refreshComponent' => '$refresh'];
 
     protected $rules = [
-        'files.*' => 'max:51200' // 50MB max per file
+        'files.*' => 'max:256000' // 50MB max per file
     ];
 
     public function getListeners()
