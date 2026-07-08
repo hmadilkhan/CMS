@@ -17,10 +17,13 @@ class Kernel extends ConsoleKernel
      */
     protected function schedule(Schedule $schedule): void
     {
+        // $schedule->command('queue:work --timeout=600 --tries=3 --stop-when-empty')
+        //     ->everyMinute()
+        //     ->withoutOverlapping()
+        //     ->runInBackground();
         $schedule->command('queue:work --timeout=600 --tries=3 --stop-when-empty')
             ->everyMinute()
-            ->withoutOverlapping()
-            ->runInBackground();
+            ->withoutOverlapping(30);
         // $schedule->command('inspire')->hourly();
         // $schedule->command('app:fetch-emails')->timezone('Asia/Karachi')->dailyAt('09:00');
         // $schedule->command('app:fetch-emails')->timezone('Asia/Karachi')->dailyAt('18:00');
