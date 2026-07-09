@@ -57,6 +57,7 @@ return [
                 'hoa' => 'Homeowners Association name (if the property is in an HOA).',
                 'hoa_phone_number' => 'Contact phone number for the HOA.',
                 'ahj' => 'Authority Having Jurisdiction — the local government body that issues permits.',
+                'ahj_website_url' => 'Website URL for the Authority Having Jurisdiction.',
                 'adders_approve_checkbox' => 'Flag indicating whether the project adders have been approved.',
                 'mpu_required' => 'Whether a Main Panel Upgrade (electrical panel upgrade) is required before solar.',
                 'meter_spot_requestd_date' => 'Date the utility meter-spot was requested.',

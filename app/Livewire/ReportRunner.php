@@ -2,27 +2,33 @@
 
 namespace App\Livewire;
 
-use App\Models\SavedReport;
-use App\Models\Customer;
 use App\Exports\DynamicReportExport;
+use App\Models\Customer;
+use App\Models\SavedReport;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
-use Livewire\Component;
 use Livewire\Attributes\Title;
+use Livewire\Component;
 use Maatwebsite\Excel\Facades\Excel;
 
 class ReportRunner extends Component
 {
     #[Title('Run Saved Reports')]
-
     public $selectedReportId = '';
+
     public $selectedReport = null;
+
     public $filterValues = [];
+
     public $filterStartDate = [];
+
     public $filterEndDate = [];
+
     public $reportData = [];
+
     public $reportColumns = [];
+
     public $showResults = false;
 
     // Available operators (same as DynamicReportBuilder)
@@ -39,7 +45,7 @@ class ReportRunner extends Component
         'NOT IN' => 'Not In List',
         'BETWEEN' => 'Between',
         'IS NULL' => 'Is Empty',
-        'IS NOT NULL' => 'Is Not Empty'
+        'IS NOT NULL' => 'Is Not Empty',
     ];
 
     public function getUserReportsProperty()
@@ -58,9 +64,9 @@ class ReportRunner extends Component
             $this->showResults = false;
 
             // Initialize filter values for each filter in the saved report
-            if ($this->selectedReport && !empty($this->selectedReport->filters)) {
+            if ($this->selectedReport && ! empty($this->selectedReport->filters)) {
                 foreach ($this->selectedReport->filters as $index => $filter) {
-                    if (!in_array($filter['operator'], ['IS NULL', 'IS NOT NULL'])) {
+                    if (! in_array($filter['operator'], ['IS NULL', 'IS NOT NULL'])) {
                         $this->filterValues[$index] = '';
                         $this->filterStartDate[$index] = '';
                         $this->filterEndDate[$index] = '';
@@ -72,8 +78,9 @@ class ReportRunner extends Component
 
     public function runReport()
     {
-        if (!$this->selectedReport) {
+        if (! $this->selectedReport) {
             session()->flash('error', 'Please select a report first.');
+
             return;
         }
 
@@ -84,7 +91,7 @@ class ReportRunner extends Component
         } catch (\Exception $e) {
             Log::error('Report execution failed', [
                 'report_id' => $this->selectedReport->id,
-                'error' => $e->getMessage()
+                'error' => $e->getMessage(),
             ]);
             session()->flash('error', 'Failed to execute report. Please try again.');
         }
@@ -106,21 +113,21 @@ class ReportRunner extends Component
         $this->addJoins($query);
 
         // Apply user-provided filter values to the saved filters (only if value is provided)
-        if (!empty($this->selectedReport->filters)) {
+        if (! empty($this->selectedReport->filters)) {
             foreach ($this->selectedReport->filters as $index => $filter) {
                 // Skip filters that don't have values (except IS NULL/IS NOT NULL)
-                if (in_array($filter['operator'], ['IS NULL', 'IS NOT NULL']) || 
-                    !empty($this->filterValues[$index]) ||
-                    (!empty($this->filterStartDate[$index]) && !empty($this->filterEndDate[$index]))) {
-                    
+                if (in_array($filter['operator'], ['IS NULL', 'IS NOT NULL']) ||
+                    ! empty($this->filterValues[$index]) ||
+                    (! empty($this->filterStartDate[$index]) && ! empty($this->filterEndDate[$index]))) {
+
                     // For BETWEEN operator with date fields, combine start and end dates
-                    if (in_array($filter['operator'], ['BETWEEN', 'NOT BETWEEN']) && 
-                        !empty($this->filterStartDate[$index]) && !empty($this->filterEndDate[$index])) {
-                        $filterValue = $this->filterStartDate[$index] . ',' . $this->filterEndDate[$index];
+                    if (in_array($filter['operator'], ['BETWEEN', 'NOT BETWEEN']) &&
+                        ! empty($this->filterStartDate[$index]) && ! empty($this->filterEndDate[$index])) {
+                        $filterValue = $this->filterStartDate[$index].','.$this->filterEndDate[$index];
                     } else {
                         $filterValue = $this->filterValues[$index] ?? $filter['value'];
                     }
-                    
+
                     $this->applyFilter($query, $filter, $filterValue);
                 }
             }
@@ -138,23 +145,23 @@ class ReportRunner extends Component
         }
 
         // Add customer ID for calculated fields processing
-        if (!in_array('customers.id', $this->selectedReport->selected_fields)) {
+        if (! in_array('customers.id', $this->selectedReport->selected_fields)) {
             $selectFields[] = DB::raw('customers.id as id');
         }
 
         $query->select($selectFields);
-        
+
         return $query;
     }
 
     private function addJoins($query)
     {
         $fieldsString = implode(',', $this->selectedReport->selected_fields);
-        
+
         // Include filter fields to ensure proper joins
-        if (!empty($this->selectedReport->filters)) {
+        if (! empty($this->selectedReport->filters)) {
             $filterFields = array_column($this->selectedReport->filters, 'field');
-            $fieldsString .= ',' . implode(',', $filterFields);
+            $fieldsString .= ','.implode(',', $filterFields);
         }
 
         // Always join projects if project fields are selected
@@ -197,10 +204,10 @@ class ReportRunner extends Component
     {
         switch ($filter['operator']) {
             case 'LIKE':
-                $query->where($filter['field'], 'LIKE', '%' . $value . '%');
+                $query->where($filter['field'], 'LIKE', '%'.$value.'%');
                 break;
             case 'NOT LIKE':
-                $query->where($filter['field'], 'NOT LIKE', '%' . $value . '%');
+                $query->where($filter['field'], 'NOT LIKE', '%'.$value.'%');
                 break;
             case 'IN':
                 $values = explode(',', $value);
@@ -243,18 +250,18 @@ class ReportRunner extends Component
                 $columns[] = [
                     'field' => $fieldName,
                     'name' => $availableFields[$field] ?? $field,
-                    'type' => 'data'
+                    'type' => 'data',
                 ];
             }
         }
 
         // Add calculated field columns
-        if (!empty($this->selectedReport->calculated_fields)) {
+        if (! empty($this->selectedReport->calculated_fields)) {
             foreach ($this->selectedReport->calculated_fields as $calcField) {
                 $columns[] = [
-                    'field' => 'calc_' . Str::slug($calcField['name'], '_'),
+                    'field' => 'calc_'.Str::slug($calcField['name'], '_'),
                     'name' => $calcField['name'],
-                    'type' => 'calculated'
+                    'type' => 'calculated',
                 ];
             }
         }
@@ -269,13 +276,13 @@ class ReportRunner extends Component
         }
 
         $availableFields = $this->getAvailableFields();
-       
+
         foreach ($this->reportData as $row) {
-            
+
             foreach ($this->selectedReport->calculated_fields as $calcField) {
-               
-                $fieldKey = 'calc_' . Str::slug($calcField['name'], '_');
-                
+
+                $fieldKey = 'calc_'.Str::slug($calcField['name'], '_');
+
                 $row->{$fieldKey} = $this->evaluateExpression($calcField['expression'], $row, $availableFields);
             }
         }
@@ -283,18 +290,18 @@ class ReportRunner extends Component
 
     private function evaluateExpression($expression, $row, $availableFields)
     {
-      
+
         $processedExpression = $expression;
-      
+
         foreach ($availableFields as $field => $name) {
             $fieldValue = $this->getNestedProperty($row, $field);
-            
+
             $processedExpression = str_replace(
-                '{' . $field . '}',
+                '{'.$field.'}',
                 is_numeric($fieldValue) ? $fieldValue : 0,
                 $processedExpression
             );
-            
+
         }
 
         if (preg_match('/^[0-9+\-*\/.() ]+$/', $processedExpression)) {
@@ -317,7 +324,7 @@ class ReportRunner extends Component
         if (is_object($object) && isset($object->{$property})) {
             return $this->formatValue($object->{$property});
         }
-       
+
         // Special case for adders fields
         if ($property === 'adders_amount' || $property === 'customer_finances.adders') {
             return $this->formatValue($object->adders_amount ?? null);
@@ -343,6 +350,7 @@ class ReportRunner extends Component
         if (is_null($value)) {
             return '';
         }
+
         return (string) $value;
     }
 
@@ -382,6 +390,8 @@ class ReportRunner extends Component
             'projects.site_survey_link' => 'Site Survey Link',
             'projects.hoa' => 'HOA',
             'projects.hoa_phone_number' => 'HOA Phone Number',
+            'projects.ahj' => 'AHJ',
+            'projects.ahj_website_url' => 'AHJ Website URL',
             'projects.adders_approve_checkbox' => 'Adders Approve Checkbox',
             'projects.mpu_required' => 'MPU Required',
             'projects.meter_spot_requestd_date' => 'Meter Spot Request Date',
@@ -471,7 +481,7 @@ class ReportRunner extends Component
             'projects.fire_inspection_date' => 'date',
             'customer_finances.created_at' => 'date',
             'customer_finances.updated_at' => 'date',
-            
+
             // Number fields
             'customers.panel_qty' => 'number',
             'customers.inverter_qty' => 'number',
@@ -489,7 +499,7 @@ class ReportRunner extends Component
             'projects.actual_labor_cost' => 'number',
             'projects.actual_permit_fee' => 'number',
             'projects.actual_office_cost' => 'number',
-            
+
             // Dropdown fields
             // 'customers.state' => 'dropdown',
             'departments.name' => 'dropdown',
@@ -500,13 +510,13 @@ class ReportRunner extends Component
             'module_types.name' => 'dropdown',
             'inverter_types.name' => 'dropdown',
         ];
-        
+
         return $fieldTypes[$field] ?? 'text';
     }
-    
+
     public function getDropdownOptions($field)
     {
-        switch($field) {
+        switch ($field) {
 
             case 'projects.department_id':
             case 'departments.name':
@@ -527,13 +537,14 @@ class ReportRunner extends Component
 
     public function exportExcel()
     {
-        if (!$this->selectedReport) {
+        if (! $this->selectedReport) {
             session()->flash('error', 'Please select a report first.');
+
             return;
         }
 
         $this->getReportData();
-        
+
         $results = [];
         foreach ($this->reportData as $row) {
             $rowData = [];
@@ -542,7 +553,7 @@ class ReportRunner extends Component
                 if ($column['type'] === 'calculated') {
                     $value = is_object($row) ? ($row->{$column['field']} ?? 'N/A') : (isset($row[$column['field']]) ? $row[$column['field']] : 'N/A');
                 }
-                if (is_numeric($value) && !is_string($value)) {
+                if (is_numeric($value) && ! is_string($value)) {
                     $value = number_format($value, (is_float($value + 0) && floor($value + 0) != ($value + 0)) ? 2 : 0);
                 }
                 if ($value === null || (is_string($value) && trim($value) === '')) {
@@ -553,7 +564,7 @@ class ReportRunner extends Component
             $results[] = $rowData;
         }
 
-        $filename = ($this->selectedReport->name ?? 'Report') . '_' . date('Y-m-d_H-i-s') . '.xlsx';
+        $filename = ($this->selectedReport->name ?? 'Report').'_'.date('Y-m-d_H-i-s').'.xlsx';
 
         return Excel::download(
             new DynamicReportExport($results, $this->reportColumns),
@@ -563,8 +574,9 @@ class ReportRunner extends Component
 
     public function exportPdf()
     {
-        if (!$this->selectedReport) {
+        if (! $this->selectedReport) {
             session()->flash('error', 'Please select a report first.');
+
             return;
         }
 
@@ -578,7 +590,7 @@ class ReportRunner extends Component
                 if ($column['type'] === 'calculated') {
                     $value = is_object($row) ? ($row->{$column['field']} ?? 'N/A') : (isset($row[$column['field']]) ? $row[$column['field']] : 'N/A');
                 }
-                if (is_numeric($value) && !is_string($value)) {
+                if (is_numeric($value) && ! is_string($value)) {
                     $value = number_format($value, (is_float($value + 0) && floor($value + 0) != ($value + 0)) ? 2 : 0);
                 }
                 if ($value === null || (is_string($value) && trim($value) === '')) {
@@ -589,7 +601,7 @@ class ReportRunner extends Component
             $results[] = $rowData;
         }
 
-        $filename = ($this->selectedReport->name ?? 'Report') . '_' . date('Y-m-d_H-i-s') . '.pdf';
+        $filename = ($this->selectedReport->name ?? 'Report').'_'.date('Y-m-d_H-i-s').'.pdf';
 
         return Excel::download(
             new DynamicReportExport($results, $this->reportColumns),

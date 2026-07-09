@@ -42,4 +42,10 @@ return [
         'timeout' => env('OPENAI_TIMEOUT', 60),
     ],
 
+    'ahj_registry' => [
+        'url' => env('AHJ_REGISTRY_URL', 'https://ahjregistry.myorangebutton.com/api/v1/ahj/'),
+        'token' => env('AHJ_REGISTRY_TOKEN'),
+        'timeout' => env('AHJ_REGISTRY_TIMEOUT', 10),
+    ],
+
 ];

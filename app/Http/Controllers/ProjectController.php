@@ -28,6 +28,7 @@ use App\Models\ProjectFollowUp;
 use App\Models\SubDepartment;
 use App\Models\Task;
 use App\Models\Tool;
+use App\Services\AhjRegistryService;
 use App\Services\FinanceMilestoneService;
 use App\Services\ProjectAssignmentService;
 use App\Traits\MediaTrait;
@@ -40,12 +41,12 @@ use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Validation\Rule;
-use Maatwebsite\Excel\Concerns\ToArray;
 use Spatie\Activitylog\Models\Activity;
 
 class ProjectController extends Controller
 {
     use MediaTrait;
+
     /**
      * Display a listing of the resource.
      */
@@ -54,10 +55,10 @@ class ProjectController extends Controller
         $departments = $this->departmentQuery();
         $selectedDepartment = $departments->count() === 1 ? $departments->first()->id : 'all';
 
-        return view("projects.index", [
-            "customers" => Customer::all(),
-            "departments" => $departments,
-            "selectedDepartment" => $selectedDepartment,
+        return view('projects.index', [
+            'customers' => Customer::all(),
+            'departments' => $departments,
+            'selectedDepartment' => $selectedDepartment,
         ]);
     }
 
@@ -65,21 +66,21 @@ class ProjectController extends Controller
     {
         $query = Department::query();
 
-
         // Alternative if you want to prioritize roles (e.g., Admin overrides Manager):
         // $roles = auth()->user()->getRoleNames();
         // if (!$roles->contains('Manager') && $roles->intersect(['Employee'])->isNotEmpty()) {
         //     $query->whereIn("id", EmployeeDepartment::whereIn("employee_id", Employee::where("user_id", auth()->user()->id)->pluck("id"))->pluck("department_id"));
         // }
 
-        if (auth()->user()->hasAnyRole(['Manager', 'Employee', 'Sub-Contractor Manager', 'Service Manager']) && !auth()->user()->hasRole('Super Admin')) {
-            $query->whereIn("id", EmployeeDepartment::whereIn("employee_id", Employee::where("user_id", auth()->user()->id)->pluck("id"))->pluck("department_id"));
+        if (auth()->user()->hasAnyRole(['Manager', 'Employee', 'Sub-Contractor Manager', 'Service Manager']) && ! auth()->user()->hasRole('Super Admin')) {
+            $query->whereIn('id', EmployeeDepartment::whereIn('employee_id', Employee::where('user_id', auth()->user()->id)->pluck('id'))->pluck('department_id'));
         }
 
         // if (auth()->user()->getRoleNames()[0] == "Manager" || auth()->user()->getRoleNames()[0] == "Employee") {
         //     $query->whereIn("id", EmployeeDepartment::whereIn("employee_id", Employee::where("user_id", auth()->user()->id)->pluck("id"))->pluck("department_id"));
         // }
-        $query->where("id", "!=", 9);
+        $query->where('id', '!=', 9);
+
         return $query->get();
     }
 
@@ -88,10 +89,10 @@ class ProjectController extends Controller
      */
     public function create()
     {
-        return view("projects.form", [
-            "project" => [],
-            "customers" => Customer::all(),
-            "employees" => Employee::getUser(1, ["Manager", "Employee"])->get(),
+        return view('projects.form', [
+            'project' => [],
+            'customers' => Customer::all(),
+            'employees' => Employee::getUser(1, ['Manager', 'Employee'])->get(),
         ]);
     }
 
@@ -109,31 +110,35 @@ class ProjectController extends Controller
         ]);
         try {
             DB::beginTransaction();
-            $code = Project::orderBy("id", "DESC")->first("code");
-            $subdepartment = SubDepartment::where("department_id", 1)->first();
+            $code = Project::orderBy('id', 'DESC')->first('code');
+            $subdepartment = SubDepartment::where('department_id', 1)->first();
             $project = Project::create(array_merge(
-                $request->except(["assigntask"]),
+                $request->except(['assigntask']),
                 [
-                    "department_id" => 1,
-                    "sub_department_id" => $subdepartment->id,
+                    'department_id' => 1,
+                    'sub_department_id' => $subdepartment->id,
                 ]
             ));
             $assignedEmployee = app(ProjectAssignmentService::class)->employeeForDepartment(1)
                 ?? Employee::with('user')->find($request->assigntask);
             $task = Task::create([
-                "project_id" => $project->id,
-                "employee_id" => $assignedEmployee?->id ?? $request->assigntask,
-                "department_id" => 1,
-                "sub_department_id" => $subdepartment->id,
-                "user_id" => auth()->user()->id,
+                'project_id' => $project->id,
+                'employee_id' => $assignedEmployee?->id ?? $request->assigntask,
+                'department_id' => 1,
+                'sub_department_id' => $subdepartment->id,
+                'user_id' => auth()->user()->id,
             ]);
             app(ProjectAssignmentService::class)->notifyAssignedEmployee($assignedEmployee, $project, $task);
             DB::commit();
+            $project->load('customer');
+            app(AhjRegistryService::class)->assignToProject($project);
             app(FinanceMilestoneService::class)->triggerProjectCreated($project);
-            return response()->json(["status" => 200, "messsage" => "Project created successfully"]);
+
+            return response()->json(['status' => 200, 'messsage' => 'Project created successfully']);
         } catch (\Throwable $th) {
             DB::rollBack();
-            return response()->json(["status" => 500, "messsage" => $th->getMessage()]);
+
+            return response()->json(['status' => 500, 'messsage' => $th->getMessage()]);
         }
     }
 
@@ -142,22 +147,23 @@ class ProjectController extends Controller
      */
     public function show(Project $project, Request $request)
     {
-        $alertClass = "";
+        $alertClass = '';
         $alertStatus = false;
-        $message = "";
-        if ($request->route('ghost') == "ghost") {
+        $message = '';
+        if ($request->route('ghost') == 'ghost') {
             $routeProject = $request->route('project');
             $projectId = $routeProject instanceof Project ? $routeProject->id : $routeProject;
             $project = Project::findOrFail($projectId);
         }
-        $projectLogs  = Task::with("employee", "user", "department", "subdepartment")->where("project_id", $project->id)->get();
+        $projectLogs = Task::with('employee', 'user', 'department', 'subdepartment')->where('project_id', $project->id)->get();
         $totalDaysByDepartment = $projectLogs->groupBy('department_id')->map(function ($group) {
             return $group->sum(function ($item) {
-                if ($item['status'] == "In-Progress") {
-                    $exitDate = date("Y-m-d H:i:s");
+                if ($item['status'] == 'In-Progress') {
+                    $exitDate = date('Y-m-d H:i:s');
                 } else {
                     $exitDate = $item['updated_at'];
                 }
+
                 return max(1, Carbon::parse($item['created_at'])->diffInDays(Carbon::parse($exitDate)));
             });
         });
@@ -169,45 +175,44 @@ class ProjectController extends Controller
             return [
                 'department_id' => (int) $id,  // Ensure ID is an integer
                 'department' => $departments[$id] ?? 'Unknown',
-                'days' => $days
+                'days' => $days,
             ];
         })->sortBy('department_id')->values();
 
-
-        $project = Project::with("task", "customer", "customer.finances", "customer.finances.finance", "department", "logs", "logs.call", "logs.user", "subdepartment", "assignedPerson", "assignedPerson.employee", "departmentnotes", "departmentnotes.user", "salesPartnerUser", "projectAcceptance", "emails", "emails.attachments", "emails.user")
+        $project = Project::with('task', 'customer', 'customer.finances', 'customer.finances.finance', 'department', 'logs', 'logs.call', 'logs.user', 'subdepartment', 'assignedPerson', 'assignedPerson.employee', 'departmentnotes', 'departmentnotes.user', 'salesPartnerUser', 'projectAcceptance', 'emails', 'emails.attachments', 'emails.user')
             ->withCount(['emails as viewed_emails_count' => function ($query) {
                 $query->where('is_view', 1);
             }])
-            ->where("id", $project->id)
+            ->where('id', $project->id)
             ->firstOrFail();
         $financeOption = data_get($project, 'customer.finances.finance');
         $days = (int) data_get($financeOption, 'no_of_days', 0);
         $alertStatus = data_get($financeOption, 'pto_restriction');
         $ntpApprovalDate = $project->ntp_approval_date;
-        if ($ntpApprovalDate != "" && $days > 0) {
+        if ($ntpApprovalDate != '' && $days > 0) {
             $finalDate = Carbon::parse($ntpApprovalDate)->addDays($days)->format('Y-m-d');
 
-            if (date("Y-m-d") >= $finalDate) {
-                $message = "PTO Greenlight approved";
-                $alertClass = "success";
+            if (date('Y-m-d') >= $finalDate) {
+                $message = 'PTO Greenlight approved';
+                $alertClass = 'success';
             } else {
-                $message = "PTO Greenlight not approved. Expected date is " . $finalDate;
-                $alertClass = "warning";
+                $message = 'PTO Greenlight not approved. Expected date is '.$finalDate;
+                $alertClass = 'warning';
             }
         }
-        $task = Task::with("employee")
-            ->whereIn("status", ["In-Progress", "Hold", "Cancelled"])
-            ->where("project_id", $project->id)
-            ->latest("id")
+        $task = Task::with('employee')
+            ->whereIn('status', ['In-Progress', 'Hold', 'Cancelled'])
+            ->where('project_id', $project->id)
+            ->latest('id')
             ->first();
-        $departments = Department::whereIn("id", Task::where("project_id", $project->id)->whereNotIn("department_id", Department::where("id", ">", $task->department_id)->take(1)->pluck("id"))->where("id", "!=", 9)->groupBy("department_id")->orderBy("department_id")->pluck("department_id"))->get();
-        $fwdDepartments =  array_merge($departments->toArray(), Department::where("id", ">", $task->department_id)->take(1)->get()->toArray());
-        $fwdIds = collect($fwdDepartments)->pluck("id");
-        $nextSubDepartments =  SubDepartment::whereIn("department_id", $fwdIds)->orderby('order', 'asc')->get();
+        $departments = Department::whereIn('id', Task::where('project_id', $project->id)->whereNotIn('department_id', Department::where('id', '>', $task->department_id)->take(1)->pluck('id'))->where('id', '!=', 9)->groupBy('department_id')->orderBy('department_id')->pluck('department_id'))->get();
+        $fwdDepartments = array_merge($departments->toArray(), Department::where('id', '>', $task->department_id)->take(1)->get()->toArray());
+        $fwdIds = collect($fwdDepartments)->pluck('id');
+        $nextSubDepartments = SubDepartment::whereIn('department_id', $fwdIds)->orderby('order', 'asc')->get();
         $addersLock = ProjectAddersLock::where('project_id', $project->id)->latest()->first();
         $isAddersLocked = $addersLock && $addersLock->status === 'locked' && $project->projectAcceptance && $project->projectAcceptance->status == 1;
 
-        Email::where("project_id", $project->id)->update(["is_view" => 0]); //->where("department_id", $project->department_id)
+        Email::where('project_id', $project->id)->update(['is_view' => 0]); // ->where("department_id", $project->department_id)
 
         $serviceManagers = \App\Models\User::role('Service Manager')->get();
         $serviceTickets = \App\Models\ServiceTicket::with(['assignedUser'])->where('project_id', $project->id)->orderBy('created_at', 'desc')->get();
@@ -216,46 +221,45 @@ class ProjectController extends Controller
             ->latest('id')
             ->first();
 
-        $view =  "projects.show" ;//$request->routeIs('projects.show-redesign') ? "projects.show-redesign" : "projects.show";
+        $view = 'projects.show'; // $request->routeIs('projects.show-redesign') ? "projects.show-redesign" : "projects.show";
 
         return view($view, [
-            "project" => $project,
-            "task" => $task,
-            "backdepartments" => Department::where("id", "<", $task->department_id)->get(),
-            "forwarddepartments" => (object)$fwdDepartments, //Department::whereIn("id", Task::where("project_id", $project->id)->pluck("department_id"))->get(),
-            "nextSubDepartments" => $nextSubDepartments,
-            "filesCount" => ProjectFile::where("project_id", $project->id)->where("department_id", $project->department_id)->get(),
-            "departments" => Department::all(),
-            "employees" => $this->getEmployees($project->department_id),
-            "adders" => AdderType::all(),
-            "uoms" => AdderUnit::all(),
-            "tools" => Tool::where("department_id", $project->department_id)->get(),
-            "calls" => Call::all(),
-            "emailTypes" => EmailType::all(),
-            "projectLogs" => $projectLogs,
-            "totalDaysOfDepartments" => $results,
-            "interactions" => Activity::where("log_name", "project")->where("subject_id", $project->id)->orderBy("id", "desc")->get(),
-            "ghost" => $request->ghost,
-            "message" => $message,
-            "alertStatus" => $alertStatus,
-            "alertClass" => $alertClass,
-            "isAddersLocked" => $isAddersLocked,
-            "addersLock" => $addersLock,
-            "serviceManagers" => $serviceManagers,
-            "serviceTickets" => $serviceTickets,
-            "designDetail" => $designDetail,
+            'project' => $project,
+            'task' => $task,
+            'backdepartments' => Department::where('id', '<', $task->department_id)->get(),
+            'forwarddepartments' => (object) $fwdDepartments, // Department::whereIn("id", Task::where("project_id", $project->id)->pluck("department_id"))->get(),
+            'nextSubDepartments' => $nextSubDepartments,
+            'filesCount' => ProjectFile::where('project_id', $project->id)->where('department_id', $project->department_id)->get(),
+            'departments' => Department::all(),
+            'employees' => $this->getEmployees($project->department_id),
+            'adders' => AdderType::all(),
+            'uoms' => AdderUnit::all(),
+            'tools' => Tool::where('department_id', $project->department_id)->get(),
+            'calls' => Call::all(),
+            'emailTypes' => EmailType::all(),
+            'projectLogs' => $projectLogs,
+            'totalDaysOfDepartments' => $results,
+            'interactions' => Activity::where('log_name', 'project')->where('subject_id', $project->id)->orderBy('id', 'desc')->get(),
+            'ghost' => $request->ghost,
+            'message' => $message,
+            'alertStatus' => $alertStatus,
+            'alertClass' => $alertClass,
+            'isAddersLocked' => $isAddersLocked,
+            'addersLock' => $addersLock,
+            'serviceManagers' => $serviceManagers,
+            'serviceTickets' => $serviceTickets,
+            'designDetail' => $designDetail,
         ]);
     }
-
 
     /**
      * Show the form for editing the specified resource.
      */
     public function edit(Project $project)
     {
-        return view("projects.form", [
-            "project" => $project,
-            "customers" => Customer::all()
+        return view('projects.form', [
+            'project' => $project,
+            'customers' => Customer::all(),
         ]);
     }
 
@@ -272,9 +276,10 @@ class ProjectController extends Controller
                 'solar_install_date',
                 'inspection_approval_date',
             ]));
-            return response()->json(["status" => 200, "messsage" => "Project updated successfully"]);
+
+            return response()->json(['status' => 200, 'messsage' => 'Project updated successfully']);
         } catch (\Throwable $th) {
-            return response()->json(["status" => 500, "messsage" => $th->getMessage()]);
+            return response()->json(['status' => 500, 'messsage' => $th->getMessage()]);
         }
     }
 
@@ -288,26 +293,27 @@ class ProjectController extends Controller
 
     public function getProjectList(Request $request)
     {
-        $result =  $this->projectQuery($request);
+        $result = $this->projectQuery($request);
         $financeOption = FinanceOption::all();
 
-        return view("projects.project-list", [
-            "projects" => $result["projects"],
-            "subdepartments" => $result["subdepartments"],
-            "departments" => $result["departments"],
-            "value" => $request->id,
-            "ghostProjects" => $result["ghostProjects"],
-            "financeOptions" => $financeOption,
+        return view('projects.project-list', [
+            'projects' => $result['projects'],
+            'subdepartments' => $result['subdepartments'],
+            'departments' => $result['departments'],
+            'value' => $request->id,
+            'ghostProjects' => $result['ghostProjects'],
+            'financeOptions' => $financeOption,
         ]);
     }
 
     public function getSubDepartments(Request $request)
     {
         try {
-            $subdepartments = SubDepartment::where("department_id", $request->id)->get();
-            return response()->json(["status" => 200, "subdepartments" => $subdepartments]);
+            $subdepartments = SubDepartment::where('department_id', $request->id)->get();
+
+            return response()->json(['status' => 200, 'subdepartments' => $subdepartments]);
         } catch (\Throwable $th) {
-            return response()->json(["status" => 200, "message" => $th->getMessage()]);
+            return response()->json(['status' => 200, 'message' => $th->getMessage()]);
         }
     }
 
@@ -322,15 +328,16 @@ class ProjectController extends Controller
             'sub_department' => 'required',
         ];
 
-        if ($request->stage == "forward" && $request->forward != $project->department_id) {
+        if ($request->stage == 'forward' && $request->forward != $project->department_id) {
 
             $validationArray = array_merge($validationArray, [
                 'utility_company' => 'required_if:forward,2',
                 'ntp_approval_date' => 'required_if:forward,2',
                 'hoa' => 'required_if:forward,2',
                 'ahj' => 'required_if:forward,2',
+                'ahj_website_url' => 'nullable|url',
                 'hoa_phone_number' => Rule::requiredIf(function () use ($request) {
-                    return $request->forward == 2 && !$request->hoa == "yes";
+                    return $request->forward == 2 && ! $request->hoa == 'yes';
                 }),
                 'site_survey_link' => 'required_if:forward,3',
                 'adders_approve_checkbox' => 'required_if:forward,4',
@@ -344,11 +351,11 @@ class ProjectController extends Controller
                 'hoa_approval_date' => 'required_if:projecthoa,yes',
                 'solar_install_date' => 'required_if:forward,6',
                 'battery_install_date' => 'required_if:forward,6',
-                'mpu_install_date' =>   Rule::requiredIf(function () use ($request) {
-                    return $request->forward == 6 && !$request->projectmpu == "yes";
+                'mpu_install_date' => Rule::requiredIf(function () use ($request) {
+                    return $request->forward == 6 && ! $request->projectmpu == 'yes';
                 }),
-                'meter_spot_result' =>   Rule::requiredIf(function () use ($request) {
-                    return $request->forward == 6 && !$request->projectmpu == "yes";
+                'meter_spot_result' => Rule::requiredIf(function () use ($request) {
+                    return $request->forward == 6 && ! $request->projectmpu == 'yes';
                 }),
                 'rough_inspection_date' => 'required_if:forward,7',
                 'final_inspection_date' => 'required_if:forward,7',
@@ -363,20 +370,20 @@ class ProjectController extends Controller
 
         try {
             DB::beginTransaction();
-            if ($request->stage == "forward" && $request->forward == $project->department_id) {
+            if ($request->stage == 'forward' && $request->forward == $project->department_id) {
                 $project->department_id = $request->forward;
                 $project->sub_department_id = $request->sub_department;
                 $project->save();
                 $task = Task::findOrFail($request->taskid);
-                Task::where("id", $request->taskid)->update(["status" => "Completed", "notes" => $request->notes]);
+                Task::where('id', $request->taskid)->update(['status' => 'Completed', 'notes' => $request->notes]);
                 $newTask = Task::create([
-                    "project_id" => $request->id,
-                    "employee_id" => $task->employee_id,
-                    "department_id" => $request->forward,
-                    "sub_department_id" => $request->sub_department,
-                    "assign_to_notes" => $request->notes,
-                    "status" => "In-Progress",
-                    "user_id" => auth()->user()->id,
+                    'project_id' => $request->id,
+                    'employee_id' => $task->employee_id,
+                    'department_id' => $request->forward,
+                    'sub_department_id' => $request->sub_department,
+                    'assign_to_notes' => $request->notes,
+                    'status' => 'In-Progress',
+                    'user_id' => auth()->user()->id,
                 ]);
                 app(ProjectAssignmentService::class)->notifyAssignedEmployee(
                     Employee::with('user')->find($task->employee_id),
@@ -384,24 +391,26 @@ class ProjectController extends Controller
                     $newTask
                 );
                 DB::commit();
-                return redirect()->route("projects.index");
+
+                return redirect()->route('projects.index');
             }
             $updateItems = [
-                "department_id" => ($request->stage == "forward" ? $request->forward : $request->back),
-                "sub_department_id" => $request->sub_department,
+                'department_id' => ($request->stage == 'forward' ? $request->forward : $request->back),
+                'sub_department_id' => $request->sub_department,
             ];
             if ($request->forward == 2) {
                 $updateItems = array_merge($updateItems, [
-                    "utility_company" => $request->utility_company,
-                    "ntp_approval_date" => $request->ntp_approval_date,
-                    "hoa" => $request->hoa,
-                    "ahj" => $request->ahj,
-                    "hoa_phone_number" => $request->hoa_phone_number,
+                    'utility_company' => $request->utility_company,
+                    'ntp_approval_date' => $request->ntp_approval_date,
+                    'hoa' => $request->hoa,
+                    'ahj' => $request->ahj,
+                    'ahj_website_url' => $request->ahj_website_url,
+                    'hoa_phone_number' => $request->hoa_phone_number,
                 ]);
             }
             if ($request->forward == 3) {
                 $updateItems = array_merge($updateItems, [
-                    "site_survey_link" => $request->site_survey_link,
+                    'site_survey_link' => $request->site_survey_link,
                     // "hoa" => $request->hoa,
                     // "hoa_phone_number" => $request->hoa_phone_number,
                 ]);
@@ -409,70 +418,70 @@ class ProjectController extends Controller
 
             if ($request->forward == 4) {
                 $updateItems = array_merge($updateItems, [
-                    "adders_approve_checkbox" => $request->adders_approve_checkbox,
-                    "mpu_required" => $request->mpu_required,
-                    "meter_spot_request_date" => $request->meter_spot_request_date,
-                    "meter_spot_request_number" => $request->meter_spot_request_number,
-                    "meter_spot_result" => $request->meter_spot_result,
+                    'adders_approve_checkbox' => $request->adders_approve_checkbox,
+                    'mpu_required' => $request->mpu_required,
+                    'meter_spot_request_date' => $request->meter_spot_request_date,
+                    'meter_spot_request_number' => $request->meter_spot_request_number,
+                    'meter_spot_result' => $request->meter_spot_result,
                 ]);
             }
 
             if ($request->forward == 5) {
                 $updateItems = array_merge($updateItems, [
-                    "permitting_submittion_date" => $request->permitting_submittion_date,
-                    "actual_permit_fee" => $request->actual_permit_fee,
-                    "permitting_approval_date" => $request->permitting_approval_date,
-                    "hoa_approval_request_date" => $request->hoa_approval_request_date,
-                    "hoa_approval_date" => $request->hoa_approval_date,
+                    'permitting_submittion_date' => $request->permitting_submittion_date,
+                    'actual_permit_fee' => $request->actual_permit_fee,
+                    'permitting_approval_date' => $request->permitting_approval_date,
+                    'hoa_approval_request_date' => $request->hoa_approval_request_date,
+                    'hoa_approval_date' => $request->hoa_approval_date,
                 ]);
             }
 
             if ($request->forward == 6) {
                 $updateItems = array_merge($updateItems, [
-                    "solar_install_date" => $request->solar_install_date,
-                    "actual_labor_cost" => $request->actual_labor_cost,
-                    "actual_material_cost" => $request->actual_material_cost,
-                    "battery_install_date" => $request->battery_install_date,
-                    "mpu_install_date" => $request->mpu_install_date,
+                    'solar_install_date' => $request->solar_install_date,
+                    'actual_labor_cost' => $request->actual_labor_cost,
+                    'actual_material_cost' => $request->actual_material_cost,
+                    'battery_install_date' => $request->battery_install_date,
+                    'mpu_install_date' => $request->mpu_install_date,
                 ]);
             }
 
             if ($request->forward == 7) {
                 $updateItems = array_merge($updateItems, [
-                    "rough_inspection_date" => $request->rough_inspection_date,
-                    "final_inspection_date" => $request->final_inspection_date,
-                    "inspection_approval_date" => $request->inspection_approval_date,
+                    'rough_inspection_date' => $request->rough_inspection_date,
+                    'final_inspection_date' => $request->final_inspection_date,
+                    'inspection_approval_date' => $request->inspection_approval_date,
                 ]);
             }
 
             if ($request->forward == 8) {
                 $updateItems = array_merge($updateItems, [
-                    "pto_submission_date" => $request->pto_submission_date,
-                    "pto_approval_date" => $request->pto_approval_date,
+                    'pto_submission_date' => $request->pto_submission_date,
+                    'pto_approval_date' => $request->pto_approval_date,
                 ]);
             }
 
             if ($request->forward == 9) {
                 $updateItems = array_merge($updateItems, [
-                    "coc_packet_mailed_out_date" => $request->coc_packet_mailed_out_date,
+                    'coc_packet_mailed_out_date' => $request->coc_packet_mailed_out_date,
                 ]);
             }
 
-            $targetDepartmentId = ($request->stage == "forward" ? $request->forward : $request->back);
-            Project::where("id", $request->id)->update($updateItems);
+            $targetDepartmentId = ($request->stage == 'forward' ? $request->forward : $request->back);
+            Project::where('id', $request->id)->update($updateItems);
             $emp = app(ProjectAssignmentService::class)->employeeForDepartment($targetDepartmentId);
 
-            if (!$emp) {
-                throw new \RuntimeException("No employee assignment found for this department.");
+            if (! $emp) {
+                throw new \RuntimeException('No employee assignment found for this department.');
             }
 
-            Task::where("id", $request->taskid)->update(["status" => "Completed", "notes" => $request->notes]);
+            Task::where('id', $request->taskid)->update(['status' => 'Completed', 'notes' => $request->notes]);
             $newTask = Task::create([
-                "project_id" => $request->id,
-                "employee_id" => $emp->id,
-                "department_id" => $targetDepartmentId,
-                "sub_department_id" => $request->sub_department,
-                "user_id" => auth()->user()->id,
+                'project_id' => $request->id,
+                'employee_id' => $emp->id,
+                'department_id' => $targetDepartmentId,
+                'sub_department_id' => $request->sub_department,
+                'user_id' => auth()->user()->id,
             ]);
             $project->refresh();
             app(ProjectAssignmentService::class)->notifyAssignedEmployee($emp, $project, $newTask);
@@ -482,9 +491,11 @@ class ProjectController extends Controller
                 'solar_install_date',
                 'inspection_approval_date',
             ]));
-            return redirect()->route("projects.index");
+
+            return redirect()->route('projects.index');
         } catch (\Throwable $th) {
             DB::rollBack();
+
             return $th->getMessage();
         }
     }
@@ -493,12 +504,12 @@ class ProjectController extends Controller
     {
         $project = Project::findOrFail($request->projectId);
 
-        if (!$project) {
+        if (! $project) {
             return response()->json(['error' => 'Project not found'], 404);
         }
 
         // THIS WILL CHECK THE PROJECT EITHER PROJECT IS FORWARD OR BACKWARD
-        $checkProject = Task::where("project_id", $request->projectId)->where("department_id", $request->departmentId)->count();
+        $checkProject = Task::where('project_id', $request->projectId)->where('department_id', $request->departmentId)->count();
 
         $currentDepartmentId = $project->department_id;
 
@@ -557,7 +568,6 @@ class ProjectController extends Controller
                     $missingFields[] = $field;
                 }
 
-
                 // Department 5: Check sub_contractor_id from customer table
                 elseif ($currentDepartmentId == 5 && $field === 'sub_contractor_id' && empty($project->customer->sub_contractor_id)) {
                     $missingFields[] = $field;
@@ -565,17 +575,17 @@ class ProjectController extends Controller
 
                 // Standard required field check for other fields
                 elseif (
-                    !in_array($field, ['hoa_phone_number', 'meter_spot_request_date', 'meter_spot_request_number', 'meter_spot_result', 'hoa_approval_request_date', 'hoa_approval_date', 'mpu_install_date', 'sub_contractor_id'])
+                    ! in_array($field, ['hoa_phone_number', 'meter_spot_request_date', 'meter_spot_request_number', 'meter_spot_result', 'hoa_approval_request_date', 'hoa_approval_date', 'mpu_install_date', 'sub_contractor_id'])
                     && empty($project->$field)
                 ) {
                     $missingFields[] = $field;
                 }
             }
 
-            if (!empty($missingFields)) {
+            if (! empty($missingFields)) {
                 return response()->json([
-                    "status" => 422,
-                    'error' => 'Cannot move project. Missing required fields for the current department.' . $currentDepartmentId,
+                    'status' => 422,
+                    'error' => 'Cannot move project. Missing required fields for the current department.'.$currentDepartmentId,
                     'missing_fields' => $missingFields,
                     'requiredFields' => $requiredFields,
                 ], 422);
@@ -584,46 +594,46 @@ class ProjectController extends Controller
 
         try {
             DB::beginTransaction();
-            
+
             // Auto-resolve pending follow-ups for the old department
             ProjectFollowUp::where('project_id', $request->projectId)
                 ->where('department_id', $currentDepartmentId)
                 ->where('status', 'Pending')
                 ->update([
                     'status' => 'Resolved',
-                    'resolved_date' => now()
+                    'resolved_date' => now(),
                 ]);
-            
+
             $project->update([
-                "department_id" => $request->departmentId,
-                "sub_department_id" => $request->subDepartmentId,
+                'department_id' => $request->departmentId,
+                'sub_department_id' => $request->subDepartmentId,
             ]);
-            
+
             $emp = app(ProjectAssignmentService::class)->employeeForDepartment((int) $request->departmentId);
 
-            if (!$emp) {
-                throw new \RuntimeException("No employee assignment found for this department.");
+            if (! $emp) {
+                throw new \RuntimeException('No employee assignment found for this department.');
             }
 
-            $activeStatuses = ["In-Progress", "Hold", "Cancelled"];
-            $currentTask = Task::where("id", $request->taskId)
-                ->where("project_id", $request->projectId)
+            $activeStatuses = ['In-Progress', 'Hold', 'Cancelled'];
+            $currentTask = Task::where('id', $request->taskId)
+                ->where('project_id', $request->projectId)
                 ->first();
 
-            if (!$currentTask || !in_array($currentTask->status, $activeStatuses)) {
-                $currentTask = Task::where("project_id", $request->projectId)
-                    ->whereIn("status", $activeStatuses)
-                    ->latest("id")
+            if (! $currentTask || ! in_array($currentTask->status, $activeStatuses)) {
+                $currentTask = Task::where('project_id', $request->projectId)
+                    ->whereIn('status', $activeStatuses)
+                    ->latest('id')
                     ->firstOrFail();
             }
 
-            Task::where("id", $currentTask->id)->update(["status" => "Completed", "notes" => $request->notes]);
+            Task::where('id', $currentTask->id)->update(['status' => 'Completed', 'notes' => $request->notes]);
             $newTask = Task::create([
-                "project_id" => $request->projectId,
-                "employee_id" => $emp->id,
-                "department_id" => $request->departmentId,
-                "sub_department_id" => $request->subDepartmentId,
-                "user_id" => auth()->user()->id,
+                'project_id' => $request->projectId,
+                'employee_id' => $emp->id,
+                'department_id' => $request->departmentId,
+                'sub_department_id' => $request->subDepartmentId,
+                'user_id' => auth()->user()->id,
             ]);
             app(ProjectAssignmentService::class)->notifyAssignedEmployee($emp, $project, $newTask);
             // Log the custom message
@@ -637,13 +647,15 @@ class ProjectController extends Controller
                     'old_lane' => $oldLane->name,
                     'new_lane' => $newLane->name,
                 ])
-                ->setEvent("move")
+                ->setEvent('move')
                 ->log("{$username} moved the project from {$oldLane->name} to {$newLane->name}.");
             DB::commit();
-            return response()->json(["status" => 200, "message" => "Project Moved Successfully"]);
+
+            return response()->json(['status' => 200, 'message' => 'Project Moved Successfully']);
         } catch (\Throwable $th) {
             DB::rollBack();
-            return response()->json(["status" => 500, "message" => "Some Error Occured" . $th->getMessage()]);
+
+            return response()->json(['status' => 500, 'message' => 'Some Error Occured'.$th->getMessage()]);
         }
     }
 
@@ -652,20 +664,22 @@ class ProjectController extends Controller
         try {
             DB::beginTransaction();
             $project = Project::findOrFail($request->id);
-            $logsCount = ProjectCallLog::where("project_id", $project->id)->where("department_id", $project->department_id)->count();
+            $logsCount = ProjectCallLog::where('project_id', $project->id)->where('department_id', $project->department_id)->count();
             // if ($request->forward != 1 && $request->forward != 8 && $logsCount == 0) {
             ProjectCallLog::create([
-                "project_id" => $project->id,
-                "department_id" => $project->department_id,
-                "call_no" => $request->call_no,
-                "notes" => $request->notes_1,
-                "user_id" => auth()->user()->id,
+                'project_id' => $project->id,
+                'department_id' => $project->department_id,
+                'call_no' => $request->call_no,
+                'notes' => $request->notes_1,
+                'user_id' => auth()->user()->id,
             ]);
             // }
             DB::commit();
-            return redirect()->route("projects.show", $project->id);
+
+            return redirect()->route('projects.show', $project->id);
         } catch (\Throwable $th) {
             DB::rollBack();
+
             return $th->getMessage();
         }
     }
@@ -676,27 +690,29 @@ class ProjectController extends Controller
         try {
             DB::beginTransaction();
             $project = Project::findOrFail($request->id);
-            if (!empty($request->file)) {
+            if (! empty($request->file)) {
                 foreach ($request->file as $key => $file) {
                     $result = $this->uploads($file, 'projects/');
                     array_push($filesArray, $result);
                 }
             }
             $task = Task::findOrFail($request->taskid);
-            if (!empty($request->file)) {
+            if (! empty($request->file)) {
                 foreach ($filesArray as $key => $file) {
                     ProjectFile::create([
-                        "project_id" => $project->id,
-                        "task_id" => $task->id,
-                        "department_id" => $project->department_id,
-                        "filename" => $file["fileName"],
+                        'project_id' => $project->id,
+                        'task_id' => $task->id,
+                        'department_id' => $project->department_id,
+                        'filename' => $file['fileName'],
                     ]);
                 }
             }
             DB::commit();
-            return redirect()->route("projects.show", $project->id);
+
+            return redirect()->route('projects.show', $project->id);
         } catch (\Throwable $th) {
             DB::rollBack();
+
             return $th->getMessage();
         }
     }
@@ -706,49 +722,49 @@ class ProjectController extends Controller
 
         DB::beginTransaction();
         try {
-            $activeStatuses = ["In-Progress", "Hold", "Cancelled"];
-            $currentTask = Task::where("id", $request->task_id)
-                ->where("project_id", $request->project_id)
+            $activeStatuses = ['In-Progress', 'Hold', 'Cancelled'];
+            $currentTask = Task::where('id', $request->task_id)
+                ->where('project_id', $request->project_id)
                 ->first();
 
-            if (!$currentTask || !in_array($currentTask->status, $activeStatuses)) {
-                $currentTask = Task::where("project_id", $request->project_id)
-                    ->whereIn("status", $activeStatuses)
-                    ->latest("id")
+            if (! $currentTask || ! in_array($currentTask->status, $activeStatuses)) {
+                $currentTask = Task::where('project_id', $request->project_id)
+                    ->whereIn('status', $activeStatuses)
+                    ->latest('id')
                     ->firstOrFail();
             }
 
-            if ($request->employee != "") {
-                Task::where("id", $currentTask->id)->update(["status" => "Completed", "notes" => "Task Assigned to Employee"]);
+            if ($request->employee != '') {
+                Task::where('id', $currentTask->id)->update(['status' => 'Completed', 'notes' => 'Task Assigned to Employee']);
                 $newTask = Task::create([
-                    "project_id" => $request->project_id,
-                    "employee_id" => $request->employee,
-                    "department_id" => $currentTask->department_id,
-                    "sub_department_id" => $currentTask->sub_department_id,
-                    "assign_to_notes" => $request->notes,
-                    "status" => "In-Progress",
-                    "user_id" => auth()->user()->id,
+                    'project_id' => $request->project_id,
+                    'employee_id' => $request->employee,
+                    'department_id' => $currentTask->department_id,
+                    'sub_department_id' => $currentTask->sub_department_id,
+                    'assign_to_notes' => $request->notes,
+                    'status' => 'In-Progress',
+                    'user_id' => auth()->user()->id,
                 ]);
 
-                $assignedEmployee = Employee::with("user")->find($request->employee);
+                $assignedEmployee = Employee::with('user')->find($request->employee);
                 $project = Project::find($request->project_id);
                 $shouldNotifyAssignedEmployee = (int) $currentTask->employee_id !== (int) $request->employee;
                 if ($project) {
                     app(ProjectAssignmentService::class)->notifyAssignedEmployee($assignedEmployee, $project, $newTask, $shouldNotifyAssignedEmployee);
                 }
             } else {
-                Task::where("id", $currentTask->id)->update(["status" => "Completed", "notes" => "New assign to notes added"]);
+                Task::where('id', $currentTask->id)->update(['status' => 'Completed', 'notes' => 'New assign to notes added']);
                 $newTask = Task::create([
-                    "project_id" => $currentTask->project_id,
-                    "employee_id" => $currentTask->employee_id,
-                    "department_id" => $currentTask->department_id,
-                    "sub_department_id" => $currentTask->sub_department_id,
-                    "assign_to_notes" => $request->notes,
-                    "status" => "In-Progress",
-                    "user_id" => auth()->user()->id,
+                    'project_id' => $currentTask->project_id,
+                    'employee_id' => $currentTask->employee_id,
+                    'department_id' => $currentTask->department_id,
+                    'sub_department_id' => $currentTask->sub_department_id,
+                    'assign_to_notes' => $request->notes,
+                    'status' => 'In-Progress',
+                    'user_id' => auth()->user()->id,
                 ]);
             }
-            
+
             // Handle follow-up if checkbox is checked
             if ($request->has('follow_up') && $request->follow_up_date) {
                 // Auto-resolve older follow-ups with same department and sub-department
@@ -758,9 +774,9 @@ class ProjectController extends Controller
                     ->where('status', 'Pending')
                     ->update([
                         'status' => 'Resolved',
-                        'resolved_date' => now()
+                        'resolved_date' => now(),
                     ]);
-                
+
                 // Create new follow-up
                 ProjectFollowUp::create([
                     'project_id' => $request->project_id,
@@ -770,23 +786,25 @@ class ProjectController extends Controller
                     'sub_department_id' => $currentTask->sub_department_id,
                     'follow_up_date' => $request->follow_up_date,
                     'notes' => $request->notes ?? 'Follow-up scheduled',
-                    'status' => 'Pending'
+                    'status' => 'Pending',
                 ]);
             }
-            
+
             DB::commit();
+
             return response()->json([
-                "status" => 200,
-                "message" => "Employee assigned successfully",
-                "task_id" => $newTask->id,
-                "department_id" => $newTask->department_id,
-                "sub_department_id" => $newTask->sub_department_id,
+                'status' => 200,
+                'message' => 'Employee assigned successfully',
+                'task_id' => $newTask->id,
+                'department_id' => $newTask->department_id,
+                'sub_department_id' => $newTask->sub_department_id,
             ]);
             // return redirect()->route("projects.show", $request->project_id);
         } catch (\Throwable $th) {
             DB::rollBack();
+
             // return $th->getMessage();
-            return response()->json(["status" => 500, "message" => "Error: " . $th->getMessage()]);
+            return response()->json(['status' => 500, 'message' => 'Error: '.$th->getMessage()]);
             // return redirect()->route("projects.show", $request->project_id)->with("error", $th->getMessage());
         }
     }
@@ -824,7 +842,7 @@ class ProjectController extends Controller
 
         $project = Project::with('department')->findOrFail($validated['project_id']);
 
-        if (!auth()->user()->hasAnyRole(['Super Admin', 'Manager'])) {
+        if (! auth()->user()->hasAnyRole(['Super Admin', 'Manager'])) {
             return response()->json(['status' => 403, 'message' => 'You are not allowed to generate design details.'], 403);
         }
 
@@ -839,7 +857,7 @@ class ProjectController extends Controller
                 ->where('project_id', $project->id)
                 ->first();
 
-            if (!$currentTask || !in_array($currentTask->status, $activeStatuses)) {
+            if (! $currentTask || ! in_array($currentTask->status, $activeStatuses)) {
                 $currentTask = Task::where('project_id', $project->id)
                     ->whereIn('status', $activeStatuses)
                     ->latest('id')
@@ -876,7 +894,7 @@ class ProjectController extends Controller
                 'follow_up_date' => $validated['follow_up_date'] ?? null,
             ];
 
-            if (!empty($validated['design_detail_id'])) {
+            if (! empty($validated['design_detail_id'])) {
                 $designDetail = ProjectDesignDetail::where('project_id', $project->id)
                     ->findOrFail($validated['design_detail_id']);
                 $designPayload['task_id'] = $designDetail->task_id;
@@ -889,7 +907,7 @@ class ProjectController extends Controller
                     ->causedBy(auth()->user())
                     ->setEvent('updated')
                     ->withProperties(['project_design_detail_id' => $designDetail->id])
-                    ->log(auth()->user()->name . ' updated design details.');
+                    ->log(auth()->user()->name.' updated design details.');
 
                 DB::commit();
 
@@ -926,7 +944,7 @@ class ProjectController extends Controller
             $shouldNotifyAssignedEmployee = (int) $currentTask->employee_id !== (int) $validated['employee_id'];
             app(ProjectAssignmentService::class)->notifyAssignedEmployee($assignedEmployee, $project, $newTask, $shouldNotifyAssignedEmployee);
 
-            if (!empty($validated['follow_up']) && !empty($validated['follow_up_date'])) {
+            if (! empty($validated['follow_up']) && ! empty($validated['follow_up_date'])) {
                 ProjectFollowUp::where('project_id', $project->id)
                     ->where('department_id', $currentTask->department_id)
                     ->where('sub_department_id', $currentTask->sub_department_id)
@@ -953,7 +971,7 @@ class ProjectController extends Controller
                 ->causedBy(auth()->user())
                 ->setEvent('created')
                 ->withProperties(['project_design_detail_id' => $designDetail->id])
-                ->log(auth()->user()->name . ' generated design details.');
+                ->log(auth()->user()->name.' generated design details.');
 
             DB::commit();
 
@@ -966,7 +984,8 @@ class ProjectController extends Controller
             ]);
         } catch (\Throwable $th) {
             DB::rollBack();
-            return response()->json(['status' => 500, 'message' => 'Error: ' . $th->getMessage()], 500);
+
+            return response()->json(['status' => 500, 'message' => 'Error: '.$th->getMessage()], 500);
         }
     }
 
@@ -978,68 +997,70 @@ class ProjectController extends Controller
         ]);
         DB::beginTransaction();
         try {
-            Task::where("project_id", $request->project_id)->update(["status" => $request->status, "notes" => $request->reason]);
-            if ($request->status == "Cancelled") {
+            Task::where('project_id', $request->project_id)->update(['status' => $request->status, 'notes' => $request->reason]);
+            if ($request->status == 'Cancelled') {
                 $project = Project::findOrFail($request->project_id);
                 $username = auth()->user()->name;
-                $project->update(["department_id" => 9, "sub_department_id" => 20]);
+                $project->update(['department_id' => 9, 'sub_department_id' => 20]);
                 // Project::where("id", $request->project_id)->update(["department_id" => 9, "sub_department_id" => 20]);
                 activity('project')
                     ->performedOn($project)
                     ->causedBy(auth()->user()) // Log who did the action
-                    ->setEvent("move")
+                    ->setEvent('move')
                     ->log("{$username} change the status to cancel and project is archived. ");
             }
             DB::commit();
-            return response()->json(["status" => 200, "message" => "Status changed successfully"]);
+
+            return response()->json(['status' => 200, 'message' => 'Status changed successfully']);
             // return redirect()->route("projects.show", $request->project_id);
         } catch (\Throwable $th) {
             DB::rollBack();
-            return response()->json(["status" => 500, "message" => "Error: " . $th->getMessage()]);
+
+            return response()->json(['status' => 500, 'message' => 'Error: '.$th->getMessage()]);
         }
     }
 
     public function projectQuery(Request $request)
     {
-        $query = Project::with("customer", "customer.salespartner", "customer.finances", "department", "subdepartment", "assignedPerson", "assignedPerson.employee", "task", "notes", "projectAcceptance");
+        $query = Project::with('customer', 'customer.salespartner', 'customer.finances', 'department', 'subdepartment', 'assignedPerson', 'assignedPerson.employee', 'task', 'notes', 'projectAcceptance');
         $query->withCount(['emails as viewed_emails_count' => function ($query) {
             $query->where('is_view', 1);
         }]);
-        $hasDepartmentNineAssigned = EmployeeDepartment::whereIn("employee_id", Employee::where("user_id", auth()->id())->pluck("id"))
-            ->where("department_id", 9)
+        $hasDepartmentNineAssigned = EmployeeDepartment::whereIn('employee_id', Employee::where('user_id', auth()->id())->pluck('id'))
+            ->where('department_id', 9)
             ->exists();
 
-        if (!auth()->user()->hasRole('Super Admin') && !$hasDepartmentNineAssigned) {
-            $query->where("department_id", "!=", 9);
+        if (! auth()->user()->hasRole('Super Admin') && ! $hasDepartmentNineAssigned) {
+            $query->where('department_id', '!=', 9);
         }
-        $subdepartmentsQuery = SubDepartment::with("department");
-        if (in_array("Sales Manager", auth()->user()->getRoleNames()->toArray())) {
-            $query->whereHas("customer", function ($q) {
-                return $q->where("sales_partner_id", auth()->user()->sales_partner_id);
+        $subdepartmentsQuery = SubDepartment::with('department');
+        if (in_array('Sales Manager', auth()->user()->getRoleNames()->toArray())) {
+            $query->whereHas('customer', function ($q) {
+                return $q->where('sales_partner_id', auth()->user()->sales_partner_id);
             });
-        } else if (in_array("Sales Person", auth()->user()->getRoleNames()->toArray())) {
-            $query->where("sales_partner_user_id", auth()->user()->id);
-        } else if (in_array("Sub-Contractor User", auth()->user()->getRoleNames()->toArray()) or in_array("Sub-Contractor Manager", auth()->user()->getRoleNames()->toArray())) {
-            $query->where("sub_contractor_user_id", auth()->user()->id);
-        } else if (auth()->user()->getRoleNames()[0] == "Manager") {
-            $query->whereIn("department_id", EmployeeDepartment::whereIn("employee_id", Employee::where("user_id", auth()->user()->id)->pluck("id"))->pluck("department_id"));
-            $subdepartmentsQuery->whereIn("department_id", EmployeeDepartment::whereIn("employee_id", Employee::where("user_id", auth()->user()->id)->pluck("id"))->pluck("department_id"));
-        } else if (auth()->user()->getRoleNames()[0] == "Employee") {
-            $latestActiveTaskIds = Task::selectRaw("MAX(id)")
-                ->whereIn("status", ["In-Progress", "Hold", "Cancelled"])
-                ->groupBy("project_id");
+        } elseif (in_array('Sales Person', auth()->user()->getRoleNames()->toArray())) {
+            $query->where('sales_partner_user_id', auth()->user()->id);
+        } elseif (in_array('Sub-Contractor User', auth()->user()->getRoleNames()->toArray()) or in_array('Sub-Contractor Manager', auth()->user()->getRoleNames()->toArray())) {
+            $query->where('sub_contractor_user_id', auth()->user()->id);
+        } elseif (auth()->user()->getRoleNames()[0] == 'Manager') {
+            $query->whereIn('department_id', EmployeeDepartment::whereIn('employee_id', Employee::where('user_id', auth()->user()->id)->pluck('id'))->pluck('department_id'));
+            $subdepartmentsQuery->whereIn('department_id', EmployeeDepartment::whereIn('employee_id', Employee::where('user_id', auth()->user()->id)->pluck('id'))->pluck('department_id'));
+        } elseif (auth()->user()->getRoleNames()[0] == 'Employee') {
+            $latestActiveTaskIds = Task::selectRaw('MAX(id)')
+                ->whereIn('status', ['In-Progress', 'Hold', 'Cancelled'])
+                ->groupBy('project_id');
 
-            $query->whereIn("id", Task::whereIn("id", $latestActiveTaskIds)
-                ->whereIn("employee_id", Employee::where("user_id", auth()->user()->id)->pluck("id"))
-                ->pluck("project_id"));
-            $subdepartmentsQuery->whereIn("department_id", EmployeeDepartment::whereIn("employee_id", Employee::where("user_id", auth()->user()->id)->pluck("id"))->pluck("department_id"));
+            $query->whereIn('id', Task::whereIn('id', $latestActiveTaskIds)
+                ->whereIn('employee_id', Employee::where('user_id', auth()->user()->id)->pluck('id'))
+                ->pluck('project_id'));
+            $subdepartmentsQuery->whereIn('department_id', EmployeeDepartment::whereIn('employee_id', Employee::where('user_id', auth()->user()->id)->pluck('id'))->pluck('department_id'));
         }
-        if ($request->id != "" && $request->id != "all") {
-            $query->where("department_id", $request->id);
-            $subdepartmentsQuery->where("department_id", $request->id);
+        if ($request->id != '' && $request->id != 'all') {
+            $query->where('department_id', $request->id);
+            $subdepartmentsQuery->where('department_id', $request->id);
         }
-        if ($request->search != "") {
-            $search = '%' . $request->search . '%';
+        if ($request->search != '') {
+            $search = '%'.$request->search.'%';
             $query->where(function ($projectQuery) use ($search) {
                 $projectQuery->where('project_name', 'like', $search)
                     ->orWhere('code', 'like', $search)
@@ -1055,19 +1076,20 @@ class ProjectController extends Controller
                     });
             });
         }
-        if ($request->id == "all") {
-            $subdepartmentsQuery->groupBy("department_id");
+        if ($request->id == 'all') {
+            $subdepartmentsQuery->groupBy('department_id');
         }
-        if (auth()->user()->hasAnyRole(["Super Admin", "Sales Manager", "Sales Person", "Sub-Contractor User", "Sub-Contractor Manager"])) {
-            $departments = Department::with("subdepartments")->where("id", "!=", 9)->get();
+        if (auth()->user()->hasAnyRole(['Super Admin', 'Sales Manager', 'Sales Person', 'Sub-Contractor User', 'Sub-Contractor Manager'])) {
+            $departments = Department::with('subdepartments')->where('id', '!=', 9)->get();
         } else {
-            $departments = Department::with("subdepartments")->whereIN("id", EmployeeDepartment::whereIn("employee_id", Employee::where("user_id", auth()->user()->id)->pluck("id"))->pluck("department_id"))->get();
+            $departments = Department::with('subdepartments')->whereIN('id', EmployeeDepartment::whereIn('employee_id', Employee::where('user_id', auth()->user()->id)->pluck('id'))->pluck('department_id'))->get();
         }
+
         return [
-            "projects" => $query->get(),
-            "subdepartments" => $subdepartmentsQuery->orderBy('order', 'asc')->get(),
-            "departments" =>  $departments,
-            "ghostProjects" => $this->ghostProjects(),
+            'projects' => $query->get(),
+            'subdepartments' => $subdepartmentsQuery->orderBy('order', 'asc')->get(),
+            'departments' => $departments,
+            'ghostProjects' => $this->ghostProjects(),
         ];
     }
 
@@ -1085,7 +1107,7 @@ class ProjectController extends Controller
             ->groupBy('project_id')
             ->pluck('project_id'); // Get the relevant project IDs
 
-        $query = Project::with("customer", "customer.salespartner", "department", "subdepartment", "assignedPerson", "assignedPerson.employee", "task", "notes")
+        $query = Project::with('customer', 'customer.salespartner', 'department', 'subdepartment', 'assignedPerson', 'assignedPerson.employee', 'task', 'notes')
             ->join('customers', 'customers.id', '=', 'projects.customer_id')
             ->select('projects.*');
 
@@ -1098,7 +1120,8 @@ class ProjectController extends Controller
         $query->withCount(['emails as viewed_emails_count' => function ($query) {
             $query->where('is_view', 1);
         }]);
-        $query->whereIn("projects.id", $projectIds);
+        $query->whereIn('projects.id', $projectIds);
+
         return $query->get();
         // Fetch all tasks for those projects that match your conditions
         // $result = Task::whereIn('project_id', $projects)
@@ -1109,23 +1132,25 @@ class ProjectController extends Controller
 
     public function getEmployees($departmentId)
     {
-        $employees = Employee::with("user")
-            ->whereHas("user.roles", function ($query) {
-                $query->whereIn("name", ["Employee"]);
+        $employees = Employee::with('user')
+            ->whereHas('user.roles', function ($query) {
+                $query->whereIn('name', ['Employee']);
             })
-            ->whereHas("department", function ($query) use ($departmentId) {
-                $query->whereIn("department_id", [$departmentId]);
+            ->whereHas('department', function ($query) use ($departmentId) {
+                $query->whereIn('department_id', [$departmentId]);
             })
             ->get();
+
         return $employees;
     }
 
     public function getProjects(Request $request)
     {
         $result = $this->projectQuery($request);
-        return view("projects.list", [
-            "projects" => $result["projects"],
-            "ghostProjects" => $result["ghostProjects"],
+
+        return view('projects.list', [
+            'projects' => $result['projects'],
+            'ghostProjects' => $result['ghostProjects'],
         ]);
     }
 
@@ -1135,51 +1160,55 @@ class ProjectController extends Controller
 
         DB::beginTransaction();
         try {
-            if (!empty($request->uom)) {
+            if (! empty($request->uom)) {
                 $customer->adders()->delete();
                 $count = count($request->uom);
                 if ($count > 0) {
                     for ($i = 0; $i < $count; $i++) {
                         $customer->adders()->create([
-                            "customer_id" => $customer->id,
-                            "adder_type_id" => $request->adders[$i],
-                            "adder_sub_type_id" => $request->subadders[$i],
-                            "adder_unit_id" => $request->uom[$i],
-                            "amount" => $request->amount[$i],
+                            'customer_id' => $customer->id,
+                            'adder_type_id' => $request->adders[$i],
+                            'adder_sub_type_id' => $request->subadders[$i],
+                            'adder_unit_id' => $request->uom[$i],
+                            'amount' => $request->amount[$i],
                         ]);
                     }
                 }
             }
             $customer->finances()->update([
-                "customer_id" => $customer->id,
-                "finance_option_id" => $request->finance_option_id,
-                "loan_term_id" => $request->loan_term_id,
-                "loan_apr_id" => $request->loan_apr_id,
-                "contract_amount" => $request->contract_amount,
-                "redline_costs" => $request->redline_costs,
-                "adders" => $request->adders_amount,
-                "commission" => $request->commission,
-                "dealer_fee" => $request->dealer_fee,
-                "dealer_fee_amount" => $request->dealer_fee_amount,
+                'customer_id' => $customer->id,
+                'finance_option_id' => $request->finance_option_id,
+                'loan_term_id' => $request->loan_term_id,
+                'loan_apr_id' => $request->loan_apr_id,
+                'contract_amount' => $request->contract_amount,
+                'redline_costs' => $request->redline_costs,
+                'adders' => $request->adders_amount,
+                'commission' => $request->commission,
+                'dealer_fee' => $request->dealer_fee,
+                'dealer_fee_amount' => $request->dealer_fee_amount,
             ]);
             DB::commit();
-            return redirect()->route("projects.show", $request->project_id);
+
+            return redirect()->route('projects.show', $request->project_id);
         } catch (\Throwable $th) {
             DB::rollBack();
+
             return $th->getMessage();
-            return redirect()->route("projects.show", $request->project_id);
+
+            return redirect()->route('projects.show', $request->project_id);
         }
     }
 
     public function getDepartmentFields(Request $request)
     {
         try {
-            //code...
+            // code...
             if ($request->id) {
                 $project = Project::findOrFail($request->projectId);
-                return view("projects.partial.department-fields", [
-                    "department" => $request->id,
-                    "project" => $project,
+
+                return view('projects.partial.department-fields', [
+                    'department' => $request->id,
+                    'project' => $project,
                 ]);
             }
         } catch (\Throwable $th) {
@@ -1190,19 +1219,20 @@ class ProjectController extends Controller
     public function checkWebsiteProject(Request $request)
     {
         try {
-            $project = Project::with("customer")
-                ->whereHas("customer", function ($query) use ($request) {
-                    $query->where("email", $request->email);
+            $project = Project::with('customer')
+                ->whereHas('customer', function ($query) use ($request) {
+                    $query->where('email', $request->email);
                 })
                 ->where('code', $request->code)->first();
-            $url = URL::to('/track-your-project/' . Crypt::encrypt($project->code));
-            return response()->json(["status" => 200, "url" => $url])
+            $url = URL::to('/track-your-project/'.Crypt::encrypt($project->code));
+
+            return response()->json(['status' => 200, 'url' => $url])
                 ->header('Access-Control-Allow-Origin', 'https://solenenergyco.com')
                 ->header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS')
                 ->header('Access-Control-Allow-Headers', 'Content-Type, Authorization')
                 ->header('Access-Control-Allow-Credentials', 'true');
         } catch (\Throwable $th) {
-            return response()->json(["status" => 500, "error" => $th->getMessage()]);
+            return response()->json(['status' => 500, 'error' => $th->getMessage()]);
         }
     }
 
@@ -1210,27 +1240,27 @@ class ProjectController extends Controller
     {
         $request->project_id = Crypt::decrypt($request->project_id);
         $project = Project::where('code', $request->project_id)->first();
-        $task = Task::whereIn("status", ["In-Progress", "Hold"])->where("project_id", $project->id)->latest("id")->first();
-        $departments = Department::whereIn("id", Task::where("project_id", $project->id)->whereNotIn("department_id", Department::where("id", ">", $task->department_id)->take(1)->pluck("id"))->groupBy("department_id")->orderBy("department_id")->pluck("department_id"))->get();
-        $fwdDepartments =  array_merge($departments->toArray(), Department::where("id", ">", $task->department_id)->take(1)->get()->toArray());
-        $departments = Department::whereIn("id", Task::where("project_id", $project->id)->whereNotIn("department_id", Department::where("id", ">", $task->department_id)->take(1)->pluck("id"))->where("id", "!=", 9)->groupBy("department_id")->orderBy("department_id")->pluck("department_id"))->get();
-        $fwdIds = collect($fwdDepartments)->pluck("id");
-        $nextSubDepartments =  SubDepartment::whereIn("department_id", $fwdIds)->orderby('order', 'asc')->get();
+        $task = Task::whereIn('status', ['In-Progress', 'Hold'])->where('project_id', $project->id)->latest('id')->first();
+        $departments = Department::whereIn('id', Task::where('project_id', $project->id)->whereNotIn('department_id', Department::where('id', '>', $task->department_id)->take(1)->pluck('id'))->groupBy('department_id')->orderBy('department_id')->pluck('department_id'))->get();
+        $fwdDepartments = array_merge($departments->toArray(), Department::where('id', '>', $task->department_id)->take(1)->get()->toArray());
+        $departments = Department::whereIn('id', Task::where('project_id', $project->id)->whereNotIn('department_id', Department::where('id', '>', $task->department_id)->take(1)->pluck('id'))->where('id', '!=', 9)->groupBy('department_id')->orderBy('department_id')->pluck('department_id'))->get();
+        $fwdIds = collect($fwdDepartments)->pluck('id');
+        $nextSubDepartments = SubDepartment::whereIn('department_id', $fwdIds)->orderby('order', 'asc')->get();
         try {
             if ($request->project_id) {
-                return view("projects.partial.website-project-details", [
-                    "project" => Project::with("task", "customer", "department", "logs", "subdepartment", "assignedPerson", "assignedPerson.employee")->where('code', $request->project_id)->first(),
-                    "task" => $task,
-                    "backdepartments" => Department::where("id", "<", $task->department_id)->get(),
-                    "forwarddepartments" => (object)$fwdDepartments,
-                    "filesCount" => ProjectFile::where("project_id", $project->id)->where("department_id", $project->department_id)->get(),
-                    "departments" => Department::all(),
-                    "employees" => $this->getEmployees($project->department_id),
-                    "adders" => AdderType::all(),
-                    "uoms" => AdderUnit::all(),
-                    "tools" => Tool::where("department_id", $project->department_id)->get(),
-                    "ghost" => [],
-                    "nextSubDepartments" => [],
+                return view('projects.partial.website-project-details', [
+                    'project' => Project::with('task', 'customer', 'department', 'logs', 'subdepartment', 'assignedPerson', 'assignedPerson.employee')->where('code', $request->project_id)->first(),
+                    'task' => $task,
+                    'backdepartments' => Department::where('id', '<', $task->department_id)->get(),
+                    'forwarddepartments' => (object) $fwdDepartments,
+                    'filesCount' => ProjectFile::where('project_id', $project->id)->where('department_id', $project->department_id)->get(),
+                    'departments' => Department::all(),
+                    'employees' => $this->getEmployees($project->department_id),
+                    'adders' => AdderType::all(),
+                    'uoms' => AdderUnit::all(),
+                    'tools' => Tool::where('department_id', $project->department_id)->get(),
+                    'ghost' => [],
+                    'nextSubDepartments' => [],
                 ]);
             }
         } catch (\Throwable $th) {
@@ -1245,51 +1275,53 @@ class ProjectController extends Controller
         ]);
         try {
             DepartmentNote::create([
-                "project_id" => $request->project_id,
-                "task_id" => $request->taskid,
-                "department_id" => $request->department_id,
-                "notes" => $request->department_notes,
-                "user_id" => auth()->user()->id,
+                'project_id' => $request->project_id,
+                'task_id' => $request->taskid,
+                'department_id' => $request->department_id,
+                'notes' => $request->department_notes,
+                'user_id' => auth()->user()->id,
             ]);
-            return redirect()->route("projects.show", $request->project_id);
+
+            return redirect()->route('projects.show', $request->project_id);
         } catch (\Throwable $th) {
             return $th->getMessage();
-            return redirect()->route("projects.show", $request->project_id);
+
+            return redirect()->route('projects.show', $request->project_id);
         }
     }
 
     public function getCallScript(Request $request)
     {
-        $project =  Project::with("task", "customer", "customer.salespartner", "department", "logs", "subdepartment", "assignedPerson", "assignedPerson.employee")->where("id", $request->project)->first();
+        $project = Project::with('task', 'customer', 'customer.salespartner', 'department', 'logs', 'subdepartment', 'assignedPerson', 'assignedPerson.employee')->where('id', $request->project)->first();
 
-        $count = CallScript::where("call_id", $request->call)->where("department_id", $request->department)->where("extra_filter", "hoa")->count();
+        $count = CallScript::where('call_id', $request->call)->where('department_id', $request->department)->where('extra_filter', 'hoa')->count();
         $script = CallScript::query();
-        $script->where("call_id", $request->call)->where("department_id", $request->department);
-        if ($project->hoa == "yes" && $count > 0) {
-            $script->where("extra_filter", "hoa");
+        $script->where('call_id', $request->call)->where('department_id', $request->department);
+        if ($project->hoa == 'yes' && $count > 0) {
+            $script->where('extra_filter', 'hoa');
         }
 
-        return view("projects.partial.call_script", [
-            "callScript" => $script->first(),
-            "department" => $request->department,
-            "callId" => $request->call,
-            "project" => $project
+        return view('projects.partial.call_script', [
+            'callScript' => $script->first(),
+            'department' => $request->department,
+            'callId' => $request->call,
+            'project' => $project,
         ]);
     }
 
     public function getEmailScript(Request $request)
     {
-        $project =  Project::where("id", $request->project)->first();
+        $project = Project::where('id', $request->project)->first();
 
-        $count = EmailScript::where("email_type_id", $request->emailType)->where("department_id", $request->department)->where("extra_filter", "hoa")->count();
+        $count = EmailScript::where('email_type_id', $request->emailType)->where('department_id', $request->department)->where('extra_filter', 'hoa')->count();
         $script = EmailScript::query();
-        $script->where("email_type_id", $request->emailType)->where("department_id", $request->department);
-        if ($project->hoa == "yes" && $count > 0) {
-            $script->where("extra_filter", "hoa");
+        $script->where('email_type_id', $request->emailType)->where('department_id', $request->department);
+        if ($project->hoa == 'yes' && $count > 0) {
+            $script->where('extra_filter', 'hoa');
         }
 
-        return view("projects.partial.email_script", [
-            "emailScript" => $script->first(),
+        return view('projects.partial.email_script', [
+            'emailScript' => $script->first(),
             // "department" => $request->department,
             // "emailTypeId" => $request->email_type,
             // "project" => $project
@@ -1298,100 +1330,101 @@ class ProjectController extends Controller
 
     public function deleteFile(Request $request)
     {
-        if ($request->id != "") {
+        if ($request->id != '') {
             try {
                 $file = ProjectFile::findOrFail($request->id);
-                $this->removeImage("projects/", $file->filename);
+                $this->removeImage('projects/', $file->filename);
                 $file->delete();
-                return response()->json(["status" => 200, "message" => "File delete successfully"]);
+
+                return response()->json(['status' => 200, 'message' => 'File delete successfully']);
             } catch (\Throwable $th) {
-                return response()->json(["status" => 500, "message" => "File not found"]);
+                return response()->json(['status' => 500, 'message' => 'File not found']);
             }
         } else {
-            return response()->json(["status" => 500, "message" => "File not found"]);
+            return response()->json(['status' => 500, 'message' => 'File not found']);
         }
     }
 
     public function projectAcceptance(Request $request)
     {
-        if ($request->mode == "post") {
+        if ($request->mode == 'post') {
             $request->validate([
-                "file" => "required|file|mimes:png,jpg,jpeg,pdf|max:10240",
-                "project_id" => "required|exists:projects,id",
-                "sales_partner_id" => "required",
-                "notes" => "nullable|string",
+                'file' => 'required|file|mimes:png,jpg,jpeg,pdf|max:10240',
+                'project_id' => 'required|exists:projects,id',
+                'sales_partner_id' => 'required',
+                'notes' => 'nullable|string',
             ]);
             $result = $this->uploads($request->file, 'project-acceptance/');
-            if (!empty($result)) {
-                $project = Project::with("task", "customer", "customer.salespartner", "customer.adders", "customer.finances", "customer.inverter", "salesPartnerUser")->where("id", $request->project_id)->first();
+            if (! empty($result)) {
+                $project = Project::with('task', 'customer', 'customer.salespartner', 'customer.adders', 'customer.finances', 'customer.inverter', 'salesPartnerUser')->where('id', $request->project_id)->first();
 
-                if (!$project?->customer?->finances || !$project->customer?->inverter || !$project->salesPartnerUser) {
-                    return response("Project acceptance cannot be submitted because required financial, inverter, or sales partner user data is missing.", 422);
+                if (! $project?->customer?->finances || ! $project->customer?->inverter || ! $project->salesPartnerUser) {
+                    return response('Project acceptance cannot be submitted because required financial, inverter, or sales partner user data is missing.', 422);
                 }
-                
+
                 // Calculate financial values (same logic as in blade)
                 $basePrice = $project->customer->finances->inverter_base_cost + $project->overwrite_base_price;
                 $moduleQtyPrice = $project->customer->finances->module_type_cost + $project->overwrite_panel_price;
                 $modulesAmount = $project->customer->panel_qty * $moduleQtyPrice;
-                
+
                 // Extract adder names
                 $addersList = [];
                 foreach ($project->customer->adders as $adder) {
-                    if (!empty($adder->type)) {
+                    if (! empty($adder->type)) {
                         $addersList[] = $adder->type->name;
                     }
                 }
-                
+
                 $projectAcceptance = ProjectAcceptance::create([
-                    "project_id" => $request->project_id,
-                    "sales_partner_id" => $request->sales_partner_id,
-                    "image" => $result["fileName"],
-                    "action_by" => 0,
-                    "status" => 0,
-                    "notes" => $request->notes,
-                    
+                    'project_id' => $request->project_id,
+                    'sales_partner_id' => $request->sales_partner_id,
+                    'image' => $result['fileName'],
+                    'action_by' => 0,
+                    'status' => 0,
+                    'notes' => $request->notes,
+
                     // Save calculated financial snapshot
-                    "inverter_base_price" => $basePrice,
-                    "dealer_fee_amount" => $project->customer->finances->dealer_fee_amount,
-                    "module_qty_price" => $moduleQtyPrice,
-                    "modules_amount" => $modulesAmount,
-                    "panel_qty" => $project->customer->panel_qty,
-                    "contract_amount" => $project->customer->finances->contract_amount,
-                    "redline_costs" => $project->customer->finances->redline_costs,
-                    "adders_amount" => $project->customer->finances->adders,
-                    "commission_amount" => $project->customer->finances->commission,
-                    "inverter_name" => $project->customer->inverter->name,
-                    "adders_list" => $addersList,
+                    'inverter_base_price' => $basePrice,
+                    'dealer_fee_amount' => $project->customer->finances->dealer_fee_amount,
+                    'module_qty_price' => $moduleQtyPrice,
+                    'modules_amount' => $modulesAmount,
+                    'panel_qty' => $project->customer->panel_qty,
+                    'contract_amount' => $project->customer->finances->contract_amount,
+                    'redline_costs' => $project->customer->finances->redline_costs,
+                    'adders_amount' => $project->customer->finances->adders,
+                    'commission_amount' => $project->customer->finances->commission,
+                    'inverter_name' => $project->customer->inverter->name,
+                    'adders_list' => $addersList,
                 ]);
-                $emailText = "<p>Hi " . $project->salesPartnerUser->name . "</p><p>The Project Acceptance Review for the project " . $project->customer->first_name . " " . $project->customer->last_name . " is ready to be approved.</p><p>Please login to the CRM and navigate to the “Acceptance” tab within the project to approve or dispute the commission amount.</p><p>We look forward to getting a reply within the next 24 hours, after which we will assume the commission as approved.</p><p>If you have any questions, please reach out to us at engineering@solenenergyco.com</p><p>Thank you for your continued support!</p><p>The Solen Energy Construction Engineering Team</p>";
-                $this->sendEmailForProjectAcceptance($project, "Project Acceptance Review - " . $project->customer->first_name . " " . $project->customer->last_name, $emailText, $project->salesPartnerUser->email);
+                $emailText = '<p>Hi '.$project->salesPartnerUser->name.'</p><p>The Project Acceptance Review for the project '.$project->customer->first_name.' '.$project->customer->last_name.' is ready to be approved.</p><p>Please login to the CRM and navigate to the “Acceptance” tab within the project to approve or dispute the commission amount.</p><p>We look forward to getting a reply within the next 24 hours, after which we will assume the commission as approved.</p><p>If you have any questions, please reach out to us at engineering@solenenergyco.com</p><p>Thank you for your continued support!</p><p>The Solen Energy Construction Engineering Team</p>';
+                $this->sendEmailForProjectAcceptance($project, 'Project Acceptance Review - '.$project->customer->first_name.' '.$project->customer->last_name, $emailText, $project->salesPartnerUser->email);
                 // Log the custom message
                 $username = auth()->user()->name;
                 activity('project')
                     ->performedOn($project)
                     ->causedBy(auth()->user()) // Log who did the action
-                    ->setEvent("move")
+                    ->setEvent('move')
                     ->log("{$username} send the Project Acceptance Review to the Sales Partner. ");
-                $projectAcceptance = ProjectAcceptance::with("user")->where("project_id", $request->project_id)->latest()->first();
+                $projectAcceptance = ProjectAcceptance::with('user')->where('project_id', $request->project_id)->latest()->first();
                 $rejectedAcceptances = ProjectAcceptance::where('project_id', $request->project_id)
                     ->where('status', '!=', 1)
                     ->where('id', '!=', $projectAcceptance->id)
                     ->with('user')
                     ->orderBy('created_at', 'desc')
                     ->get();
-                if (!empty($projectAcceptance)) {
-                    return view("projects.project-acceptance", [
-                        "image" => $result["fileName"],
-                        "project" => $project,
-                        "mode" => "view",
-                        "projectAcceptance" => $projectAcceptance,
-                        "rejectedAcceptances" => $rejectedAcceptances,
+                if (! empty($projectAcceptance)) {
+                    return view('projects.project-acceptance', [
+                        'image' => $result['fileName'],
+                        'project' => $project,
+                        'mode' => 'view',
+                        'projectAcceptance' => $projectAcceptance,
+                        'rejectedAcceptances' => $rejectedAcceptances,
                     ]);
                 }
             }
         } else {
-            $projectAcceptance = ProjectAcceptance::with("user")->where("project_id", $request->project_id)->latest()->first();
-            if (!empty($projectAcceptance)) {
+            $projectAcceptance = ProjectAcceptance::with('user')->where('project_id', $request->project_id)->latest()->first();
+            if (! empty($projectAcceptance)) {
                 $rejectedAcceptances = ProjectAcceptance::where('project_id', $request->project_id)
                     ->where('status', '!=', 1)
                     ->where('id', '!=', $projectAcceptance->id)
@@ -1399,11 +1432,11 @@ class ProjectController extends Controller
                     ->orderBy('created_at', 'desc')
                     ->get();
 
-                return view("projects.project-acceptance", [
-                    "projectAcceptance" => $projectAcceptance,
-                    "project" => Project::with("task", "customer", "customer.salespartner", "customer.adders")->where("id", $request->project_id)->first(),
-                    "rejectedAcceptances" => $rejectedAcceptances,
-                    "mode" => "view",
+                return view('projects.project-acceptance', [
+                    'projectAcceptance' => $projectAcceptance,
+                    'project' => Project::with('task', 'customer', 'customer.salespartner', 'customer.adders')->where('id', $request->project_id)->first(),
+                    'rejectedAcceptances' => $rejectedAcceptances,
+                    'mode' => 'view',
                 ]);
             }
         }
@@ -1411,13 +1444,13 @@ class ProjectController extends Controller
 
     public function generatePDF(Request $request)
     {
-        $image = ProjectAcceptance::with("user")->where("project_id", $request->id)->first();
-        $project = Project::with("task", "customer", "customer.salespartner", "customer.adders")->where("id", $request->id)->first();
+        $image = ProjectAcceptance::with('user')->where('project_id', $request->id)->first();
+        $project = Project::with('task', 'customer', 'customer.salespartner', 'customer.adders')->where('id', $request->id)->first();
 
         $modulesAmount = $project->customer->panel_qty * $project->customer->module->amount;
 
         // Initialize FPDF
-        $pdf = new FPDF();
+        $pdf = new FPDF;
         $pdf->AddPage();
 
         $pdf->ln(5);
@@ -1438,13 +1471,13 @@ class ProjectController extends Controller
 
         // Homeowner details
         $pdf->SetFont('Arial', '', 12);
-        $pdf->Cell(0, 8, 'Homeowner Name: ' . $project->customer->first_name . ' ' . $project->customer->last_name, 0, 1);
-        $pdf->Cell(0, 8, 'Address: ' . $project->customer->address, 0, 1);
-        $pdf->Cell(0, 8, 'Phone: ' . $project->customer->phone, 0, 1);
+        $pdf->Cell(0, 8, 'Homeowner Name: '.$project->customer->first_name.' '.$project->customer->last_name, 0, 1);
+        $pdf->Cell(0, 8, 'Address: '.$project->customer->address, 0, 1);
+        $pdf->Cell(0, 8, 'Phone: '.$project->customer->phone, 0, 1);
 
         // Add Image
-        if (!empty($image)) {
-            $pdf->Image(public_path('storage/project-acceptance/' . $image->image), 10, 60, 190, 100);
+        if (! empty($image)) {
+            $pdf->Image(public_path('storage/project-acceptance/'.$image->image), 10, 60, 190, 100);
         }
 
         // Line break
@@ -1461,7 +1494,7 @@ class ProjectController extends Controller
         $pdf->Cell(50, 10, number_format($project->customer->inverter->invertertyperates->base_cost, 2), 1, 1);
 
         $pdf->Cell(70, 10, 'Module Price', 1);
-        $pdf->Cell(70, 10, $project->customer->panel_qty . ' x ' . $project->customer->module->amount, 1);
+        $pdf->Cell(70, 10, $project->customer->panel_qty.' x '.$project->customer->module->amount, 1);
         $pdf->Cell(50, 10, number_format($modulesAmount, 2), 1, 1);
 
         $pdf->Cell(70, 10, 'System Cost', 1);
@@ -1483,10 +1516,10 @@ class ProjectController extends Controller
         $pdf->Cell(70, 10, 'Contract Price', 1);
         $pdf->Cell(70, 10, '-', 1);
         $pdf->Cell(50, 10, number_format($project->customer->finances->contract_amount, 2), 1, 1);
-        $addersName = "";
+        $addersName = '';
 
         foreach ($project->customer->adders as $adders) {
-            $addersName .= $adders->type->name . ",";
+            $addersName .= $adders->type->name.',';
         }
 
         $pdf->ln(5);
@@ -1497,10 +1530,10 @@ class ProjectController extends Controller
         $pdf->Cell(0, 10, $addersName, 0, 1, 'L');
 
         // Set the file path where you want to save the PDF in the 'storage/app/public/pdfs' folder
-        $filePath = storage_path('app/public/pdfs/project_acceptance_review-' . $project->id . '.pdf');
+        $filePath = storage_path('app/public/pdfs/project_acceptance_review-'.$project->id.'.pdf');
 
         // Ensure the 'pdfs' folder exists, if not, create it
-        if (!file_exists(storage_path('app/public/pdfs'))) {
+        if (! file_exists(storage_path('app/public/pdfs'))) {
             mkdir(storage_path('app/public/pdfs'), 0777, true);
         }
 
@@ -1509,72 +1542,74 @@ class ProjectController extends Controller
 
         // Output the PDF
         // $pdf->Output('I', 'project_acceptance_review.pdf'); // 'D' for download, 'I' for inline
-        $ccEmails = "";
+        $ccEmails = '';
         $attachments = [];
         $details = [
-            "subject" => "Project Acceptance Review",
-            "body" => "Hi, Project Acceptance Review PDf is attached. Please check the attachment. ",
-            "project_id" => $project->id,
-            "department_id" => 3,
-            "customer_id" => $project->customer_id,
-            "customer_email" => "hmadilkhan@gmail.com",
+            'subject' => 'Project Acceptance Review',
+            'body' => 'Hi, Project Acceptance Review PDf is attached. Please check the attachment. ',
+            'project_id' => $project->id,
+            'department_id' => 3,
+            'customer_id' => $project->customer_id,
+            'customer_email' => 'hmadilkhan@gmail.com',
         ];
-        array_push($attachments,  'project_acceptance_review-' . $project->id . '.pdf');
+        array_push($attachments, 'project_acceptance_review-'.$project->id.'.pdf');
+
         // dispatch(new AcceptanceEmailJob($details, $attachments, $ccEmails));
         // Mail::mailer("dealreview")->to($details['customer_email'])->send(new AcceptanceEmail($details, $attachments,$ccEmails));
         // return Mail::mailer("dealreview")->to($details['customer_email'])->send(new AcceptanceEmail($details, $attachments, $ccEmails));
-        return response()->json(["status" => 200, "message" => "Email has been sent"]);
+        return response()->json(['status' => 200, 'message' => 'Email has been sent']);
         exit;
     }
 
     public function actionProjectAcceptance(Request $request)
     {
         try {
-            $projectAcceptance = ProjectAcceptance::with("user")->where("project_id", $request->projectId)->latest()->first();
-            $project = Project::with("customer", "assignedPerson", "assignedPerson.employee")->where("id", $projectAcceptance->project_id)->first();
-            ProjectAcceptance::where("id", $request->id)->update([
-                "action_by" => auth()->user()->id,
-                "status" => $request->mode,
-                "approved_date" => date("Y-m-d H:i:s"),
-                "reason" => $request->reason,
+            $projectAcceptance = ProjectAcceptance::with('user')->where('project_id', $request->projectId)->latest()->first();
+            $project = Project::with('customer', 'assignedPerson', 'assignedPerson.employee')->where('id', $projectAcceptance->project_id)->first();
+            ProjectAcceptance::where('id', $request->id)->update([
+                'action_by' => auth()->user()->id,
+                'status' => $request->mode,
+                'approved_date' => date('Y-m-d H:i:s'),
+                'reason' => $request->reason,
             ]);
 
             if ($request->mode == 1) {
                 ProjectAddersLock::create([
                     'project_id' => $project->id,
                     'user_id' => auth()->id(),
-                    'status' => 'locked'
+                    'status' => 'locked',
                 ]);
             }
 
-            $projectUrl = url('/projects/' . $project->id);
-            $assignedEmployeeName = $project->assignedPerson->first()?->employee?->name ?? "Team";
-            $emailText = "<p>Hi " . $assignedEmployeeName . "</p><p>The Project Acceptance Review for " . $project->customer->first_name . " " . $project->customer->last_name . " has been " . ($request->mode == 1 ? 'approved' : 'rejected') . "</p><p>Project URL: <a href='" . $projectUrl . "'>" . $projectUrl . "</a></p><p>Please take the necessary steps to continue moving the job forward.</p><p>Thank you!.</p>";
-            $this->sendEmailForProjectAcceptance($project, "Project Acceptance Review Status - " . $project->customer->first_name . " " . $project->customer->last_name, $emailText, "engineering@solenenergyco.com");
+            $projectUrl = url('/projects/'.$project->id);
+            $assignedEmployeeName = $project->assignedPerson->first()?->employee?->name ?? 'Team';
+            $emailText = '<p>Hi '.$assignedEmployeeName.'</p><p>The Project Acceptance Review for '.$project->customer->first_name.' '.$project->customer->last_name.' has been '.($request->mode == 1 ? 'approved' : 'rejected')."</p><p>Project URL: <a href='".$projectUrl."'>".$projectUrl.'</a></p><p>Please take the necessary steps to continue moving the job forward.</p><p>Thank you!.</p>';
+            $this->sendEmailForProjectAcceptance($project, 'Project Acceptance Review Status - '.$project->customer->first_name.' '.$project->customer->last_name, $emailText, 'engineering@solenenergyco.com');
             // Log the custom message
             $username = auth()->user()->name;
             activity('project')
                 ->performedOn($project)
                 ->causedBy(auth()->user()) // Log who did the action
-                ->setEvent("move")
-                ->log("The Project Acceptance Review for " . $project->customer->first_name . " " . $project->customer->last_name . " has been " . ($request->mode == 1 ? 'approved' : 'rejected') . " by {$username}  ");
-            return response()->json(["status" => 200, "message" => "Project Acceptance Approved"]);
+                ->setEvent('move')
+                ->log('The Project Acceptance Review for '.$project->customer->first_name.' '.$project->customer->last_name.' has been '.($request->mode == 1 ? 'approved' : 'rejected')." by {$username}  ");
+
+            return response()->json(['status' => 200, 'message' => 'Project Acceptance Approved']);
         } catch (\Throwable $th) {
-            return response()->json(["status" => 500, "message" => "Error: " . $th->getMessage()]);
+            return response()->json(['status' => 500, 'message' => 'Error: '.$th->getMessage()]);
         }
     }
 
     public function sendEmailForProjectAcceptance($project, $subject, $body, $emailTo)
     {
-        $ccEmails = "";
+        $ccEmails = '';
         $attachments = [];
         $details = [
-            "subject" => $subject,
-            "body" => $body,
-            "project_id" => $project->id,
-            "department_id" => 3,
-            "customer_id" => $project->customer_id,
-            "customer_email" => $emailTo,
+            'subject' => $subject,
+            'body' => $body,
+            'project_id' => $project->id,
+            'department_id' => 3,
+            'customer_id' => $project->customer_id,
+            'customer_email' => $emailTo,
         ];
         dispatch(new AcceptanceEmailJob($details, $attachments, $ccEmails));
     }
@@ -1587,7 +1622,7 @@ class ProjectController extends Controller
             ProjectAddersLock::create([
                 'project_id' => $request->project_id,
                 'user_id' => auth()->id(),
-                'status' => $request->status
+                'status' => $request->status,
             ]);
 
             $username = auth()->user()->name;
@@ -1599,7 +1634,7 @@ class ProjectController extends Controller
                 ->setEvent('adders_lock')
                 ->log("{$username} {$request->status} the adders section.");
 
-            return response()->json(['status' => 200, 'message' => 'Adders ' . $request->status . ' successfully']);
+            return response()->json(['status' => 200, 'message' => 'Adders '.$request->status.' successfully']);
         } catch (\Throwable $th) {
             return response()->json(['status' => 500, 'message' => $th->getMessage()]);
         }
@@ -1609,21 +1644,21 @@ class ProjectController extends Controller
     {
         try {
             $followUp = ProjectFollowUp::findOrFail($request->followup_id);
-            
+
             // Prevent changing status if already resolved
             if ($followUp->status === 'Resolved') {
                 return response()->json(['status' => 400, 'message' => 'Cannot change status of resolved follow-up']);
             }
-            
+
             $updateData = ['status' => $request->status];
-            
+
             // Set resolved_date when status changes to Resolved
             if ($request->status === 'Resolved') {
                 $updateData['resolved_date'] = now();
             }
-            
+
             $followUp->update($updateData);
-            
+
             return response()->json(['status' => 200, 'message' => 'Follow-up status updated successfully']);
         } catch (\Throwable $th) {
             return response()->json(['status' => 500, 'message' => $th->getMessage()]);

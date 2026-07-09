@@ -2,60 +2,72 @@
 
 namespace App\Livewire;
 
+use App\Exports\DynamicReportExport;
 use App\Models\Customer;
 use App\Models\Project;
+use App\Models\SavedReport;
 use App\Models\User;
-use App\Models\SalesPartner;
-use App\Models\OfficeCost;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
-use Livewire\Component;
-use Livewire\Attributes\Title;
-use Maatwebsite\Excel\Facades\Excel;
-use App\Exports\DynamicReportExport;
-use App\Models\SavedReport;
 use Illuminate\Support\Str;
+use Livewire\Attributes\Title;
+use Livewire\Component;
+use Maatwebsite\Excel\Facades\Excel;
 
 class DynamicReportBuilder extends Component
 {
     #[Title('Dynamic Report Builder')]
-
     public $reportType = '';
+
     public $selectedFields = [];
+
     public $filters = [];
+
     public $calculatedFields = [];
+
     public $reportData = [];
+
     public $reportColumns = [];
+
     public $showResults = false;
 
     public $reportName = '';
 
     // Edit functionality
     public $editingReportId = null;
+
     public $isEditing = false;
 
     // Filter form fields
     public $filterField = '';
+
     public $filterOperator = '=';
+
     public $filterValue = '';
 
     // Calculated field form
     public $calcFieldName = '';
+
     public $calcFieldExpression = '';
 
     // Calculated field builder UI
     public $calcInitialField = '';
+
     public $builderOperator = '+';
+
     public $builderField2 = '';
+
     public $builderValue2 = '';
+
     public $calcExpressionPreview = '';
+
     public $calcExpressionBuilder = [];
 
     // Available report types
     public $reportTypes = [
         'profitability' => 'Profitability Report',
         'forecast' => 'Forecast Report',
-        'override' => 'Override Report'
+        'override' => 'Override Report',
     ];
 
     // Available operators
@@ -72,7 +84,7 @@ class DynamicReportBuilder extends Component
         'NOT IN' => 'Not In List',
         'BETWEEN' => 'Between',
         'IS NULL' => 'Is Empty',
-        'IS NOT NULL' => 'Is Not Empty'
+        'IS NOT NULL' => 'Is Not Empty',
     ];
 
     public function mount()
@@ -122,6 +134,8 @@ class DynamicReportBuilder extends Component
             'projects.site_survey_link' => 'Site Survey Link',
             'projects.hoa' => 'HOA',
             'projects.hoa_phone_number' => 'HOA Phone Number',
+            'projects.ahj' => 'AHJ',
+            'projects.ahj_website_url' => 'AHJ Website URL',
             'projects.adders_approve_checkbox' => 'Adders Approve Checkbox',
             'projects.mpu_required' => 'MPU Required',
             'projects.meter_spot_requestd_date' => 'Meter Spot Request Date',
@@ -206,7 +220,7 @@ class DynamicReportBuilder extends Component
         return [
             'count' => count($this->selectedFields),
             'fields' => $this->selectedFields,
-            'reportType' => $this->reportType
+            'reportType' => $this->reportType,
         ];
     }
 
@@ -239,8 +253,8 @@ class DynamicReportBuilder extends Component
                     'customer_finances.commission',
                     'customer_finances.adders',
                     'customer_finances.redline_costs',
-                    "projects.actual_material_cost",
-                    "projects.actual_labor_cost",
+                    'projects.actual_material_cost',
+                    'projects.actual_labor_cost',
                 ];
                 break;
             case 'forecast':
@@ -249,7 +263,7 @@ class DynamicReportBuilder extends Component
                     'customers.last_name',
                     'customers.sold_date',
                     'projects.project_name',
-                    'sales_partners.name'
+                    'sales_partners.name',
                 ];
                 break;
             case 'override':
@@ -258,7 +272,7 @@ class DynamicReportBuilder extends Component
                     'customers.last_name',
                     'customers.sold_date',
                     'sales_partners.name',
-                    'projects.project_name'
+                    'projects.project_name',
                 ];
                 break;
         }
@@ -266,7 +280,7 @@ class DynamicReportBuilder extends Component
 
     public function addField($field)
     {
-        if (!in_array($field, $this->selectedFields)) {
+        if (! in_array($field, $this->selectedFields)) {
             $this->selectedFields[] = $field;
         }
     }
@@ -299,14 +313,14 @@ class DynamicReportBuilder extends Component
         $this->validate([
             'filterField' => 'required',
             'filterOperator' => 'required',
-            'filterValue' => 'required_unless:filterOperator,IS NULL,IS NOT NULL'
+            'filterValue' => 'required_unless:filterOperator,IS NULL,IS NOT NULL',
         ]);
 
         $this->filters[] = [
             'field' => $this->filterField,
             'operator' => $this->filterOperator,
             'value' => $this->filterValue,
-            'field_name' => $this->availableFields[$this->filterField] ?? $this->filterField
+            'field_name' => $this->availableFields[$this->filterField] ?? $this->filterField,
         ];
 
         $this->reset(['filterField', 'filterOperator', 'filterValue']);
@@ -322,9 +336,9 @@ class DynamicReportBuilder extends Component
     {
         // First operation: require initial field, operator, and right side
         if (empty($this->calcExpressionBuilder)) {
-            if ($this->calcInitialField && $this->builderOperator && (($this->builderField2 && !$this->builderValue2) || (!$this->builderField2 && $this->builderValue2 !== ''))) {
-                $part2 = $this->builderField2 ? '{' . $this->builderField2 . '}' : $this->builderValue2;
-                $expression = ' ' . $this->builderOperator . ' ' . $part2;
+            if ($this->calcInitialField && $this->builderOperator && (($this->builderField2 && ! $this->builderValue2) || (! $this->builderField2 && $this->builderValue2 !== ''))) {
+                $part2 = $this->builderField2 ? '{'.$this->builderField2.'}' : $this->builderValue2;
+                $expression = ' '.$this->builderOperator.' '.$part2;
                 $this->calcExpressionBuilder[] = $expression;
                 $this->updateCalcExpressionPreview();
                 // Reset for next operation
@@ -334,9 +348,9 @@ class DynamicReportBuilder extends Component
             }
         } else {
             // Subsequent operations: only operator and right side
-            if ($this->builderOperator && (($this->builderField2 && !$this->builderValue2) || (!$this->builderField2 && $this->builderValue2 !== ''))) {
-                $part2 = $this->builderField2 ? '{' . $this->builderField2 . '}' : $this->builderValue2;
-                $expression = ' ' . $this->builderOperator . ' ' . $part2;
+            if ($this->builderOperator && (($this->builderField2 && ! $this->builderValue2) || (! $this->builderField2 && $this->builderValue2 !== ''))) {
+                $part2 = $this->builderField2 ? '{'.$this->builderField2.'}' : $this->builderValue2;
+                $expression = ' '.$this->builderOperator.' '.$part2;
                 $this->calcExpressionBuilder[] = $expression;
                 $this->updateCalcExpressionPreview();
                 // Reset for next operation
@@ -349,7 +363,7 @@ class DynamicReportBuilder extends Component
 
     private function updateCalcExpressionPreview()
     {
-        $this->calcExpressionPreview = $this->calcInitialField ? '{' . $this->calcInitialField . '}' : '';
+        $this->calcExpressionPreview = $this->calcInitialField ? '{'.$this->calcInitialField.'}' : '';
         foreach ($this->calcExpressionBuilder as $part) {
             $this->calcExpressionPreview .= $part;
         }
@@ -377,8 +391,9 @@ class DynamicReportBuilder extends Component
             ->where('user_id', auth()->id())
             ->first();
 
-        if (!$report) {
+        if (! $report) {
             session()->flash('error', 'Report not found or access denied.');
+
             return redirect()->route('dynamic-report-builder');
         }
 
@@ -400,12 +415,12 @@ class DynamicReportBuilder extends Component
     {
         $this->validate([
             'calcFieldName' => 'required|string|max:255',
-            'calcFieldExpression' => 'required|string'
+            'calcFieldExpression' => 'required|string',
         ]);
 
         $this->calculatedFields[] = [
             'name' => $this->calcFieldName,
-            'expression' => $this->calcFieldExpression
+            'expression' => $this->calcFieldExpression,
         ];
 
         $this->reset(['calcFieldName', 'calcFieldExpression']);
@@ -422,16 +437,17 @@ class DynamicReportBuilder extends Component
     {
         if ($this->isEditing) {
             $this->updateReport();
+
             return;
         }
 
         try {
             $this->validate([
                 'reportName' => 'required|string|max:255',
-                'selectedFields' => 'required|array|min:1'
+                'selectedFields' => 'required|array|min:1',
             ], [
                 'reportName.required' => 'Report Name field is required.',
-                'selectedFields.required' => 'Please select at least one field.'
+                'selectedFields.required' => 'Please select at least one field.',
             ]);
         } catch (\Illuminate\Validation\ValidationException $e) {
             session()->flash('error', 'Please fix the validation errors.');
@@ -443,14 +459,13 @@ class DynamicReportBuilder extends Component
             $query = $this->buildQuery();
             $sql = $query->toSql();
             $bindings = $query->getBindings();
-            
+
             // Combine SQL and bindings for storage
             $queryWithBindings = [
                 'sql' => $sql,
-                'bindings' => $bindings
+                'bindings' => $bindings,
             ];
-            
-            
+
             // Save the report
             SavedReport::create([
                 'name' => $this->reportName,
@@ -459,15 +474,15 @@ class DynamicReportBuilder extends Component
                 'filters' => $this->filters,
                 'calculated_fields' => $this->calculatedFields,
                 'query' => json_encode($queryWithBindings),
-                'user_id' => auth()->user()->id
+                'user_id' => auth()->user()->id,
             ]);
-    
+
             session()->flash('success', 'Report saved successfully!');
         } catch (\Throwable $th) {
-            Log::error('Error saving report: ' . $th->getMessage());
+            Log::error('Error saving report: '.$th->getMessage());
             session()->flash('error', 'Failed to save report. Please try again.');
         }
-        
+
         // Reset form
         $this->reset(['reportName']);
     }
@@ -477,10 +492,10 @@ class DynamicReportBuilder extends Component
         try {
             $this->validate([
                 'reportName' => 'required|string|max:255',
-                'selectedFields' => 'required|array|min:1'
+                'selectedFields' => 'required|array|min:1',
             ], [
                 'reportName.required' => 'Report Name field is required.',
-                'selectedFields.required' => 'Please select at least one field.'
+                'selectedFields.required' => 'Please select at least one field.',
             ]);
         } catch (\Illuminate\Validation\ValidationException $e) {
             session()->flash('error', 'Please fix the validation errors.');
@@ -492,8 +507,9 @@ class DynamicReportBuilder extends Component
                 ->where('user_id', auth()->id())
                 ->first();
 
-            if (!$report) {
+            if (! $report) {
                 session()->flash('error', 'Report not found or access denied.');
+
                 return;
             }
 
@@ -501,11 +517,11 @@ class DynamicReportBuilder extends Component
             $query = $this->buildQuery();
             $sql = $query->toSql();
             $bindings = $query->getBindings();
-            
+
             // Combine SQL and bindings for storage
             $queryWithBindings = [
                 'sql' => $sql,
-                'bindings' => $bindings
+                'bindings' => $bindings,
             ];
 
             // Update the report
@@ -515,13 +531,14 @@ class DynamicReportBuilder extends Component
                 'selected_fields' => $this->selectedFields,
                 'filters' => $this->filters,
                 'calculated_fields' => $this->calculatedFields,
-                'query' => json_encode($queryWithBindings)
+                'query' => json_encode($queryWithBindings),
             ]);
 
             session()->flash('success', 'Report updated successfully!');
+
             return redirect()->route('report-runner');
         } catch (\Throwable $th) {
-            Log::error('Error updating report: ' . $th->getMessage());
+            Log::error('Error updating report: '.$th->getMessage());
             session()->flash('error', 'Failed to update report. Please try again.');
         }
     }
@@ -535,7 +552,7 @@ class DynamicReportBuilder extends Component
     {
         try {
             $this->validate([
-                'selectedFields' => 'required|array|min:1'
+                'selectedFields' => 'required|array|min:1',
             ]);
         } catch (\Illuminate\Validation\ValidationException $e) {
             session()->flash('error', 'Please select at least one field.');
@@ -545,7 +562,6 @@ class DynamicReportBuilder extends Component
         $query = $this->buildQuery();
         $this->reportData = $query->get();
         $this->reportColumns = $this->buildColumns();
-
 
         $this->showResults = true;
 
@@ -582,7 +598,7 @@ class DynamicReportBuilder extends Component
         }
 
         // Add customer ID for calculated fields processing
-        if (!in_array('customers.id', $this->selectedFields)) {
+        if (! in_array('customers.id', $this->selectedFields)) {
             $selectFields[] = DB::raw('customers.id as id');
         }
 
@@ -591,7 +607,7 @@ class DynamicReportBuilder extends Component
             'selectedFields' => $this->selectedFields,
             'selectFields' => $selectFields,
             'sql' => $query->toSql(),
-            'bindings' => $query->getBindings()
+            'bindings' => $query->getBindings(),
         ]);
 
         $query->select($selectFields);
@@ -622,7 +638,7 @@ class DynamicReportBuilder extends Component
             $relationsToLoad[] = 'inverter';
         }
 
-        if (!empty($relationsToLoad)) {
+        if (! empty($relationsToLoad)) {
             $query->with($relationsToLoad);
         }
 
@@ -674,7 +690,7 @@ class DynamicReportBuilder extends Component
             'hasProjects' => str_contains($fieldsString, 'projects.'),
             'hasSalesPartners' => str_contains($fieldsString, 'sales_partners.'),
             'hasCustomerFinances' => str_contains($fieldsString, 'customer_finances.'),
-            'reportType' => $this->reportType
+            'reportType' => $this->reportType,
         ]);
     }
 
@@ -682,10 +698,10 @@ class DynamicReportBuilder extends Component
     {
         switch ($filter['operator']) {
             case 'LIKE':
-                $query->where($filter['field'], 'LIKE', '%' . $filter['value'] . '%');
+                $query->where($filter['field'], 'LIKE', '%'.$filter['value'].'%');
                 break;
             case 'NOT LIKE':
-                $query->where($filter['field'], 'NOT LIKE', '%' . $filter['value'] . '%');
+                $query->where($filter['field'], 'NOT LIKE', '%'.$filter['value'].'%');
                 break;
             case 'IN':
                 $values = explode(',', $filter['value']);
@@ -733,7 +749,7 @@ class DynamicReportBuilder extends Component
                 $columns[] = [
                     'field' => $fieldName, // Use field name without table prefix
                     'name' => $this->availableFields[$field] ?? $field,
-                    'type' => 'data'
+                    'type' => 'data',
                 ];
             }
         }
@@ -741,9 +757,9 @@ class DynamicReportBuilder extends Component
         // Add calculated field columns
         foreach ($this->calculatedFields as $calcField) {
             $columns[] = [
-                'field' => 'calc_' . Str::slug($calcField['name'], '_'),
+                'field' => 'calc_'.Str::slug($calcField['name'], '_'),
                 'name' => $calcField['name'],
-                'type' => 'calculated'
+                'type' => 'calculated',
             ];
         }
 
@@ -758,7 +774,7 @@ class DynamicReportBuilder extends Component
 
         foreach ($this->reportData as $row) {
             foreach ($this->calculatedFields as $calcField) {
-                $fieldKey = 'calc_' . Str::slug($calcField['name'], '_');
+                $fieldKey = 'calc_'.Str::slug($calcField['name'], '_');
                 $row->{$fieldKey} = $this->evaluateExpression($calcField['expression'], $row);
             }
         }
@@ -773,7 +789,7 @@ class DynamicReportBuilder extends Component
         foreach ($this->availableFields as $field => $name) {
             $fieldValue = $this->getNestedProperty($row, $field);
             $processedExpression = str_replace(
-                '{' . $field . '}',
+                '{'.$field.'}',
                 is_numeric($fieldValue) ? $fieldValue : 0,
                 $processedExpression
             );
@@ -854,6 +870,7 @@ class DynamicReportBuilder extends Component
                 return null;
             }
         }
+
         return $this->formatValue($value);
     }
 
@@ -868,6 +885,7 @@ class DynamicReportBuilder extends Component
             if ($this->isJson($value)) {
                 return $this->formatJsonValue($value);
             }
+
             return $value;
         }
 
@@ -880,12 +898,13 @@ class DynamicReportBuilder extends Component
 
     private function isJson($string)
     {
-        if (!is_string($string)) {
+        if (! is_string($string)) {
             return false;
         }
 
         json_decode($string);
-        return (json_last_error() == JSON_ERROR_NONE);
+
+        return json_last_error() == JSON_ERROR_NONE;
     }
 
     private function formatJsonValue($jsonString)
@@ -915,6 +934,7 @@ class DynamicReportBuilder extends Component
                         $formatted[] = (string) $item;
                     }
                 }
+
                 return implode(', ', $formatted);
             }
 
@@ -922,11 +942,12 @@ class DynamicReportBuilder extends Component
             $formatted = [];
             foreach ($value as $key => $item) {
                 if (is_array($item) || is_object($item)) {
-                    $formatted[] = $key . ': ' . $this->formatComplexValue($item);
+                    $formatted[] = $key.': '.$this->formatComplexValue($item);
                 } else {
-                    $formatted[] = $key . ': ' . (string) $item;
+                    $formatted[] = $key.': '.(string) $item;
                 }
             }
+
             return implode('; ', $formatted);
         }
 
@@ -938,6 +959,7 @@ class DynamicReportBuilder extends Component
 
             // Convert object to array
             $array = (array) $value;
+
             return $this->formatComplexValue($array);
         }
 
@@ -948,6 +970,7 @@ class DynamicReportBuilder extends Component
     {
         if (empty($this->reportData)) {
             session()->flash('error', 'No data to export. Please generate a report first.');
+
             return;
         }
 
@@ -967,7 +990,7 @@ class DynamicReportBuilder extends Component
                 if ($column['type'] === 'calculated') {
                     $value = is_object($row) ? ($row->{$column['field']} ?? 'N/A') : (isset($row[$column['field']]) ? $row[$column['field']] : 'N/A');
                 }
-                if (is_numeric($value) && !is_string($value)) {
+                if (is_numeric($value) && ! is_string($value)) {
                     $value = number_format($value, (is_float($value + 0) && floor($value + 0) != ($value + 0)) ? 2 : 0);
                 }
                 // If value is null, empty string, or only whitespace, show '-'
@@ -979,7 +1002,7 @@ class DynamicReportBuilder extends Component
             $results[] = $rowData;
         }
 
-        $filename = $this->reportTypes[$this->reportType] . '_' . date('Y-m-d_H-i-s') . '.xlsx';
+        $filename = $this->reportTypes[$this->reportType].'_'.date('Y-m-d_H-i-s').'.xlsx';
 
         return Excel::download(
             new DynamicReportExport($results, $this->reportColumns),
@@ -991,6 +1014,7 @@ class DynamicReportBuilder extends Component
     {
         if (empty($this->reportData)) {
             session()->flash('error', 'No data to export. Please generate a report first.');
+
             return;
         }
 
@@ -1010,7 +1034,7 @@ class DynamicReportBuilder extends Component
                 if ($column['type'] === 'calculated') {
                     $value = is_object($row) ? ($row->{$column['field']} ?? 'N/A') : (isset($row[$column['field']]) ? $row[$column['field']] : 'N/A');
                 }
-                if (is_numeric($value) && !is_string($value)) {
+                if (is_numeric($value) && ! is_string($value)) {
                     $value = number_format($value, (is_float($value + 0) && floor($value + 0) != ($value + 0)) ? 2 : 0);
                 }
                 // If value is null, empty string, or only whitespace, show '-'
@@ -1022,7 +1046,7 @@ class DynamicReportBuilder extends Component
             $results[] = $rowData;
         }
 
-        $filename = $this->reportTypes[$this->reportType] . '_' . date('Y-m-d_H-i-s') . '.pdf';
+        $filename = $this->reportTypes[$this->reportType].'_'.date('Y-m-d_H-i-s').'.pdf';
 
         return Excel::download(
             new DynamicReportExport($results, $this->reportColumns),

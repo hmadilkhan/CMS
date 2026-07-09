@@ -472,6 +472,12 @@
             color: #15803d;
         }
 
+        .project-tag-chip.ahj-website-tag {
+            border: 0;
+            cursor: pointer;
+            text-decoration: none;
+        }
+
         .nav-tabs {
             border: none;
             background: white;
@@ -2310,6 +2316,11 @@
                         if (!empty($project->ahj)) {
                             $projectHeaderTags->push($project->ahj);
                         }
+
+                        $ahjWebsiteUrl = trim((string) $project->ahj_website_url);
+                        $ahjWebsiteHref = $ahjWebsiteUrl === ''
+                            ? null
+                            : (preg_match('/^https?:\/\//i', $ahjWebsiteUrl) ? $ahjWebsiteUrl : 'https://' . $ahjWebsiteUrl);
                     @endphp
 
                     @if (count($inverterTags) || count($adderTags) || $projectHeaderTags->isNotEmpty())
@@ -2318,7 +2329,22 @@
                                 @if ($projectHeaderTags->isNotEmpty())
                                     <div class="project-tag-list is-left">
                                         @foreach ($projectHeaderTags as $tag)
-                                            <span class="project-tag-chip project-info-tag">{{ $tag }}</span>
+                                            @if (!empty($project->ahj) && $tag === $project->ahj)
+                                                @if ($ahjWebsiteHref)
+                                                    <a class="project-tag-chip project-info-tag ahj-website-tag"
+                                                        href="{{ $ahjWebsiteHref }}" target="_blank" rel="noopener noreferrer">
+                                                        {{ $tag }}
+                                                    </a>
+                                                @else
+                                                    <button type="button"
+                                                        class="project-tag-chip project-info-tag ahj-website-tag"
+                                                        onclick="if (window.Swal) { Swal.fire('AHJ Website', 'No Website Address found.', 'info'); } else { alert('Website address available nahi hai.'); }">
+                                                        {{ $tag }}
+                                                    </button>
+                                                @endif
+                                            @else
+                                                <span class="project-tag-chip project-info-tag">{{ $tag }}</span>
+                                            @endif
                                         @endforeach
                                     </div>
                                 @endif
@@ -2513,6 +2539,11 @@
                 'icon' => 'icofont-credit-card',
                 'label' => 'Finance',
                 'value' => optional(optional($project->customer->finances)->finance)->name ?? '-',
+            ],
+            [
+                'icon' => 'icofont-law-document',
+                'label' => 'AHJ Website',
+                'value' => $project->ahj_website_url ?: '-',
             ],
         ];
     @endphp

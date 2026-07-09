@@ -46,8 +46,8 @@ class AiFieldDictionaryService
         'pto' => ['projects.pto_submission_date', 'projects.pto_approval_date'],
         'homeowners association' => ['projects.hoa', 'projects.hoa_approval_date'],
         'hoa' => ['projects.hoa', 'projects.hoa_approval_date', 'projects.hoa_approval_request_date'],
-        'authority having jurisdiction' => ['projects.ahj'],
-        'ahj' => ['projects.ahj'],
+        'authority having jurisdiction' => ['projects.ahj', 'projects.ahj_website_url'],
+        'ahj' => ['projects.ahj', 'projects.ahj_website_url'],
         'main panel upgrade' => ['projects.mpu_required', 'projects.mpu_install_date'],
         'mpu' => ['projects.mpu_required', 'projects.mpu_install_date'],
         'certificate of completion' => ['projects.coc_packet_mailed_out_date'],
@@ -85,9 +85,7 @@ class AiFieldDictionaryService
 
     private const GENERIC_COLUMNS = ['id', 'created_at', 'updated_at', 'deleted_at'];
 
-    public function __construct(private readonly AiPermissionService $aiPermissionService)
-    {
-    }
+    public function __construct(private readonly AiPermissionService $aiPermissionService) {}
 
     /**
      * True when the message reads like a request to explain a field/term/concept
@@ -123,7 +121,7 @@ class AiFieldDictionaryService
     public function explain(string $message, User $user): array
     {
         $glossary = $this->matchGlossary($message);
-        $columns  = $this->matchColumns($message, $user);
+        $columns = $this->matchColumns($message, $user);
 
         // Nothing concrete resolved → let the AI handle it with grounding.
         if ($glossary === [] && $columns['accessible'] === [] && $columns['restricted'] === []) {
@@ -138,8 +136,8 @@ class AiFieldDictionaryService
             return [
                 'handled' => true,
                 'message' => "The field **{$names}** is part of restricted financial data, so it isn't available for your role. "
-                    . 'If you believe you should have access, please contact your administrator. '
-                    . 'I can still help you with project, customer, task and ticket information.',
+                    .'If you believe you should have access, please contact your administrator. '
+                    .'I can still help you with project, customer, task and ticket information.',
             ];
         }
 
@@ -161,7 +159,7 @@ class AiFieldDictionaryService
 
         $matchedNames = array_merge(
             array_keys($glossary),
-            collect($columns['accessible'])->map(fn ($m) => $m['table'] . '.' . $m['column'])->all()
+            collect($columns['accessible'])->map(fn ($m) => $m['table'].'.'.$m['column'])->all()
         );
 
         return [
@@ -179,7 +177,7 @@ class AiFieldDictionaryService
     public function contextFor(string $message, User $user): string
     {
         $glossary = $this->matchGlossary($message);
-        $columns  = $this->matchColumns($message, $user)['accessible'];
+        $columns = $this->matchColumns($message, $user)['accessible'];
 
         if ($glossary === [] && $columns === []) {
             return '';
@@ -218,13 +216,13 @@ class AiFieldDictionaryService
 
         $closest = $this->matchColumns($message, $user)['accessible'];
         if ($closest !== []) {
-            $fields = collect($closest)->take(4)->map(fn ($m) => $m['column'] . ' (' . $m['table_label'] . ')')->implode(', ');
+            $fields = collect($closest)->take(4)->map(fn ($m) => $m['column'].' ('.$m['table_label'].')')->implode(', ');
             $lines[] = "Did you mean one of these fields? {$fields}.";
             $lines[] = '';
         }
 
         if ($modules !== []) {
-            $lines[] = 'You can ask me about: ' . collect($modules)->take(10)->implode(', ') . '.';
+            $lines[] = 'You can ask me about: '.collect($modules)->take(10)->implode(', ').'.';
         }
 
         $lines[] = 'For example: "show my active projects", "tickets pending by priority", or "what does the field meter_spot_result mean?".';
@@ -241,14 +239,14 @@ class AiFieldDictionaryService
      */
     private function matchGlossary(string $message): array
     {
-        $lower = ' ' . mb_strtolower($message) . ' ';
+        $lower = ' '.mb_strtolower($message).' ';
         $hits = [];
 
         foreach ((array) config('ai_field_dictionary.glossary', []) as $term => $definition) {
             $needle = mb_strtolower((string) $term);
 
             // Word-boundary-ish match so "pto" doesn't match inside "option".
-            if (preg_match('/(?<![a-z])' . preg_quote($needle, '/') . '(?![a-z])/u', $lower)) {
+            if (preg_match('/(?<![a-z])'.preg_quote($needle, '/').'(?![a-z])/u', $lower)) {
                 $hits[$term] = $definition;
             }
         }
@@ -264,7 +262,7 @@ class AiFieldDictionaryService
      */
     private function matchColumns(string $message, User $user): array
     {
-        $lower = ' ' . mb_strtolower($message) . ' ';
+        $lower = ' '.mb_strtolower($message).' ';
         $tables = (array) config('ai_field_dictionary.tables', []);
 
         $targets = [];      // "table.column" => true (dedupe)
@@ -273,7 +271,7 @@ class AiFieldDictionaryService
 
         // 1. Synonym hits → explicit targets.
         foreach (self::SYNONYMS as $phrase => $cols) {
-            if (str_contains($lower, ' ' . $phrase . ' ') || str_contains($lower, ' ' . $phrase)) {
+            if (str_contains($lower, ' '.$phrase.' ') || str_contains($lower, ' '.$phrase)) {
                 foreach ($cols as $target) {
                     $targets[$target] = true;
                 }
@@ -288,7 +286,7 @@ class AiFieldDictionaryService
                 }
 
                 foreach ($this->columnVariants($column) as $variant) {
-                    if (preg_match('/(?<![a-z])' . preg_quote($variant, '/') . '(?![a-z])/u', $lower)) {
+                    if (preg_match('/(?<![a-z])'.preg_quote($variant, '/').'(?![a-z])/u', $lower)) {
                         $targets["{$table}.{$column}"] = true;
                         break;
                     }
@@ -305,11 +303,11 @@ class AiFieldDictionaryService
             }
 
             $entry = [
-                'table'       => $table,
+                'table' => $table,
                 'table_label' => $meta['label'] ?? Str::headline($table),
-                'column'      => $column,
+                'column' => $column,
                 'description' => $meta['columns'][$column],
-                'values'      => (array) ($meta['value_maps'][$column] ?? []),
+                'values' => (array) ($meta['value_maps'][$column] ?? []),
             ];
 
             if ($this->aiPermissionService->canAccessColumn($user, $table, $column)) {

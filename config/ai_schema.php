@@ -39,6 +39,7 @@ return [
                 'hoa',
                 'hoa_phone_number',
                 'ahj',
+                'ahj_website_url',
                 'adders_approve_checkbox',
                 'mpu_required',
                 'meter_spot_requestd_date',
@@ -89,6 +90,7 @@ return [
                 'mpu_required',
                 'meter_spot_result',
                 'ahj',
+                'ahj_website_url',
             ],
             'relationships' => [
                 'customer' => [
@@ -1158,13 +1160,13 @@ return [
             ],
             'relationships' => [
                 'project' => [
-                    'table'       => 'projects',
-                    'local_key'   => 'subject_id',
+                    'table' => 'projects',
+                    'local_key' => 'subject_id',
                     'foreign_key' => 'id',
                 ],
                 'causer' => [
-                    'table'       => 'users',
-                    'local_key'   => 'causer_id',
+                    'table' => 'users',
+                    'local_key' => 'causer_id',
                     'foreign_key' => 'id',
                 ],
             ],

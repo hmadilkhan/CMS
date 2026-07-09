@@ -13,18 +13,27 @@ class EditFields extends Component
 {
     // PROJECT OBJECT
     public $project;
+
     public $ghost;
+
     public $production_requirement;
 
     // MAIN FIELDS
     public $projectId;
+
     public $departmentId;
 
     // FIRST DEPARTMENT
     public $utility_company;
+
     public $ntp_approval_date;
+
     public $hoa;
+
     public $ahj;
+
+    public $ahj_website_url;
+
     public $hoa_phone_number;
 
     // SECOND DEPARTMENT
@@ -32,49 +41,72 @@ class EditFields extends Component
 
     // THIRD DEPARTMENT
     public $adders_approve_checkbox;
+
     public $mpu_required;
+
     public $meter_spot_request_date;
+
     public $meter_spot_request_number;
+
     public $meter_spot_result;
+
     public $production_value_achieved;
 
     // FORTH DEPARTMENT
     public $permitting_submittion_date;
+
     public $actual_permit_fee;
+
     public $fire_review_required;
+
     public $permitting_approval_date;
+
     public $hoa_approval_request_date;
+
     public $hoa_approval_date;
 
     // FIFTH DEPARTMENT
     public $solar_install_date;
+
     public $battery_install_date;
+
     public $monitoring_link;
+
     // public $actual_labor_cost;
     // public $actual_material_cost;
     public $placards_ordered;
+
     public $placards_note;
+
     public $mpu_install_date;
 
     // SIXTH DEPARTMENT
     public $rough_inspection_date;
+
     public $final_inspection_date;
+
     public $inspection_approval_date;
+
     public $fire_inspection_date;
 
     // SEVENTH DEPARTMENT
     public $pto_submission_date;
+
     public $pto_approval_date;
 
     // EIGHT DEPARTMENT
     public $coc_packet_mailed_out_date;
 
     public $message;
+
     public $messageType;
 
     public $utilityCompanies;
+
     public $contractors;
+
     public $sub_contractor_id;
+
     public $sub_contractor_user_id;
 
     public function mount()
@@ -89,6 +121,7 @@ class EditFields extends Component
         $this->ntp_approval_date = $this->project->ntp_approval_date;
         $this->hoa = $this->project->hoa;
         $this->ahj = $this->project->ahj;
+        $this->ahj_website_url = $this->project->ahj_website_url;
         $this->hoa_phone_number = $this->project->hoa_phone_number;
 
         // SECOND DEPARTMENT
@@ -124,7 +157,7 @@ class EditFields extends Component
         $this->rough_inspection_date = $this->project->rough_inspection_date;
         $this->final_inspection_date = $this->project->final_inspection_date;
         $this->inspection_approval_date = $this->project->inspection_approval_date;
-        $this->fire_inspection_date  = $this->project->fire_inspection_date;
+        $this->fire_inspection_date = $this->project->fire_inspection_date;
 
         // SEVENTH DEPARTMENT
         $this->pto_submission_date = $this->project->pto_submission_date;
@@ -139,11 +172,10 @@ class EditFields extends Component
         $this->sub_contractor_user_id = $this->project->sub_contractor_user_id;
     }
 
-
     public function updateProjectFields()
     {
         $customMessages = [];
-        $project = $this->project; //Project::with('customer','customer.finances','customer.finances.finance','customer.finances.term','customer.finances.apr')->findOrFail($this->projectId);
+        $project = $this->project; // Project::with('customer','customer.finances','customer.finances.finance','customer.finances.term','customer.finances.apr')->findOrFail($this->projectId);
         $this->production_requirement = $project->customer->finances->finance->production_requirements;
 
         // if ($this->departmentId == 1) {
@@ -187,7 +219,6 @@ class EditFields extends Component
         //             return  $this->production_requirement == 1;
         //         }),
         //     ];
-
 
         //     $customMessages = [
         //         'adders_approve_checkbox.required_if' => 'The adders approve checkbox is required for this department.',
@@ -277,16 +308,17 @@ class EditFields extends Component
         $customerUpdateItems = [];
         if ($this->departmentId == 1) {
             $updateItems = array_merge($updateItems, [
-                "utility_company" => $this->utility_company,
-                "ntp_approval_date" => $this->ntp_approval_date,
-                "hoa" => $this->hoa,
-                "ahj" => $this->ahj,
-                "hoa_phone_number" => $this->hoa_phone_number,
+                'utility_company' => $this->utility_company,
+                'ntp_approval_date' => $this->ntp_approval_date,
+                'hoa' => $this->hoa,
+                'ahj' => $this->ahj,
+                'ahj_website_url' => $this->ahj_website_url,
+                'hoa_phone_number' => $this->hoa_phone_number,
             ]);
         }
         if ($this->departmentId == 2) {
             $updateItems = array_merge($updateItems, [
-                "site_survey_link" => $this->site_survey_link,
+                'site_survey_link' => $this->site_survey_link,
                 // "hoa" => $this->hoa,
                 // "hoa_phone_number" => $this->hoa_phone_number,
             ]);
@@ -303,81 +335,82 @@ class EditFields extends Component
                 //     $this->addError('production_value_achieved', "Sold Production Value is required.");
                 //     return;
                 // }
-                if ($sold_production_value != "" || $sold_production_value != null) {
+                if ($sold_production_value != '' || $sold_production_value != null) {
                     $calculatePercentage = ((($this->production_value_achieved / $sold_production_value) - 1) * 100);
 
                     if (bccomp($calculatePercentage, $negative, 2) <= 0 || bccomp($calculatePercentage, $positive, 2) >= 0) {
-                        $this->addError('production_value_achieved', "Calculated Percentage (" . number_format($calculatePercentage, 2) . "%) is exceeding the allowed variance range.");
+                        $this->addError('production_value_achieved', 'Calculated Percentage ('.number_format($calculatePercentage, 2).'%) is exceeding the allowed variance range.');
+
                         return;
                     }
                 }
             }
 
             $updateItems = array_merge($updateItems, [
-                "adders_approve_checkbox" => $this->adders_approve_checkbox,
-                "mpu_required" => $this->mpu_required,
-                "meter_spot_request_date" => $this->meter_spot_request_date,
-                "meter_spot_request_number" => $this->meter_spot_request_number,
+                'adders_approve_checkbox' => $this->adders_approve_checkbox,
+                'mpu_required' => $this->mpu_required,
+                'meter_spot_request_date' => $this->meter_spot_request_date,
+                'meter_spot_request_number' => $this->meter_spot_request_number,
             ], $this->production_requirement == 1 ? [
-                "production_value_achieved" => $this->production_value_achieved,
+                'production_value_achieved' => $this->production_value_achieved,
             ] : []);
         }
 
         if ($this->departmentId == 4) {
             $updateItems = array_merge($updateItems, [
-                "permitting_submittion_date" => $this->permitting_submittion_date,
-                "actual_permit_fee" => $this->actual_permit_fee,
-                "permitting_approval_date" => $this->permitting_approval_date,
-                "hoa_approval_request_date" => $this->hoa_approval_request_date,
-                "hoa_approval_date" => $this->hoa_approval_date,
-                "fire_review_required" => $this->fire_review_required,
+                'permitting_submittion_date' => $this->permitting_submittion_date,
+                'actual_permit_fee' => $this->actual_permit_fee,
+                'permitting_approval_date' => $this->permitting_approval_date,
+                'hoa_approval_request_date' => $this->hoa_approval_request_date,
+                'hoa_approval_date' => $this->hoa_approval_date,
+                'fire_review_required' => $this->fire_review_required,
             ]);
-            
+
         }
 
         if ($this->departmentId == 5) {
             $updateItems = array_merge($updateItems, [
-                "solar_install_date" => $this->solar_install_date,
+                'solar_install_date' => $this->solar_install_date,
                 // "actual_labor_cost" => $this->actual_labor_cost,
                 // "actual_material_cost" => $this->actual_material_cost,
                 // "placards_ordered" => $this->placards_ordered,
                 // "placards_note" => $this->placards_note,
-                "battery_install_date" => $this->battery_install_date,
-                "monitoring_link" => $this->monitoring_link,
-                "mpu_install_date" => $this->mpu_install_date,
-                "meter_spot_result" => $this->meter_spot_result,
-                "sub_contractor_user_id" => $this->sub_contractor_user_id,
+                'battery_install_date' => $this->battery_install_date,
+                'monitoring_link' => $this->monitoring_link,
+                'mpu_install_date' => $this->mpu_install_date,
+                'meter_spot_result' => $this->meter_spot_result,
+                'sub_contractor_user_id' => $this->sub_contractor_user_id,
             ]);
 
             $customerUpdateItems = array_merge($customerUpdateItems, [
-               "sub_contractor_id" => $this->sub_contractor_id,
+                'sub_contractor_id' => $this->sub_contractor_id,
             ]);
         }
 
         if ($this->departmentId == 6) {
             $updateItems = array_merge($updateItems, [
-                "rough_inspection_date" => $this->rough_inspection_date,
-                "final_inspection_date" => $this->final_inspection_date,
-                "inspection_approval_date" => $this->inspection_approval_date,
-                "fire_inspection_date" => $this->fire_inspection_date,
+                'rough_inspection_date' => $this->rough_inspection_date,
+                'final_inspection_date' => $this->final_inspection_date,
+                'inspection_approval_date' => $this->inspection_approval_date,
+                'fire_inspection_date' => $this->fire_inspection_date,
             ]);
         }
 
         if ($this->departmentId == 7) {
             $updateItems = array_merge($updateItems, [
-                "pto_submission_date" => $this->pto_submission_date,
-                "pto_approval_date" => $this->pto_approval_date,
+                'pto_submission_date' => $this->pto_submission_date,
+                'pto_approval_date' => $this->pto_approval_date,
             ]);
         }
 
         if ($this->departmentId == 8) {
             $updateItems = array_merge($updateItems, [
-                "coc_packet_mailed_out_date" => $this->coc_packet_mailed_out_date,
+                'coc_packet_mailed_out_date' => $this->coc_packet_mailed_out_date,
             ]);
         }
 
         try {
-            Project::where("id", $this->projectId)->update($updateItems);
+            Project::where('id', $this->projectId)->update($updateItems);
             if ($this->departmentId == 5) {
                 $this->project->customer()->update($customerUpdateItems);
             }
@@ -394,7 +427,7 @@ class EditFields extends Component
                 ->performedOn($project)
                 ->causedBy(auth()->user()) // Log who did the action
                 ->withProperties($updateItems)
-                ->setEvent("updated")
+                ->setEvent('updated')
                 ->log("{$username} updated the project fields: {$changedFields}.");
 
             $this->message = 'Data updated successfully!';

@@ -23,8 +23,7 @@ class AiQueryPlannerService
         private readonly AiSchemaService $aiSchemaService,
         private readonly AiPermissionService $aiPermissionService,
         private readonly AiProfiler $profiler
-    ) {
-    }
+    ) {}
 
     public function plan(string $question, User $user, ?array $previousContext = null, string $conversationMemory = ''): array
     {
@@ -262,7 +261,7 @@ class AiQueryPlannerService
                             'answer_type' => 'table',
                             'intent' => 'profitability_report_by_date_range',
                             'tables' => ['customers', 'projects', 'sales_partners', 'customer_finances'],
-                            'columns' => ['first_name','last_name', 'name','solar_install_date','contract_amount','dealer_fee_amount','redline_costs','adders','actual_material_cost','actual_labor_cost','actual_permit_fee','office_cost'],
+                            'columns' => ['first_name', 'last_name', 'name', 'solar_install_date', 'contract_amount', 'dealer_fee_amount', 'redline_costs', 'adders', 'actual_material_cost', 'actual_labor_cost', 'actual_permit_fee', 'office_cost'],
                             'group_by' => [],
                             'filters' => [
                                 [
@@ -356,7 +355,7 @@ class AiQueryPlannerService
 
         if (($plan['intent'] ?? 'unknown') === 'unknown' && $this->looksLikeCrmDataQuestion($question)) {
             $retryResponse = $this->openAiService->createJsonResponse(
-                $this->instructions() . "\n\nSECOND PASS: The previous plan was unsupported. Re-check allowed_schema and crm_module_hints carefully. If the question is about any allowed CRM module, return mode data_explorer with generic intent crm_list, crm_count, crm_group_summary, or crm_detail. Return unsupported only when no allowed table or column can answer it.",
+                $this->instructions()."\n\nSECOND PASS: The previous plan was unsupported. Re-check allowed_schema and crm_module_hints carefully. If the question is about any allowed CRM module, return mode data_explorer with generic intent crm_list, crm_count, crm_group_summary, or crm_detail. Return unsupported only when no allowed table or column can answer it.",
                 [
                     'question' => $question,
                     'conversation_memory' => $conversationMemory !== '' ? $conversationMemory : '(no prior conversation)',
@@ -378,7 +377,7 @@ class AiQueryPlannerService
                 $plan = $retryPlan;
             }
         }
-        
+
         // Store original question in plan for AI SQL generation
         $plan['original_question'] = $question;
 
@@ -451,18 +450,18 @@ class AiQueryPlannerService
             // back-reference when followed by a record noun, handled below, so we
             // don't hijack phrases like "created this month").
             '/\b(those|these|them|they|their)\b'
-            . '|\bthe same\b'
-            . '|\b(above|previous|last)\s+(result|results|query|one|ones|projects|records|data|list|report)\b'
+            .'|\bthe same\b'
+            .'|\b(above|previous|last)\s+(result|results|query|one|ones|projects|records|data|list|report)\b'
             // "this/those + (optional one word/number) + record noun":
             // matches "those projects", "this 4 projects", "these top tickets",
             // but not "this month" (month is not a record noun) or longer phrases.
-            . '|\b(this|that|these|those)\s+(?:\w+\s+){0,1}(project|projects|record|records|customer|customers|ticket|tickets|data|result|results|list|report|ones)\b'
+            .'|\b(this|that|these|those)\s+(?:\w+\s+){0,1}(project|projects|record|records|customer|customers|ticket|tickets|data|result|results|list|report|ones)\b'
             // Roman-Urdu demonstratives "in/un/inn/unn + (optional word) + noun":
             // "in projects", "un tickets", "inn 4 customers".
-            . '|\b(in|un|inn|unn)\s+(?:\w+\s+){0,1}(project|projects|record|records|customer|customers|ticket|tickets|log|logs)\b'
-            . '|\b(in|un)\s*(mein|me)\s+se\b'
+            .'|\b(in|un|inn|unn)\s+(?:\w+\s+){0,1}(project|projects|record|records|customer|customers|ticket|tickets|log|logs)\b'
+            .'|\b(in|un)\s*(mein|me)\s+se\b'
             // Roman-Urdu pronouns: inka/inki/inko/inhe/inhein (+ un- variants).
-            . '|\b(inka|inki|inko|inhe|inhein|unka|unki|unko|unhe|unhein)\b/u',
+            .'|\b(inka|inki|inko|inhe|inhein|unka|unki|unko|unhe|unhein)\b/u',
             $q
         );
     }
@@ -476,7 +475,7 @@ class AiQueryPlannerService
      */
     private function buildFollowUpPlan(string $question, array $previousContext): ?array
     {
-        $tables  = array_values(array_filter((array) ($previousContext['tables'] ?? [])));
+        $tables = array_values(array_filter((array) ($previousContext['tables'] ?? [])));
         $filters = array_values(array_filter((array) ($previousContext['filters'] ?? []), 'is_array'));
 
         if ($tables === []) {
@@ -491,29 +490,29 @@ class AiQueryPlannerService
         // and therefore cannot make a department/sub-department name filter ambiguous.
         if (in_array('projects', $tables, true)) {
             return [
-                'answer_type'             => 'table',
-                'intent'                  => 'crm_list',
-                'tables'                  => array_values(array_unique(array_merge($tables, ['customers']))),
-                'columns'                 => ['project_name', 'code', 'first_name', 'last_name'],
-                'group_by'                => [],
-                'filters'                 => $filters,
+                'answer_type' => 'table',
+                'intent' => 'crm_list',
+                'tables' => array_values(array_unique(array_merge($tables, ['customers']))),
+                'columns' => ['project_name', 'code', 'first_name', 'last_name'],
+                'group_by' => [],
+                'filters' => $filters,
                 'requires_finance_access' => $requiresFinance,
-                'sql'                     => null,
-                'fallback_message'        => null,
+                'sql' => null,
+                'fallback_message' => null,
             ];
         }
 
         // Generic follow-up → re-list the same entity with the same filters.
         return [
-            'answer_type'             => 'table',
-            'intent'                  => 'crm_list',
-            'tables'                  => $tables,
-            'columns'                 => array_values(array_filter((array) ($previousContext['columns'] ?? []))),
-            'group_by'                => [],
-            'filters'                 => $filters,
+            'answer_type' => 'table',
+            'intent' => 'crm_list',
+            'tables' => $tables,
+            'columns' => array_values(array_filter((array) ($previousContext['columns'] ?? []))),
+            'group_by' => [],
+            'filters' => $filters,
             'requires_finance_access' => $requiresFinance,
-            'sql'                     => null,
-            'fallback_message'        => null,
+            'sql' => null,
+            'fallback_message' => null,
         ];
     }
 
@@ -665,7 +664,7 @@ This is a solar energy installation company CRM. Use these term-to-column mappin
 - "permit approved" / "permit approval" → permitting_approval_date
 - "site survey" / "survey" → site_survey_link (or project date context)
 - "HOA" / "hoa approval" / "homeowners association" → hoa_approval_date, hoa_approval_request_date, hoa
-- "AHJ" / "authority having jurisdiction" → ahj
+- "AHJ" / "authority having jurisdiction" → ahj, ahj_website_url
 - "MPU" / "main panel upgrade" → mpu_required, mpu_install_date
 - "meter spot" / "meter" → meter_spot_requestd_date, meter_spot_result
 - "rough inspection" → rough_inspection_date
@@ -1322,13 +1321,13 @@ PROMPT;
 
             return [
                 'answer_type' => 'table',
-                'intent'      => $wantsSummary ? 'project_lane_summary' : 'project_lane_movement',
-                'tables'      => ['tasks', 'projects', 'departments'],
-                'columns'     => ['project_name', 'code', 'department', 'created_at', 'updated_at'],
-                'group_by'    => [],
-                'filters'     => [],
+                'intent' => $wantsSummary ? 'project_lane_summary' : 'project_lane_movement',
+                'tables' => ['tasks', 'projects', 'departments'],
+                'columns' => ['project_name', 'code', 'department', 'created_at', 'updated_at'],
+                'group_by' => [],
+                'filters' => [],
                 'requires_finance_access' => false,
-                'sql'             => null,
+                'sql' => null,
                 'fallback_message' => null,
             ];
         }
@@ -1411,17 +1410,17 @@ PROMPT;
         if ($mentionsProject && $isCountQuestion && $taskStatus !== null
             && ! $mentionsTicket && ! $mentionsAcceptance && ! $hasExtraQualifier) {
             return [
-                'answer_type'             => 'count',
-                'intent'                  => 'project_status_filter_count',
-                'tables'                  => ['projects', 'tasks'],
-                'columns'                 => ['id'],
-                'group_by'                => [],
-                'filters'                 => [
+                'answer_type' => 'count',
+                'intent' => 'project_status_filter_count',
+                'tables' => ['projects', 'tasks'],
+                'columns' => ['id'],
+                'group_by' => [],
+                'filters' => [
                     ['table' => 'tasks', 'column' => 'status', 'operator' => '=', 'value' => $taskStatus],
                 ],
                 'requires_finance_access' => false,
-                'sql'                     => null,
-                'fallback_message'        => null,
+                'sql' => null,
+                'fallback_message' => null,
             ];
         }
 
@@ -1496,22 +1495,22 @@ PROMPT;
             // "not in Archived department" / "exclude archived" → drop archived-dept projects.
             if (preg_match('/\bnot\s+(?:in\s+)?(?:the\s+)?archived?\b|exclude[ds]?\s+archived|without\s+archived|except\s+archived|non[- ]?archived/i', $normalized)) {
                 $statusFilter[] = [
-                    'table'    => 'projects',
-                    'column'   => 'department_id',
+                    'table' => 'projects',
+                    'column' => 'department_id',
                     'operator' => '!=',
-                    'value'    => (int) config('ai.schema.archived_department_id', 9),
+                    'value' => (int) config('ai.schema.archived_department_id', 9),
                 ];
             }
 
             return [
                 'answer_type' => $hasCondition ? 'count' : 'table',
-                'intent'      => 'project_acceptance_count',
-                'tables'      => ['projects', 'project_acceptances'],
-                'columns'     => ['id', 'project_id', 'status'],
-                'group_by'    => $hasCondition ? [] : ['status'],
-                'filters'     => $statusFilter,
+                'intent' => 'project_acceptance_count',
+                'tables' => ['projects', 'project_acceptances'],
+                'columns' => ['id', 'project_id', 'status'],
+                'group_by' => $hasCondition ? [] : ['status'],
+                'filters' => $statusFilter,
                 'requires_finance_access' => false,
-                'sql'          => null,
+                'sql' => null,
                 'fallback_message' => null,
             ];
         }
@@ -1721,13 +1720,13 @@ PROMPT;
 
             return [
                 'answer_type' => 'table',
-                'intent'      => 'project_acceptance_list',
-                'tables'      => ['projects', 'customers', 'project_acceptances'],
-                'columns'     => ['project_name', 'code', 'first_name', 'last_name', 'status', 'approved_date', 'reason', 'created_at', 'updated_at'],
-                'group_by'    => [],
-                'filters'     => [$acceptanceCondition],
+                'intent' => 'project_acceptance_list',
+                'tables' => ['projects', 'customers', 'project_acceptances'],
+                'columns' => ['project_name', 'code', 'first_name', 'last_name', 'status', 'approved_date', 'reason', 'created_at', 'updated_at'],
+                'group_by' => [],
+                'filters' => [$acceptanceCondition],
                 'requires_finance_access' => false,
-                'sql'          => null,
+                'sql' => null,
                 'fallback_message' => null,
             ];
         }
@@ -1785,7 +1784,7 @@ PROMPT;
         // for "how many"); only fall back to the grouped summary for "priority wise".
         if ($mentionsTicket && str_contains($normalized, 'priorit')) {
             $priorityValue = $this->extractTicketPriority($normalized);
-            $wantsSummary  = str_contains($normalized, 'wise')
+            $wantsSummary = str_contains($normalized, 'wise')
                 || str_contains($normalized, 'summary')
                 || str_contains($normalized, 'group')
                 || str_contains($normalized, 'breakdown');
@@ -1799,31 +1798,31 @@ PROMPT;
 
                 return [
                     'answer_type' => $isCount ? 'count' : 'table',
-                    'intent'      => $isCount ? 'crm_count' : 'crm_list',
-                    'tables'      => ['service_tickets'],
-                    'columns'     => $isCount ? ['id'] : ['subject', 'priority', 'status', 'created_at'],
-                    'group_by'    => [],
-                    'filters'     => [[
-                        'table'    => 'service_tickets',
-                        'column'   => 'priority',
+                    'intent' => $isCount ? 'crm_count' : 'crm_list',
+                    'tables' => ['service_tickets'],
+                    'columns' => $isCount ? ['id'] : ['subject', 'priority', 'status', 'created_at'],
+                    'group_by' => [],
+                    'filters' => [[
+                        'table' => 'service_tickets',
+                        'column' => 'priority',
                         'operator' => '=',
-                        'value'    => $priorityValue,
+                        'value' => $priorityValue,
                     ]],
                     'requires_finance_access' => false,
-                    'sql'          => null,
+                    'sql' => null,
                     'fallback_message' => null,
                 ];
             }
 
             return [
                 'answer_type' => 'table',
-                'intent'      => 'crm_group_summary',
-                'tables'      => ['service_tickets'],
-                'columns'     => ['priority'],
-                'group_by'    => ['priority'],
-                'filters'     => [],
+                'intent' => 'crm_group_summary',
+                'tables' => ['service_tickets'],
+                'columns' => ['priority'],
+                'group_by' => ['priority'],
+                'filters' => [],
                 'requires_finance_access' => false,
-                'sql'          => null,
+                'sql' => null,
                 'fallback_message' => null,
             ];
         }
@@ -1832,13 +1831,13 @@ PROMPT;
         if ($mentionsTicket && str_contains($normalized, 'status') && $mentionsSummary && ! $mentionsUser && ! $ticketUserName) {
             return [
                 'answer_type' => 'table',
-                'intent'      => 'crm_group_summary',
-                'tables'      => ['service_tickets'],
-                'columns'     => ['status'],
-                'group_by'    => ['status'],
-                'filters'     => [],
+                'intent' => 'crm_group_summary',
+                'tables' => ['service_tickets'],
+                'columns' => ['status'],
+                'group_by' => ['status'],
+                'filters' => [],
                 'requires_finance_access' => false,
-                'sql'          => null,
+                'sql' => null,
                 'fallback_message' => null,
             ];
         }
@@ -2100,7 +2099,7 @@ PROMPT;
         ];
 
         foreach ($stopWords as $word) {
-            $name = trim(preg_replace('/\b' . preg_quote($word, '/') . '\b/u', ' ', $name));
+            $name = trim(preg_replace('/\b'.preg_quote($word, '/').'\b/u', ' ', $name));
         }
 
         $name = trim(preg_replace('/\s+/u', ' ', $name));
@@ -2162,7 +2161,7 @@ PROMPT;
         ];
 
         foreach ($stopWords as $word) {
-            $name = trim(preg_replace('/\b' . preg_quote($word, '/') . '\b/u', ' ', $name));
+            $name = trim(preg_replace('/\b'.preg_quote($word, '/').'\b/u', ' ', $name));
         }
 
         $name = trim(preg_replace('/\s+/u', ' ', $name));
@@ -2216,7 +2215,7 @@ PROMPT;
             $stopWords = ['show', 'me', 'the', 'of', 'for', 'by', 'created', 'ticket', 'tickets', 'summary', 'status', 'wise'];
 
             foreach ($stopWords as $word) {
-                $name = trim(preg_replace('/\b' . preg_quote($word, '/') . '\b/u', ' ', $name));
+                $name = trim(preg_replace('/\b'.preg_quote($word, '/').'\b/u', ' ', $name));
             }
 
             $name = trim(preg_replace('/\s+/u', ' ', $name));
@@ -2263,11 +2262,11 @@ PROMPT;
         if (preg_match('/\b([A-Z][a-zA-Z]+-[A-Z][a-zA-Z]+)\b/', $question, $m)) {
             $name = $m[1];
 
-            if (preg_match('/' . preg_quote($name, '/') . '\s*-\s*([A-Za-z0-9][A-Za-z0-9. ]*?)(?=\s+(?:and|also|plus|or|with|task|tasks|finance|financing|detail|details|summary|project)\b|[,.?!]|$)/iu', $question, $m2)) {
+            if (preg_match('/'.preg_quote($name, '/').'\s*-\s*([A-Za-z0-9][A-Za-z0-9. ]*?)(?=\s+(?:and|also|plus|or|with|task|tasks|finance|financing|detail|details|summary|project)\b|[,.?!]|$)/iu', $question, $m2)) {
                 $suffix = trim($m2[1], " \t.,?!");
 
                 if ($suffix !== '') {
-                    $name .= ' - ' . $suffix;
+                    $name .= ' - '.$suffix;
                 }
             }
 
@@ -2288,7 +2287,7 @@ PROMPT;
     private function extractTicketPriority(string $normalized): ?string
     {
         foreach (['urgent' => 'Urgent', 'critical' => 'Critical', 'high' => 'High', 'medium' => 'Medium', 'low' => 'Low'] as $needle => $value) {
-            if (preg_match('/\b' . $needle . '\b/', $normalized)) {
+            if (preg_match('/\b'.$needle.'\b/', $normalized)) {
                 return $value;
             }
         }
@@ -2340,7 +2339,7 @@ PROMPT;
             $stopWords = ['show', 'me', 'the', 'of', 'project', 'summary', 'details', 'detail'];
 
             foreach ($stopWords as $word) {
-                $name = trim(preg_replace('/\b' . preg_quote($word, '/') . '\b/u', ' ', $name));
+                $name = trim(preg_replace('/\b'.preg_quote($word, '/').'\b/u', ' ', $name));
             }
 
             $name = trim(preg_replace('/\s+/u', ' ', $name));
@@ -2389,7 +2388,7 @@ PROMPT;
             ];
 
             foreach ($stopWords as $word) {
-                $name = trim(preg_replace('/\b' . preg_quote($word, '/') . '\b/u', ' ', $name));
+                $name = trim(preg_replace('/\b'.preg_quote($word, '/').'\b/u', ' ', $name));
             }
 
             $name = trim(preg_replace('/\s+/u', ' ', $name));
@@ -2454,8 +2453,8 @@ PROMPT;
         if (str_contains($q, 'cancelled') || str_contains($q, 'canceled')) {
             return [
                 'fallback' => 'Project Acceptance does not have a "cancelled" status. '
-                    . 'The available statuses are: **Pending** (not yet reviewed), **Approved**, or **Rejected**. '
-                    . 'Please try asking about one of those.',
+                    .'The available statuses are: **Pending** (not yet reviewed), **Approved**, or **Rejected**. '
+                    .'Please try asking about one of those.',
             ];
         }
 
@@ -2466,7 +2465,7 @@ PROMPT;
     {
         $normalized = preg_replace('/\b(\d{1,2})(st|nd|rd|th)\b/i', '$1', $question) ?: $question;
         $monthNames = 'jan(?:uary)?|feb(?:ruary)?|mar(?:ch)?|apr(?:il)?|may|jun(?:e)?|jul(?:y)?|aug(?:ust)?|sep(?:tember)?|oct(?:ober)?|nov(?:ember)?|dec(?:ember)?';
-        $datePattern = '/\b(?:\d{4}-\d{1,2}-\d{1,2}|\d{1,2}\s+(?:' . $monthNames . ')\s+\d{4}|(?:' . $monthNames . ')\s+\d{1,2},?\s+\d{4})\b/i';
+        $datePattern = '/\b(?:\d{4}-\d{1,2}-\d{1,2}|\d{1,2}\s+(?:'.$monthNames.')\s+\d{4}|(?:'.$monthNames.')\s+\d{1,2},?\s+\d{4})\b/i';
 
         preg_match_all($datePattern, $normalized, $matches);
         $dates = array_values($matches[0] ?? []);
@@ -2483,7 +2482,7 @@ PROMPT;
             }
         }
 
-        if (preg_match('/\b(' . $monthNames . ')\s+(\d{4})\b/i', $normalized, $monthMatch)) {
+        if (preg_match('/\b('.$monthNames.')\s+(\d{4})\b/i', $normalized, $monthMatch)) {
             $month = $this->parseDate($monthMatch[0]);
 
             if ($month) {

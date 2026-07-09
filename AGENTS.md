@@ -1,0 +1,294 @@
+# AGENTS.md
+
+Guidance for working in this repository. Read this first; it captures what is not obvious from a single file.
+
+## What this project is
+
+A **Laravel 10 CRM for a solar-energy installation company** (PHP 8.1+). It manages
+solar installation projects end-to-end: customers, projects moving through department
+"lanes", tasks, service tickets, site surveys, finance/profitability, sub-contractors
+and sales partners, an equipment catalogue (inverters/modules/batteries), an email/IMAP
+module, and reporting.
+
+Stack & key packages:
+- Laravel 10, **Livewire 3** (dashboards, reports, charts), Blade + **Tailwind/Alpine** (Vite).
+- **spatie/laravel-permission** (roles/permissions), **spatie/laravel-activitylog** (audit/`activity_log`).
+- `barryvdh/laravel-dompdf` + `setasign/fpdf` (PDFs), `maatwebsite/excel` (exports),
+  `webklex/laravel-imap` (email fetch), `spatie/laravel-google-calendar`, `lab404/laravel-impersonate`.
+- Frontend build: `npm run dev` / `npm run build` (Vite). Tests: PHPUnit (`phpunit.xml`), Dusk for browser.
+
+Conventions: PSR-4 `App\` → `app/`. Service classes in `app/Services`, Livewire in
+`app/Livewire`, Eloquent models in `app/Models`. Match surrounding code style; run
+`./vendor/bin/pint` before finishing PHP changes.
+
+---
+
+## ⭐ The AI Chatbot — "SolenAssist"
+
+This is the centerpiece feature and the most intricate subsystem. It is a **read-only,
+role-aware natural-language assistant** over the CRM database. Users ask questions in
+English or Roman-Urdu (or mixed) and get back text, tables, cards, or counts. It speaks
+the solar domain (NTP, PTO, HOA, AHJ, MPU, COC, meter spot, lanes, etc.).
+
+**Hard security invariants (never violate):**
+- **Read-only.** No INSERT/UPDATE/DELETE/DDL ever. Write-intent questions are rejected up front.
+- **OpenAI never executes SQL.** The model returns *structured JSON plans* or *candidate SQL strings*; Laravel validates, scopes, and executes them. Generated SQL is always SELECT-only, passed through validators, and `LIMIT`-capped (≤100).
+- **Everything is allowlisted** in `config/ai_schema.php` (59 tables) — tables, columns, searchable columns, relationships, sensitive columns, access rules. The model can only see/use what is listed.
+- **Role-based row + column scoping** is applied server-side before execution. Never widen a scoped user's visibility.
+- Secrets (password, remember_token, api_token, tokens, etc.) must never be added to `allowed_columns`.
+
+### Request flow (entry points)
+
+- Routes: `routes/web.php` lines ~77–84, gated by `can:SolenAssist` + `throttle:ai_chat`; `send`/`retry` also pass `ai.daily.limit` middleware (`App\Http\Middleware\AiDailyLimit`).
+- Controller: `app/Http/Controllers/AiChatController.php` — `index/show/send/rename/destroy/retry/feedback`. Thin; delegates to `AiChatService`.
+- Persistence: `ai_chats`, `ai_chat_messages`, `ai_query_logs`, `ai_query_feedback`, `ai_query_examples` (migrations `2026_05_26_*`, `2026_05_27_*`). Conversation continuity uses OpenAI's `previous_response_id` stored on the chat (`openai_response_id`).
+
+### Orchestration — `app/Services/AiChatService.php` (the brain)
+
+`send()` → `respondToMessage()` → optional **multi-intent decomposition** (`looksCompound`/`decompose` splits "X and also Y" into self-contained questions via the LLM) → `routeSingle()`.
+
+`routeSingle()` tries cheap deterministic fast-paths first (no/low OpenAI cost), falling through if a gate can't confidently resolve:
+1. **Help** request → static capabilities text.
+2. **Bare project code** ("1048", "SS-001") → project-detail summary.
+3. **Obvious greeting / social** → general chat (skip planner).
+4. **Field/term explanation** ("what is PTO?", "meter_spot_result kya hai?") → `AiFieldDictionaryService` (deterministic, permission-aware, no OpenAI cost).
+5. **Named project detail** ("summary of <project>") → `AiProjectLaneService::getProjectDetail` + per-department lane table.
+6. **"Who moved project X" / move history** → answered from `activity_log` directly (correct `subject_type` + code→id, which AI SQL gets wrong).
+7. Everything else → **`handleQueryPlan()`** (the full CRM pipeline).
+
+### The hybrid query pipeline — `handleQueryPlan()`
+
+```
+User message
+  → AiQueryPlannerService::plan()      (structured JSON plan via OpenAI sql_model)
+  → branch on plan.intent / plan.mode:
+       • project_lane_movement / _summary → AiProjectLaneService (named query, bypasses SQL pipeline)
+       • intent=unknown & mode=unsupported → general chat fallback
+       • mode != 'fixed_action' (data_explorer) → AI TEXT-TO-SQL first
+       • mode = 'fixed_action' (curated report) → STRUCTURED builder first
+  → AiAnswerFormatterService::format()  (LLM turns rows into a friendly answer)
+  → persist assistant message + AiQueryLog + AiQueryExample
+```
+
+Two execution engines, chosen by plan mode, with **fallbacks between them**:
+
+**A. Structured pipeline (curated / fixed_action reports):**
+`AiPlanValidatorService::validate` → `AiEntityResolverService::resolve` (resolves
+customer/project/department/user names; asks for clarification on multiple matches,
+not-found on none) → `AiSafeQueryBuilderService::build` (wraps `AiSqlBuilderService`)
+→ `AiSqlValidatorService::validate` (SELECT-only, blocked keywords) →
+`AiQueryExecutorService::execute` (runs on read-only connection).
+
+**B. Text-to-SQL (open-ended / data_explorer):** `AiTextToSqlService::generate` asks the
+strong model to write SQL constrained to the per-user allowed schema, then **one
+self-correcting retry** feeds the real DB error back (`regenerate`). Server enforces:
+soft-delete `deleted_at IS NULL`, `LIMIT`, SELECT-only, table/column allowlist, finance guard.
+
+**Cross-fallbacks (important for "why did it still answer" reasoning):**
+- data_explorer tries Text-to-SQL first; if it fails, falls to the structured builder.
+- structured pipeline falls to Text-to-SQL when: plan can't validate, entity resolution needs clarification, execution fails, **or** a curated query returns empty/`count=0` *for a full-access user* (likely a mis-route — gated to unscoped users so scoped roles never gain visibility).
+- If everything fails → graceful **general chat** (`handleGeneralChat`) using OpenAI with assistant instructions.
+
+### The planner — `app/Services/AiQueryPlannerService.php`
+
+- Big file (~2500 lines). Produces a **hybrid plan**: `mode` (`fixed_action | data_explorer | clarification_required | unsupported`), `confidence`, `intent`, `tables`, `columns`, `filters`, `group_by`, `requires_finance_access`, etc. JSON-schema-constrained (`jsonSchema()`).
+- Pre-OpenAI shortcuts: `isWriteOperationQuestion` (block writes), `isFollowUpReference` + `buildFollowUpPlan` (resolve "those projects", "in me se" against previous context), `inferKnownPlan` (keyword router for lane queries, user+role lists, named project/acceptance summaries, finance/profitability/transaction reports, date-range extraction).
+- `instructions()` holds the **domain prompt**: solar term→column mappings (e.g. "PTO" → `pto_submission_date`/`pto_approval_date`, "ghost" → Pre-Inspection Lane), module hints, activity-log rules, answer-type guide, security rules. If you change schema/columns, update these mappings too.
+- `sanitizePlan()` re-checks every table/column/filter against `AiSchemaService` + `AiPermissionService` and returns a permission-denied plan on violation. Confidence < 0.65 → rejected/clarification.
+- A second pass retries when the first plan is `unknown` but the question `looksLikeCrmDataQuestion`.
+
+### OpenAI client — `app/Services/OpenAiService.php`
+
+- Calls the **OpenAI Responses API** (`/v1/responses`), not chat completions.
+- `createResponse()` = free-form assistant (uses `buildAssistantInstructions` — the SolenAssist persona + full solar domain knowledge + per-role capability description). `createJsonResponse()` = JSON-schema-constrained output for planner/Text-to-SQL, with a retry-on-invalid-JSON loop and a model-downgrade fallback.
+- **Two models**: `services.openai.model` (default `gpt-4.1-mini`, cheap path) and `services.openai.sql_model` (`gpt-4.1`, used by planner + Text-to-SQL where accuracy matters). `sqlModel()` returns the latter.
+
+### Row scoping & permissions (security core)
+
+- `AiRowScopeService` — single source of truth for project row-access; **mirrors `App\Services\ProjectService::projectQuery()`** so the assistant scopes exactly like the rest of the CRM. `hasUnscopedAccess()` = Super Admin / Admin / finance-capable. Provides `applyProjectScope()` (lazy subqueries for the structured builder) and `projectScopeSql()`/`allowedProjectIds()` (inline IDs spliced into Text-to-SQL via the `__PROJECT_ACCESS_SCOPE__` token — scoped Text-to-SQL is refused if it isn't project-centric or omits the token).
+- `AiPermissionService` / `AiAccessPolicyService` — table/column/finance/profitability access by role, delegating to the CRM permission service.
+- Role tiers: **Super Admin/Admin** = all; **Finance** = finance + project/customer context; **Manager** (+ Sales/Sub-Contractor Manager) = department/team; **Employee/Sales Person/Sub-Contractor User** = own assigned projects/tickets/tasks.
+
+### Supporting services (`app/Services/Ai*`)
+
+- `AiSchemaService` — reads `config/ai_schema.php` (allowed tables/columns/relationships/access rules).
+- `AiPlanValidatorService`, `AiSqlValidatorService`, `AiSqlParserService` — validation layers (modes, blocked keywords, SELECT-only, no UNION/subquery-in-FROM).
+- `AiSafeQueryBuilderService` → `AiSqlBuilderService` / `AiGenericQueryBuilderService` / `AiDynamicSqlBuilderService` — build SQL from structured plans with scoping + soft-deletes.
+- `AiEntityResolverService` — name → record resolution + clarification/not-found.
+- `AiQueryExecutorService` — executes on the read-only connection, returns rows/row_count/errors.
+- `AiAnswerFormatterService` — LLM formats result rows into the user-facing message (text/table/card).
+- `AiFieldDictionaryService` — deterministic field/term explanations from `config/ai_field_dictionary.php`; also supplies `guidanceFor()`/`contextFor()` grounding.
+- `AiProjectLaneService` — named queries for lane movement, per-department totals, project detail, and move/activity history.
+
+### Config & env (AI)
+
+- `config/ai.php` — write-block toggle, schema knobs (`archived_department_id`, `max_query_limit`), `project_detail.lane_delay_days`, security limits (daily/per-minute caps, query timeout, cache TTL).
+- `config/ai_schema.php` — the table/column allowlist (security-critical; review on every migration).
+- `config/ai_field_dictionary.php` — human explanations of fields/terms.
+- `config/ai_eval.php` — evaluation cases.
+- `config/services.php` → `openai` block. Env: `OPENAI_API_KEY`, `OPENAI_MODEL`, `OPENAI_SQL_MODEL`, `OPENAI_MAX_OUTPUT_TOKENS`, `OPENAI_TIMEOUT`, `AI_READONLY_DB_CONNECTION`, plus `AI_*` limits. Production should use a **SELECT-only DB user** for `database.connections.ai_readonly`.
+
+### Tooling & docs
+
+- `php artisan ai:eval [--user=ID] [--show] [--keep]` — regression/coverage suite (`AiEvalCommand`, cases in `config/ai_eval.php`). Supports multi-turn chains so follow-up context is tested. **Run this after changing AI routing/planning.**
+- `php artisan ai:schema-audit [--json]` — audits `ai_schema` + `ai_field_dictionary` against the live DB (catches drift after migrations).
+- `php artisan ai:profile-report [--days=7] [--json]` — aggregates the Phase-0 profiling data (latency split, OpenAI round-trips/question, engine mix, fallback rate, repeat-question rate) from `ai_query_logs`. `ai:eval --profile` prints per-case timing. Profiling is pure observability, gated by `AI_PROFILING` (default off) → `config('ai.profiling.enabled')`; collected by `App\Services\AiProfiler` (request-scoped), recorded in `OpenAiService` (OpenAI ms/tokens) + `AiQueryExecutorService` (DB ms) + stage labels in planner/text-to-sql/formatter, persisted to `ai_query_logs` (`openai_calls`, `openai_ms`, `db_ms`, `engine`, `fallbacks`, `stage_timings`, `question_hash`). See `docs/ai-profiling-plan.md`.
+- Docs: `docs/ai-chat-configuration.md`, `docs/ai-query-planner.md`, `docs/ai-profiling-plan.md`. Frontend view: `resources/views/ai-chat/index.blade.php`.
+
+### When modifying the AI subsystem
+
+1. Adding a table/module → edit `config/ai_schema.php` (model, table, allowed/searchable columns, relationships, sensitive_columns, access_rule), then update planner `instructions()`/`moduleHints()` mappings, run `ai:schema-audit`, add an `ai_eval` case, run `ai:eval`.
+   - ⚠️ **Low-privilege roles use a hardcoded table list.** `AiPermissionService::canAccessTable` grants Manager-tier roles by `access_rule`, but **Employee / Sales Person / Sub-Contractor User** are gated by an explicit `in_array($table, [...])` allowlist (the `projects/tasks/service_tickets/...` block). A new `project_access` table is auto-visible to Managers but **NOT** to these roles unless you also add it to that hardcoded list. Update both places.
+2. Never add credential columns to `allowed_columns`; mark finance/profitability columns sensitive.
+3. Preserve the two invariants: *OpenAI never executes SQL* and *scoping is applied server-side*. Any new SQL path must go through the validators + `AiRowScopeService`.
+4. Keep English + Roman-Urdu handling — keyword lists and prompts are bilingual by design.
+
+### Performance, profiling & ongoing optimization work
+
+A **measure-first** optimization effort is underway. Read this before touching the AI latency path.
+
+**Phase 0 — Profiling (DONE, keep it).** Pure observability, gated by `AI_PROFILING` (default off) → `config('ai.profiling.enabled')`.
+- `App\Services\AiProfiler` (request-scoped, bound in `AppServiceProvider::register`) collects per-stage wall time, OpenAI round-trips/tokens, DB time, engine, fallbacks. No-op when the flag is off (≈ a boolean check).
+- Recorded by `OpenAiService` (OpenAI ms/tokens + `attempts`/`duration_ms` in its return), `AiQueryExecutorService` (DB ms), and one-line `stage('…')` labels in planner / text-to-sql / formatter. `AiChatService::routeSingle` resets per question, tags engine/fallbacks, and persists via `profileColumns()`.
+- Persisted to `ai_query_logs` columns: `openai_calls`, `openai_ms`, `db_ms`, `engine`, `fallbacks`, `stage_timings` (json), `question_hash`.
+- Inspect: `php artisan ai:eval --profile` (per-case timing) and `php artisan ai:profile-report [--days=N] [--limit=N]` (aggregate: p50/p95 latency, avg round-trips, OpenAI/DB/PHP split, engine mix, fallback + repeat-question rate, per-stage p50/p95). See `docs/ai-profiling-plan.md`.
+
+**Formatter fix + optimization (DONE).** Two linked changes — do not regress them:
+1. `OpenAiService::createJsonResponse` now guarantees the literal word "json" appears in the **input** whenever it falls back to `text.format` = `json_object` (no `json_schema` given). The Responses API 400s otherwise, and the `instructions` field does not satisfy it. This bug had made the answer formatter throw on *every* call, silently returning canned fallback text (e.g. "Here are the matching CRM results.") instead of real summaries.
+2. `AiAnswerFormatterService::format` is now **deterministic-first + trimmed**: rows/columns/cards always come from the executed query (`fallbackAnswer`, the same logic that passes eval); report intents (profitability/forecast/override/transaction) and empty results skip the LLM entirely; everything else gets ONE friendly sentence via `generateMessage`, which sends only `row_count` + ≤5 sample rows (never the full result set) under a strict `json_schema`. **Never send full result rows to the formatter again.** Removed dead methods: `instructions`, `normalizeAnswer`, `emptyAnswer`, `examples`.
+3. **Count value extraction is alias-agnostic** (`AiAnswerFormatterService::extractCountValue`). Count answers previously read the fixed key `$rows[0]['aggregate']` — fine for the structured builder (which aliases counts `aggregate`) but Text-to-SQL aliases them arbitrarily (`project_count`, `total_projects`, …), so the value came back 0 and the assistant wrongly said "no projects" for a non-zero count. The helper now reads known aliases, then any `*count*/*total*` column, then the first numeric value. This surfaced when the routing fix sent count questions to Text-to-SQL; counts now work regardless of engine/alias.
+
+**Measured baseline after the formatter optimization** (admin user, profiled eval, ~54 questions):
+- Total latency p50 ≈ 5.6s, p95 ≈ 18s. Avg OpenAI calls ≈ 1.4 (max 3) — *low*, so "merge planner+text-to-sql" is NOT justified.
+- Formatter p50 ≈ 2.0s / p95 ≈ 3.8s (was 9.3s / 81s before trimming). Reports skip it (0 calls).
+- **The bottleneck is now the planner** (`AiQueryPlannerService::plan`, gpt-4.1): p50 ≈ 3.65s, **p95 ≈ 11.7s**, big variance. Repeat-question rate ≈ 9%.
+
+**Guiding principle:** speed never at the cost of accuracy. Do NOT reintroduce brittle keyword→intent matching, keyword-based schema pruning, or a planner model downgrade unless `ai:eval` proves it safe. Every change: run `ai:eval` before/after.
+
+**Planner latency (DONE).** Was the top bottleneck after the formatter work (gpt-4.1, p50 ≈ 3.65s, p95 ≈ 11.7s).
+- **A — Plan cache (implemented):** `AiQueryPlannerService::plan` caches the sanitized plan for an identical normalized question, keyed by a permission signature (roles + finance + profitability access), gated to empty conversation memory and usable intents only. On a hit it skips the gpt-4.1 planner call and returns `syntheticOpenAiResponse()`. The plan holds no user-specific row data (scoping is applied downstream), so it never widens access. TTL: `config('ai.planner.cache_ttl')` (`AI_PLANNER_CACHE_TTL`, default 6h; 0 disables). Verified: repeated question planner ms ≈ 6000 → ≈ 10 (call skipped), 40/40 eval still pass.
+- **B — Few-shot trim (minimal):** removed one exact-duplicate `employee_department_list` example. Aggressive trimming was **declined** — the few-shot examples are a minority of the planner prompt (the 59-table schema dominates) and they aid accuracy; trimming them is not worth the accuracy risk, and schema pruning is off-limits.
+
+**Routing flake fix (DONE).** Root cause: for "details of all deal review department projects" the LLM planner returned `filters: []` (it never captured the department filter into the structured plan) AND non-deterministically set `mode` to `fixed_action` vs `data_explorer`. On `fixed_action` the question went structured-first, which only sees `plan['filters']` (empty) → returned all rows (100). On `data_explorer` it went Text-to-SQL first, which reads the raw question, writes the `WHERE departments.name='Deal Review'` itself → correct 4 rows.
+- **Fix:** in `AiQueryPlannerService::legacyPlanFromHybrid` the LLM-planner success branch now forces `'mode' => 'data_explorer'` (was the LLM's own mode). Every free-form LLM-planned question runs Text-to-SQL first; the structured builder remains the fallback. Curated `inferKnownPlan` reports keep `fixed_action` (tagged separately in `withHybridMetadata`), so curated reports are unaffected. This removes the non-determinism at its source and matches the project's principle (Text-to-SQL for free-form, structured/keyword only for curated). Verified: 6/6 runs now return 4 rows via text_to_sql (was intermittently 100).
+
+**Text-to-SQL domain grounding (DONE).** `AiTextToSqlService::domainGrounding()` injects real values for the CRM's two most ambiguous query terms (cached 30 min via `distinctColumn()`, non-sensitive reference data):
+- **department vs sub_department** — text-to-sql looked for the "Deal Review" DEPARTMENT inside `sub_departments` → 0 (or ignored it → 372). Grounding lists `departments.name` / `sub_departments.name` values and says to match a named lane against whichever table contains it. "Deal Review" is a department. Verified: returns 4 consistently.
+- **status** — "projects by status" was grouping by `departments.name` aliased as "status" (showing lanes, not statuses). Grounding states a project has no status column; its status is `tasks.status` (In-Progress/Hold/Completed/Cancelled) joined `tasks.project_id = projects.id AND tasks.department_id = projects.department_id` (current-department task = one per project), and to NEVER alias a department as status. Verified: "Projects by status" / "projects status wise" now return real statuses.
+
+These groundings are needed because the routing fix sends free-form questions to Text-to-SQL, which must know domain nuances the structured planner examples used to encode. Add new grounding here when a domain term is consistently misread.
+
+**UX + caching enhancements (DONE).** Four additive features, each verified:
+1. **Text-to-SQL result caching** — `AiTextToSqlService::generate` caches generated SQL keyed by question_hash + permission signature, **only for unscoped (admin/finance) users** (scoped users splice user-specific project IDs into SQL → never cached), gated to empty conversation memory. `config('ai.text_to_sql.cache_ttl')` (`AI_TEXT_TO_SQL_CACHE_TTL`, 6h). Combined with the plan cache, a repeated admin question can run with 0 OpenAI calls. Verified.
+2. **CSV / PDF export** — `AiChatController::export` (route `ai-chat.export`, `GET /ai-chat/messages/{message}/export/{format}` where format∈csv,pdf). Reads the already-stored, already-scoped answer rows from message metadata (no query re-run → can't leak more than the user saw). CSV via `streamDownload`+`fputcsv` (quoting safe), PDF via dompdf `ai-chat.export` view. Buttons in the assistant action bar (Blade + JS) when the answer is a table with rows.
+3. **Follow-up chips** — `AiAnswerFormatterService::generateMessage` now returns `{message, suggestions[]}` from the SAME single LLM call (no extra round-trip); suggestions stored on `answer['suggestions']`, rendered as clickable `.followup-chip` buttons (Blade + JS, delegated click → fills input + submits). Only on non-empty, non-report answers.
+4. **Inline charts** — grouped/aggregate table answers (one numeric + one label column, 2–30 rows, "Total" row excluded) render an ApexCharts bar chart. ApexCharts bundle added to `layouts.ai-chat`. Chart data passed via a nested `<script type="application/json">` (JSON_HEX_* flags) to avoid attribute-quoting bugs; `initCharts()` is fully defensive (removes the mount on any non-chartable/malformed/error case, never breaks the page). Works for both server-rendered (on load) and freshly-appended messages.
+
+Note: the ai-chat view renders messages in BOTH Blade (initial load) and JS (`appendMessage`/`renderAnswer`, new messages) — any answer-rendering change must be made in both, kept consistent. No Tailwind rebuild needed (reused existing classes).
+
+**All optimization + enhancement items are DONE** (profiling, formatter fix+optimize+count-extraction, planner plan-cache, routing flake, Text-to-SQL department grounding + result caching, CSV/PDF export, follow-up chips, inline charts). Deliberately NOT done (by choice): streaming responses, and planner schema-pruning / model-downgrade (accuracy risk). Targeted fixes were verified individually; run a full `php artisan ai:eval` after OpenAI quota resets to confirm 40/40. Re-run `ai:eval` after any AI change to confirm no regression.
+
+### QA round — bug fixes & hardening (DONE, keep these)
+
+A QA pass (scan + live probing as different roles) found and fixed the following. All verified with `php artisan ai:eval` → **40/40**, and individually re-probed.
+
+**Security (the big one):**
+- **Text-to-SQL column allowlist (was missing).** `AiTextToSqlService::run()` validated tables but NOT columns — the "everything is allowlisted: columns" invariant held only for the structured engine, yet Text-to-SQL is the *primary* engine after the routing flake fix. Added `AiTextToSqlService::validateColumns()`: every qualified `table.column` ref must pass `AiPermissionService::canAccessColumn` (blocks secrets + finance/profitability cols a user can't see), plus a `SECRET_COLUMN_DENYLIST` backstop for unqualified credential columns. Verified the existing schema keeps `id`/FK columns in `allowed_columns`, so the check never false-rejects valid joins.
+- **No table aliases in Text-to-SQL** (`buildInstructions` rule). Aliases broke the server-side soft-delete + row-scope injection (which use real table names). Outer/main tables must use full names; aliases allowed ONLY inside correlated subqueries (needed for the latest-task pattern below). `AI_READONLY_DB_CONNECTION=ai_readonly` is already set in `.env` (write-protection is real, not just regex).
+
+**Accuracy bugs (all rooted in project↔task one-to-many + count-vs-list routing):**
+- **Status counts inflated** ("projects by status" summed 419 > 372 total). A project has many tasks, so a plain `JOIN tasks` over-counts. Fixed BOTH engines to pin to each project's LATEST task: structured `AiSqlBuilderService` (`project_status_count` + `project_status_summary`) adds `whereRaw('tasks.id = (select max(lt.id) from tasks as lt where lt.project_id = projects.id and lt.deleted_at is null)')`; Text-to-SQL `domainGrounding()` (status section, cache key bumped to `_v3`) instructs the same latest-task subquery. **Canonical rule: a project's status = the status of its latest (`MAX(id)`) task.**
+- **Duplicate rows in stage lists** ("projects in permitting stage" showed each project twice). Model spuriously joined `tasks`. Grounding now says: to LIST/COUNT projects in a lane/stage, filter `projects.department_id → departments.name` directly, do NOT join `tasks` (use `DISTINCT`/`COUNT(DISTINCT projects.id)` if you must).
+- **"Top N highest/lowest" ignored sort+limit** (curated `project_financing_summary` returned 100 unsorted). Added a ranking guard in `AiQueryPlannerService::inferKnownPlan`: finance questions containing a superlative (`highest|lowest|top|most|…`) skip the curated report and fall to Text-to-SQL (which writes `ORDER BY … LIMIT N`).
+- **"How many <status> projects" returned a capped list framed as a count** (said "100" when real = 319). Added `project_status_filter_count` intent: a tightly-guarded `inferKnownPlan` branch (only fires on a bare "how many/kitne + project + task-status"; defers anything with a date/department/location/milestone qualifier to the LLM/TTS) → structured builder does `count(*)` with the latest-task pin + `tasks.status` filter.
+
+**Multi-intent decompose (flaky → deterministic):** `AiChatService::decompose()` got NO conversation context, so split parts kept an unresolved "this project" and relied on probabilistic downstream resolution (≈50% flaky). Now `respondToMessage` passes `buildConversationMemory(...)` into `decompose()`, and the prompt resolves references to the concrete subject (real project name) up front → each sub-question is self-contained → deterministic.
+
+**Sibling-project precision (named follow-up leaked siblings):** "financing details of this project" for "Yunjiao-Guan - 61st Ave" returned 3 rows — the customer "Yunjiao-Guan" has 3 projects (`… - 61st Ave`, `… - Burlwood`, `… - Amador St`) and the filter was a loose `project_name LIKE '%Yunjiao-Guan%'`. Two truncation points fixed: (1) `AiQueryPlannerService::extractProjectReferenceFilter` now also captures a trailing ` - <address/unit>` segment after the hyphenated name (so the filter targets the SPECIFIC project, not every sibling), trimming trailing punctuation; (2) `decompose()`'s prompt now keeps the EXACT, COMPLETE name including the address/unit suffix (never shortens "Yunjiao-Guan - 61st Ave" to "Yunjiao-Guan"). Verified: financing follow-up now returns the single asked project; 40/40 eval. (A bare customer name like just "Yunjiao-Guan" still legitimately matches all siblings — that's intended.)
+
+**UI rendering (`resources/views/ai-chat/index.blade.php`):**
+- **Multi-intent answers dropped in the UI.** The send (and retry) JS rendered only `data.messages[last]`, so a compound message's earlier reply (e.g. financing) was in the DB but never shown — only the last part (tasks). Added `appendNewAssistantMessages()` which renders EVERY assistant reply after the latest user message. (Blade initial-load already rendered all messages, so this only affected live append.)
+- **Wide single-entity results made readable.** A 1–3 row × >5 column result (e.g. one project's financing) rendered as a horizontally-scrolling table. Now rendered as stacked label/value cards via `renderRecordCards()` (JS) + matching Blade branch; the auto-chart is suppressed for these. Kept JS + Blade consistent (per the note above).
+
+**Gotchas / learnings (important):**
+- **`php artisan view:cache` does NOT lint the compiled PHP** — it only does the Blade→PHP transform, so a structural bug that produces invalid PHP still reports "cached successfully". To actually validate a Blade change, compile then `php -l` the files in `storage/framework/views/*.php`.
+- **Avoid `@php … @endphp` blocks containing a `//` comment** — it breaks Blade's `@php`→`<?php` conversion (opening `@php` stays literal), cascading into "unexpected endif". Prefer inline `@if(<expr>)` conditions and `{{-- --}}` Blade comments.
+- **Role reality:** `Employee` (and other scoped roles) have NO finance access, so financing/contract-amount answers are correctly blocked for them — "only tasks showed" is by-design scoping, not a bug. Finance data needs Admin/Super Admin/Finance.
+- **The eval asserts the LAST assistant message of a step**, so a multi-intent test's final clause must reference data that exists for the test project (Yunjiao-Guan has financing + tasks but no logs).
+- Added **`php artisan ai:eval --filter="<text>"`** to run only cases whose label contains the text (fast iteration on one case).
+- **phpMyAdmin shows ALL rows including soft-deleted ones** (`deleted_at IS NOT NULL`). The app always filters `deleted_at IS NULL`. When testing a "missing data" scenario by manually setting a value to NULL in phpMyAdmin, first confirm the row is not soft-deleted — otherwise the app correctly excludes it and returns 0 results, which looks like a bug but isn't.
+- **0-row result ≠ query failure.** When all records have the requested field filled, a "missing X" query correctly returns 0 rows. Always verify actual DB data before assuming the SQL is wrong.
+
+### Second QA pass — routing & filter bugs (DONE, keep these)
+
+**Financing method grouping mis-routed (DONE):**
+- `inferKnownPlan` in `AiQueryPlannerService` was too greedy: any question with both "project" + "financing" keywords was routed to the curated `project_financing_summary` flat-list report, even when the user asked for a *grouped* breakdown ("Show projects as per Financing methods").
+- **Fix:** added `$wantsFinanceGrouping` detection — regex for `method(s)`, `option wise`, `method wise`, `finance/financing wise`, `finance/financing type`, or `per/by financing` skips the curated route and falls to Text-to-SQL, which writes the correct `GROUP BY finance_options.name` query.
+- **Domain grounding added:** `AiTextToSqlService::domainGrounding()` now includes a "Financing method" section (cache key bumped to `_v4`): lists real `finance_options.name` values, the join path `projects → customers → customer_finances → finance_options`, and a canonical `GROUP BY` example with `COUNT(DISTINCT projects.id)`.
+
+**NULL / missing-data filter bug (DONE) — affects ALL "where X is missing" questions:**
+- `AiGenericQueryBuilderService::applyFilters` (handles `crm_list`, `crm_count`, `crm_group_summary` intents) had no null handling: `{operator:"=", value:null}` fell to the `default` match arm → `where('phone', '=', null)` → SQL `WHERE phone = NULL` (always false in MySQL). `AiSqlBuilderService` had the correct `whereNull` logic but it was never ported to the Generic builder.
+- **Fix (3 files):**
+  1. `AiGenericQueryBuilderService::applyFilters` — added explicit null guards BEFORE the match block: `is_null` operator or `= null` value → `whereNull`; `is_not_null` or `!= null` → `whereNotNull`.
+  2. `AiSqlBuilderService::applyFilters` — same guards extended to also handle the new explicit `is_null`/`is_not_null` operators.
+  3. `AiQueryPlannerService::jsonSchema()` — added `is_null` and `is_not_null` to the filter operator enum (was only `=, !=, >, >=, <, <=, like, in, between`). Added a **NULL / MISSING DATA FILTERS** instructions block with concrete examples so the LLM knows to use `operator:"is_null"` for "missing/empty/not filled" questions.
+
+**0-row result showed misleading "Did you mean these fields?" guidance (DONE):**
+- `AiChatService::handleQueryPlan` appended `AiFieldDictionaryService::guidanceFor()` to EVERY 0-row result. `guidanceFor()` scans the question for column names — so "Customers whose phone is missing" returned "Did you mean one of these fields? phone (Customers), phone (Employees)…" even though the query ran perfectly and correctly found 0 matches.
+- `guidanceFor()` is for intent-unknown failures (line ~630), NOT for successful queries with no matching data.
+- **Fix:** removed `guidanceFor()` from the 0-row branch (line ~639). A clean, honest message is shown instead: *"No records found matching your request. The data may not exist yet, or try adjusting your filters."*
+
+**Eval suite now at 44 cases** (was 40 → 41 after financing fix → 43 after null fixes → 44 after short-prompt variant). Run with `php artisan ai:eval --filter="<text>"` for a single case.
+
+---
+
+### Third QA pass — security & correctness hardening (DONE, keep these)
+
+A focused QA + verification pass (commit `a9fed1e`) over the chatbot's controller / middleware / parser layers. Each finding was confirmed against the live code before fixing; two reported issues were retracted on verification (see notes).
+
+**Security:**
+- **CSV / formula injection in export (`AiChatController::export`).** The CSV stream wrote raw DB values via `fputcsv` with no escaping, so a cell beginning `=`, `+`, `-`, `@`, tab or CR would execute as a formula when the file is opened in Excel/Sheets (data exfiltration / DDE). **Fix:** a `$sanitize` closure prefixes a single quote `'` to any such value (applied to headers and rows). The PDF path is unaffected (dompdf renders, doesn't evaluate formulas).
+- **Daily-limit race condition (`AiDailyLimit`).** The cap was a read-then-write (`Cache::get` → check → `Cache::put`), a TOCTOU race: two concurrent requests both read the same count and slip past the limit. **Fix:** wrap the check-increment in an atomic per-user `Cache::lock(...)->block(3)`, released BEFORE `$next()` (so it never serialises the slow OpenAI call); fail-open on `LockTimeoutException`. Verified the `file` cache driver implements `LockProvider`, so locks are real here. NOTE: a plain `Cache::increment()` is NOT atomic on the file driver — the lock is required.
+- **Text-to-SQL parser gaps (`AiSqlParserService`).** (1) `hasMultipleStatements` checked the RAW sql for `;`, so a legit value like `'Smith; Inc'` was wrongly rejected as multi-statement — now strips string literals first (matching the keyword-check above it). (2) Added `intersect` / `except` to `BLOCKED_KEYWORDS` (MySQL 8 set operators; low risk, completeness).
+
+**Correctness / UX:**
+- **`handleHelpRequest` had no transaction (`AiChatService`).** Its three writes (message + log update + chat update) weren't wrapped, unlike every sibling handler — a mid-way failure could leave the message stored while the query log stayed `pending`. Now wrapped in `DB::transaction`.
+- **Field-dictionary guidance on entity clarification (`AiChatService::handleQueryPlan`).** When entity resolution asks the user to disambiguate (`clarification_required` / `not_found`, intent forced to `unknown`), `guidanceFor()` was still appending "Did you mean these fields?" noise. Now skipped for those two modes; still shown for genuinely unrecognised questions.
+- **Cleanups:** removed the redundant `' and also '` compound cue (already a superset of `' also '` in `looksCompound`); removed the `exists:ai_chats,id` rule on `send` (it 422'd only when absent, leaking whether another user's chat id exists — `findUserChat` already 404s on missing OR unowned, so both cases are now a uniform 404).
+- **Docs:** removed stray `</content>` / `</invoke>` tool-call tags accidentally committed at the end of this file; added the low-privilege hardcoded-table-list note under "When modifying the AI subsystem".
+
+**Retracted on verification (NOT bugs):** (a) "`profit_margin` formatted as currency" — no bare `profit_margin` column exists; the only one is `profit_margin_percent`, correctly caught by `isPercentColumn` first. (b) The daily-limit fix was initially proposed as `Cache::increment()` — corrected to a lock after confirming the file driver's increment isn't atomic.
+
+These fixes are controller/middleware/parser-level and don't change question→answer behaviour, so no new `ai_eval` cases were added (only Issue 8 alters a clarification message). `php -l` clean on all touched files.
+
+**Adders-on-a-project + loose name matching (DONE).** Reported bug: "show me the adders of project Yunjiao Guan 61st Ave" returned 0 rows even though the project (id 272) has a `customer_adder`. Two root causes, both in `AiTextToSqlService`:
+- **Strict single-phrase name match.** Text-to-SQL wrote `project_name LIKE '%Yunjiao Guan 61st Ave%'`, but the stored name is `Yunjiao-Guan - 61st Ave` (hyphens + ` - ` suffix) → no match. **Fix:** `buildInstructions()` now tells the model to match a project/customer name **token-wise** — split into distinctive tokens and AND one `LIKE` per token (`project_name LIKE '%Yunjiao%' AND project_name LIKE '%61st%'`), skipping filler (the/of/project/ave/st). General fix — helps every name query, not just adders.
+- **Wrong adders table.** A project's adders live in `customer_adders` (the deal's adders + `amount`), reached via `projects → customers → customer_adders → adder_types/sub_types/units`; the `adders` table is the price CATALOGUE. **Fix:** new "Adders" section in `domainGrounding()` (cache key bumped `_v4` → `_v5`) with the join path + example. Verified: `ai:eval --filter="adders"` returns the real deal adder (Tesla Expansion Battery, $8,250). **Remember to `cache:clear` after a grounding change** — the previous (wrong) SQL was held in the Text-to-SQL result cache.
+
+**Estimated & Actual Project Costs — deterministic "Financial Ledger" handler (DONE).** Reported bug: "Show me the Estimated & Actual Project Costs of project X" returned wrong figures. Root cause: those values come from the **`App\Livewire\Project\ProjectCost`** panel, where the **estimated** material/labor are COMPUTED live from the catalogue + customer specs — NOT stored columns. (The `pre_estimated_material_costs` / `pre_estimated_labor_costs` columns are never written — those `update()` lines are commented out — so Text-to-SQL reading them returns `$0.00`.) Text-to-SQL structurally cannot reproduce this. **Fix:** a deterministic handler that mirrors the Livewire formula exactly:
+- `AiProjectLaneService::getProjectCostLedger()` + `computeCostLedger()` reuse the SAME Eloquent relations (`customer->finances/module/inverter->invertertyperates`, first `LaborCost`) as `ProjectCost`, null-safe. Internal Contract = `redline_costs + adders + holdback_amount`; Est Material = `panel_qty × module.internal_module_cost + inverter_rate.internal_base_cost`; Est Labor = `labor.cost × panel_qty + inverter_rate.internal_labor_cost`; Est Permit = `pre_estimated_permit_costs`; Actuals = `actual_material_cost/labor_cost/permit_fee`; Profit = Internal Contract − (material+labor+permit).
+- Routed by `AiChatService::isProjectCostLedgerRequest()` / `handleProjectCostLedger()` (gate 2.4 in `routeSingle`, BEFORE the planner). The project name is extracted AFTER stripping cost vocabulary (estimated/actual/cost/…), else those words pollute the search and resolve nothing. Token-wise name matching via `AiProjectLaneService::nameTokens()`.
+- **Permission-gated identically to the CRM panel** (`@can('Pre and Post Project Cost')`). NOTE: regular **Admin does NOT have this permission — only Super Admin does**, so the default `ai:eval` admin (#102) is correctly DENIED. The committed eval case asserts the deny (security guard: no internal-cost leak, no `$0.00` Text-to-SQL fall-through); the success path is verified as Super Admin: `ai:eval --filter="Estimated" --user=1` → 6-row table, Internal Contract $46,335.50, Est profit $15,714.70 (33.92%).
+
+---
+
+## General development notes
+
+- Email/IMAP: `EmailFetchService`, `app/Console/Commands/FetchEmails.php` / `FetchAllEmails.php`, jobs in `app/Jobs`.
+- Reporting/dashboards: `app/Livewire/*` (DynamicReportBuilder, charts, role dashboards).
+- Deploy helpers: `deploy.sh` / `rollback.sh`. Activity audit via spatie activitylog (`activity_log` table).
+- Tests live in `tests/` (PHPUnit + Dusk). The repo is on branch `main`.
+
+### ⚠️ Deployment gotcha — server shows old UI after `git push`
+
+`deploy.sh` only runs `git pull`. It does **NOT** clear compiled Blade views or rebuild JS/CSS assets. After any push that touches `.blade.php` files or frontend JS, the server will keep serving stale compiled views and stale JS bundles — so the new UI renders correctly on local but shows the old layout on production.
+
+**After every push that touches Blade views or frontend JS, run on the server:**
+```bash
+php artisan view:clear
+php artisan cache:clear
+php artisan config:clear
+npm run build        # only needed if JS/CSS changed
+```
+
+Root cause: shared Hostinger hosting — no CI/CD pipeline, no post-receive hook. Must be run manually via the hosting panel's terminal or SSH after each deploy. Consider adding these commands to `deploy.sh`.
