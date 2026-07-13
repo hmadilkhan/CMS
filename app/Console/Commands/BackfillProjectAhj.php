@@ -14,7 +14,9 @@ class BackfillProjectAhj extends Command
 
     public function handle(AhjRegistryService $ahjRegistry): int
     {
-        $query = Project::with('customer')->whereHas('customer');
+        $query = Project::with('customer')
+            ->whereHas('customer')
+            ->where('department_id', '!=', 9);
 
         if (! $this->option('overwrite')) {
             $query->where(function ($query) {
