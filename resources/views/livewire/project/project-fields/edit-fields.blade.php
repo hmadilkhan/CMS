@@ -49,11 +49,8 @@
                     @enderror
                 </div>
                 <div class="col-sm-4 mb-3 ">
-                    <label for="ahj" class="form-label" id="requiredfiles">AHJ</label>
-                    <input class="form-control" type="text" id="ahj" name="ahj" wire:model="ahj">
-                    @error('ahj')
-                        <div id="ahj_message" class="text-danger message mt-2">{{ $message }}</div>
-                    @enderror
+                    <label for="ahj" class="form-label">AHJ</label>
+                    <input disabled class="form-control" type="text" id="ahj" name="ahj" value="{{ $ahj }}">
                 </div>
                 @if ($hoa == 'yes')
                     <div class="col-sm-4 mb-3" id="hoa_select">

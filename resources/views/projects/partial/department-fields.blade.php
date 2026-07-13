@@ -28,20 +28,8 @@
         @enderror
     </div>
     <div class="col-sm-3 mb-3 ">
-        <label for="ahj" class="form-label" id="requiredfiles">AHJ</label>
-        <input class="form-control" type="text" id="ahj" name="ahj" value="{{$project->ahj}}">
-        @error("ahj")
-        <div id="ahj_message" class="text-danger message mt-2">{{$message}}</div>
-        @enderror
-        <div id="ahj_message" class="text-danger message mt-2"></div>
-    </div>
-    <div class="col-sm-3 mb-3 ">
-        <label for="ahj_website_url" class="form-label">AHJ Website URL</label>
-        <input class="form-control" type="url" id="ahj_website_url" name="ahj_website_url" value="{{$project->ahj_website_url}}">
-        @error("ahj_website_url")
-        <div id="ahj_website_url_message" class="text-danger message mt-2">{{$message}}</div>
-        @enderror
-        <div id="ahj_website_url_message" class="text-danger message mt-2"></div>
+        <label for="ahj" class="form-label">AHJ</label>
+        <input disabled class="form-control" type="text" id="ahj" value="{{$project->ahj}}">
     </div>
     <div class="col-sm-3 mb-3" id="hoa_select" style="display:none;">
         <label for="hoa_phone_number" class="form-label" id="requiredfiles">Phone Number Field</label>

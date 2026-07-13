@@ -307,12 +307,11 @@ class EditFields extends Component
         $updateItems = [];
         $customerUpdateItems = [];
         if ($this->departmentId == 1) {
+            // AHJ / AHJ website URL are auto-fetched and not user-editable.
             $updateItems = array_merge($updateItems, [
                 'utility_company' => $this->utility_company,
                 'ntp_approval_date' => $this->ntp_approval_date,
                 'hoa' => $this->hoa,
-                'ahj' => $this->ahj,
-                'ahj_website_url' => $this->ahj_website_url,
                 'hoa_phone_number' => $this->hoa_phone_number,
             ]);
         }
