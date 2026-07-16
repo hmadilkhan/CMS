@@ -261,8 +261,18 @@ $("#adders").change(function() {
             },
             dataType: 'json',
             success: function(response) {
-                $("#uom").val(response.adders.adder_unit_id).change();
-                $("#amount").val(response.adders.price);
+                let unitId = response.adders.adder_unit_id;
+                let price = parseFloat(response.adders.price) || 0;
+                let amount = price;
+                if (unitId == 3) {
+                    let moduleQty = parseFloat($('#module_qty').val()) || 0;
+                    amount = price * moduleQty;
+                } else if (unitId == 5) {
+                    let panelQty = parseFloat($('#panel_qty').val()) || 0;
+                    amount = price * panelQty;
+                }
+                $("#uom").val(unitId).change();
+                $("#amount").val(amount);
             },
             error: function(error) {
                 console.log(error.responseJSON.message);
@@ -277,17 +287,8 @@ $("#btnAdder").click(function() {
     let unit_id = $("#uom").val();
     let adders_name = $.trim($("#adders option:selected").text());
     let unit_name = $.trim($("#uom option:selected").text());
+    // #amount already holds the final value (multiplied by qty on adder select), so no re-multiply here.
     let amount = $("#amount").val();
-    if (unit_id == 3) {
-        let moduleQty = $('#module_qty').val();
-        let panelQty = $('#panel_qty').val();
-        amount = amount * moduleQty;
-    }
-    if (unit_id == 5) {
-        let moduleQty = $('#module_qty').val();
-        let panelQty = $('#panel_qty').val();
-        amount = amount * panelQty;
-    }
     let result = checkExistence(adders_id, unit_id);
     if (result == false) {
         let newRow = "<tr id='row" + (rowLength + 1) + "'>" +
