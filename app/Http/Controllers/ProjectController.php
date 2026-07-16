@@ -317,6 +317,32 @@ class ProjectController extends Controller
         }
     }
 
+    /**
+     * Return a sub-department id guaranteed to belong to the given department.
+     * If the requested sub-department already belongs to the department it is
+     * kept; otherwise it falls back to the department's first sub-department
+     * (by order). Returns null when the department has no sub-departments.
+     */
+    protected function resolveSubDepartmentForDepartment($departmentId, $subDepartmentId)
+    {
+        if (! $departmentId) {
+            return null;
+        }
+
+        $belongs = $subDepartmentId
+            && SubDepartment::where('id', $subDepartmentId)
+                ->where('department_id', $departmentId)
+                ->exists();
+
+        if ($belongs) {
+            return $subDepartmentId;
+        }
+
+        return SubDepartment::where('department_id', $departmentId)
+            ->orderBy('order', 'asc')
+            ->value('id');
+    }
+
     public function projectMove(Request $request)
     {
         $project = Project::findOrFail($request->id);
@@ -367,11 +393,16 @@ class ProjectController extends Controller
 
         $validated = $request->validate($validationArray);
 
+        $targetDepartmentIdForSub = $request->stage == 'forward' ? $request->forward : $request->back;
+        // Ensure the sub-department belongs to the target department (avoids a
+        // mismatched department/sub_department pair being persisted).
+        $resolvedSubDepartmentId = $this->resolveSubDepartmentForDepartment($targetDepartmentIdForSub, $request->sub_department);
+
         try {
             DB::beginTransaction();
             if ($request->stage == 'forward' && $request->forward == $project->department_id) {
                 $project->department_id = $request->forward;
-                $project->sub_department_id = $request->sub_department;
+                $project->sub_department_id = $resolvedSubDepartmentId;
                 $project->save();
                 $task = Task::findOrFail($request->taskid);
                 Task::where('id', $request->taskid)->update(['status' => 'Completed', 'notes' => $request->notes]);
@@ -379,7 +410,7 @@ class ProjectController extends Controller
                     'project_id' => $request->id,
                     'employee_id' => $task->employee_id,
                     'department_id' => $request->forward,
-                    'sub_department_id' => $request->sub_department,
+                    'sub_department_id' => $resolvedSubDepartmentId,
                     'assign_to_notes' => $request->notes,
                     'status' => 'In-Progress',
                     'user_id' => auth()->user()->id,
@@ -395,7 +426,7 @@ class ProjectController extends Controller
             }
             $updateItems = [
                 'department_id' => ($request->stage == 'forward' ? $request->forward : $request->back),
-                'sub_department_id' => $request->sub_department,
+                'sub_department_id' => $resolvedSubDepartmentId,
             ];
             if ($request->forward == 2) {
                 // AHJ website URL stays auto-fetched / not user-editable.
@@ -479,7 +510,7 @@ class ProjectController extends Controller
                 'project_id' => $request->id,
                 'employee_id' => $emp->id,
                 'department_id' => $targetDepartmentId,
-                'sub_department_id' => $request->sub_department,
+                'sub_department_id' => $resolvedSubDepartmentId,
                 'user_id' => auth()->user()->id,
             ]);
             $project->refresh();
@@ -591,6 +622,18 @@ class ProjectController extends Controller
             }
         }
 
+        // Ensure the sub-department actually belongs to the target department.
+        // Prevents a mismatched pair (e.g. department 3 + sub_department 1) from
+        // being saved, which would hide the project from its department tab.
+        $subDepartmentId = $this->resolveSubDepartmentForDepartment($request->departmentId, $request->subDepartmentId);
+
+        if (! $subDepartmentId) {
+            return response()->json([
+                'status' => 422,
+                'error' => 'No valid sub-department found for the selected department.',
+            ], 422);
+        }
+
         try {
             DB::beginTransaction();
 
@@ -605,7 +648,7 @@ class ProjectController extends Controller
 
             $project->update([
                 'department_id' => $request->departmentId,
-                'sub_department_id' => $request->subDepartmentId,
+                'sub_department_id' => $subDepartmentId,
             ]);
 
             $emp = app(ProjectAssignmentService::class)->employeeForDepartment((int) $request->departmentId);
@@ -631,7 +674,7 @@ class ProjectController extends Controller
                 'project_id' => $request->projectId,
                 'employee_id' => $emp->id,
                 'department_id' => $request->departmentId,
-                'sub_department_id' => $request->subDepartmentId,
+                'sub_department_id' => $subDepartmentId,
                 'user_id' => auth()->user()->id,
             ]);
             app(ProjectAssignmentService::class)->notifyAssignedEmployee($emp, $project, $newTask);
