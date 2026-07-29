@@ -360,7 +360,6 @@ class ProjectController extends Controller
                 'utility_company' => 'required_if:forward,2',
                 'ntp_approval_date' => 'required_if:forward,2',
                 'hoa' => 'required_if:forward,2',
-                'ahj' => 'nullable|string|max:255',
                 'hoa_phone_number' => Rule::requiredIf(function () use ($request) {
                     return $request->forward == 2 && ! $request->hoa == 'yes';
                 }),
@@ -429,12 +428,11 @@ class ProjectController extends Controller
                 'sub_department_id' => $resolvedSubDepartmentId,
             ];
             if ($request->forward == 2) {
-                // AHJ website URL stays auto-fetched / not user-editable.
+                // AHJ / AHJ website URL are auto-fetched and not user-editable.
                 $updateItems = array_merge($updateItems, [
                     'utility_company' => $request->utility_company,
                     'ntp_approval_date' => $request->ntp_approval_date,
                     'hoa' => $request->hoa,
-                    'ahj' => $request->ahj,
                     'hoa_phone_number' => $request->hoa_phone_number,
                 ]);
             }
