@@ -47,7 +47,7 @@ class CustomerController extends Controller
         return (int) FinanceOption::where('id', $financeOptionId)->value('loan_id') === 1;
     }
 
-    protected function financeOptionIsPrepaidPpa(?int $financeOptionId): bool
+    protected function financeOptionUsesCustomerPortion(?int $financeOptionId): bool
     {
         if (empty($financeOptionId)) {
             return false;
@@ -55,8 +55,12 @@ class CustomerController extends Controller
 
         $financeOption = FinanceOption::find($financeOptionId);
 
+        // Prepaid PPA (id 9) and Wheelhouse Credit Union (id 10) both expose the
+        // Third Party Credit + Customer Portion fields (customer_portion = contract_amount - third_party_credit).
         return ! empty($financeOption)
-            && ((int) $financeOption->id === 9 || strcasecmp(trim($financeOption->name), 'Prepaid PPA') === 0);
+            && (in_array((int) $financeOption->id, [9, 10], true)
+                || strcasecmp(trim($financeOption->name), 'Prepaid PPA') === 0
+                || strcasecmp(trim($financeOption->name), 'Wheelhouse Credit Union') === 0);
     }
 
     protected function customerValidationRules(Request $request): array
@@ -93,14 +97,14 @@ class CustomerController extends Controller
                 'nullable',
                 'numeric',
                 Rule::requiredIf(function () use ($request) {
-                    return $this->financeOptionIsPrepaidPpa((int) $request->finance_option_id);
+                    return $this->financeOptionUsesCustomerPortion((int) $request->finance_option_id);
                 }),
             ],
             'customer_portion' => [
                 'nullable',
                 'numeric',
                 Rule::requiredIf(function () use ($request) {
-                    return $this->financeOptionIsPrepaidPpa((int) $request->finance_option_id);
+                    return $this->financeOptionUsesCustomerPortion((int) $request->finance_option_id);
                 }),
             ],
             'loanId' => [
@@ -205,7 +209,7 @@ class CustomerController extends Controller
 
     protected function financeData(Request $request, ModuleType $moduleCost, InverterTypeRate $inverterBaseCost, float $holdBackAmount): array
     {
-        $isPrepaidPpa = $this->financeOptionIsPrepaidPpa((int) $request->finance_option_id);
+        $isPrepaidPpa = $this->financeOptionUsesCustomerPortion((int) $request->finance_option_id);
 
         return [
             'finance_option_id' => $request->finance_option_id,

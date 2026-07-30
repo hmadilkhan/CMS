@@ -772,20 +772,26 @@
             let dealerFee = (value != undefined ? value : parseFloat($("#dealer_fee").val()));
             let dealerPercentage = (dealerFee * 100).toFixed(2);
             let contractAmount = parseFloat($('#contract_amount').val());
+            // Wheelhouse Credit Union (id 10): dealer fee is calculated on the Customer Portion, not the Contract Amount.
+            let dealerFeeBase = (parseInt($('#finance_option_id').val()) === 10)
+                ? (parseFloat($('#customer_portion').val()) || 0)
+                : contractAmount;
             if (value != undefined) {
                 $('#dealer_fee').val('');
                 $('#dealer_fee').val(dealerPercentage);
             }
-            if (contractAmount != "" && value != undefined) {
-                $('#dealer_fee_amount').val(value * contractAmount);
+            if (dealerFeeBase != "" && value != undefined) {
+                $('#dealer_fee_amount').val(value * dealerFeeBase);
             } else {
-                $('#dealer_fee_amount').val((dealerFee / 100) * contractAmount);
+                $('#dealer_fee_amount').val((dealerFee / 100) * dealerFeeBase);
             }
             calculateCommission()
         }
 
         function togglePrepaidPPAFields(financeOptionId) {
-            if (parseInt(financeOptionId) === 9) {
+            let id = parseInt(financeOptionId);
+            // Prepaid PPA (9) and Wheelhouse Credit Union (10) both use the Third Party Credit + Customer Portion fields.
+            if (id === 9 || id === 10) {
                 $(".prepaidPPADiv").show();
                 calculateCustomerPortion();
             } else {
@@ -803,8 +809,13 @@
         }
 
         $("#contract_amount, #third_party_credit").on('input blur', function() {
-            if (parseInt($("#finance_option_id").val()) === 9) {
+            let id = parseInt($("#finance_option_id").val());
+            if (id === 9 || id === 10) {
                 calculateCustomerPortion();
+                // Wheelhouse (10): recompute dealer fee amount on the updated Customer Portion.
+                if (id === 10) {
+                    dealerFee();
+                }
             }
         });
 
