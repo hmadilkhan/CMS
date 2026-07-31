@@ -292,3 +292,55 @@ npm run build        # only needed if JS/CSS changed
 ```
 
 Root cause: shared Hostinger hosting — no CI/CD pipeline, no post-receive hook. Must be run manually via the hosting panel's terminal or SSH after each deploy. Consider adding these commands to `deploy.sh`.
+
+---
+
+## Cursor Cloud specific instructions
+
+Durable notes for running this app in the Cursor Cloud VM. System deps (PHP 8.3 CLI + extensions,
+Composer, MySQL 8) and one-off local data (dev DB, admin user, seed reference data, `.env`) live in the
+VM snapshot. The startup update script only refreshes app dependencies (`composer install`, `npm install`).
+
+### Starting the app (services are NOT auto-started)
+- MySQL does not auto-start on boot. Start it first: `sudo service mysql start` (verify with `sudo mysqladmin ping`).
+- Backend: `php artisan serve --host=0.0.0.0 --port=8000` (run in a tmux session).
+- Frontend assets (dev): `npm run dev` (Vite on 5173). The app works without it if assets were built, but for
+  development run `npm run dev`. Livewire/Alpine drive most interactivity.
+- App URL: `http://127.0.0.1:8000`. `/` redirects to `/login`.
+
+### Database
+- Local dev DB is `laravel` on `127.0.0.1:3306`, user `root` with an EMPTY password (matches `.env.example`).
+- Schema is created by migrations only: `php artisan migrate` (143 migrations). There is **no SQL dump** and the
+  committed `DatabaseSeeder` only inserts `ProjectDepartmentField` rows — it does NOT create users, roles,
+  departments, or catalogue data.
+- PHPUnit uses a separate MySQL DB `cms_testing` (see `phpunit.xml`); create it once with
+  `CREATE DATABASE cms_testing`. Feature tests use `RefreshDatabase` (they migrate the schema themselves).
+- Run `php artisan storage:link` once so PDF/report assets under `public/storage` resolve.
+
+### Login (username, not email)
+- Auth is by **`username` + `password`** (see `LoginRequest`), NOT email.
+- A Super Admin dev user exists in the snapshot: username `admin`, password `password`. `Super Admin` bypasses
+  every permission gate via `Gate::before` (`AuthServiceProvider`), so it can reach all modules.
+- The dev DB is also pre-seeded with minimal reference data so the core customer→project flow works: departments
+  1–8, a `New Deals` sub-department, `Cash`/`Goodleap` finance options, a `Solen Direct` sales partner, a Sales
+  Person user `jsmith`, one inverter type + `InverterTypeRate` (base cost), and one module type. Creating a
+  Customer at `/customers/create` spawns a Project in department 1 (Deal Review).
+
+### Test / lint / build commands
+- Tests: `php artisan test` (or `./vendor/bin/phpunit`). Lint: `./vendor/bin/pint` (`--test` to check only).
+  Browser tests under `tests/Browser` are Dusk and need a Chrome driver (not wired up here).
+- Known-failing tests that are NOT environment problems:
+  - The whole AI/`SolenAssist` suite (`tests/Feature/AiChatModuleTest`, `tests/Unit/AiServicesTest`) and
+    `php artisan ai:eval` require a real `OPENAI_API_KEY` (unset here) — they fail/skip without it. The chatbot is
+    an optional feature; the rest of the CRM runs without OpenAI.
+  - `CrmModuleSmokeTest` `/tickets` returns 500 because it queries an external `wordpress` DB connection
+    (`wp_vxcf_leads`) that does not exist in dev — an optional integration.
+  - `ProjectAcceptanceWorkflowTest` PDF step needs `public/storage/solen_logo.png`, an uploaded asset absent from
+    the repo.
+  - Pint reports pre-existing style deviations across the codebase; do not mass-reformat.
+
+### Gotchas
+- The `/projects` pipeline board loads project cards asynchronously via the `projects-list` (`getProjects`) AJAX
+  endpoint, so the board can look empty for a moment before cards render; the executive dashboard (`/dashboard`)
+  aggregates confirm project data.
+- `QUEUE_CONNECTION=sync` and `CACHE_DRIVER=file` in dev, so no queue worker/Redis is needed.
