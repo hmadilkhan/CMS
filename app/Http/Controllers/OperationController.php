@@ -1369,18 +1369,20 @@ class OperationController extends Controller
 
     private function validateLoanTerm(Request $request, $ignoreId = null): array
     {
-        $uniqueFinanceOption = Rule::unique("loan_terms", "finance_option_id")
+        $uniqueYear = Rule::unique("loan_terms", "year")
+            ->where(fn ($query) => $query->where("finance_option_id", $request->finance_option_id))
             ->whereNull("deleted_at");
         if (!empty($ignoreId)) {
-            $uniqueFinanceOption->ignore($ignoreId);
+            $uniqueYear->ignore($ignoreId);
         }
 
         $rules = [
-            "finance_option_id" => ["required", "exists:finance_options,id", $uniqueFinanceOption],
+            "finance_option_id" => ["required", "exists:finance_options,id"],
             "year" => [
                 "required",
                 "string",
                 "max:255",
+                $uniqueYear,
             ],
         ];
 
@@ -1389,7 +1391,7 @@ class OperationController extends Controller
         }
 
         return $request->validate($rules, [
-            "finance_option_id.unique" => "The record already exists.",
+            "year.unique" => "This loan term already exists for the selected finance option.",
         ]);
     }
 }
