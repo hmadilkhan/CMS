@@ -6,6 +6,7 @@ use App\Models\Project;
 use App\Models\SubContractor;
 use App\Models\UtilityCompany;
 use App\Services\FinanceMilestoneService;
+use App\Services\ProjectDateChangeNotifier;
 use Illuminate\Validation\Rule;
 use Livewire\Component;
 
@@ -408,6 +409,10 @@ class EditFields extends Component
             ]);
         }
 
+        // Read before the write: the update below is a query-builder mass
+        // update, so the model never sees the previous values.
+        $previousDates = $project->only(array_keys(ProjectDateChangeNotifier::TRACKED_FIELDS));
+
         try {
             Project::where('id', $this->projectId)->update($updateItems);
             if ($this->departmentId == 5) {
@@ -419,6 +424,7 @@ class EditFields extends Component
                 'solar_install_date',
                 'inspection_approval_date',
             ]));
+            app(ProjectDateChangeNotifier::class)->notify($this->project, $previousDates, $updateItems);
             $username = auth()->user()->name;
             // Get the changed field names
             $changedFields = collect($updateItems)->keys()->implode(', ');

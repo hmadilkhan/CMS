@@ -32,6 +32,7 @@ use App\Services\AhjRegistryService;
 use App\Services\FinanceMilestoneService;
 use App\Services\NotificationTemplateService;
 use App\Services\ProjectAssignmentService;
+use App\Services\ProjectDateChangeNotifier;
 use App\Traits\MediaTrait;
 use Carbon\Carbon;
 use FPDF;
@@ -497,7 +498,12 @@ class ProjectController extends Controller
             }
 
             $targetDepartmentId = ($request->stage == 'forward' ? $request->forward : $request->back);
+            // Read before the write: the update below is a query-builder mass
+            // update, so the model never sees the previous values.
+            $previousDates = $project->only(array_keys(ProjectDateChangeNotifier::TRACKED_FIELDS));
             Project::where('id', $request->id)->update($updateItems);
+            $project->refresh();
+            app(ProjectDateChangeNotifier::class)->notify($project, $previousDates, $updateItems);
             $emp = app(ProjectAssignmentService::class)->employeeForDepartment($targetDepartmentId);
 
             if (! $emp) {
