@@ -130,12 +130,16 @@ class FinanceMilestoneService
                 'email_recipients' => $recipients,
             ]);
 
+            $mail = app(NotificationTemplateService::class)->render('finance_milestone_triggered', [
+                'project_name' => $project->project_name,
+                'milestone_label' => $milestone->label,
+                'customer_name' => $this->customerName($project),
+                'amount' => number_format($amount, 2),
+                'project_url' => route('projects.show', $project->id),
+            ]);
+
             foreach ($recipients as $recipient) {
-                SendHtmlEmailJob::dispatch(
-                    $recipient,
-                    'Finance Milestone Triggered: ' . $project->project_name . ' - ' . $milestone->label,
-                    $this->emailBody($project, $amount)
-                );
+                SendHtmlEmailJob::dispatch($recipient, $mail['subject'], $mail['body']);
             }
         });
     }
@@ -207,14 +211,11 @@ class FinanceMilestoneService
             ->all();
     }
 
-    private function emailBody(Project $project, float $amount): string
+    private function customerName(Project $project): string
     {
         $customerName = trim(($project->customer?->first_name ?? '') . ' ' . ($project->customer?->last_name ?? ''));
-        $customerName = $customerName !== '' ? $customerName : $project->project_name;
-        $projectUrl = route('projects.show', $project->id);
 
-        return 'Dear Accounting Team, Please collect $' . number_format($amount, 2)
-            . ' from <a href="' . e($projectUrl) . '">' . e($customerName) . '</a>. Thank you';
+        return $customerName !== '' ? $customerName : $project->project_name;
     }
 
     private function defaultMilestones(): array

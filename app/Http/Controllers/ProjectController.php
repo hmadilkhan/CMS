@@ -30,6 +30,7 @@ use App\Models\Task;
 use App\Models\Tool;
 use App\Services\AhjRegistryService;
 use App\Services\FinanceMilestoneService;
+use App\Services\NotificationTemplateService;
 use App\Services\ProjectAssignmentService;
 use App\Traits\MediaTrait;
 use Carbon\Carbon;
@@ -1436,8 +1437,14 @@ class ProjectController extends Controller
                     'inverter_name' => $project->customer->inverter->name,
                     'adders_list' => $addersList,
                 ]);
-                $emailText = '<p>Hi '.$project->salesPartnerUser->name.'</p><p>The Project Acceptance Review for the project '.$project->customer->first_name.' '.$project->customer->last_name.' is ready to be approved.</p><p>Please login to the CRM and navigate to the “Acceptance” tab within the project to approve or dispute the commission amount.</p><p>We look forward to getting a reply within the next 24 hours, after which we will assume the commission as approved.</p><p>If you have any questions, please reach out to us at engineering@solenenergyco.com</p><p>Thank you for your continued support!</p><p>The Solen Energy Construction Engineering Team</p>';
-                $this->sendEmailForProjectAcceptance($project, 'Project Acceptance Review - '.$project->customer->first_name.' '.$project->customer->last_name, $emailText, $project->salesPartnerUser->email);
+                $mail = app(NotificationTemplateService::class)->render('acceptance_review_sent', [
+                    'recipient_name' => $project->salesPartnerUser->name,
+                    'customer_name' => trim($project->customer->first_name.' '.$project->customer->last_name),
+                    'project_name' => $project->project_name,
+                    'project_url' => url('/projects/'.$project->id),
+                    'support_email' => 'engineering@solenenergyco.com',
+                ]);
+                $this->sendEmailForProjectAcceptance($project, $mail['subject'], $mail['body'], $project->salesPartnerUser->email);
                 // Log the custom message
                 $username = auth()->user()->name;
                 activity('project')
@@ -1621,10 +1628,14 @@ class ProjectController extends Controller
                 ]);
             }
 
-            $projectUrl = url('/projects/'.$project->id);
-            $assignedEmployeeName = $project->assignedPerson->first()?->employee?->name ?? 'Team';
-            $emailText = '<p>Hi '.$assignedEmployeeName.'</p><p>The Project Acceptance Review for '.$project->customer->first_name.' '.$project->customer->last_name.' has been '.($request->mode == 1 ? 'approved' : 'rejected')."</p><p>Project URL: <a href='".$projectUrl."'>".$projectUrl.'</a></p><p>Please take the necessary steps to continue moving the job forward.</p><p>Thank you!.</p>';
-            $this->sendEmailForProjectAcceptance($project, 'Project Acceptance Review Status - '.$project->customer->first_name.' '.$project->customer->last_name, $emailText, 'engineering@solenenergyco.com');
+            $mail = app(NotificationTemplateService::class)->render('acceptance_review_status', [
+                'recipient_name' => $project->assignedPerson->first()?->employee?->name ?? 'Team',
+                'customer_name' => trim($project->customer->first_name.' '.$project->customer->last_name),
+                'project_name' => $project->project_name,
+                'status' => $request->mode == 1 ? 'approved' : 'rejected',
+                'project_url' => url('/projects/'.$project->id),
+            ]);
+            $this->sendEmailForProjectAcceptance($project, $mail['subject'], $mail['body'], 'engineering@solenenergyco.com');
             // Log the custom message
             $username = auth()->user()->name;
             activity('project')

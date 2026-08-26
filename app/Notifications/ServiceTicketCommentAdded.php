@@ -2,6 +2,7 @@
 
 namespace App\Notifications;
 
+use App\Services\NotificationTemplateService;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
@@ -29,15 +30,18 @@ class ServiceTicketCommentAdded extends Notification implements ShouldQueue
 
     public function toMail($notifiable)
     {
+        $mail = app(NotificationTemplateService::class)->render('service_ticket_comment', [
+            'recipient_name' => $notifiable->name,
+            'ticket_id' => $this->ticket->id,
+            'ticket_subject' => $this->ticket->subject,
+            'comment_by' => optional($this->comment->user)->name,
+            'comment' => $this->comment->comment,
+            'ticket_url' => route('service.dashboard'),
+        ]);
+
         return (new MailMessage)
-            ->subject('New Comment on Ticket #' . $this->ticket->id)
-            ->greeting('Hello ' . $notifiable->name . ',')
-            ->line('A new comment has been added to your ticket.')
-            ->line('**Ticket Subject:** ' . $this->ticket->subject)
-            ->line('**Comment by:** ' . $this->comment->user->name)
-            ->line('**Comment:** ' . $this->comment->comment)
-            ->action('View Ticket', route('service.dashboard'))
-            ->line('Thank you for using our service!');
+            ->subject($mail['subject'])
+            ->markdown('emails.notification-template', ['body' => $mail['body']]);
     }
 
     public function toArray($notifiable)

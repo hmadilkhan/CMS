@@ -2,6 +2,7 @@
 
 namespace App\Notifications;
 
+use App\Services\NotificationTemplateService;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
@@ -41,13 +42,17 @@ class NoteMentionedNotification extends Notification implements ShouldQueue
      */
     public function toMail(object $notifiable): MailMessage
     {
+        $mail = app(NotificationTemplateService::class)->render('note_mentioned', [
+            'recipient_name' => $notifiable->name,
+            'mentioned_by' => $this->mentionedBy->name,
+            'project_name' => $this->project->project_name,
+            'note' => $this->note,
+            'project_url' => url('/projects/' . $this->project->id),
+        ]);
+
         return (new MailMessage)
-            ->subject('You were mentioned in a project note')
-            ->greeting('Hello ' . $notifiable->name . ',')
-            ->line($this->mentionedBy->name . ' mentioned you in a note on project: ' . $this->project->project_name)
-            ->line('Note: ' . $this->note)
-            ->action('View Project', url('/projects/' . $this->project->id))
-            ->line('Thank you for using our application!');
+            ->subject($mail['subject'])
+            ->markdown('emails.notification-template', ['body' => $mail['body']]);
     }
 
     /**

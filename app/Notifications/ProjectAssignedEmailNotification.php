@@ -4,6 +4,7 @@ namespace App\Notifications;
 
 use App\Models\Project;
 use App\Models\Task;
+use App\Services\NotificationTemplateService;
 use Illuminate\Bus\Queueable;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
@@ -33,18 +34,19 @@ class ProjectAssignedEmailNotification extends Notification
             ?? optional($this->project->department)->name
             ?? 'N/A';
 
+        $mail = app(NotificationTemplateService::class)->render('project_assigned', [
+            'recipient_name' => $notifiable->name,
+            'project_name' => $projectName,
+            'project_code' => $this->project->code,
+            'customer_name' => $customerName,
+            'department_name' => $departmentName,
+            'assigned_by' => $this->assignedBy,
+            'notes' => $this->task->assign_to_notes,
+            'project_url' => route('projects.show', $this->project->id),
+        ]);
+
         return (new MailMessage)
-            ->subject('Project Assigned: ' . $projectName)
-            ->markdown('emails.project-assigned', [
-                'userName' => $notifiable->name,
-                'projectName' => $projectName,
-                'customerName' => $customerName,
-                'departmentName' => $departmentName,
-                'assignedBy' => $this->assignedBy,
-                'notes' => $this->task->assign_to_notes,
-                'projectUrl' => route('projects.show', $this->project->id),
-                'logoUrl' => asset('assets/images/logo.png'),
-                'companyName' => 'Solen Energy Co.',
-            ]);
+            ->subject($mail['subject'])
+            ->markdown('emails.notification-template', ['body' => $mail['body']]);
     }
 }

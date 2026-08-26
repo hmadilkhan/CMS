@@ -2,6 +2,7 @@
 
 namespace App\Notifications;
 
+use App\Services\NotificationTemplateService;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
@@ -38,14 +39,17 @@ class EmailReceivedNotification extends Notification implements ShouldQueue
      */
     public function toMail($notifiable)
     {
+        $mail = app(NotificationTemplateService::class)->render('email_received', [
+            'recipient_name' => $notifiable->name,
+            'project_name' => $this->project->project_name,
+            'email_subject' => $this->email->subject,
+            'sender' => $this->sender ?? 'Unknown',
+            'project_url' => url('/projects/' . $this->project->id),
+        ]);
+
         return (new MailMessage)
-            ->subject('New Email Received for Project: ' . $this->project->project_name)
-            ->greeting('Hello ' . $notifiable->name . ',')
-            ->line('A new email was received for the project: ' . $this->project->project_name)
-            ->line('Subject: ' . $this->email->subject)
-            ->line('From: ' . ($this->sender ?? 'Unknown'))
-            ->action('View Project', url('/projects/' . $this->project->id))
-            ->line('Thank you for using our application!');
+            ->subject($mail['subject'])
+            ->markdown('emails.notification-template', ['body' => $mail['body']]);
     }
 
     /**

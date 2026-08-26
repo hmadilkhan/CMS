@@ -2,6 +2,7 @@
 
 namespace App\Notifications;
 
+use App\Services\NotificationTemplateService;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
@@ -26,16 +27,19 @@ class ServiceTicketResolved extends Notification implements ShouldQueue
 
     public function toMail($notifiable)
     {
+        $mail = app(NotificationTemplateService::class)->render('service_ticket_resolved', [
+            'recipient_name' => $notifiable->name,
+            'ticket_id' => $this->ticket->id,
+            'ticket_subject' => $this->ticket->subject,
+            'project_name' => optional($this->ticket->project)->project_name,
+            'priority' => $this->ticket->priority,
+            'resolved_by' => optional($this->ticket->assignedUser)->name,
+            'ticket_url' => route('service.dashboard'),
+        ]);
+
         return (new MailMessage)
-            ->subject('Ticket Resolved - #' . $this->ticket->id)
-            ->greeting('Hello ' . $notifiable->name . ',')
-            ->line('Great news! Your service ticket has been resolved.')
-            ->line('**Ticket Subject:** ' . $this->ticket->subject)
-            ->line('**Project:** ' . $this->ticket->project->project_name)
-            ->line('**Priority:** ' . $this->ticket->priority)
-            ->line('**Resolved by:** ' . $this->ticket->assignedUser->name)
-            ->action('View Ticket', route('service.dashboard'))
-            ->line('Thank you for using our service!');
+            ->subject($mail['subject'])
+            ->markdown('emails.notification-template', ['body' => $mail['body']]);
     }
 
     public function toArray($notifiable)

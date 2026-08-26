@@ -18,12 +18,14 @@ use App\Models\InverterType;
 use App\Models\InverterTypeRate;
 use App\Models\LoanApr;
 use App\Models\LoanTerm;
+use App\Models\NotificationTemplate;
 use App\Models\SalesPartner;
 use App\Models\SubContractor;
 use App\Models\SubDepartment;
 use App\Models\User;
 use App\Models\UtilityCompany;
 use App\Services\FinanceMilestoneService;
+use App\Services\NotificationTemplateService;
 use App\Traits\MediaTrait;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -44,7 +46,7 @@ class OperationController extends Controller
     public function getRedlineCostByInverter(Request $request)
     {
         if ($request->inverter_type_id != "") {
-            $inverters =  InverterTypeRate::with("inverter")->where("inverter_type_id", $request->inverter_type_id)->get();
+            $inverters = InverterTypeRate::with("inverter")->where("inverter_type_id", $request->inverter_type_id)->get();
             return response()->json(["redlinecostlist" => $inverters]);
         }
     }
@@ -65,7 +67,6 @@ class OperationController extends Controller
             return redirect()->route("view-redline-cost")->with('error', $th->getMessage());
         }
     }
-
 
     public function redlineStore(Request $request)
     {
@@ -502,7 +503,6 @@ class OperationController extends Controller
         return response()->json(["status" => 200, "subtypes" => $subtypes]);
     }
 
-
     public function salesPartnerView(Request $request)
     {
         if ($request->id != "") {
@@ -804,12 +804,80 @@ class OperationController extends Controller
         if ($request->id != "") {
             $script = EmailScript::with("email", "department")->where("id", $request->id)->first();
         }
+
+        $templates = app(NotificationTemplateService::class)->all();
+        $editingTemplate = $templates[$request->template] ?? null;
+
         return view("operations/email-scripts/index", [
             "emailTypes" => EmailType::all(),
             "departments" => Department::all(),
             "emailScripts" => EmailScript::with("email", "department")->get(),
             "script" => ($request->id != "" ? $script : []),
+            "notificationTemplates" => $templates,
+            "editingTemplate" => $editingTemplate,
+            // Land on the tab the request is about: editing a template, or
+            // coming back from saving one.
+            "activeTab" => ($editingTemplate || $request->tab === "templates") ? "templates" : "scripts",
         ]);
+    }
+
+    /**
+     * Save an admin edit of one system email template. Templates are declared
+     * in config/notification_templates.php; only the subject and body are
+     * editable, and only with placeholders that template actually supplies.
+     */
+    public function notificationTemplateUpdate(Request $request)
+    {
+        $service = app(NotificationTemplateService::class);
+
+        $validated = $request->validate([
+            "key" => ["required", "string"],
+            "subject" => ["required", "string", "max:255"],
+            "body" => ["required", "string"],
+        ]);
+
+        if (!$service->find($validated["key"])) {
+            return redirect()->route("email.scripts.list", ["tab" => "templates"])->with("error", "Unknown email template.");
+        }
+
+        $unknown = $service->unknownPlaceholders($validated["key"], $validated["subject"], $validated["body"]);
+
+        if (!empty($unknown)) {
+            return redirect()
+                ->route("email.scripts.list", ["template" => $validated["key"]])
+                ->withInput()
+                ->with("error", "Unknown placeholder: {" . implode("}, {", $unknown) . "}. Use only the tags listed under the editor.");
+        }
+
+        try {
+            NotificationTemplate::updateOrCreate(
+                ["key" => $validated["key"]],
+                [
+                    "subject" => $validated["subject"],
+                    "body" => $validated["body"],
+                    "is_active" => $request->boolean("is_active", true),
+                    "updated_by" => auth()->id(),
+                ]
+            );
+
+            return redirect()->route("email.scripts.list", ["tab" => "templates"])->with("success", "Email template saved successfully");
+        } catch (\Throwable $th) {
+            return redirect()->route("email.scripts.list")->with("error", $th->getMessage());
+        }
+    }
+
+    /**
+     * Drop the admin edit so the template falls back to the shipped default.
+     */
+    public function notificationTemplateReset(Request $request)
+    {
+        try {
+            NotificationTemplate::where("key", $request->key)->forceDelete();
+
+            return redirect()->route("email.scripts.list", ["tab" => "templates"])->with("success", "Template reset to the default content");
+        } catch (\Throwable $th) {
+            return redirect()->route("email.scripts.list")->with("error", $th->getMessage());
+        }
     }
 
     public function emailScriptStore(Request $request)

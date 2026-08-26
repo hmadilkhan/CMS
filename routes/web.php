@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 
 use App\Http\Controllers\AuroraController;
 use App\Http\Controllers\AiChatController;
@@ -295,6 +295,8 @@ Route::middleware('auth')->group(function () {
         Route::post('/email-scripts-store', 'emailScriptStore')->name("email.scripts.store");
         Route::post('/email-scripts-update', 'emailScriptUpdate')->name("email.scripts.update");
         Route::post('/email-scripts-delete', 'emailScriptDelete')->name("email.scripts.delete");
+        Route::post('/notification-template-update', 'notificationTemplateUpdate')->name("notification.template.update");
+        Route::post('/notification-template-reset', 'notificationTemplateReset')->name("notification.template.reset");
 
         // LOAN TERM VIEW
         Route::get('/view-loan-term/{id?}', 'loanTermView')->name("loan.term");
