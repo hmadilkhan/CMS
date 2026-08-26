@@ -10,7 +10,12 @@
             margin-top: 20px;
         }
 
-        .card {
+        /* Keep these scoped: an unscoped `.card` rule also hits the layout
+           header, where the notification / profile dropdown panels rely on
+           .w380 / .w280 and get squashed by `width: 100%`. Modals sit outside
+           #project-show-page, so they are listed explicitly. */
+        #project-show-page .card,
+        .modal .card {
             background: #fff;
             transition: all 0.3s ease;
             border: 0;
@@ -415,7 +420,8 @@
             }
         }
 
-        .card-header {
+        #project-show-page .card-header,
+        .modal .card-header {
             background: linear-gradient(135deg, #2c3e50 0%, #000000 100%);
             color: white;
             border-radius: 16px 16px 0 0 !important;
@@ -801,14 +807,17 @@
             box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
         }
 
-        .badge {
+        #project-show-page .badge,
+        .modal .badge {
             padding: 0.5rem 1rem;
             border-radius: 8px;
             font-weight: 600;
         }
 
-        .form-control,
-        .form-select {
+        #project-show-page .form-control,
+        #project-show-page .form-select,
+        .modal .form-control,
+        .modal .form-select {
             border-radius: 10px;
             border: 2px solid #e9ecef;
             padding: 0.75rem 1rem;
