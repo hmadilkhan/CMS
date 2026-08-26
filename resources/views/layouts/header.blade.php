@@ -11,7 +11,8 @@
             <!-- header rightbar icon -->
             <div class="h-right d-flex align-items-center mr-5 mr-lg-0 order-1">
                 <div class="dropdown notifications zindex-popover">
-                    <a class="nav-link dropdown-toggle pulse" href="#" role="button" data-bs-toggle="dropdown">
+                    <a class="nav-link dropdown-toggle pulse" href="#" role="button" data-bs-toggle="dropdown"
+                        data-bs-auto-close="outside">
                         <i class="icofont-alarm fs-5"></i>
                         <span class="pulse-ring"></span>
                     </a>

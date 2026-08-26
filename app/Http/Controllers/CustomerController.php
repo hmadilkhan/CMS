@@ -411,15 +411,25 @@ class CustomerController extends Controller
 
             $customer->update($this->customerData($request));
 
-            $project->update([
+            $projectUpdate = [
                 'project_name' => $request->first_name.'-'.$request->last_name,
-                'sub_department_id' => $subdepartment->id,
                 'description' => $request->notes,
                 'sales_partner_user_id' => $request->sales_partner_user_id,
                 'sub_contractor_user_id' => $request->sub_contractor_user_id,
                 'overwrite_base_price' => $request->overwrite_base_price ?? 0,
                 'overwrite_panel_price' => $request->overwrite_panel_price ?? 0,
-            ]);
+            ];
+
+            // resolveInitialSubDepartment() always returns a STARTING (department 1)
+            // sub-department, so it may only be written while the project is still in
+            // that department. Writing it to a project that has already been moved
+            // forward silently produced a mismatched pair (e.g. department 3 with
+            // sub-department 1 "New Deals"), which hides the project from its lane.
+            if ((int) $project->department_id === (int) $subdepartment->department_id) {
+                $projectUpdate['sub_department_id'] = $subdepartment->id;
+            }
+
+            $project->update($projectUpdate);
 
             Task::where('project_id', $project->id)
                 ->where('department_id', 1)

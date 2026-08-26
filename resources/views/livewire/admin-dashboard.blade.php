@@ -349,28 +349,40 @@
     </div>
 
     <script>
-        $(document).off('change', '.admin-followup-status-select').on('change', '.admin-followup-status-select', function() {
-            const selectElement = $(this);
-            const newStatus = selectElement.val();
+        // jQuery is loaded at the bottom of the master layout, after @yield('content'),
+        // so this block has to wait for it instead of running inline.
+        (function() {
+            function bindFollowupStatusChange() {
+                $(document).off('change', '.admin-followup-status-select').on('change', '.admin-followup-status-select', function() {
+                    const selectElement = $(this);
+                    const newStatus = selectElement.val();
 
-            $.ajax({
-                url: '{{ route("followup.status.update") }}',
-                method: 'POST',
-                data: {
-                    _token: '{{ csrf_token() }}',
-                    followup_id: selectElement.data('followup-id'),
-                    status: newStatus
-                },
-                success: function(response) {
-                    if (response.status === 200 && newStatus === 'Resolved') {
-                        location.reload();
-                    }
-                },
-                error: function() {
-                    selectElement.val('Pending');
-                    Swal.fire('Error!', 'Failed to update follow-up status.', 'error');
-                }
-            });
-        });
+                    $.ajax({
+                        url: '{{ route('followup.status.update') }}',
+                        method: 'POST',
+                        data: {
+                            _token: '{{ csrf_token() }}',
+                            followup_id: selectElement.data('followup-id'),
+                            status: newStatus
+                        },
+                        success: function(response) {
+                            if (response.status === 200 && newStatus === 'Resolved') {
+                                location.reload();
+                            }
+                        },
+                        error: function() {
+                            selectElement.val('Pending');
+                            Swal.fire('Error!', 'Failed to update follow-up status.', 'error');
+                        }
+                    });
+                });
+            }
+
+            if (window.jQuery) {
+                bindFollowupStatusChange();
+            } else {
+                document.addEventListener('DOMContentLoaded', bindFollowupStatusChange);
+            }
+        })();
     </script>
 </div>

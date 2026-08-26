@@ -259,4 +259,42 @@
     .premium-modal-header a {
         color: inherit !important;
     }
+
+    /* Notifications dropdown: header sits on the warm gradient, so the
+       "mark all as read" action and the count pill go translucent white. */
+    .notifications .notification-count {
+        background: rgba(255, 255, 255, 0.22);
+        border-radius: 999px;
+        padding: 0.05rem 0.45rem;
+        font-size: 0.72rem;
+        font-weight: 600;
+    }
+
+    .notifications .btn-mark-all-read {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.3rem;
+        padding: 0.2rem 0.65rem;
+        border: 1px solid rgba(255, 255, 255, 0.45);
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.16);
+        color: #ffffff !important;
+        font-size: 0.72rem;
+        font-weight: 500;
+        line-height: 1.5;
+        white-space: nowrap;
+        transition: background-color 0.15s ease, border-color 0.15s ease;
+    }
+
+    .notifications .btn-mark-all-read:hover:not(:disabled),
+    .notifications .btn-mark-all-read:focus:not(:disabled) {
+        background: rgba(255, 255, 255, 0.32);
+        border-color: rgba(255, 255, 255, 0.7);
+        box-shadow: none;
+    }
+
+    .notifications .btn-mark-all-read:disabled {
+        opacity: 0.6;
+        cursor: default;
+    }
 </style>
