@@ -1434,12 +1434,13 @@ return [
         'notes_mentions' => [
             'model' => \App\Models\NotesMention::class,
             'table' => 'notes_mentions',
-            'allowed_columns' => ['id', 'project_id', 'department_id', 'employee_id', 'created_at', 'updated_at'],
+            'allowed_columns' => ['id', 'project_id', 'department_id', 'employee_id', 'user_id', 'created_at', 'updated_at'],
             'searchable_columns' => [],
             'relationships' => [
                 'project' => ['table' => 'projects', 'local_key' => 'project_id', 'foreign_key' => 'id'],
                 'department' => ['table' => 'departments', 'local_key' => 'department_id', 'foreign_key' => 'id'],
                 'employee' => ['table' => 'employees', 'local_key' => 'employee_id', 'foreign_key' => 'id'],
+                'user' => ['table' => 'users', 'local_key' => 'user_id', 'foreign_key' => 'id'],
             ],
             'sensitive_columns' => [],
             'default_sort_column' => 'created_at',

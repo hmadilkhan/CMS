@@ -9,6 +9,7 @@ use App\Models\NotesMention;
 use App\Models\Project;
 use App\Models\User;
 use App\Notifications\NoteMentionedNotification;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Notification;
 use Livewire\Component;
@@ -28,33 +29,57 @@ class NotesSection extends Component
 
     protected $listeners = ['refresh' => '$refresh'];
 
-    /** @var array<int|string, int|null> */
-    protected static $salesPartnerIdCache = [];
+    /** @var array<int|string, array{sales_partner_id: int|null, sales_partner_user_id: int|null}> */
+    protected static $salesPartnerCache = [];
 
     public function mount()
     {
         $this->showToCustomer = 0;
-        $projectSalesPartnerId = $this->projectSalesPartnerId();
-        $this->employees = Employee::select('id', 'name', 'email', 'user_id')
-            ->with('user.roles:id,name')
-            ->where(function ($query) use ($projectSalesPartnerId) {
-                $query->whereHas('user.roles', function ($q) {
-                    $q->whereIn('name', ['Manager', 'Sub-Contractor Manager', 'Employee', 'Super Admin']);
-                })
-                ->when($projectSalesPartnerId, function ($q) use ($projectSalesPartnerId) {
-                    $q->orWhereHas('user', function ($userQuery) use ($projectSalesPartnerId) {
-                        $userQuery->where('sales_partner_id', $projectSalesPartnerId);
+        $salesPartner = $this->projectSalesPartnerContext();
+
+        // Built from users (not employees): a sales partner user does not always
+        // have an employee record, and without one they could never be mentioned.
+        $this->employees = User::select('id', 'name', 'email')
+            ->with('roles:id,name')
+            ->where(function ($query) use ($salesPartner) {
+                $query->where(function ($staff) {
+                    $staff->whereHas('roles', function ($q) {
+                        $q->whereIn('name', ['Manager', 'Sub-Contractor Manager', 'Employee', 'Super Admin']);
+                    })
+                    ->whereExists(function ($q) {
+                        $q->select(DB::raw(1))
+                            ->from('employees')
+                            ->whereColumn('employees.user_id', 'users.id')
+                            ->whereNull('employees.deleted_at');
                     });
                 });
+
+                // Everyone working for the project's sales partner. Note that
+                // users.sales_partner_id doubles as the sub-contractor id for
+                // sub-contractor users, so those are excluded here.
+                if (!empty($salesPartner['sales_partner_id'])) {
+                    $query->orWhere(function ($partner) use ($salesPartner) {
+                        $partner->where('sales_partner_id', $salesPartner['sales_partner_id'])
+                            ->where(function ($type) {
+                                $type->whereNull('user_type_id')
+                                    ->orWhere('user_type_id', '!=', 4);
+                            });
+                    });
+                }
+
+                // The sales partner user assigned to this project.
+                if (!empty($salesPartner['sales_partner_user_id'])) {
+                    $query->orWhere('id', $salesPartner['sales_partner_user_id']);
+                }
             })
+            ->orderBy('name')
             ->get()
-            ->map(function ($employee) {
-                $roles = $employee->user?->roles->pluck('name')->all() ?? [];
+            ->map(function ($user) {
                 return [
-                    'id' => $employee->id,
-                    'name' => $employee->name,
-                    'email' => $employee->email,
-                    'role' => implode(', ', $roles),
+                    'id' => $user->id,
+                    'name' => $user->name,
+                    'email' => $user->email,
+                    'role' => $user->roles->pluck('name')->implode(', '),
                 ];
             })
             ->values()
@@ -62,24 +87,77 @@ class NotesSection extends Component
     }
 
     /**
-     * Sales partner attached to this project (via its customer). Mentionable
-     * users of that partner are added to the @mention list.
+     * Sales partner attached to this project: the partner company (via its
+     * customer) and the partner user assigned to the project itself. Both feed
+     * the @mention list.
+     *
+     * @return array{sales_partner_id: int|null, sales_partner_user_id: int|null}
      */
-    protected function projectSalesPartnerId()
+    protected function projectSalesPartnerContext(): array
     {
         if (empty($this->projectId)) {
-            return null;
+            return ['sales_partner_id' => null, 'sales_partner_user_id' => null];
         }
 
         // One component instance is mounted per department tab, so memoise the
         // lookup for the request instead of re-querying it for every tab.
-        if (!array_key_exists($this->projectId, static::$salesPartnerIdCache)) {
-            static::$salesPartnerIdCache[$this->projectId] = Project::where('id', $this->projectId)
+        if (!array_key_exists($this->projectId, static::$salesPartnerCache)) {
+            $project = Project::select('id', 'customer_id', 'sales_partner_user_id')
                 ->with('customer:id,sales_partner_id')
-                ->first()?->customer?->sales_partner_id;
+                ->find($this->projectId);
+
+            static::$salesPartnerCache[$this->projectId] = [
+                'sales_partner_id' => $project?->customer?->sales_partner_id,
+                'sales_partner_user_id' => $project?->sales_partner_user_id,
+            ];
         }
 
-        return static::$salesPartnerIdCache[$this->projectId];
+        return static::$salesPartnerCache[$this->projectId];
+    }
+
+    /**
+     * Users referenced as @<user id>:<name> in the note being saved.
+     *
+     * @return \Illuminate\Support\Collection
+     */
+    protected function mentionedUsers(array $mentionedIds)
+    {
+        $mentionedIds = array_values(array_unique(array_filter($mentionedIds)));
+
+        if (empty($mentionedIds)) {
+            return collect();
+        }
+
+        return User::whereIn('id', $mentionedIds)->get();
+    }
+
+    /**
+     * Notify one mentioned user and log the mention. Sales partner users have
+     * no employee record, so employee_id stays null for them.
+     */
+    protected function recordMention(User $user, Project $project, string $cleanNote, string $subjectPrefix): void
+    {
+        NotesMention::create([
+            "project_id" => $this->projectId,
+            "department_id" => $this->departmentId,
+            "employee_id" => Employee::where('user_id', $user->id)->value('id'),
+            "user_id" => $user->id,
+        ]);
+
+        try {
+            Notification::send($user, new NoteMentionedNotification($project, $cleanNote, auth()->user()));
+        } catch (\Exception $e) {
+            Log::error('Notification send failed: ' . $e->getMessage());
+        }
+
+        if ($user->email_preference == 1 && !empty($user->email)) {
+            $message = "You have been mentioned in an updated note in the department (" . $project->department->name . ") added by (" . auth()->user()->name . ")";
+            SendRawEmailJob::dispatch(
+                $user->email,
+                $subjectPrefix . ' - (' . $project->project_name . ') - (' . $project->department->name . ')',
+                $message
+            )->afterCommit();
+        }
     }
 
     protected $rules = [
@@ -98,36 +176,12 @@ class NotesSection extends Component
             // Create clean note text with only names (no IDs)
             $cleanNote = $this->departmentNote;
             foreach ($matches[0] as $index => $fullMatch) {
-                $employeeName = $matches[2][$index];
-                $cleanNote = str_replace($fullMatch, "@{$employeeName}", $cleanNote);
+                $mentionedName = $matches[2][$index];
+                $cleanNote = str_replace($fullMatch, "@{$mentionedName}", $cleanNote);
             }
 
-            $employees = Employee::with("user")->whereIn('id', $mentionedIds)->get();
-            foreach ($employees as $employee) {
-                NotesMention::create([
-                    "project_id" => $this->projectId,
-                    "department_id" => $this->departmentId,
-                    "employee_id" => $employee->id,
-                ]);
-                $message = "You have been mentioned in an updated note in the department (" . $project->department->name . ") added by (" . auth()->user()->name . ")";
-                // Send notification (below mail code)
-                $user = User::find($employee->user->id);
-                if ($user) {
-                    try {
-                        Notification::send($user, new NoteMentionedNotification($project, $cleanNote, auth()->user()));
-                    } catch (\Exception $e) {
-                        Log::error('Notification send failed: ' . $e->getMessage());
-                    }
-                }
-                // $employee->user->notify(new NoteMentionedNotification($project, $cleanNote, auth()->user()));
-                // Notification::send($employee->user, new NoteMentionedNotification($project, $cleanNote, auth()->user()));
-                if ($employee->user && $employee->user->email_preference == 1 && !empty($employee->user->email)) {
-                    SendRawEmailJob::dispatch(
-                        $employee->user->email,
-                        'New Project Notes Mention - (' . $project->project_name . ') - (' . $project->department->name . ')',
-                        $message
-                    )->afterCommit();
-                }
+            foreach ($this->mentionedUsers($mentionedIds) as $user) {
+                $this->recordMention($user, $project, $cleanNote, 'New Project Notes Mention');
             }
 
             DepartmentNote::create([
@@ -186,32 +240,13 @@ class NotesSection extends Component
             // Create clean note text with only names (no IDs)
             $cleanNote = $this->departmentNote;
             foreach ($matches[0] as $index => $fullMatch) {
-                $employeeName = $matches[2][$index];
-                $cleanNote = str_replace($fullMatch, "@{$employeeName}", $cleanNote);
+                $mentionedName = $matches[2][$index];
+                $cleanNote = str_replace($fullMatch, "@{$mentionedName}", $cleanNote);
             }
 
-            // Send emails to mentioned employees
-            $employees = Employee::with("user")->whereIn('id', $mentionedIds)->get();
-            foreach ($employees as $employee) {
-                NotesMention::create([
-                    "project_id" => $this->projectId,
-                    "department_id" => $this->departmentId,
-                    "employee_id" => $employee->id,
-                ]);
-                $message = "You have been mentioned in an updated note in the department (" . $project->department->name . ") added by (" . auth()->user()->name . ")";
-                // Send notification (below mail code)
-                try {
-                    Notification::send($employee->user, new NoteMentionedNotification($project, $cleanNote, auth()->user()));
-                } catch (\Exception $e) {
-                    Log::error('Notification send failed in updateNote: ' . $e->getMessage());
-                }
-                if ($employee->user && $employee->user->email_preference == 1 && !empty($employee->user->email)) {
-                    SendRawEmailJob::dispatch(
-                        $employee->user->email,
-                        'Updated Project Notes Mention - (' . $project->project_name . ') - (' . $project->department->name . ')',
-                        $message
-                    )->afterCommit();
-                }
+            // Send emails to mentioned users
+            foreach ($this->mentionedUsers($mentionedIds) as $user) {
+                $this->recordMention($user, $project, $cleanNote, 'Updated Project Notes Mention');
             }
 
             // Update the note with clean text (only names)

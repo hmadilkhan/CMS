@@ -528,12 +528,13 @@ return [
 
         'notes_mentions' => [
             'label' => 'Notes Mentions',
-            'description' => 'Records where an employee is @mentioned in a project/department note.',
+            'description' => 'Records where a user is @mentioned in a project/department note.',
             'columns' => [
                 'id' => 'Internal unique ID.',
                 'project_id' => 'The project.',
                 'department_id' => 'The department.',
-                'employee_id' => 'The employee who was mentioned.',
+                'employee_id' => 'The employee record of the mentioned person, when they have one. Null for sales partner users, who have no employee record.',
+                'user_id' => 'The user who was mentioned. This is the authoritative field; use it instead of employee_id.',
                 'created_at' => 'When created.',
                 'updated_at' => 'When last updated.',
             ],
