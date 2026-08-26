@@ -123,6 +123,20 @@
         .suggestions-dropdown .list-group-item.active {
             background: var(--solen-gradient);
         }
+
+        .suggestions-dropdown .list-group-item {
+            white-space: normal;
+        }
+
+        .suggestions-dropdown .mention-role {
+            margin-left: 0.35rem;
+            font-size: 0.8rem;
+            opacity: 0.65;
+        }
+
+        .suggestions-dropdown .list-group-item.active .mention-role {
+            opacity: 0.85;
+        }
     </style>
     @can('Notes Section')
         <div class="col-sm-12 mb-3">
@@ -182,7 +196,10 @@
                             <template x-for="(employee, index) in filteredEmployees" :key="employee.id">
                                 <li class="list-group-item list-group-item-action"
                                     :class="index === selectedIndex ? 'active text-black' : 'text-black'"
-                                    x-text="employee.name" @click="selectEmployee(employee)">
+                                    @click="selectEmployee(employee)">
+                                    <span x-text="employee.name"></span>
+                                    <span class="mention-role" x-show="employee.role"
+                                        x-text="'(' + employee.role + ')'"></span>
                                 </li>
                             </template>
                         </ul>
@@ -248,7 +265,10 @@
                                     <template x-for="(employee, index) in filteredEmployees" :key="employee.id">
                                         <li class="list-group-item list-group-item-action"
                                             :class="index === selectedIndex ? 'active text-black' : 'text-black'"
-                                            x-text="employee.name" @click="selectEmployee(employee)">
+                                            @click="selectEmployee(employee)">
+                                            <span x-text="employee.name"></span>
+                                            <span class="mention-role" x-show="employee.role"
+                                                x-text="'(' + employee.role + ')'"></span>
                                         </li>
                                     </template>
                                 </ul>

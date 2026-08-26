@@ -8,10 +8,10 @@ use App\Models\Employee;
 use App\Models\NotesMention;
 use App\Models\Project;
 use App\Models\User;
-use Livewire\Component;
-use Illuminate\Support\Facades\Notification;
 use App\Notifications\NoteMentionedNotification;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Notification;
+use Livewire\Component;
 
 class NotesSection extends Component
 {
@@ -28,22 +28,58 @@ class NotesSection extends Component
 
     protected $listeners = ['refresh' => '$refresh'];
 
+    /** @var array<int|string, int|null> */
+    protected static $salesPartnerIdCache = [];
+
     public function mount()
     {
-        $loggedInUser = auth()->user();
         $this->showToCustomer = 0;
-        $this->employees = Employee::select('id', 'name', 'email')
-            ->where(function($query) use ($loggedInUser) {
-                $query->whereHas('user.roles', function($q) {
+        $projectSalesPartnerId = $this->projectSalesPartnerId();
+        $this->employees = Employee::select('id', 'name', 'email', 'user_id')
+            ->with('user.roles:id,name')
+            ->where(function ($query) use ($projectSalesPartnerId) {
+                $query->whereHas('user.roles', function ($q) {
                     $q->whereIn('name', ['Manager', 'Sub-Contractor Manager', 'Employee', 'Super Admin']);
                 })
-                ->when($loggedInUser && $loggedInUser->sales_partner_id, function($q) use ($loggedInUser) {
-                    $q->orWhereHas('user', function($userQuery) use ($loggedInUser) {
-                        $userQuery->where('sales_partner_id', $loggedInUser->sales_partner_id);
+                ->when($projectSalesPartnerId, function ($q) use ($projectSalesPartnerId) {
+                    $q->orWhereHas('user', function ($userQuery) use ($projectSalesPartnerId) {
+                        $userQuery->where('sales_partner_id', $projectSalesPartnerId);
                     });
                 });
             })
-            ->get();
+            ->get()
+            ->map(function ($employee) {
+                $roles = $employee->user?->roles->pluck('name')->all() ?? [];
+                return [
+                    'id' => $employee->id,
+                    'name' => $employee->name,
+                    'email' => $employee->email,
+                    'role' => implode(', ', $roles),
+                ];
+            })
+            ->values()
+            ->all();
+    }
+
+    /**
+     * Sales partner attached to this project (via its customer). Mentionable
+     * users of that partner are added to the @mention list.
+     */
+    protected function projectSalesPartnerId()
+    {
+        if (empty($this->projectId)) {
+            return null;
+        }
+
+        // One component instance is mounted per department tab, so memoise the
+        // lookup for the request instead of re-querying it for every tab.
+        if (!array_key_exists($this->projectId, static::$salesPartnerIdCache)) {
+            static::$salesPartnerIdCache[$this->projectId] = Project::where('id', $this->projectId)
+                ->with('customer:id,sales_partner_id')
+                ->first()?->customer?->sales_partner_id;
+        }
+
+        return static::$salesPartnerIdCache[$this->projectId];
     }
 
     protected $rules = [
