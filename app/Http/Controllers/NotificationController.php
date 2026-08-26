@@ -2,8 +2,6 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
-
 class NotificationController extends Controller
 {
     public function index()
@@ -12,12 +10,28 @@ class NotificationController extends Controller
         return view('notifications.index', compact('notifications'));
     }
 
+    /**
+     * Mark as read and open the linked record - used by the "View Details" link.
+     */
     public function markAsRead($id)
     {
         $notification = auth()->user()->notifications()->find($id);
         if ($notification) {
             $notification->markAsRead();
             return redirect($notification->data['url'] ?? route('notifications.index'));
+        }
+        return redirect()->back();
+    }
+
+    /**
+     * Mark a single notification as read and stay on the notifications page.
+     */
+    public function markAsReadOnly($id)
+    {
+        $notification = auth()->user()->notifications()->find($id);
+        if ($notification) {
+            $notification->markAsRead();
+            return redirect()->back()->with('success', 'Notification marked as read');
         }
         return redirect()->back();
     }

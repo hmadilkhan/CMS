@@ -11,7 +11,9 @@
             <!-- header rightbar icon -->
             <div class="h-right d-flex align-items-center mr-5 mr-lg-0 order-1">
                 <div class="dropdown notifications zindex-popover">
-                    <a class="nav-link dropdown-toggle pulse" href="#" role="button" data-bs-toggle="dropdown"
+                    <a id="notificationsBell"
+                        class="nav-link dropdown-toggle {{ auth()->user()->unreadNotifications()->exists() ? 'pulse' : '' }}"
+                        href="#" role="button" data-bs-toggle="dropdown"
                         data-bs-auto-close="outside">
                         <i class="icofont-alarm fs-5"></i>
                         <span class="pulse-ring"></span>
@@ -97,3 +99,19 @@
         </div>
     </nav>
 </div>
+
+{{-- The bell lives outside the Livewire notifications component, so it listens
+     for that component's unread-count event to start/stop its pulse animation. --}}
+<script>
+    window.addEventListener('notifications-updated', function (event) {
+        var bell = document.getElementById('notificationsBell');
+        if (!bell) {
+            return;
+        }
+
+        var detail = event.detail || {};
+        var unread = Array.isArray(detail) ? (detail[0] || {}).unread : detail.unread;
+
+        bell.classList.toggle('pulse', Number(unread) > 0);
+    });
+</script>

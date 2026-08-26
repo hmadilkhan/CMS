@@ -1,7 +1,7 @@
 <?php
 
-use App\Http\Controllers\AuroraController;
 use App\Http\Controllers\AiChatController;
+use App\Http\Controllers\AuroraController;
 use App\Http\Controllers\CustomerController;
 use App\Http\Controllers\DeployController;
 use App\Http\Controllers\EmployeeController;
@@ -16,13 +16,10 @@ use App\Http\Controllers\ProjectController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\TaskController;
 use App\Http\Controllers\ToolController;
-use App\Http\Controllers\SiteSurveyController;
 use App\Livewire\AdminDashboard;
 use App\Livewire\DynamicReport;
 use App\Livewire\DynamicReportBuilder;
-use App\Livewire\DynamicReport\DynamicReportForm;
 use App\Livewire\ReportRunner;
-use App\Models\InverterType;
 use Illuminate\Support\Facades\Route;
 use Lab404\Impersonate\Controllers\ImpersonateController;
 
@@ -40,7 +37,6 @@ use Lab404\Impersonate\Controllers\ImpersonateController;
 Route::get('/CRM', function () {
     return redirect('https://crm.solenenergyco.com');
 });
-
 
 // Route::get('/storage-link', function () {
 //     $targetFolder = storage_path("app/public");
@@ -66,7 +62,6 @@ Route::get('/track-your-project', function () {
 
 Route::get('/admin/deploy', [DeployController::class, 'deploy'])->middleware('auth');
 Route::post('/admin/deploy', [DeployController::class, 'deployAction'])->name('admin.deploy')->middleware('auth');
-
 
 Route::post('store-ticket', [App\Http\Controllers\NewTicketController::class, 'store'])->name("store.ticket");
 Route::get('check-website-project/{code}/{email}', [App\Http\Controllers\ProjectController::class, 'checkWebsiteProject'])->name('get.website.project');
@@ -134,7 +129,6 @@ Route::middleware('auth')->group(function () {
     Route::get('tools-index/{id?}', [App\Http\Controllers\ToolController::class, 'index'])->name('tools.manage');
     Route::post('tools-delete', [App\Http\Controllers\ToolController::class, 'toolDelete'])->name('tools.delete');
 
-
     Route::post('get-employees-with-department', [App\Http\Controllers\EmployeeController::class, 'getDepartmentEmployees'])->name('get.employee.department');
 
     Route::post('get-finance-option-by-id', [App\Http\Controllers\CustomerController::class, 'getFinanceOptionById'])->name('get.finance.option.by.id');
@@ -155,7 +149,7 @@ Route::middleware('auth')->group(function () {
     Route::post('project-list', [App\Http\Controllers\ProjectController::class, 'getProjectList'])->name('projects.list');
     Route::post('get-sub-departments', [App\Http\Controllers\ProjectController::class, 'getSubDepartments'])->name('get.sub.departments');
     // Route::post('projects-move', [App\Http\Controllers\ProjectController::class, 'projectMove'])->name('projects.move'); // OLD Should be remove in Future
-    Route::post('move-project', [App\Http\Controllers\ProjectController::class, 'moveProject'])->name('move.project'); // NEW 
+    Route::post('move-project', [App\Http\Controllers\ProjectController::class, 'moveProject'])->name('move.project'); // NEW
     Route::post('project-call-logs', [App\Http\Controllers\ProjectController::class, 'saveCallLogs'])->name('projects.call.logs');
     Route::post('project-call-script', [App\Http\Controllers\ProjectController::class, 'getCallScript'])->name('projects.call.script');
     Route::post('project-email-script', [App\Http\Controllers\ProjectController::class, 'getEmailScript'])->name('projects.email.script');
@@ -234,8 +228,7 @@ Route::middleware('auth')->group(function () {
         Route::post('/adders-type-update', 'addersTypeUpdate')->name("adder.type.update");
         Route::post('/adders-type-delete', 'addersTypeDelete')->name("adder.type.delete");
 
-
-        // UTILITY COMPANY 
+        // UTILITY COMPANY
         Route::get('/view-utility-company/{id?}', 'utilityCompanyView')->name("view.utility.types");
         Route::post('/utility-company-store', 'utilityCompanyStore')->name("utility.type.store");
         Route::post('/utility-company-update', 'utilityCompanyUpdate')->name("utility.type.update");
@@ -363,7 +356,7 @@ Route::middleware('auth')->group(function () {
     // NOTIFICATIONS
     Route::get('/notifications', [App\Http\Controllers\NotificationController::class, 'index'])->name('notifications.index');
     Route::post('/notifications/mark-all-read', [App\Http\Controllers\NotificationController::class, 'markAllAsRead'])->name('notifications.mark-all-read');
-    Route::post('/notifications/{id}/mark-read', [App\Http\Controllers\NotificationController::class, 'markAsRead']);
+    Route::post('/notifications/{id}/mark-read', [App\Http\Controllers\NotificationController::class, 'markAsReadOnly'])->name('notifications.mark-read-only');
     Route::get('/notifications/{id}/mark-read', [App\Http\Controllers\NotificationController::class, 'markAsRead'])->name('notifications.mark-read');
 
     Route::get('tickets', [App\Http\Controllers\NewTicketController::class, 'index'])->name("tickets");

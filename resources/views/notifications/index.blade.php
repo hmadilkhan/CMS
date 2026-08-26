@@ -52,8 +52,9 @@
         font-size: 0.85rem;
         font-weight: 600;
     }
+    /* Always visible - it was hover-only, so users could not find it. */
     .mark-read-btn {
-        opacity: 0;
+        opacity: 0.75;
         transition: opacity 0.3s ease;
     }
     .notification-card:hover .mark-read-btn {
@@ -72,6 +73,13 @@
 </style>
 
 <div class="container-xxxl">
+    @if(session('success'))
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        <i class="icofont-check-circled me-2"></i>{{ session('success') }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+    @endif
+
     <div class="notification-header">
         <div class="d-flex justify-content-between align-items-center">
             <div>
@@ -124,7 +132,7 @@
                                     </a>
                                     @endif
                                     @if(!$notification->read_at)
-                                    <form action="{{ route('notifications.mark-read', $notification->id) }}" method="POST" class="mark-read-btn">
+                                    <form action="{{ route('notifications.mark-read-only', $notification->id) }}" method="POST" class="mark-read-btn">
                                         @csrf
                                         <button type="submit" class="btn btn-sm btn-outline-secondary">
                                             <i class="icofont-check"></i> Mark as Read

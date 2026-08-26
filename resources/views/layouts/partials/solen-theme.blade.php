@@ -297,4 +297,37 @@
         opacity: 0.6;
         cursor: default;
     }
+
+    /* Read notifications stay in the dropdown list, just visually muted. */
+    .notifications .notification-item.is-read {
+        opacity: 0.6;
+    }
+
+    .notifications .notification-item.is-unread {
+        background: rgba(151, 76, 18, 0.06);
+        border-radius: 6px;
+    }
+
+    .notifications .btn-mark-one-read {
+        flex: 0 0 auto;
+        align-self: center;
+        padding: 0.1rem 0.4rem;
+        border: 1px solid rgba(151, 76, 18, 0.35);
+        border-radius: 999px;
+        background: transparent;
+        color: var(--solen-primary-dark) !important;
+        font-size: 0.72rem;
+        line-height: 1.4;
+    }
+
+    .notifications .btn-mark-one-read:hover:not(:disabled),
+    .notifications .btn-mark-one-read:focus:not(:disabled) {
+        background: rgba(151, 76, 18, 0.12);
+        box-shadow: none;
+    }
+
+    .notifications .btn-mark-one-read:disabled {
+        opacity: 0.5;
+        cursor: default;
+    }
 </style>
