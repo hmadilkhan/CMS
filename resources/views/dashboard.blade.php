@@ -52,6 +52,13 @@
     .employee-dashboard-page .badge.bg-danger {
         background: #1d4ed8 !important;
     }
+    /* Upcoming AHJ's count - theme accent, dark text (best contrast on #F19828) */
+    .employee-dashboard-page .dashboard-tabs .nav-link .ahj-tab-badge,
+    .employee-dashboard-page .dashboard-tabs .nav-link.active .ahj-tab-badge {
+        background: #F19828 !important;
+        color: #050505 !important;
+        font-weight: 700;
+    }
 </style>
 <div class="container-xxl employee-dashboard-page">
     <div class="row mb-4">
@@ -70,6 +77,16 @@
                         @endif
                     </a>
                 </li>
+                @if(!empty($showUpcomingAhj))
+                <li class="nav-item">
+                    <a class="nav-link" data-bs-toggle="tab" href="#upcoming-ahjs" role="tab">
+                        <i class="icofont-building me-2"></i>Upcoming AHJ's
+                        @if($upcomingAhjProjects->count() > 0)
+                            <span class="badge ahj-tab-badge ms-1">{{ $upcomingAhjProjects->count() }}</span>
+                        @endif
+                    </a>
+                </li>
+                @endif
             </ul>
         </div>
     </div>
@@ -246,6 +263,115 @@
         <div class="tab-pane fade" id="service-tickets" role="tabpanel">
             @include('service-tickets.employee-dashboard-content')
         </div>
+
+        @if(!empty($showUpcomingAhj))
+        <div class="tab-pane fade" id="upcoming-ahjs" role="tabpanel">
+            <div class="card mb-3 shadow-sm">
+                <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                    <div class="info-header">
+                        <h6 class="mb-0 fw-bold"><i class="icofont-building me-2"></i>Upcoming AHJ's</h6>
+                        <small class="text-muted">Projects currently in Site Survey or Engineering</small>
+                    </div>
+                    <span class="badge bg-light text-primary rounded-pill">{{ $upcomingAhjProjects->count() }}</span>
+                </div>
+                <div class="card-body">
+                    <div class="{{ $upcomingAhjProjects->isEmpty() ? 'd-none' : '' }}" id="upcomingAhjTableWrap">
+                        <table id="upcomingAhjTable" class="table table-hover align-middle mb-0 datatable" style="width:100%">
+                            <thead>
+                                <tr>
+                                    <th>Project Id</th>
+                                    <th>Project Name</th>
+                                    <th>AHJ Name</th>
+                                    <th class="text-center">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach ($upcomingAhjProjects as $ahjProject)
+                                <tr class="upcoming-ahj-row" data-project-id="{{ $ahjProject->id }}">
+                                    <td>{{ $ahjProject->code ?? '—' }}</td>
+                                    <td>
+                                        <a class="text-decoration-none" href="{{ route('projects.show', $ahjProject->id) }}">{{ $ahjProject->project_name }}</a>
+                                    </td>
+                                    <td>{{ trim((string) $ahjProject->ahj) !== '' ? $ahjProject->ahj : '—' }}</td>
+                                    <td class="text-center">
+                                        <button type="button" class="btn btn-sm btn-outline-danger ahj-mark-remove" data-project-id="{{ $ahjProject->id }}">
+                                            <i class="icofont-close-circled me-1"></i>Mark As Remove
+                                        </button>
+                                    </td>
+                                </tr>
+                                @endforeach
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="text-center text-muted py-4 {{ $upcomingAhjProjects->isEmpty() ? '' : 'd-none' }}" id="upcomingAhjEmpty">
+                        No upcoming AHJ projects right now.
+                    </div>
+                </div>
+            </div>
+
+            <div class="card mb-3 shadow-sm">
+                <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                    <div class="info-header">
+                        <h6 class="mb-0 fw-bold"><i class="icofont-history me-2"></i>Removed From The List</h6>
+                        <small class="text-muted">Removed by hand, or moved on to Permitting</small>
+                    </div>
+                    <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-toggle="collapse" data-bs-target="#removedAhjPanel">
+                        <span class="badge bg-light text-primary rounded-pill me-1" id="removedAhjCount">{{ $removedAhjProjects->count() }}</span> Show / Hide
+                    </button>
+                </div>
+                <div class="collapse" id="removedAhjPanel">
+                    <div class="card-body">
+                        <div class="{{ $removedAhjProjects->isEmpty() ? 'd-none' : '' }}" id="removedAhjTableWrap">
+                            <table id="removedAhjTable" class="table table-hover align-middle mb-0" style="width:100%">
+                                <thead>
+                                    <tr>
+                                        <th>Project Id</th>
+                                        <th>Project Name</th>
+                                        <th>AHJ Name</th>
+                                        <th>Left The List On</th>
+                                        <th>Reason</th>
+                                        <th class="text-center">Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="removedAhjBody">
+                                    @foreach ($removedAhjProjects as $removed)
+                                    <tr class="removed-ahj-row" data-project-id="{{ $removed->project_id }}">
+                                        <td>{{ $removed->project->code ?? '—' }}</td>
+                                        <td>
+                                            <a class="text-decoration-none" href="{{ route('projects.show', $removed->project_id) }}">{{ $removed->project->project_name }}</a>
+                                        </td>
+                                        <td>{{ trim((string) $removed->project->ahj) !== '' ? $removed->project->ahj : '—' }}</td>
+                                        <td>{{ optional($removed->removed_at)->format('d M Y, h:i A') }}</td>
+                                        <td>
+                                            @if($removed->isManual())
+                                                <span class="badge bg-secondary">Marked as removed</span>
+                                                <small class="text-muted d-block">by {{ $removed->removedBy->name ?? 'Unknown' }}</small>
+                                            @else
+                                                <span class="badge bg-success">Moved to {{ $removed->movedToDepartment->name ?? 'another lane' }}</span>
+                                            @endif
+                                        </td>
+                                        <td class="text-center">
+                                            @if($removed->isManual())
+                                                <button type="button" class="btn btn-sm btn-outline-primary ahj-restore" data-project-id="{{ $removed->project_id }}">
+                                                    <i class="icofont-undo me-1"></i>Undo
+                                                </button>
+                                            @else
+                                                <span class="text-muted">—</span>
+                                            @endif
+                                        </td>
+                                    </tr>
+                                    @endforeach
+                                </tbody>
+                            </table>
+                        </div>
+                        <div class="text-center text-muted py-4 {{ $removedAhjProjects->isEmpty() ? '' : 'd-none' }}" id="removedAhjEmpty">
+                            Nothing has left the list yet.
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        @endif
     </div>
 </div>
 @section('scripts')
@@ -300,6 +426,175 @@ $(document).ready(function() {
     $('.status-select').each(function() {
         $(this).data('original-value', $(this).val());
     });
+
+    // Upcoming AHJ's - the live table is a DataTable, so rows on another page
+    // leave the DOM; the counts are kept on counters, not by counting rows.
+    let ahjLiveCount = {{ !empty($showUpcomingAhj) ? $upcomingAhjProjects->count() : 0 }};
+    let ahjRemovedCount = {{ !empty($showUpcomingAhj) ? $removedAhjProjects->count() : 0 }};
+    const ahjCurrentUser = @json(auth()->user()->name);
+
+    function ahjLiveTable() {
+        return ($.fn.DataTable && $.fn.DataTable.isDataTable('#upcomingAhjTable'))
+            ? $('#upcomingAhjTable').DataTable()
+            : null;
+    }
+
+    // DataTables sizes hidden tables wrong; re-measure when the tab is opened.
+    $('a[href="#upcoming-ahjs"]').on('shown.bs.tab', function() {
+        const dt = ahjLiveTable();
+        if (dt) {
+            dt.columns.adjust();
+        }
+    });
+
+    function ahjRowCells(row) {
+        return {
+            code: row.find('td').eq(0).html(),
+            name: row.find('td').eq(1).html(),
+            ahj: row.find('td').eq(2).html()
+        };
+    }
+
+    // Mark As Remove - takes the project off the live list for everyone
+    $(document).on('click', '.ahj-mark-remove', function() {
+        const button = $(this);
+        const row = button.closest('.upcoming-ahj-row');
+        const projectId = button.data('project-id');
+        const cells = ahjRowCells(row);
+
+        button.prop('disabled', true);
+
+        $.ajax({
+            url: '{{ route("upcoming.ahj.remove") }}',
+            method: 'POST',
+            data: {
+                _token: '{{ csrf_token() }}',
+                project_id: projectId
+            },
+            success: function(response) {
+                if (response.status === 200) {
+                    dropLiveAhjRow(row);
+                    prependRemovedAhjRow(projectId, cells, response.removed_at, ahjCurrentUser);
+                    showToast('Success!', response.message, 'success');
+                } else {
+                    showToast('Error!', response.message || 'Failed to update', 'error');
+                    button.prop('disabled', false);
+                }
+            },
+            error: function(xhr) {
+                showToast('Error!', (xhr.responseJSON && xhr.responseJSON.message) ? xhr.responseJSON.message : 'Failed to update', 'error');
+                button.prop('disabled', false);
+            }
+        });
+    });
+
+    // Undo - put a manually removed project back on the live list
+    $(document).on('click', '.ahj-restore', function() {
+        const button = $(this);
+        const row = button.closest('.removed-ahj-row');
+        const projectId = button.data('project-id');
+        const cells = ahjRowCells(row);
+
+        button.prop('disabled', true);
+
+        $.ajax({
+            url: '{{ route("upcoming.ahj.restore") }}',
+            method: 'POST',
+            data: {
+                _token: '{{ csrf_token() }}',
+                project_id: projectId
+            },
+            success: function(response) {
+                if (response.status === 200) {
+                    row.remove();
+                    ahjRemovedCount = Math.max(0, ahjRemovedCount - 1);
+                    addLiveAhjRow(projectId, cells);
+                    showToast('Success!', response.message, 'success');
+                } else {
+                    showToast('Error!', response.message || 'Failed to update', 'error');
+                    button.prop('disabled', false);
+                }
+            },
+            error: function(xhr) {
+                showToast('Error!', (xhr.responseJSON && xhr.responseJSON.message) ? xhr.responseJSON.message : 'Failed to update', 'error');
+                button.prop('disabled', false);
+            }
+        });
+    });
+
+    function ahjRemoveButton(projectId) {
+        return '<button type="button" class="btn btn-sm btn-outline-danger ahj-mark-remove" data-project-id="' + projectId + '">' +
+            '<i class="icofont-close-circled me-1"></i>Mark As Remove</button>';
+    }
+
+    function dropLiveAhjRow(row) {
+        const dt = ahjLiveTable();
+
+        if (dt) {
+            dt.row(row).remove().draw(false);
+        } else {
+            row.remove();
+        }
+
+        ahjLiveCount = Math.max(0, ahjLiveCount - 1);
+        refreshAhjCounts();
+    }
+
+    function addLiveAhjRow(projectId, cells) {
+        const dt = ahjLiveTable();
+
+        if (dt) {
+            const added = dt.row.add([cells.code, cells.name, cells.ahj, ahjRemoveButton(projectId)]).draw(false);
+            $(added.node())
+                .addClass('upcoming-ahj-row')
+                .attr('data-project-id', projectId)
+                .find('td').last().addClass('text-center');
+        } else {
+            $('#upcomingAhjTable tbody').append(
+                '<tr class="upcoming-ahj-row" data-project-id="' + projectId + '">' +
+                '<td>' + cells.code + '</td><td>' + cells.name + '</td><td>' + cells.ahj + '</td>' +
+                '<td class="text-center">' + ahjRemoveButton(projectId) + '</td></tr>'
+            );
+        }
+
+        ahjLiveCount += 1;
+        refreshAhjCounts();
+    }
+
+    function prependRemovedAhjRow(projectId, cells, removedAt, removedBy) {
+        $('#removedAhjBody').prepend(
+            '<tr class="removed-ahj-row" data-project-id="' + projectId + '">' +
+            '<td>' + cells.code + '</td><td>' + cells.name + '</td><td>' + cells.ahj + '</td>' +
+            '<td>' + removedAt + '</td>' +
+            '<td><span class="badge bg-secondary">Marked as removed</span>' +
+            '<small class="text-muted d-block">by ' + $('<div>').text(removedBy).html() + '</small></td>' +
+            '<td class="text-center"><button type="button" class="btn btn-sm btn-outline-primary ahj-restore" data-project-id="' + projectId + '">' +
+            '<i class="icofont-undo me-1"></i>Undo</button></td></tr>'
+        );
+
+        ahjRemovedCount += 1;
+        refreshAhjCounts();
+    }
+
+    function refreshAhjCounts() {
+        const tabLink = $('a[href="#upcoming-ahjs"]');
+        let badge = tabLink.find('.ahj-tab-badge');
+
+        if (ahjLiveCount === 0) {
+            badge.remove();
+        } else {
+            if (badge.length === 0) {
+                badge = $('<span class="badge ahj-tab-badge ms-1"></span>').appendTo(tabLink);
+            }
+            badge.text(ahjLiveCount);
+        }
+
+        $('#upcomingAhjTableWrap').toggleClass('d-none', ahjLiveCount === 0);
+        $('#upcomingAhjEmpty').toggleClass('d-none', ahjLiveCount !== 0);
+        $('#removedAhjCount').text(ahjRemovedCount);
+        $('#removedAhjTableWrap').toggleClass('d-none', ahjRemovedCount === 0);
+        $('#removedAhjEmpty').toggleClass('d-none', ahjRemovedCount !== 0);
+    }
     
     // Toast notification function
     function showToast(title, message, type) {
@@ -351,6 +646,9 @@ $(document).ready(function() {
 .form-select-sm:focus {
     border-color: #1d4ed8;
     box-shadow: 0 0 0 0.2rem rgba(29, 78, 216, 0.12);
+}
+#removedAhjTable td {
+    color: #6b7280;
 }
 </style>
 @endsection

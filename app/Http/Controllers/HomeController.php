@@ -8,16 +8,19 @@ use App\Models\ProjectFollowUp;
 use App\Models\ServiceTicket;
 use App\Models\Task;
 use App\Services\ProjectService;
-use Illuminate\Contracts\View\View;
+use App\Services\UpcomingAhjService;
 use Illuminate\Http\Request;
 
 class HomeController extends Controller
 {
     protected $projectService;
 
-    public function __construct(ProjectService $projectService)
+    protected $upcomingAhjService;
+
+    public function __construct(ProjectService $projectService, UpcomingAhjService $upcomingAhjService)
     {
         $this->projectService = $projectService;
+        $this->upcomingAhjService = $upcomingAhjService;
     }
     public function dashboard(Request $request)
     {
@@ -27,7 +30,6 @@ class HomeController extends Controller
             return view('technician-dashboard-wrapper');
         }
 
-        
         if (auth()->user()->hasRole("Super Admin")) {
             return view('executive-dashboard');
         }
@@ -38,7 +40,7 @@ class HomeController extends Controller
                 "tickets" => $tickets
             ]);
         }
-        
+
         if (!empty(auth()->user()->employee)) {
             $emails = Email::with("project", "customer")->whereIn("project_id", Task::where("employee_id", auth()->user()->employee->id)->where("status", "!=", "Completed")->pluck("project_id"))->where("is_view", 1)->get();
         }
@@ -64,11 +66,23 @@ class HomeController extends Controller
                 ->get();
         }
 
+        // Upcoming AHJ's tab - Permitting department users (and Admin) only
+        $showUpcomingAhj = $this->upcomingAhjService->visibleTo(auth()->user());
+        $upcomingAhjProjects = $showUpcomingAhj
+            ? $this->upcomingAhjService->projectsFor(auth()->user())
+            : collect();
+        $removedAhjProjects = $showUpcomingAhj
+            ? $this->upcomingAhjService->removedProjects()
+            : collect();
+
         return view('dashboard', [
             "projects" => $this->projectService->projectQuery($request),
             "emails" => $emails,
             "followUps" => $followUps,
-            "serviceTickets" => $serviceTickets
+            "serviceTickets" => $serviceTickets,
+            "showUpcomingAhj" => $showUpcomingAhj,
+            "upcomingAhjProjects" => $upcomingAhjProjects,
+            "removedAhjProjects" => $removedAhjProjects
         ]);
     }
 }
