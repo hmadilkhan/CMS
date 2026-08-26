@@ -20,6 +20,19 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Company Name
+    |--------------------------------------------------------------------------
+    |
+    | Trading name shown to customers and partners — email headers, footers and
+    | signatures. Kept separate from "name" so the branding stays correct even
+    | when APP_NAME is left at its framework default.
+    |
+    */
+
+    'company_name' => env('APP_COMPANY_NAME', 'Solen Energy Co.'),
+
+    /*
+    |--------------------------------------------------------------------------
     | Application Environment
     |--------------------------------------------------------------------------
     |
@@ -159,7 +172,7 @@ return [
         /*
          * Package Service Providers...
          */
-        
+
         /*
          * Application Service Providers...
          */

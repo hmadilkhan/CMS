@@ -255,6 +255,22 @@ return [
                 'name' => env('OOC_MAIL_FROM_NAME', 'COC'),
             ],
         ],
+        // Local testing only: set MAIL_MAILER=log to write rendered emails to
+        // storage/logs instead of sending them, or MAIL_MAILER=array to keep
+        // them in memory (used by tests). Neither reaches a real inbox.
+        'log' => [
+            'transport' => 'log',
+            'channel' => env('MAIL_LOG_CHANNEL'),
+            'from' => [
+                'address' => env('MAIL_FROM_ADDRESS', 'dealreview@testsolencrm.com'),
+                'name' => env('MAIL_FROM_NAME', 'Solen Energy Co - Deal Review'),
+            ],
+        ],
+
+        'array' => [
+            'transport' => 'array',
+        ],
+
         // add more configurations if needed
     ],
 
