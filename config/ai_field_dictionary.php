@@ -60,8 +60,8 @@ return [
                 'ahj_website_url' => 'Website URL for the Authority Having Jurisdiction.',
                 'adders_approve_checkbox' => 'Flag indicating whether the project adders have been approved.',
                 'mpu_required' => 'Whether a Main Panel Upgrade (electrical panel upgrade) is required before solar.',
-                'meter_spot_requestd_date' => 'Date the utility meter-spot was requested.',
-                'meter_spot_requestd_number' => 'Reference number for the meter-spot request.',
+                'meter_spot_request_date' => 'Date the utility meter-spot was requested.',
+                'meter_spot_request_number' => 'Reference number for the meter-spot request.',
                 'meter_spot_result' => 'Outcome/result of the utility meter-spot request.',
                 'permitting_submittion_date' => 'Date the building permit was submitted to the AHJ.',
                 'permitting_approval_date' => 'Date the building permit was approved by the AHJ.',
@@ -353,6 +353,33 @@ return [
             ],
         ],
 
+        'project_document_follow_ups' => [
+            'label' => 'Document Follow Ups',
+            'description' => 'The MPU paperwork chase: projects where MPU Required is Yes but the meter spot result has not come back yet. Shown on the Engineering assignee dashboard and cleared when the result is filled in.',
+            'columns' => [
+                'id' => 'Internal unique ID.',
+                'project_id' => 'The project being chased.',
+                'employee_id' => 'The Engineering employee who owns the chase.',
+                'department_id' => 'The lane the project was in when the follow-up opened.',
+                'sub_department_id' => 'The sub-lane the project was in when the follow-up opened.',
+                'status' => 'Whether the follow-up is still pending or resolved.',
+                'opened_at' => 'When the project joined the Document Follow Up list.',
+                'resolved_at' => 'Date and time the project left the list.',
+                'resolved_reason' => 'Why it left: meter spot result filled, MPU no longer required, or project archived.',
+                'resolved_by' => 'The user who cleared it.',
+                'created_at' => 'When created.',
+                'updated_at' => 'When last updated.',
+            ],
+            'value_maps' => [
+                'status' => ['Pending' => 'Still chasing the document', 'Resolved' => 'Cleared'],
+                'resolved_reason' => [
+                    'meter_spot_result' => 'Meter spot result was filled in',
+                    'mpu_not_required' => 'MPU Required is no longer Yes',
+                    'project_archived' => 'Project was archived',
+                ],
+            ],
+        ],
+
         'project_call_logs' => [
             'label' => 'Project Call Logs',
             'description' => 'Log of phone calls made on a project, per department.',
@@ -501,9 +528,13 @@ return [
                 'department_id' => 'The parent department.',
                 'name' => 'Sub-department name.',
                 'order' => 'The position of this sub-lane in the workflow order.',
+                'show_in_move_list' => 'Whether this lane can be picked when moving a project. When off, the lane is closed: it is not offered as a destination and projects sitting in it cannot be moved by hand.',
                 'created_at' => 'When created.',
                 'updated_at' => 'When last updated.',
                 'deleted_at' => 'When soft-deleted (NULL means active).',
+            ],
+            'value_maps' => [
+                'show_in_move_list' => ['1' => 'Open lane — can be moved into and out of', '0' => 'Closed lane — system-controlled only'],
             ],
         ],
 

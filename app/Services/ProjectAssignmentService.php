@@ -43,7 +43,12 @@ class ProjectAssignmentService
             ->first();
     }
 
-    public function notifyAssignedEmployee(?Employee $employee, Project $project, Task $task, bool $shouldNotify = true): void
+    /**
+     * $sendEmail is turned off when the move is not something the assignee has
+     * to act on yet - a project parked in Install Pending Document by an open
+     * Document Follow Up still gets the in-app notification, but no e-mail.
+     */
+    public function notifyAssignedEmployee(?Employee $employee, Project $project, Task $task, bool $shouldNotify = true, bool $sendEmail = true): void
     {
         if (!$shouldNotify || !$employee?->user) {
             return;
@@ -52,7 +57,7 @@ class ProjectAssignmentService
         $assignedBy = auth()->user()->name ?? 'System';
         $employee->user->notify(new ProjectAssignedNotification($project, $task, $assignedBy));
 
-        if (empty($employee->user->email)) {
+        if (!$sendEmail || empty($employee->user->email)) {
             return;
         }
 

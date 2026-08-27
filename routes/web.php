@@ -167,6 +167,7 @@ Route::middleware('auth')->group(function () {
     Route::post('action-project-acceptance', [App\Http\Controllers\ProjectController::class, 'actionProjectAcceptance'])->name('action.project.acceptance');
     Route::post('toggle-adders-lock', [App\Http\Controllers\ProjectController::class, 'toggleAddersLock'])->name('toggle.adders.lock');
     Route::post('update-followup-status', [App\Http\Controllers\ProjectController::class, 'updateFollowUpStatus'])->name('followup.status.update');
+    Route::post('document-followup/meter-spot-result', [App\Http\Controllers\DocumentFollowUpController::class, 'updateMeterSpotResult'])->name('document.followup.meter.spot.result');
     Route::post('upcoming-ahj/remove', [App\Http\Controllers\UpcomingAhjController::class, 'remove'])->name('upcoming.ahj.remove');
     Route::post('upcoming-ahj/restore', [App\Http\Controllers\UpcomingAhjController::class, 'restore'])->name('upcoming.ahj.restore');
     Route::get('/projects/{project}/redesign', [App\Http\Controllers\ProjectController::class, 'show'])->name('projects.show-redesign');

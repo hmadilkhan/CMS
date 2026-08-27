@@ -7,6 +7,7 @@ use App\Models\Employee;
 use App\Models\ProjectFollowUp;
 use App\Models\ServiceTicket;
 use App\Models\Task;
+use App\Services\DocumentFollowUpService;
 use App\Services\ProjectService;
 use App\Services\UpcomingAhjService;
 use Illuminate\Http\Request;
@@ -17,10 +18,13 @@ class HomeController extends Controller
 
     protected $upcomingAhjService;
 
-    public function __construct(ProjectService $projectService, UpcomingAhjService $upcomingAhjService)
+    protected $documentFollowUpService;
+
+    public function __construct(ProjectService $projectService, UpcomingAhjService $upcomingAhjService, DocumentFollowUpService $documentFollowUpService)
     {
         $this->projectService = $projectService;
         $this->upcomingAhjService = $upcomingAhjService;
+        $this->documentFollowUpService = $documentFollowUpService;
     }
     public function dashboard(Request $request)
     {
@@ -55,6 +59,12 @@ class HomeController extends Controller
                 ->get();
         }
 
+        // Document Follow Up - the MPU paperwork chase, Engineering assignees only
+        $showDocumentFollowUp = $this->documentFollowUpService->visibleTo(auth()->user());
+        $documentFollowUps = $showDocumentFollowUp
+            ? $this->documentFollowUpService->pendingList()
+            : collect();
+
         // Get service tickets for logged-in employee
         $serviceTickets = [];
         if (!empty(auth()->user()->id)) {
@@ -79,6 +89,8 @@ class HomeController extends Controller
             "projects" => $this->projectService->projectQuery($request),
             "emails" => $emails,
             "followUps" => $followUps,
+            "showDocumentFollowUp" => $showDocumentFollowUp,
+            "documentFollowUps" => $documentFollowUps,
             "serviceTickets" => $serviceTickets,
             "showUpcomingAhj" => $showUpcomingAhj,
             "upcomingAhjProjects" => $upcomingAhjProjects,

@@ -64,6 +64,7 @@ class AiPermissionService
                 'service_tickets',
                 'service_ticket_comments',
                 'project_follow_ups',
+                'project_document_follow_ups',
                 'project_call_logs',
                 'project_files',
                 'project_design_details',
@@ -125,7 +126,7 @@ class AiPermissionService
             $departmentIds = $this->departmentIdsFor($user);
 
             return match ($table) {
-                'projects', 'tasks', 'project_follow_ups', 'project_call_logs', 'project_files', 'project_design_details' => $query->whereIn('department_id', $departmentIds),
+                'projects', 'tasks', 'project_follow_ups', 'project_document_follow_ups', 'project_call_logs', 'project_files', 'project_design_details' => $query->whereIn('department_id', $departmentIds),
                 'project_invoice_details' => $query->whereHas('project', fn ($projectQuery) => $projectQuery->whereIn('department_id', $departmentIds)),
                 'service_tickets' => $query->whereHas('project', fn ($projectQuery) => $projectQuery->whereIn('department_id', $departmentIds)),
                 'customers' => $query->whereHas('project', fn ($projectQuery) => $projectQuery->whereIn('department_id', $departmentIds)),
@@ -138,7 +139,7 @@ class AiPermissionService
 
             return match ($table) {
                 'projects' => $query->whereIn('id', Task::whereIn('employee_id', $employeeIds)->select('project_id')),
-                'tasks', 'project_follow_ups', 'project_design_details' => $query->whereIn('employee_id', $employeeIds),
+                'tasks', 'project_follow_ups', 'project_document_follow_ups', 'project_design_details' => $query->whereIn('employee_id', $employeeIds),
                 'project_invoice_details' => $query->whereIn('project_id', Task::whereIn('employee_id', $employeeIds)->select('project_id')),
                 'service_tickets' => $query->where('assigned_to', $user->id)->orWhere('user_id', $user->id),
                 'service_ticket_comments' => $query->where('user_id', $user->id),

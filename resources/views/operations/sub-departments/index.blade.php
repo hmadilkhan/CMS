@@ -63,6 +63,16 @@
                     </span>
                     @enderror
                 </div>
+                <div class="col-xl-4 col-lg-6 col-md-6 col-12">
+                    <label>Move List</label>
+                    <div class="form-check mt-2">
+                        <input type="hidden" name="show_in_move_list" value="0">
+                        <input class="form-check-input" type="checkbox" id="show_in_move_list" name="show_in_move_list" value="1"
+                            {{ old('show_in_move_list', !empty($subDepartment) ? $subDepartment->show_in_move_list : 1) ? 'checked' : '' }}>
+                        <label class="form-check-label" for="show_in_move_list">Show in the project move dropdown</label>
+                    </div>
+                    <small class="text-muted">Unchecked: this lane cannot be picked as a move destination, and projects sitting in it cannot be moved by hand.</small>
+                </div>
                 <div class="col-12">
                     <div class="operation-actions">
                         <button type="submit" class="btn btn-primary" value="save"><i class="icofont-save"></i> Save</button>
@@ -85,6 +95,7 @@
                     <th>Department</th>
                     <th>Name</th>
                     <th>Order</th>
+                    <th>Move List</th>
                     <th>Actions</th>
                 </tr>
             </thead>
@@ -95,6 +106,13 @@
                     <td>{{ $list->department->name ?? 'N/A' }}</td>
                     <td>{{ $list->name }}</td>
                     <td class="cost-value">{{ $list->order }}</td>
+                    <td>
+                        @if ($list->show_in_move_list)
+                            <span class="badge bg-success">Shown</span>
+                        @else
+                            <span class="badge bg-secondary">Hidden</span>
+                        @endif
+                    </td>
                     <td class="text-center">
                         <a class="action-link" data-toggle="tooltip" title="Edit" href="{{ route('sub.departments.list', $list->id) }}">
                             <i class="icofont-pencil text-warning"></i></a>

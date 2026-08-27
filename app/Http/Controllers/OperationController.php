@@ -1157,6 +1157,7 @@ class OperationController extends Controller
             "department_id" => ["required", "exists:departments,id"],
             "name" => ["required", "string", "max:255", Rule::unique("sub_departments", "name")->where("department_id", $request->department_id)->whereNull("deleted_at")],
             "order" => ["required", "integer", "min:0"],
+            "show_in_move_list" => ["nullable", "boolean"],
         ], [
             "name.unique" => "The record already exists.",
         ]);
@@ -1166,6 +1167,7 @@ class OperationController extends Controller
                 "department_id" => $validated["department_id"],
                 "name" => $validated["name"],
                 "order" => $validated["order"],
+                "show_in_move_list" => (bool) ($validated["show_in_move_list"] ?? false),
             ]);
 
             return redirect()->route("sub.departments.list")->with("success", "Data Saved Successfully");
@@ -1181,6 +1183,7 @@ class OperationController extends Controller
             "department_id" => ["required", "exists:departments,id"],
             "name" => ["required", "string", "max:255", Rule::unique("sub_departments", "name")->ignore($request->id)->where("department_id", $request->department_id)->whereNull("deleted_at")],
             "order" => ["required", "integer", "min:0"],
+            "show_in_move_list" => ["nullable", "boolean"],
         ], [
             "name.unique" => "The record already exists.",
         ]);
@@ -1190,6 +1193,7 @@ class OperationController extends Controller
             $subDepartment->department_id = $validated["department_id"];
             $subDepartment->name = $validated["name"];
             $subDepartment->order = $validated["order"];
+            $subDepartment->show_in_move_list = (bool) ($validated["show_in_move_list"] ?? false);
             $subDepartment->save();
 
             return redirect()->route("sub.departments.list")->with("success", "Data Updated Successfully");

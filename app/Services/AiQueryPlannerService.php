@@ -693,6 +693,7 @@ This is a solar energy installation company CRM. Use these term-to-column mappin
 
 ### Related Modules (separate tables)
 - "follow up" / "followup" / "follow-up" → table: project_follow_ups
+- "document follow up" / "MPU follow up" / "meter spot follow up" → table: project_document_follow_ups (MPU paperwork chase; status Pending/Resolved, resolved_at = when it left the list)
 - "call log" / "call logs" / "calls" → table: project_call_logs
 - "project design" / "design details" → table: project_design_details
 - "acceptance" / "project acceptance" → table: project_acceptances (status: 0=pending, 1=approved, 2=rejected)

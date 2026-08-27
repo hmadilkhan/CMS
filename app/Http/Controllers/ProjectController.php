@@ -29,6 +29,7 @@ use App\Models\SubDepartment;
 use App\Models\Task;
 use App\Models\Tool;
 use App\Services\AhjRegistryService;
+use App\Services\DocumentFollowUpService;
 use App\Services\FinanceMilestoneService;
 use App\Services\NotificationTemplateService;
 use App\Services\ProjectAssignmentService;
@@ -210,7 +211,7 @@ class ProjectController extends Controller
         $departments = Department::whereIn('id', Task::where('project_id', $project->id)->whereNotIn('department_id', Department::where('id', '>', $task->department_id)->take(1)->pluck('id'))->where('id', '!=', 9)->groupBy('department_id')->orderBy('department_id')->pluck('department_id'))->get();
         $fwdDepartments = array_merge($departments->toArray(), Department::where('id', '>', $task->department_id)->take(1)->get()->toArray());
         $fwdIds = collect($fwdDepartments)->pluck('id');
-        $nextSubDepartments = SubDepartment::whereIn('department_id', $fwdIds)->orderby('order', 'asc')->get();
+        $nextSubDepartments = SubDepartment::whereIn('department_id', $fwdIds)->selectableForMove()->orderby('order', 'asc')->get();
         $addersLock = ProjectAddersLock::where('project_id', $project->id)->latest()->first();
         $isAddersLocked = $addersLock && $addersLock->status === 'locked' && $project->projectAcceptance && $project->projectAcceptance->status == 1;
 
@@ -311,7 +312,7 @@ class ProjectController extends Controller
     public function getSubDepartments(Request $request)
     {
         try {
-            $subdepartments = SubDepartment::where('department_id', $request->id)->get();
+            $subdepartments = SubDepartment::where('department_id', $request->id)->selectableForMove()->get();
 
             return response()->json(['status' => 200, 'subdepartments' => $subdepartments]);
         } catch (\Throwable $th) {
@@ -324,6 +325,10 @@ class ProjectController extends Controller
      * If the requested sub-department already belongs to the department it is
      * kept; otherwise it falls back to the department's first sub-department
      * (by order). Returns null when the department has no sub-departments.
+     *
+     * The fallback only ever lands on an open lane - a closed one (Install
+     * Pending Document, order 0) would otherwise silently swallow every move
+     * whose selected lane did not match the target department.
      */
     protected function resolveSubDepartmentForDepartment($departmentId, $subDepartmentId)
     {
@@ -341,6 +346,7 @@ class ProjectController extends Controller
         }
 
         return SubDepartment::where('department_id', $departmentId)
+            ->selectableForMove()
             ->orderBy('order', 'asc')
             ->value('id');
     }
@@ -399,6 +405,18 @@ class ProjectController extends Controller
         // mismatched department/sub_department pair being persisted).
         $resolvedSubDepartmentId = $this->resolveSubDepartmentForDepartment($targetDepartmentIdForSub, $request->sub_department);
 
+        // Permitting -> Installation with an open Document Follow Up: the
+        // project is parked in Install Pending Document whatever lane was
+        // picked, and the new assignee is not e-mailed about it.
+        $documentFollowUpService = app(DocumentFollowUpService::class);
+        $hasDocumentFollowUp = $documentFollowUpService->hasPending($project->id);
+        $forcePendingDocumentLane = $documentFollowUpService->shouldForcePendingDocumentLane($project, $targetDepartmentIdForSub);
+        $selectedSubDepartmentId = $resolvedSubDepartmentId;
+
+        if ($forcePendingDocumentLane) {
+            $resolvedSubDepartmentId = DocumentFollowUpService::PENDING_DOCUMENT_SUB_DEPARTMENT_ID;
+        }
+
         try {
             DB::beginTransaction();
             if ($request->stage == 'forward' && $request->forward == $project->department_id) {
@@ -419,7 +437,9 @@ class ProjectController extends Controller
                 app(ProjectAssignmentService::class)->notifyAssignedEmployee(
                     Employee::with('user')->find($task->employee_id),
                     $project,
-                    $newTask
+                    $newTask,
+                    true,
+                    ! $hasDocumentFollowUp
                 );
                 DB::commit();
 
@@ -519,7 +539,15 @@ class ProjectController extends Controller
                 'user_id' => auth()->user()->id,
             ]);
             $project->refresh();
-            app(ProjectAssignmentService::class)->notifyAssignedEmployee($emp, $project, $newTask);
+            app(ProjectAssignmentService::class)->notifyAssignedEmployee($emp, $project, $newTask, true, ! $hasDocumentFollowUp);
+
+            if ($forcePendingDocumentLane) {
+                $documentFollowUpService->logForcedPendingDocumentLane($project, $selectedSubDepartmentId);
+            }
+
+            // MPU Required / meter spot result may have just been written above,
+            // so open or clear the Document Follow Up to match.
+            $documentFollowUpService->sync($project);
             DB::commit();
             app(FinanceMilestoneService::class)->triggerDateMilestones($project, array_intersect(array_keys($updateItems), [
                 'permitting_approval_date',
@@ -541,6 +569,27 @@ class ProjectController extends Controller
 
         if (! $project) {
             return response()->json(['error' => 'Project not found'], 404);
+        }
+
+        // A closed lane is a dead end for manual moves: nothing may be moved out
+        // of one, and nothing may be moved into one. The UI hides both, so this
+        // only catches a request that skipped the UI.
+        $currentSubDepartment = SubDepartment::find($project->sub_department_id);
+
+        if ($currentSubDepartment && $currentSubDepartment->isClosedForMovement()) {
+            return response()->json([
+                'status' => 422,
+                'error' => 'This project cannot be moved while it is in '.$currentSubDepartment->name.'.',
+            ], 422);
+        }
+
+        $requestedSubDepartment = SubDepartment::find($request->subDepartmentId);
+
+        if ($requestedSubDepartment && $requestedSubDepartment->isClosedForMovement()) {
+            return response()->json([
+                'status' => 422,
+                'error' => $requestedSubDepartment->name.' is not available as a move destination.',
+            ], 422);
         }
 
         // THIS WILL CHECK THE PROJECT EITHER PROJECT IS FORWARD OR BACKWARD
@@ -639,6 +688,18 @@ class ProjectController extends Controller
             ], 422);
         }
 
+        // Permitting -> Installation with an open Document Follow Up: the
+        // project is parked in Install Pending Document whatever lane was
+        // picked, and the new assignee is not e-mailed about it.
+        $documentFollowUpService = app(DocumentFollowUpService::class);
+        $hasDocumentFollowUp = $documentFollowUpService->hasPending($project->id);
+        $forcePendingDocumentLane = $documentFollowUpService->shouldForcePendingDocumentLane($project, $request->departmentId);
+        $selectedSubDepartmentId = $subDepartmentId;
+
+        if ($forcePendingDocumentLane) {
+            $subDepartmentId = DocumentFollowUpService::PENDING_DOCUMENT_SUB_DEPARTMENT_ID;
+        }
+
         try {
             DB::beginTransaction();
 
@@ -682,7 +743,7 @@ class ProjectController extends Controller
                 'sub_department_id' => $subDepartmentId,
                 'user_id' => auth()->user()->id,
             ]);
-            app(ProjectAssignmentService::class)->notifyAssignedEmployee($emp, $project, $newTask);
+            app(ProjectAssignmentService::class)->notifyAssignedEmployee($emp, $project, $newTask, true, ! $hasDocumentFollowUp);
             // Log the custom message
             $oldLane = Department::findOrFail($currentDepartmentId);
             $newLane = Department::findOrFail($request->departmentId);
@@ -696,6 +757,11 @@ class ProjectController extends Controller
                 ])
                 ->setEvent('move')
                 ->log("{$username} moved the project from {$oldLane->name} to {$newLane->name}.");
+
+            if ($forcePendingDocumentLane) {
+                $project->refresh();
+                $documentFollowUpService->logForcedPendingDocumentLane($project, $selectedSubDepartmentId);
+            }
             DB::commit();
 
             return response()->json(['status' => 200, 'message' => 'Project Moved Successfully']);
@@ -1292,7 +1358,7 @@ class ProjectController extends Controller
         $fwdDepartments = array_merge($departments->toArray(), Department::where('id', '>', $task->department_id)->take(1)->get()->toArray());
         $departments = Department::whereIn('id', Task::where('project_id', $project->id)->whereNotIn('department_id', Department::where('id', '>', $task->department_id)->take(1)->pluck('id'))->where('id', '!=', 9)->groupBy('department_id')->orderBy('department_id')->pluck('department_id'))->get();
         $fwdIds = collect($fwdDepartments)->pluck('id');
-        $nextSubDepartments = SubDepartment::whereIn('department_id', $fwdIds)->orderby('order', 'asc')->get();
+        $nextSubDepartments = SubDepartment::whereIn('department_id', $fwdIds)->selectableForMove()->orderby('order', 'asc')->get();
         try {
             if ($request->project_id) {
                 return view('projects.partial.website-project-details', [

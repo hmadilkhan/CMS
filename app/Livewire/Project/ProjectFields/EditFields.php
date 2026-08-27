@@ -5,6 +5,7 @@ namespace App\Livewire\Project\ProjectFields;
 use App\Models\Project;
 use App\Models\SubContractor;
 use App\Models\UtilityCompany;
+use App\Services\DocumentFollowUpService;
 use App\Services\FinanceMilestoneService;
 use App\Services\ProjectDateChangeNotifier;
 use Illuminate\Validation\Rule;
@@ -425,6 +426,10 @@ class EditFields extends Component
                 'inspection_approval_date',
             ]));
             app(ProjectDateChangeNotifier::class)->notify($this->project, $previousDates, $updateItems);
+            // MPU Required (Engineering) / meter spot result (Installation) both
+            // live on this form, so keep the Document Follow Up in step.
+            app(DocumentFollowUpService::class)->sync($this->project, auth()->user());
+            $this->project->refresh();
             $username = auth()->user()->name;
             // Get the changed field names
             $changedFields = collect($updateItems)->keys()->implode(', ');

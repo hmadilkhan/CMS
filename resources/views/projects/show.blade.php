@@ -2373,10 +2373,22 @@
                         </div>
                     @endif
 
+                    {{-- A project sitting in a closed lane cannot be moved by hand at all. --}}
+                    @php
+                        $movementLocked = $project->subdepartment && ! $project->subdepartment->show_in_move_list;
+                        $movementLockedTitle = $movementLocked
+                            ? 'Movement locked while this project is in ' . $project->subdepartment->name
+                            : '';
+                    @endphp
                     <div class="d-flex justify-content-center align-items-center">
                         <nav class="navbar navbar-expand-lg ">
                             <div class="container-fluid">
                                 <div class="collapse navbar-collapse">
+                                    @if ($movementLocked)
+                                        <div class="w-100 text-center small text-muted mb-2">
+                                            <i class="icofont-lock me-1"></i>{{ $movementLockedTitle }}
+                                        </div>
+                                    @endif
                                     <ul class="nav nav-tabs project-department-tabs tab-body-header rounded ms-3 prtab-set w-sm-100"
                                         style="overflow: visible !important;">
                                         @foreach ($departments as $department)
@@ -2405,12 +2417,12 @@
                                             @endphp
                                             @if ($department->id < $project->department_id)
                                                 <li class="nav-item dropdown bg-success">
-                                                    <a class="nav-link dropdown-toggle  text-white" id="navbarDropdown"
-                                                        role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                                    <a class="nav-link {{ $movementLocked ? '' : 'dropdown-toggle' }}  text-white" id="navbarDropdown"
+                                                        role="button" @if (!$movementLocked) data-bs-toggle="dropdown" aria-expanded="false" @else title="{{ $movementLockedTitle }}" @endif>
                                                         <span class="department-pipeline-title">{{ $departmentStepLabel }}</span>
                                                         <span class="department-pipeline-status">{{ $departmentProgressStatus }}</span>
                                                     </a>
-                                                    @if (count($filtered_collection) > 0)
+                                                    @if (!$movementLocked && count($filtered_collection) > 0)
                                                         <ul class="dropdown-menu" aria-labelledby="navbarDropdown">
                                                             @foreach ($filtered_collection as $subdepartment)
                                                                 <li><a onclick="moveProjectModal('{{ $project->id }}', currentProjectTaskId, '{{ $department->id }}','{{ $subdepartment->id }}')"
@@ -2422,13 +2434,13 @@
                                                 </li>
                                             @elseif($department->id == $project->department_id)
                                                 <li class="nav-item dropdown bg-success">
-                                                    <a class="nav-link dropdown-toggle active text-white"
-                                                        id="navbarDropdown" role="button" data-bs-toggle="dropdown"
-                                                        aria-expanded="false">
+                                                    <a class="nav-link {{ $movementLocked ? '' : 'dropdown-toggle' }} active text-white"
+                                                        id="navbarDropdown" role="button"
+                                                        @if (!$movementLocked) data-bs-toggle="dropdown" aria-expanded="false" @else title="{{ $movementLockedTitle }}" @endif>
                                                         <span class="department-pipeline-title">{{ $departmentStepLabel }}</span>
                                                         <span class="department-pipeline-status">{{ $departmentProgressStatus }}</span>
                                                     </a>
-                                                    @if (count($filtered_collection) > 0)
+                                                    @if (!$movementLocked && count($filtered_collection) > 0)
                                                         <ul class="dropdown-menu" aria-labelledby="navbarDropdown">
                                                             @foreach ($filtered_collection as $subdepartment)
                                                                 <li><a onclick="moveProjectModal('{{ $project->id }}', currentProjectTaskId, '{{ $department->id }}','{{ $subdepartment->id }}')"
@@ -2440,12 +2452,12 @@
                                                 </li>
                                             @else
                                                 <li class="nav-item dropdown">
-                                                    <a class="nav-link dropdown-toggle " id="navbarDropdown" role="button"
-                                                        data-bs-toggle="dropdown" aria-expanded="false">
+                                                    <a class="nav-link {{ $movementLocked ? '' : 'dropdown-toggle' }} " id="navbarDropdown" role="button"
+                                                        @if (!$movementLocked) data-bs-toggle="dropdown" aria-expanded="false" @else title="{{ $movementLockedTitle }}" @endif>
                                                         <span class="department-pipeline-title">{{ $departmentStepLabel }}</span>
                                                         <span class="department-pipeline-status">{{ $departmentProgressStatus }}</span>
                                                     </a>
-                                                    @if (count($filtered_collection) > 0)
+                                                    @if (!$movementLocked && count($filtered_collection) > 0)
                                                         <ul class="dropdown-menu" aria-labelledby="navbarDropdown">
                                                             @foreach ($filtered_collection as $subdepartment)
                                                                 <li><a onclick="moveProjectModal('{{ $project->id }}', currentProjectTaskId, '{{ $department->id }}','{{ $subdepartment->id }}')"
