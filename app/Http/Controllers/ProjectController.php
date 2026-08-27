@@ -655,9 +655,17 @@ class ProjectController extends Controller
                     $missingFields[] = $field;
                 }
 
+                // Department 4: Fire Review Required only has to be answered -
+                // and "No" is stored as 0, which empty() would call missing.
+                elseif ($field === 'fire_review_required') {
+                    if ($project->fire_review_required === null) {
+                        $missingFields[] = $field;
+                    }
+                }
+
                 // Standard required field check for other fields
                 elseif (
-                    ! in_array($field, ['hoa_phone_number', 'meter_spot_request_date', 'meter_spot_request_number', 'meter_spot_result', 'hoa_approval_request_date', 'hoa_approval_date', 'mpu_install_date', 'sub_contractor_id'])
+                    ! in_array($field, ['hoa_phone_number', 'meter_spot_request_date', 'meter_spot_request_number', 'meter_spot_result', 'hoa_approval_request_date', 'hoa_approval_date', 'mpu_install_date', 'sub_contractor_id', 'fire_review_required'])
                     && empty($project->$field)
                 ) {
                     $missingFields[] = $field;

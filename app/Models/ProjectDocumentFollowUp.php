@@ -22,6 +22,13 @@ class ProjectDocumentFollowUp extends Model
     /** The project was archived / cancelled while the chase was open. */
     public const REASON_PROJECT_ARCHIVED = 'project_archived';
 
+    /**
+     * Written by a migration, never by the app: the project already answered
+     * the chase's question before the chase existed, so it is left alone.
+     * Deleting such a row lets the chase open for that project after all.
+     */
+    public const REASON_PRE_EXISTING = 'pre_existing';
+
     protected $guarded = [];
 
     protected $casts = [

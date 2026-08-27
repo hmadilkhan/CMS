@@ -16,9 +16,6 @@ class DocumentFollowUpController extends Controller
     /** Same set the project Files card accepts. */
     private const FILE_RULES = 'file|max:51200|mimes:pdf,jpg,jpeg,png,heic,dxf,docx,dwg';
 
-    /** The only two values the Meter Spot Result dropdown offers. */
-    private const METER_SPOT_RESULTS = ['same', 'relocation'];
-
     protected $documentFollowUpService;
 
     public function __construct(DocumentFollowUpService $documentFollowUpService)
@@ -27,27 +24,30 @@ class DocumentFollowUpController extends Controller
     }
 
     /**
-     * What each follow up card collects: the meter spot result for the MPU
-     * chase, the utility bill file itself for the Deal Review one. Producing it
+     * What each follow up card collects: a value for the chases that wait on a
+     * project field (the meter spot result), or the document itself for the
+     * chases that wait on a file (utility bill, fire approval). Producing it
      * closes the follow up and, when the project is parked, sends it on to the
      * chase's release lane.
      */
     public function update(Request $request)
     {
         $type = $request->type;
-        $isUtilityBill = $type === DocumentFollowUpService::TYPE_UTILITY_BILL;
+        $config = $this->documentFollowUpService->config($type);
+        $wantsFile = (bool) $config['file_category'];
+        $label = $this->documentFollowUpService->label($type);
 
         $request->validate([
             'project_id' => 'required|exists:projects,id',
             'type' => ['required', Rule::in(DocumentFollowUpService::types())],
-            'value' => $isUtilityBill
+            'value' => $wantsFile
                 ? ['nullable', 'string', 'max:255']
-                : ['required', Rule::in(self::METER_SPOT_RESULTS)],
-            'files' => [$isUtilityBill ? 'required' : 'nullable', 'array'],
+                : ['required', Rule::in($config['value_options'])],
+            'files' => [$wantsFile ? 'required' : 'nullable', 'array'],
             'files.*' => self::FILE_RULES,
         ], [
-            'files.required' => 'Please upload the utility bill before saving.',
-            'value.in' => 'Please choose a valid Meter Spot Result.',
+            'files.required' => 'Please upload the document before saving.',
+            'value.in' => 'Please choose a valid value.',
         ]);
 
         if (! $this->documentFollowUpService->visibleTo(auth()->user(), $type)) {
@@ -59,17 +59,17 @@ class DocumentFollowUpController extends Controller
         if (! $this->documentFollowUpService->hasPending($project->id, $type)) {
             return response()->json([
                 'status' => 422,
-                'message' => 'This project no longer has an open '.$this->documentFollowUpService->label($type),
+                'message' => 'This project no longer has an open '.$label,
             ], 422);
         }
 
         try {
             DB::beginTransaction();
 
-            if ($isUtilityBill) {
-                $this->storeUtilityBills($request, $project);
+            if ($wantsFile) {
+                $this->storeDocuments($request, $project, $type);
             } else {
-                $project->update(['meter_spot_result' => $request->value]);
+                $project->update([$config['value_column'] => $request->value]);
             }
 
             $project->refresh();
@@ -100,11 +100,12 @@ class DocumentFollowUpController extends Controller
     }
 
     /**
-     * Store the uploaded bills the same way the project Files card does - same
-     * disk and folder - but filed under Deal Review and marked as utility bills
-     * so they land in their own section instead of the department file list.
+     * Store the uploaded documents the same way the project Files card does -
+     * same disk and folder - but filed under the chase's owning department and
+     * marked with its category, so they land in their own section instead of
+     * the department file list.
      */
-    protected function storeUtilityBills(Request $request, Project $project): void
+    protected function storeDocuments(Request $request, Project $project, string $type): void
     {
         $files = $request->file('files') ?? [];
 
@@ -112,7 +113,8 @@ class DocumentFollowUpController extends Controller
             return;
         }
 
-        $departmentId = $this->documentFollowUpService->ownerDepartmentId(DocumentFollowUpService::TYPE_UTILITY_BILL);
+        $config = $this->documentFollowUpService->config($type);
+        $departmentId = $this->documentFollowUpService->ownerDepartmentId($type);
         $taskId = Task::where('project_id', $project->id)
             ->whereIn('status', ['In-Progress', 'Hold', 'Cancelled'])
             ->latest('id')
@@ -120,6 +122,10 @@ class DocumentFollowUpController extends Controller
             ?? Task::where('project_id', $project->id)->latest('id')->value('id');
 
         $username = auth()->user()->name ?? 'System';
+        $category = $config['file_category'];
+        $what = $type === DocumentFollowUpService::TYPE_FIRE_REVIEW
+            ? 'fire approval document'
+            : 'utility bill';
 
         foreach ($files as $file) {
             $originalName = str_replace(' ', '_', $file->getClientOriginalName());
@@ -131,15 +137,15 @@ class DocumentFollowUpController extends Controller
                 'department_id' => $departmentId,
                 'filename' => $storedName,
                 'header_text' => $file->getClientOriginalName(),
-                'category' => ProjectFile::CATEGORY_UTILITY_BILL,
+                'category' => $category,
             ]);
 
             activity('project')
                 ->performedOn($project)
                 ->causedBy(auth()->user())
                 ->setEvent('updated')
-                ->withProperties(['files' => $storedName, 'category' => ProjectFile::CATEGORY_UTILITY_BILL])
-                ->log("{$username} uploaded the utility bill: {$storedName}.");
+                ->withProperties(['files' => $storedName, 'category' => $category])
+                ->log("{$username} uploaded the {$what}: {$storedName}.");
         }
     }
 }

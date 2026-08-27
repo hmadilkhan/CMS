@@ -13,6 +13,9 @@ class ProjectFile extends Model
     /** The bill collected by the Utility Bill Follow Up. */
     public const CATEGORY_UTILITY_BILL = 'utility_bill';
 
+    /** The approval collected by the Fire Review Follow Up. */
+    public const CATEGORY_FIRE_REVIEW = 'fire_review';
+
     protected $guarded = [];
 
     /** Files that belong to a named group, e.g. the utility bills. */

@@ -24,6 +24,9 @@ use App\Models\User;
  *   Utility Bill  - Deal Review owns it. Opens when Utility Bill Required is
  *                   "yes" and no bill has been uploaded; clears when the bill
  *                   itself is uploaded from the follow up card.
+ *   Fire Review   - Permitting owns it. Opens when Fire Review Required is
+ *                   "yes" and no fire approval document has been uploaded;
+ *                   clears when that document is uploaded from the card.
  *
  * While a chase is open the project may still travel the pipeline normally,
  * but the one move that would carry it past the paperwork is intercepted: it
@@ -41,13 +44,20 @@ class DocumentFollowUpService
 
     public const TYPE_UTILITY_BILL = 'utility_bill';
 
+    public const TYPE_FIRE_REVIEW = 'fire_review';
+
     /** A project parked here is out of every chase. */
     public const ARCHIVED_DEPARTMENT = 'Archived';
 
     /**
-     * Everything that differs between the two chases. Sub-department ids are
-     * fixed records: 31 Install Pending Document, 12 Install Not Scheduled,
-     * 32 PTO Pending Document, 18 PTO.
+     * Everything that differs between the chases.
+     *
+     * `file_category` means the chase is closed by uploading that kind of file;
+     * `value_column` means it is closed by filling that project column in, with
+     * `value_options` limiting what may be entered. Sub-department ids are fixed
+     * records: 31 Install Pending Document, 12 Install Not Scheduled, 32 PTO
+     * Pending Document, 18 PTO, 29 Inspection Pending Fire Review, 16 Inspection
+     * Not Scheduled.
      */
     public const TYPES = [
         self::TYPE_MPU => [
@@ -57,6 +67,9 @@ class DocumentFollowUpService
             'to_department' => 'Installation',
             'parked_sub_department_id' => 31,
             'released_sub_department_id' => 12,
+            'value_column' => 'meter_spot_result',
+            'value_options' => ['same', 'relocation'],
+            'file_category' => null,
         ],
         self::TYPE_UTILITY_BILL => [
             'label' => 'Utility Bill Follow Up',
@@ -65,6 +78,20 @@ class DocumentFollowUpService
             'to_department' => 'PTO',
             'parked_sub_department_id' => 32,
             'released_sub_department_id' => 18,
+            'value_column' => null,
+            'value_options' => [],
+            'file_category' => ProjectFile::CATEGORY_UTILITY_BILL,
+        ],
+        self::TYPE_FIRE_REVIEW => [
+            'label' => 'Fire Review Follow Up',
+            'owner_department' => 'Permitting',
+            'from_department' => 'Installation',
+            'to_department' => 'Inspection',
+            'parked_sub_department_id' => 29,
+            'released_sub_department_id' => 16,
+            'value_column' => null,
+            'value_options' => [],
+            'file_category' => ProjectFile::CATEGORY_FIRE_REVIEW,
         ],
     ];
 
@@ -185,34 +212,43 @@ class DocumentFollowUpService
             ->exists();
     }
 
-    /** The document is still missing and the project is still in play. */
+    /** The department field says this paperwork is needed on this project. */
+    public function paperworkRequired(Project $project, string $type): bool
+    {
+        return match ($type) {
+            self::TYPE_UTILITY_BILL => strtolower((string) $project->utility_bill_required) === 'yes',
+            self::TYPE_FIRE_REVIEW => (int) $project->fire_review_required === 1,
+            default => strtolower((string) $project->mpu_required) === 'yes',
+        };
+    }
+
+    /** The paperwork is needed, has not arrived, and the project is still in play. */
     public function needsFollowUp(Project $project, string $type): bool
     {
         if ((int) $project->department_id === (int) $this->archivedDepartmentId()) {
             return false;
         }
 
-        return match ($type) {
-            self::TYPE_UTILITY_BILL => strtolower((string) $project->utility_bill_required) === 'yes'
-                && ! $this->documentReceived($project, $type),
-            default => strtolower((string) $project->mpu_required) === 'yes'
-                && trim((string) $project->meter_spot_result) === '',
-        };
+        return $this->paperworkRequired($project, $type)
+            && ! $this->documentReceived($project, $type);
     }
 
     /**
-     * The missing document has arrived. For the utility bill that is the bill
-     * itself - a file marked as a utility bill, which only the follow up card
-     * uploads - not an answer on a dropdown.
+     * The missing paperwork has arrived - either the file itself (utility bill,
+     * fire approval), which only the follow up card uploads, or the value the
+     * chase is waiting on (the meter spot result).
      */
     public function documentReceived(Project $project, string $type): bool
     {
-        return match ($type) {
-            self::TYPE_UTILITY_BILL => ProjectFile::where('project_id', $project->id)
-                ->category(ProjectFile::CATEGORY_UTILITY_BILL)
-                ->exists(),
-            default => trim((string) $project->meter_spot_result) !== '',
-        };
+        $config = $this->config($type);
+
+        if ($config['file_category']) {
+            return ProjectFile::where('project_id', $project->id)
+                ->category($config['file_category'])
+                ->exists();
+        }
+
+        return trim((string) $project->{$config['value_column']}) !== '';
     }
 
     /* ------------------------------------------------------------ reconciling */
@@ -234,7 +270,7 @@ class DocumentFollowUpService
         $pending = $this->pendingFor($project->id, $type);
 
         if ($this->needsFollowUp($project, $type)) {
-            if (! $pending) {
+            if (! $pending && ! $this->predatesTheChase($project, $type)) {
                 $this->open($project, $type, $causer);
             }
 
@@ -275,7 +311,9 @@ class DocumentFollowUpService
                         ->where(function ($missing) {
                             $missing->whereNull('meter_spot_result')->orWhere('meter_spot_result', '');
                         });
-                })->orWhereRaw('lower(utility_bill_required) = ?', ['yes']);
+                })
+                    ->orWhereRaw('lower(utility_bill_required) = ?', ['yes'])
+                    ->orWhere('fire_review_required', 1);
             })
             ->pluck('id')
             ->merge(ProjectDocumentFollowUp::pending()->pluck('project_id'))
@@ -288,6 +326,19 @@ class DocumentFollowUpService
         foreach (Project::whereIn('id', $candidateIds)->get() as $project) {
             $this->sync($project, $causer);
         }
+    }
+
+    /**
+     * The project answered this chase's question before the chase existed, so a
+     * migration marked it as pre-existing and it is never chased. Removing that
+     * row opts the project back in.
+     */
+    public function predatesTheChase(Project $project, string $type): bool
+    {
+        return ProjectDocumentFollowUp::where('project_id', $project->id)
+            ->ofType($type)
+            ->where('resolved_reason', ProjectDocumentFollowUp::REASON_PRE_EXISTING)
+            ->exists();
     }
 
     /** Put the project on the owning department's dashboard list. */
@@ -305,9 +356,11 @@ class DocumentFollowUpService
             'opened_at' => now(),
         ]);
 
-        $why = $type === self::TYPE_UTILITY_BILL
-            ? 'Utility Bill Required is Yes and the bill has not been uploaded yet'
-            : 'MPU Required is Yes and the meter spot result is still missing';
+        $why = match ($type) {
+            self::TYPE_UTILITY_BILL => 'Utility Bill Required is Yes and the bill has not been uploaded yet',
+            self::TYPE_FIRE_REVIEW => 'Fire Review Required is Yes and no fire approval document has been uploaded yet',
+            default => 'MPU Required is Yes and the meter spot result is still missing',
+        };
 
         $this->record(
             $project,
@@ -335,13 +388,17 @@ class DocumentFollowUpService
         ]);
 
         $why = match ($reason) {
-            ProjectDocumentFollowUp::REASON_DOCUMENT_RECEIVED => $type === self::TYPE_UTILITY_BILL
-                ? 'the utility bill was uploaded'
-                : 'meter spot result "'.$project->meter_spot_result.'" was filled in',
+            ProjectDocumentFollowUp::REASON_DOCUMENT_RECEIVED => match ($type) {
+                self::TYPE_UTILITY_BILL => 'the utility bill was uploaded',
+                self::TYPE_FIRE_REVIEW => 'the fire approval document was uploaded',
+                default => 'meter spot result "'.$project->meter_spot_result.'" was filled in',
+            },
             ProjectDocumentFollowUp::REASON_PROJECT_ARCHIVED => 'the project was archived',
-            default => $type === self::TYPE_UTILITY_BILL
-                ? 'Utility Bill Required is no longer Yes'
-                : 'MPU Required is no longer Yes',
+            default => match ($type) {
+                self::TYPE_UTILITY_BILL => 'Utility Bill Required is no longer Yes',
+                self::TYPE_FIRE_REVIEW => 'Fire Review Required is no longer Yes',
+                default => 'MPU Required is no longer Yes',
+            },
         };
 
         $this->record(

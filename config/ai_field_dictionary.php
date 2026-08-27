@@ -80,7 +80,7 @@ return [
                 'placards_ordered' => 'Whether the required electrical placards/labels have been ordered.',
                 'placards_note' => 'Notes about the placards.',
                 'production_value_achieved' => 'The actual energy production value the system achieved.',
-                'fire_review_required' => 'Whether a fire department review/inspection is required.',
+                'fire_review_required' => 'Whether a fire department review is required. Answered in Permitting; 1 (yes) starts a Fire Review Follow Up that parks the project in Inspection Pending Fire Review until the fire approval document is uploaded (a project_files row with category "fire_review"). NULL means not answered yet.',
                 'fire_inspection_date' => 'Date of the fire department inspection.',
                 'office_cost' => 'Office overhead cost allocated to the project (financial — restricted).',
                 'actual_permit_fee' => 'Actual permit fee paid (financial — restricted).',
@@ -97,7 +97,7 @@ return [
             ],
             'value_maps' => [
                 'mpu_required' => ['1' => 'Yes — MPU required', '0' => 'No', 'Yes' => 'MPU required', 'No' => 'Not required'],
-                'fire_review_required' => ['1' => 'Fire review required', '0' => 'Not required'],
+                'fire_review_required' => ['1' => 'Fire review required', '0' => 'Not required', '' => 'Not answered yet'],
                 'utility_bill_required' => ['yes' => 'Utility bill must be collected', 'no' => 'Utility bill not needed'],
             ],
         ],
@@ -357,7 +357,7 @@ return [
 
         'project_document_follow_ups' => [
             'label' => 'Document Follow Ups',
-            'description' => 'The paperwork chases. "mpu": MPU Required is Yes but the meter spot result has not come back (Engineering owns it). "utility_bill": Utility Bill Required is Yes but the bill has not been uploaded (Deal Review owns it). Each parks the project in a pending-document lane until the document arrives.',
+            'description' => 'The paperwork chases. "mpu": MPU Required is Yes but the meter spot result has not come back (Engineering owns it). "utility_bill": Utility Bill Required is Yes but the bill has not been uploaded (Deal Review owns it). "fire_review": Fire Review Required is Yes but no fire approval document has been uploaded (Permitting owns it). Each parks the project in a pending-document lane until the document arrives.',
             'columns' => [
                 'id' => 'Internal unique ID.',
                 'project_id' => 'The project being chased.',
@@ -378,11 +378,13 @@ return [
                 'type' => [
                     'mpu' => 'MPU / meter spot result chase (Engineering)',
                     'utility_bill' => 'Utility bill upload chase (Deal Review)',
+                    'fire_review' => 'Fire approval document chase (Permitting)',
                 ],
                 'resolved_reason' => [
                     'document_received' => 'The missing document arrived',
                     'not_required' => 'The question no longer applies',
                     'project_archived' => 'Project was archived',
+                    'pre_existing' => 'Answered before the chase existed, so never chased',
                 ],
             ],
         ],
@@ -413,13 +415,16 @@ return [
                 'department_id' => 'The department the file belongs to.',
                 'filename' => 'The stored file name.',
                 'header_text' => 'A heading/label describing the file.',
-                'category' => 'The named group the file belongs to, e.g. "utility_bill" for the bill collected by the Utility Bill Follow Up. NULL means an ordinary file in the department file list.',
+                'category' => 'The named group the file belongs to: "utility_bill" for the bill collected by the Utility Bill Follow Up, "fire_review" for the approval collected by the Fire Review Follow Up. NULL means an ordinary file in the department file list.',
                 'created_at' => 'When uploaded.',
                 'updated_at' => 'When last updated.',
                 'deleted_at' => 'When soft-deleted (NULL means active).',
             ],
             'value_maps' => [
-                'category' => ['utility_bill' => 'Customer utility bill (Deal Review)'],
+                'category' => [
+                    'utility_bill' => 'Customer utility bill (Deal Review)',
+                    'fire_review' => 'Fire approval document (Permitting)',
+                ],
             ],
         ],
 

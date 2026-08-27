@@ -71,6 +71,12 @@ class HomeController extends Controller
             ? $this->documentFollowUpService->pendingList(DocumentFollowUpService::TYPE_UTILITY_BILL)
             : collect();
 
+        // Fire Review Follow Up - the Permitting chase, Permitting assignees only
+        $showFireReviewFollowUp = $this->documentFollowUpService->visibleTo(auth()->user(), DocumentFollowUpService::TYPE_FIRE_REVIEW);
+        $fireReviewFollowUps = $showFireReviewFollowUp
+            ? $this->documentFollowUpService->pendingList(DocumentFollowUpService::TYPE_FIRE_REVIEW)
+            : collect();
+
         // Get service tickets for logged-in employee
         $serviceTickets = [];
         if (!empty(auth()->user()->id)) {
@@ -99,6 +105,8 @@ class HomeController extends Controller
             "documentFollowUps" => $documentFollowUps,
             "showUtilityBillFollowUp" => $showUtilityBillFollowUp,
             "utilityBillFollowUps" => $utilityBillFollowUps,
+            "showFireReviewFollowUp" => $showFireReviewFollowUp,
+            "fireReviewFollowUps" => $fireReviewFollowUps,
             "serviceTickets" => $serviceTickets,
             "showUpcomingAhj" => $showUpcomingAhj,
             "upcomingAhjProjects" => $upcomingAhjProjects,

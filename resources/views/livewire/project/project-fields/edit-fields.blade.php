@@ -202,8 +202,8 @@
                     <select class="form-select" aria-label="Default select Fire Review Required"
                         id="fire_review_required" name="fire_review_required" wire:model.live="fire_review_required">
                         <option value="">Fire Review Required</option>
-                        <option @selected($project->fire_review_required) value="1">Yes</option>
-                        <option @selected($project->fire_review_required) value="0">No</option>
+                        <option @selected($project->fire_review_required === 1) value="1">Yes</option>
+                        <option @selected($project->fire_review_required === 0) value="0">No</option>
                     </select>
                     @error('placards_ordered')
                         <div class="text-danger message mt-2">{{ $message }}</div>

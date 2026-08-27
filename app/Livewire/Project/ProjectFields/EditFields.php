@@ -368,7 +368,11 @@ class EditFields extends Component
                 'permitting_approval_date' => $this->permitting_approval_date,
                 'hoa_approval_request_date' => $this->hoa_approval_request_date,
                 'hoa_approval_date' => $this->hoa_approval_date,
-                'fire_review_required' => $this->fire_review_required,
+                // Blank means the question has not been answered yet, which is
+                // NULL - not 0, which is the real answer "no fire review".
+                'fire_review_required' => $this->fire_review_required === '' || $this->fire_review_required === null
+                    ? null
+                    : (int) $this->fire_review_required,
             ]);
 
         }

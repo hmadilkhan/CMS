@@ -339,6 +339,65 @@
             </div>
         </div>
         @endif
+        @if(!empty($showFireReviewFollowUp))
+        <div class="col-md-12">
+            <div class="card mb-3 shadow-sm follow-up-card" data-follow-up-type="fire_review">
+                <div class="card-header py-3 d-flex justify-content-between align-items-center bg-gradient-primary">
+                    <div class="info-header">
+                        <h6 class="mb-0 fw-bold text-white"><i class="icofont-fire-burn me-2"></i>Fire Review Follow Up</h6>
+                        <small class="text-white-50">Projects where Fire Review Required = Yes and no approval document uploaded yet</small>
+                    </div>
+                    <span class="badge bg-light text-primary rounded-pill follow-up-count">{{ $fireReviewFollowUps->count() }}</span>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive follow-up-table-wrap {{ $fireReviewFollowUps->isEmpty() ? 'd-none' : '' }}">
+                        <table class="table table-hover align-middle mb-0" style="width:100%">
+                            <thead class="table-light">
+                                <tr>
+                                    <th class="border-0 fw-semibold text-muted">Project Id</th>
+                                    <th class="border-0 fw-semibold text-muted">AHJ</th>
+                                    <th class="border-0 fw-semibold text-muted" style="min-width: 300px;">Fire Approval Document</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach ($fireReviewFollowUps as $fireReviewFollowUp)
+                                <tr class="border-bottom follow-up-row" data-project-id="{{ $fireReviewFollowUp->project->id }}">
+                                    <td class="py-3">
+                                        <a href="{{ route('projects.show', $fireReviewFollowUp->project->id) }}"
+                                           class="text-decoration-none fw-semibold text-primary">
+                                            {{ $fireReviewFollowUp->project->code ?? $fireReviewFollowUp->project->id }}
+                                        </a>
+                                        <div class="small text-muted mt-1">{{ $fireReviewFollowUp->project->project_name }}</div>
+                                    </td>
+                                    <td class="py-3">
+                                        {{ trim((string) $fireReviewFollowUp->project->ahj) !== ''
+                                            ? $fireReviewFollowUp->project->ahj
+                                            : '—' }}
+                                    </td>
+                                    <td class="py-3">
+                                        <div class="input-group input-group-sm">
+                                            <input type="file" class="form-control follow-up-files"
+                                                   multiple accept=".pdf,.jpg,.jpeg,.png,.heic,.dxf,.docx,.dwg">
+                                            <button type="button" class="btn btn-primary follow-up-save">
+                                                <i class="icofont-upload-alt me-1"></i>Upload
+                                            </button>
+                                        </div>
+                                        <small class="text-muted">Uploading the approval clears the follow up. Max 50MB each.</small>
+                                    </td>
+                                </tr>
+                                @endforeach
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="text-center py-5 follow-up-empty {{ $fireReviewFollowUps->isEmpty() ? '' : 'd-none' }}">
+                        <i class="icofont-fire-burn text-muted" style="font-size: 3rem;"></i>
+                        <h6 class="text-muted mt-3">No fire review follow-ups right now</h6>
+                        <p class="text-muted small">Projects appear here when Fire Review Required is answered Yes.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        @endif
         {{-- <div class="col-md-12">
             <div class="card mb-3">
                 <div class="card-header py-3 d-flex justify-content-between align-items-center">
