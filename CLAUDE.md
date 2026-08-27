@@ -272,6 +272,20 @@ These fixes are controller/middleware/parser-level and don't change question→a
 
 ---
 
+## Paperwork Follow Ups (MPU / Utility Bill / Fire Review)
+
+Three "chases" that hold a project in a closed lane until a missing document
+arrives. They are one generic implementation driven by a config table, not three
+features — **read `docs/follow-ups.md` before changing any of it.** That file has
+the per-chase config, the end-to-end flow, the decisions that were taken
+deliberately, the gotchas, and the recipe for adding a fourth.
+
+Quick orientation: `app/Services/DocumentFollowUpService.php` is the whole brain;
+`project_document_follow_ups` holds the chase rows; `project_files.category`
+groups a chase's documents into its own section; `sub_departments.show_in_move_list = 0`
+marks a lane closed to manual movement (enforced in the UI *and* in
+`ProjectController::moveProject()`).
+
 ## General development notes
 
 - Email/IMAP: `EmailFetchService`, `app/Console/Commands/FetchEmails.php` / `FetchAllEmails.php`, jobs in `app/Jobs`.
