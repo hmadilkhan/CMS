@@ -5,6 +5,10 @@
             <input disabled class="form-control" type="text" value="{{ $project->utility_company }}">
         </div>
         <div class="col-sm-6 mb-3">
+            <label for="utility_bill_required" class="form-label">Utility Bill Required</label>
+            <input disabled class="form-control" type="text" value="{{ $project->utility_bill_required }}">
+        </div>
+        <div class="col-sm-6 mb-3">
             <label for="ntp_approval_date" class="form-label">NTP Approval Date</label>
             <input disabled class="form-control" type="date" value="{{ $project->ntp_approval_date }}">
         </div>

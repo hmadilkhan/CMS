@@ -2733,6 +2733,13 @@
 
                                                     <div class="col-lg-4 col-md-12 mb-3 sample-files-column">
                                                         @livewire('project.enhanced-files-section', ['projectId' => $project->id, 'taskId' => $task->id, 'departmentId' => $department->id, 'projectDepartmentId' => $project->department_id, 'ghost' => $ghost,'viewSource' => 'crm'], key('enhanced-' . $department->id))
+                                                        {{-- Utility bills live under Deal Review, collected by the Utility Bill
+                                                             Follow Up. Same component as Files above, so the format matches. --}}
+                                                        @if (strcasecmp($department->name, 'Deal Review') === 0)
+                                                            <div class="mt-4">
+                                                                @livewire('project.enhanced-files-section', ['projectId' => $project->id, 'taskId' => $task->id, 'departmentId' => $department->id, 'projectDepartmentId' => $project->department_id, 'ghost' => $ghost, 'viewSource' => 'crm', 'category' => \App\Models\ProjectFile::CATEGORY_UTILITY_BILL, 'sectionTitle' => 'Utility Bills', 'sectionIcon' => 'icofont-bill', 'allowUpload' => false], key('utility-bills-' . $department->id))
+                                                            </div>
+                                                        @endif
                                                         @if ($isCurrentDepartment)
                                                             @can('Department Tools')
                                                                 <div class="card border-0 mt-4">

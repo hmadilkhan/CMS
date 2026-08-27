@@ -212,17 +212,17 @@
         </div>
         @if(!empty($showDocumentFollowUp))
         <div class="col-md-12">
-            <div class="card mb-3 shadow-sm">
+            <div class="card mb-3 shadow-sm follow-up-card" data-follow-up-type="mpu">
                 <div class="card-header py-3 d-flex justify-content-between align-items-center bg-gradient-primary">
                     <div class="info-header">
                         <h6 class="mb-0 fw-bold text-white"><i class="icofont-file-document me-2"></i>Document Follow Up</h6>
                         <small class="text-white-50">Projects with MPU Required = Yes and no meter spot result yet</small>
                     </div>
-                    <span class="badge bg-light text-primary rounded-pill" id="documentFollowUpCount">{{ $documentFollowUps->count() }}</span>
+                    <span class="badge bg-light text-primary rounded-pill follow-up-count">{{ $documentFollowUps->count() }}</span>
                 </div>
                 <div class="card-body p-0">
-                    <div class="table-responsive {{ $documentFollowUps->isEmpty() ? 'd-none' : '' }}" id="documentFollowUpTableWrap">
-                        <table id="documentFollowUpTable" class="table table-hover align-middle mb-0" style="width:100%">
+                    <div class="table-responsive follow-up-table-wrap {{ $documentFollowUps->isEmpty() ? 'd-none' : '' }}">
+                        <table class="table table-hover align-middle mb-0" style="width:100%">
                             <thead class="table-light">
                                 <tr>
                                     <th class="border-0 fw-semibold text-muted">Project Id</th>
@@ -234,7 +234,7 @@
                             </thead>
                             <tbody>
                                 @foreach ($documentFollowUps as $documentFollowUp)
-                                <tr class="border-bottom document-follow-up-row" data-project-id="{{ $documentFollowUp->project->id }}">
+                                <tr class="border-bottom follow-up-row" data-project-id="{{ $documentFollowUp->project->id }}">
                                     <td class="py-3">
                                         <a href="{{ route('projects.show', $documentFollowUp->project->id) }}"
                                            class="text-decoration-none fw-semibold text-primary">
@@ -255,25 +255,85 @@
                                     </td>
                                     <td class="py-3">
                                         <div class="input-group input-group-sm">
-                                            <input type="text" class="form-control document-follow-up-result"
-                                                   placeholder="Enter meter spot result"
-                                                   maxlength="255"
-                                                   value="{{ $documentFollowUp->project->meter_spot_result }}">
-                                            <button type="button" class="btn btn-primary document-follow-up-save">
+                                            <select class="form-select follow-up-value">
+                                                <option value="">Select Meter Spot Result</option>
+                                                <option value="same" {{ $documentFollowUp->project->meter_spot_result == 'same' ? 'selected' : '' }}>Same Location</option>
+                                                <option value="relocation" {{ $documentFollowUp->project->meter_spot_result == 'relocation' ? 'selected' : '' }}>Relocation</option>
+                                            </select>
+                                            <button type="button" class="btn btn-primary follow-up-save">
                                                 <i class="icofont-save me-1"></i>Save
                                             </button>
                                         </div>
-                                        <small class="text-muted">Filling this clears the follow up</small>
+                                        <small class="text-muted">Selecting this clears the follow up</small>
                                     </td>
                                 </tr>
                                 @endforeach
                             </tbody>
                         </table>
                     </div>
-                    <div class="text-center py-5 {{ $documentFollowUps->isEmpty() ? '' : 'd-none' }}" id="documentFollowUpEmpty">
+                    <div class="text-center py-5 follow-up-empty {{ $documentFollowUps->isEmpty() ? '' : 'd-none' }}">
                         <i class="icofont-file-document text-muted" style="font-size: 3rem;"></i>
                         <h6 class="text-muted mt-3">No document follow-ups right now</h6>
                         <p class="text-muted small">Projects appear here when MPU Required is set to Yes.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        @endif
+        @if(!empty($showUtilityBillFollowUp))
+        <div class="col-md-12">
+            <div class="card mb-3 shadow-sm follow-up-card" data-follow-up-type="utility_bill">
+                <div class="card-header py-3 d-flex justify-content-between align-items-center bg-gradient-primary">
+                    <div class="info-header">
+                        <h6 class="mb-0 fw-bold text-white"><i class="icofont-bill me-2"></i>Utility Bill Follow Up</h6>
+                        <small class="text-white-50">Projects where Utility Bill Required = Yes and no bill uploaded yet</small>
+                    </div>
+                    <span class="badge bg-light text-primary rounded-pill follow-up-count">{{ $utilityBillFollowUps->count() }}</span>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive follow-up-table-wrap {{ $utilityBillFollowUps->isEmpty() ? 'd-none' : '' }}">
+                        <table class="table table-hover align-middle mb-0" style="width:100%">
+                            <thead class="table-light">
+                                <tr>
+                                    <th class="border-0 fw-semibold text-muted">Project Id</th>
+                                    <th class="border-0 fw-semibold text-muted">Utility Company</th>
+                                    <th class="border-0 fw-semibold text-muted" style="min-width: 300px;">Utility Bill</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach ($utilityBillFollowUps as $utilityBillFollowUp)
+                                <tr class="border-bottom follow-up-row" data-project-id="{{ $utilityBillFollowUp->project->id }}">
+                                    <td class="py-3">
+                                        <a href="{{ route('projects.show', $utilityBillFollowUp->project->id) }}"
+                                           class="text-decoration-none fw-semibold text-primary">
+                                            {{ $utilityBillFollowUp->project->code ?? $utilityBillFollowUp->project->id }}
+                                        </a>
+                                        <div class="small text-muted mt-1">{{ $utilityBillFollowUp->project->project_name }}</div>
+                                    </td>
+                                    <td class="py-3">
+                                        {{ trim((string) $utilityBillFollowUp->project->utility_company) !== ''
+                                            ? $utilityBillFollowUp->project->utility_company
+                                            : '—' }}
+                                    </td>
+                                    <td class="py-3">
+                                        <div class="input-group input-group-sm">
+                                            <input type="file" class="form-control follow-up-files"
+                                                   multiple accept=".pdf,.jpg,.jpeg,.png,.heic,.dxf,.docx,.dwg">
+                                            <button type="button" class="btn btn-primary follow-up-save">
+                                                <i class="icofont-upload-alt me-1"></i>Upload
+                                            </button>
+                                        </div>
+                                        <small class="text-muted">Uploading the bill clears the follow up. Max 50MB each.</small>
+                                    </td>
+                                </tr>
+                                @endforeach
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="text-center py-5 follow-up-empty {{ $utilityBillFollowUps->isEmpty() ? '' : 'd-none' }}">
+                        <i class="icofont-bill text-muted" style="font-size: 3rem;"></i>
+                        <h6 class="text-muted mt-3">No utility bill follow-ups right now</h6>
+                        <p class="text-muted small">Projects appear here when Utility Bill Required is answered Yes.</p>
                     </div>
                 </div>
             </div>
@@ -496,35 +556,53 @@ $(document).ready(function() {
         $(this).data('original-value', $(this).val());
     });
 
-    // Document Follow Up - the only editable cell is the meter spot result.
-    // Saving it clears the follow up server side, so the row drops off the list.
-    $(document).on('click', '.document-follow-up-save', function() {
+    // Follow up cards - each row collects one thing: the meter spot result on
+    // the Document card, the bill file itself on the Utility Bill card.
+    // Producing it clears the follow up server side, so the row drops off.
+    $(document).on('click', '.follow-up-save', function() {
         const button = $(this);
-        const row = button.closest('.document-follow-up-row');
-        const input = row.find('.document-follow-up-result');
-        const result = $.trim(input.val());
+        const row = button.closest('.follow-up-row');
+        const card = button.closest('.follow-up-card');
+        const input = row.find('.follow-up-value');
+        const fileInput = row.find('.follow-up-files')[0];
+        const value = input.length ? $.trim(input.val()) : '';
 
-        if (result === '') {
-            showToast('Error!', 'Please enter the meter spot result', 'error');
+        if (input.length && value === '') {
+            showToast('Error!', 'Please fill this field first', 'error');
             input.trigger('focus');
             return;
+        }
+
+        if (fileInput && (!fileInput.files || fileInput.files.length === 0)) {
+            showToast('Error!', 'Please choose the utility bill file first', 'error');
+            return;
+        }
+
+        const payload = new FormData();
+        payload.append('_token', '{{ csrf_token() }}');
+        payload.append('project_id', row.data('project-id'));
+        payload.append('type', card.data('follow-up-type'));
+        payload.append('value', value);
+
+        if (fileInput && fileInput.files) {
+            for (let i = 0; i < fileInput.files.length; i++) {
+                payload.append('files[]', fileInput.files[i]);
+            }
         }
 
         button.prop('disabled', true);
 
         $.ajax({
-            url: '{{ route("document.followup.meter.spot.result") }}',
+            url: '{{ route("document.followup.update") }}',
             method: 'POST',
-            data: {
-                _token: '{{ csrf_token() }}',
-                project_id: row.data('project-id'),
-                meter_spot_result: result
-            },
+            data: payload,
+            processData: false,
+            contentType: false,
             success: function(response) {
                 if (response.status === 200) {
                     showToast('Success!', response.message, 'success');
                     row.remove();
-                    refreshDocumentFollowUpCount();
+                    refreshFollowUpCard(card);
                 } else {
                     showToast('Error!', response.message || 'Failed to save', 'error');
                     button.prop('disabled', false);
@@ -537,11 +615,11 @@ $(document).ready(function() {
         });
     });
 
-    function refreshDocumentFollowUpCount() {
-        const remaining = $('#documentFollowUpTable tbody .document-follow-up-row').length;
-        $('#documentFollowUpCount').text(remaining);
-        $('#documentFollowUpTableWrap').toggleClass('d-none', remaining === 0);
-        $('#documentFollowUpEmpty').toggleClass('d-none', remaining !== 0);
+    function refreshFollowUpCard(card) {
+        const remaining = card.find('tbody .follow-up-row').length;
+        card.find('.follow-up-count').text(remaining);
+        card.find('.follow-up-table-wrap').toggleClass('d-none', remaining === 0);
+        card.find('.follow-up-empty').toggleClass('d-none', remaining !== 0);
     }
 
     // Upcoming AHJ's - the live table is a DataTable, so rows on another page

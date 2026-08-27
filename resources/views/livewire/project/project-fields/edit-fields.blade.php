@@ -27,6 +27,18 @@
                     @enderror
                 </div>
                 <div class="col-sm-4 mb-3 ">
+                    <label for="utility_bill_required" class="form-label" id="requiredfiles">Utility Bill Required</label>
+                    <select class="form-select" aria-label="Utility Bill Upload" wire:model.live="utility_bill_required"
+                        id="utility_bill_required" name="utility_bill_required">
+                        <option value="">Select Utility Bill Required</option>
+                        <option {{ $project->utility_bill_required == 'yes' ? 'selected' : '' }} value="yes">Yes</option>
+                        <option {{ $project->utility_bill_required == 'no' ? 'selected' : '' }} value="no">No</option>
+                    </select>
+                    @error('utility_bill_required')
+                        <div id="utility_bill_required_message" class="text-danger message mt-2">{{ $message }}</div>
+                    @enderror
+                </div>
+                <div class="col-sm-4 mb-3 ">
                     <label for="ntp_approval_date" class="form-label" id="requiredfiles">NTP Approval Date</label>
                     <input class="form-control" type="date" id="ntp_approval_date" name="ntp_approval_date"
                         wire:model="ntp_approval_date">

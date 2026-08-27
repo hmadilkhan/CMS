@@ -13,11 +13,11 @@ class ProjectDocumentFollowUp extends Model
 
     public const STATUS_RESOLVED = 'Resolved';
 
-    /** Meter spot result was filled in - the document is no longer missing. */
-    public const REASON_METER_SPOT_RESULT = 'meter_spot_result';
+    /** The missing document arrived (meter spot result / utility bill upload). */
+    public const REASON_DOCUMENT_RECEIVED = 'document_received';
 
-    /** MPU Required was switched away from "yes", so the follow up no longer applies. */
-    public const REASON_MPU_NOT_REQUIRED = 'mpu_not_required';
+    /** The question no longer applies - MPU is not required, the bill answer changed. */
+    public const REASON_NOT_REQUIRED = 'not_required';
 
     /** The project was archived / cancelled while the chase was open. */
     public const REASON_PROJECT_ARCHIVED = 'project_archived';
@@ -57,5 +57,10 @@ class ProjectDocumentFollowUp extends Model
     public function scopePending($query)
     {
         return $query->where('status', self::STATUS_PENDING);
+    }
+
+    public function scopeOfType($query, string $type)
+    {
+        return $query->where('type', $type);
     }
 }

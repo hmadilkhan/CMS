@@ -52,6 +52,7 @@ return [
                 'budget' => 'Budgeted amount for the project (financial — restricted).',
                 'description' => 'Free-text notes/description of the project.',
                 'utility_company' => 'The electric utility company serving the property.',
+                'utility_bill_required' => 'Whether the customer utility bill still has to be collected. Answered in Deal Review, and reads like MPU Required: "yes" starts a Utility Bill Follow Up that parks the project in PTO Pending Document until the bill is actually uploaded (a project_files row with category "utility_bill").',
                 'ntp_approval_date' => 'Date Notice To Proceed (NTP) was approved — authorization to begin installation work.',
                 'site_survey_link' => 'Link to the site survey document/report for the property.',
                 'hoa' => 'Homeowners Association name (if the property is in an HOA).',
@@ -97,6 +98,7 @@ return [
             'value_maps' => [
                 'mpu_required' => ['1' => 'Yes — MPU required', '0' => 'No', 'Yes' => 'MPU required', 'No' => 'Not required'],
                 'fire_review_required' => ['1' => 'Fire review required', '0' => 'Not required'],
+                'utility_bill_required' => ['yes' => 'Utility bill must be collected', 'no' => 'Utility bill not needed'],
             ],
         ],
 
@@ -355,11 +357,12 @@ return [
 
         'project_document_follow_ups' => [
             'label' => 'Document Follow Ups',
-            'description' => 'The MPU paperwork chase: projects where MPU Required is Yes but the meter spot result has not come back yet. Shown on the Engineering assignee dashboard and cleared when the result is filled in.',
+            'description' => 'The paperwork chases. "mpu": MPU Required is Yes but the meter spot result has not come back (Engineering owns it). "utility_bill": Utility Bill Required is Yes but the bill has not been uploaded (Deal Review owns it). Each parks the project in a pending-document lane until the document arrives.',
             'columns' => [
                 'id' => 'Internal unique ID.',
                 'project_id' => 'The project being chased.',
-                'employee_id' => 'The Engineering employee who owns the chase.',
+                'type' => 'Which chase this is: mpu (meter spot result) or utility_bill (utility bill upload).',
+                'employee_id' => 'The employee who owns the chase (the owning department assignee).',
                 'department_id' => 'The lane the project was in when the follow-up opened.',
                 'sub_department_id' => 'The sub-lane the project was in when the follow-up opened.',
                 'status' => 'Whether the follow-up is still pending or resolved.',
@@ -372,9 +375,13 @@ return [
             ],
             'value_maps' => [
                 'status' => ['Pending' => 'Still chasing the document', 'Resolved' => 'Cleared'],
+                'type' => [
+                    'mpu' => 'MPU / meter spot result chase (Engineering)',
+                    'utility_bill' => 'Utility bill upload chase (Deal Review)',
+                ],
                 'resolved_reason' => [
-                    'meter_spot_result' => 'Meter spot result was filled in',
-                    'mpu_not_required' => 'MPU Required is no longer Yes',
+                    'document_received' => 'The missing document arrived',
+                    'not_required' => 'The question no longer applies',
                     'project_archived' => 'Project was archived',
                 ],
             ],
@@ -406,9 +413,13 @@ return [
                 'department_id' => 'The department the file belongs to.',
                 'filename' => 'The stored file name.',
                 'header_text' => 'A heading/label describing the file.',
+                'category' => 'The named group the file belongs to, e.g. "utility_bill" for the bill collected by the Utility Bill Follow Up. NULL means an ordinary file in the department file list.',
                 'created_at' => 'When uploaded.',
                 'updated_at' => 'When last updated.',
                 'deleted_at' => 'When soft-deleted (NULL means active).',
+            ],
+            'value_maps' => [
+                'category' => ['utility_bill' => 'Customer utility bill (Deal Review)'],
             ],
         ],
 

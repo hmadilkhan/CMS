@@ -34,6 +34,7 @@ return [
                 'budget',
                 'description',
                 'utility_company',
+                'utility_bill_required',
                 'ntp_approval_date',
                 'site_survey_link',
                 'hoa',
@@ -86,6 +87,7 @@ return [
                 'sales_partner_user_id',
                 'sub_contractor_user_id',
                 'utility_company',
+                'utility_bill_required',
                 'hoa',
                 'mpu_required',
                 'meter_spot_result',
@@ -721,6 +723,7 @@ return [
             'allowed_columns' => [
                 'id',
                 'project_id',
+                'type',
                 'employee_id',
                 'department_id',
                 'sub_department_id',
@@ -733,6 +736,7 @@ return [
                 'updated_at',
             ],
             'searchable_columns' => [
+                'type',
                 'status',
                 'resolved_reason',
             ],
@@ -813,6 +817,7 @@ return [
                 'department_id',
                 'filename',
                 'header_text',
+                'category',
                 'created_at',
                 'updated_at',
                 'deleted_at',
@@ -820,6 +825,7 @@ return [
             'searchable_columns' => [
                 'filename',
                 'header_text',
+                'category',
             ],
             'relationships' => [
                 'project' => [

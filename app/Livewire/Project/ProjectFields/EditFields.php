@@ -28,6 +28,8 @@ class EditFields extends Component
     // FIRST DEPARTMENT
     public $utility_company;
 
+    public $utility_bill_required;
+
     public $ntp_approval_date;
 
     public $hoa;
@@ -120,6 +122,7 @@ class EditFields extends Component
 
         // FIRST DEPARTMENT
         $this->utility_company = $this->project->utility_company;
+        $this->utility_bill_required = $this->project->utility_bill_required;
         $this->ntp_approval_date = $this->project->ntp_approval_date;
         $this->hoa = $this->project->hoa;
         $this->ahj = $this->project->ahj;
@@ -312,6 +315,7 @@ class EditFields extends Component
             // AHJ / AHJ website URL are auto-fetched and not user-editable.
             $updateItems = array_merge($updateItems, [
                 'utility_company' => $this->utility_company,
+                'utility_bill_required' => $this->utility_bill_required,
                 'ntp_approval_date' => $this->ntp_approval_date,
                 'hoa' => $this->hoa,
                 'hoa_phone_number' => $this->hoa_phone_number,

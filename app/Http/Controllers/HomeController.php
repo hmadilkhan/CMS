@@ -60,9 +60,15 @@ class HomeController extends Controller
         }
 
         // Document Follow Up - the MPU paperwork chase, Engineering assignees only
-        $showDocumentFollowUp = $this->documentFollowUpService->visibleTo(auth()->user());
+        $showDocumentFollowUp = $this->documentFollowUpService->visibleTo(auth()->user(), DocumentFollowUpService::TYPE_MPU);
         $documentFollowUps = $showDocumentFollowUp
-            ? $this->documentFollowUpService->pendingList()
+            ? $this->documentFollowUpService->pendingList(DocumentFollowUpService::TYPE_MPU)
+            : collect();
+
+        // Utility Bill Follow Up - the Deal Review chase, Deal Review assignees only
+        $showUtilityBillFollowUp = $this->documentFollowUpService->visibleTo(auth()->user(), DocumentFollowUpService::TYPE_UTILITY_BILL);
+        $utilityBillFollowUps = $showUtilityBillFollowUp
+            ? $this->documentFollowUpService->pendingList(DocumentFollowUpService::TYPE_UTILITY_BILL)
             : collect();
 
         // Get service tickets for logged-in employee
@@ -91,6 +97,8 @@ class HomeController extends Controller
             "followUps" => $followUps,
             "showDocumentFollowUp" => $showDocumentFollowUp,
             "documentFollowUps" => $documentFollowUps,
+            "showUtilityBillFollowUp" => $showUtilityBillFollowUp,
+            "utilityBillFollowUps" => $utilityBillFollowUps,
             "serviceTickets" => $serviceTickets,
             "showUpcomingAhj" => $showUpcomingAhj,
             "upcomingAhjProjects" => $upcomingAhjProjects,

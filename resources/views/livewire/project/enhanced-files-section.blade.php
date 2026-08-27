@@ -398,13 +398,14 @@
 
     @can('Files Section')
         <div class="files-header">
-            <i class="icofont-files-stack me-2"></i>Files
+            <i class="{{ $sectionIcon }} me-2"></i>{{ $sectionTitle }}
         </div>
 
         @php
             $showEditFields =
-                ($ghost == 'ghost' && $departmentId == 7) ||
-                ($ghost != 'ghost' && $departmentId == $projectDepartmentId);
+                $allowUpload &&
+                (($ghost == 'ghost' && $departmentId == 7) ||
+                    ($ghost != 'ghost' && $departmentId == $projectDepartmentId));
         @endphp
         @if ($showEditFields && $viewSource != 'website')
             <div class="mb-4">
@@ -476,7 +477,7 @@
         @empty
             <div class="no-files">
                 <i class="icofont-folder-open display-4 d-block mb-3"></i>
-                No Files Found
+                No {{ $sectionTitle }} Found
             </div>
         @endforelse
     </div>

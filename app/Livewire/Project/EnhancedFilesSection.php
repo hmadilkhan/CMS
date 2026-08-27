@@ -20,11 +20,21 @@ class EnhancedFilesSection extends Component
     public $ghost;
     public $deleteId;
     public $viewSource = "";
-    
+
+    /**
+     * Which slice of the project's files this instance shows. NULL is the
+     * department's ordinary file list; a category name (e.g. "utility_bill")
+     * makes it that group's own section, rendered identically.
+     */
+    public $category = null;
+    public $sectionTitle = "Files";
+    public $sectionIcon = "icofont-files-stack";
+    public $allowUpload = true;
+
     public $showModal = false;
     public $files = [];
     public $uploadedFiles = [];
-    
+
     protected $rules = [
         'files.*' => 'required|file|max:51200|mimes:pdf,jpg,jpeg,png,heic,dxf,docx,dwg'
     ];
@@ -80,7 +90,7 @@ class EnhancedFilesSection extends Component
                     $preview = null;
                 }
             }
-            
+
             $this->uploadedFiles[] = [
                 'name' => $file->getClientOriginalName(),
                 'size' => $file->getSize(),
@@ -122,6 +132,7 @@ class EnhancedFilesSection extends Component
                 "department_id" => $this->departmentId,
                 "filename" => $imageName,
                 "header_text" => 'Untitled',
+                "category" => $this->category,
             ]);
 
             activity('project')
@@ -143,13 +154,19 @@ class EnhancedFilesSection extends Component
 
     public function render()
     {
+        // A category section (e.g. utility bills) shows that group across the
+        // project; the plain section shows the department's ungrouped files.
         $departmentFiles = ProjectFile::where("project_id", $this->projectId)
-            ->where("department_id", $this->departmentId)
+            ->when(
+                $this->category,
+                fn ($query) => $query->category($this->category),
+                fn ($query) => $query->where("department_id", $this->departmentId)->ungrouped()
+            )
             ->orderBy('created_at', 'desc')
             ->get();
         $departmentId = $this->departmentId;
         $projectDepartmentId = $this->projectDepartmentId;
-        
+
         return view('livewire.project.enhanced-files-section', compact("departmentFiles", "departmentId", "projectDepartmentId"));
     }
 }

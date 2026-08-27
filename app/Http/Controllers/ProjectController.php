@@ -232,7 +232,7 @@ class ProjectController extends Controller
             'backdepartments' => Department::where('id', '<', $task->department_id)->get(),
             'forwarddepartments' => (object) $fwdDepartments, // Department::whereIn("id", Task::where("project_id", $project->id)->pluck("department_id"))->get(),
             'nextSubDepartments' => $nextSubDepartments,
-            'filesCount' => ProjectFile::where('project_id', $project->id)->where('department_id', $project->department_id)->get(),
+            'filesCount' => ProjectFile::where('project_id', $project->id)->where('department_id', $project->department_id)->ungrouped()->get(),
             'departments' => Department::all(),
             'employees' => $this->getEmployees($project->department_id),
             'adders' => AdderType::all(),
@@ -405,16 +405,16 @@ class ProjectController extends Controller
         // mismatched department/sub_department pair being persisted).
         $resolvedSubDepartmentId = $this->resolveSubDepartmentForDepartment($targetDepartmentIdForSub, $request->sub_department);
 
-        // Permitting -> Installation with an open Document Follow Up: the
-        // project is parked in Install Pending Document whatever lane was
-        // picked, and the new assignee is not e-mailed about it.
+        // The move a paperwork chase intercepts (Permitting -> Installation for
+        // MPU, Inspection -> PTO for the utility bill): the project is parked
+        // in that chase's lane whatever lane was picked, and only this move
+        // skips the assignment e-mail.
         $documentFollowUpService = app(DocumentFollowUpService::class);
-        $hasDocumentFollowUp = $documentFollowUpService->hasPending($project->id);
-        $forcePendingDocumentLane = $documentFollowUpService->shouldForcePendingDocumentLane($project, $targetDepartmentIdForSub);
+        $forcedFollowUpType = $documentFollowUpService->forcedTypeForMove($project, $targetDepartmentIdForSub);
         $selectedSubDepartmentId = $resolvedSubDepartmentId;
 
-        if ($forcePendingDocumentLane) {
-            $resolvedSubDepartmentId = DocumentFollowUpService::PENDING_DOCUMENT_SUB_DEPARTMENT_ID;
+        if ($forcedFollowUpType) {
+            $resolvedSubDepartmentId = $documentFollowUpService->parkedSubDepartmentId($forcedFollowUpType);
         }
 
         try {
@@ -437,9 +437,7 @@ class ProjectController extends Controller
                 app(ProjectAssignmentService::class)->notifyAssignedEmployee(
                     Employee::with('user')->find($task->employee_id),
                     $project,
-                    $newTask,
-                    true,
-                    ! $hasDocumentFollowUp
+                    $newTask
                 );
                 DB::commit();
 
@@ -539,14 +537,14 @@ class ProjectController extends Controller
                 'user_id' => auth()->user()->id,
             ]);
             $project->refresh();
-            app(ProjectAssignmentService::class)->notifyAssignedEmployee($emp, $project, $newTask, true, ! $hasDocumentFollowUp);
+            app(ProjectAssignmentService::class)->notifyAssignedEmployee($emp, $project, $newTask, true, ! $forcedFollowUpType);
 
-            if ($forcePendingDocumentLane) {
-                $documentFollowUpService->logForcedPendingDocumentLane($project, $selectedSubDepartmentId);
+            if ($forcedFollowUpType) {
+                $documentFollowUpService->logForcedParkedLane($project, $forcedFollowUpType, $selectedSubDepartmentId);
             }
 
-            // MPU Required / meter spot result may have just been written above,
-            // so open or clear the Document Follow Up to match.
+            // The chase fields may have just been written above, so open or
+            // clear the follow ups to match.
             $documentFollowUpService->sync($project);
             DB::commit();
             app(FinanceMilestoneService::class)->triggerDateMilestones($project, array_intersect(array_keys($updateItems), [
@@ -688,16 +686,16 @@ class ProjectController extends Controller
             ], 422);
         }
 
-        // Permitting -> Installation with an open Document Follow Up: the
-        // project is parked in Install Pending Document whatever lane was
-        // picked, and the new assignee is not e-mailed about it.
+        // The move a paperwork chase intercepts (Permitting -> Installation for
+        // MPU, Inspection -> PTO for the utility bill): the project is parked
+        // in that chase's lane whatever lane was picked, and only this move
+        // skips the assignment e-mail.
         $documentFollowUpService = app(DocumentFollowUpService::class);
-        $hasDocumentFollowUp = $documentFollowUpService->hasPending($project->id);
-        $forcePendingDocumentLane = $documentFollowUpService->shouldForcePendingDocumentLane($project, $request->departmentId);
+        $forcedFollowUpType = $documentFollowUpService->forcedTypeForMove($project, $request->departmentId);
         $selectedSubDepartmentId = $subDepartmentId;
 
-        if ($forcePendingDocumentLane) {
-            $subDepartmentId = DocumentFollowUpService::PENDING_DOCUMENT_SUB_DEPARTMENT_ID;
+        if ($forcedFollowUpType) {
+            $subDepartmentId = $documentFollowUpService->parkedSubDepartmentId($forcedFollowUpType);
         }
 
         try {
@@ -743,7 +741,7 @@ class ProjectController extends Controller
                 'sub_department_id' => $subDepartmentId,
                 'user_id' => auth()->user()->id,
             ]);
-            app(ProjectAssignmentService::class)->notifyAssignedEmployee($emp, $project, $newTask, true, ! $hasDocumentFollowUp);
+            app(ProjectAssignmentService::class)->notifyAssignedEmployee($emp, $project, $newTask, true, ! $forcedFollowUpType);
             // Log the custom message
             $oldLane = Department::findOrFail($currentDepartmentId);
             $newLane = Department::findOrFail($request->departmentId);
@@ -758,9 +756,9 @@ class ProjectController extends Controller
                 ->setEvent('move')
                 ->log("{$username} moved the project from {$oldLane->name} to {$newLane->name}.");
 
-            if ($forcePendingDocumentLane) {
+            if ($forcedFollowUpType) {
                 $project->refresh();
-                $documentFollowUpService->logForcedPendingDocumentLane($project, $selectedSubDepartmentId);
+                $documentFollowUpService->logForcedParkedLane($project, $forcedFollowUpType, $selectedSubDepartmentId);
             }
             DB::commit();
 
