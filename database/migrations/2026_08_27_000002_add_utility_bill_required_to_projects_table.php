@@ -11,12 +11,12 @@ return new class extends Migration
     private const DEAL_REVIEW_DEPARTMENT_ID = 1;
 
     /**
-     * "Utility Bill Required" sits beside Utility Company in the Deal Review
-     * fields, and reads exactly like MPU Required: "yes" means the bill still
-     * has to be collected, which starts a Utility Bill Follow Up; the follow up
-     * clears when the bill is actually uploaded. Left NULL on every existing
-     * project on purpose - nothing is back-filled, so no project inherits a
-     * follow up it never had.
+     * "Utility Bill Uploaded" sits beside Utility Company in the Deal Review
+     * fields, and reads the opposite way round to MPU Required: "no" means the
+     * bill still has to be collected, which starts a Utility Bill Follow Up;
+     * the follow up clears when the bill is actually uploaded (answering "yes"
+     * closes it too). Left NULL on every existing project on purpose - nothing
+     * is back-filled, so no project inherits a follow up it never had.
      *
      * It is also registered as a Deal Review required field, so a project
      * cannot leave Deal Review until the question has been answered.

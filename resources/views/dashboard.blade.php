@@ -286,7 +286,7 @@
                 <div class="card-header py-3 d-flex justify-content-between align-items-center bg-gradient-primary">
                     <div class="info-header">
                         <h6 class="mb-0 fw-bold text-white"><i class="icofont-bill me-2"></i>Utility Bill Follow Up</h6>
-                        <small class="text-white-50">Projects where Utility Bill Required = Yes and no bill uploaded yet</small>
+                        <small class="text-white-50">Projects where Utility Bill Uploaded = No and no bill uploaded yet</small>
                     </div>
                     <span class="badge bg-light text-primary rounded-pill follow-up-count">{{ $utilityBillFollowUps->count() }}</span>
                 </div>
@@ -333,7 +333,7 @@
                     <div class="text-center py-5 follow-up-empty {{ $utilityBillFollowUps->isEmpty() ? '' : 'd-none' }}">
                         <i class="icofont-bill text-muted" style="font-size: 3rem;"></i>
                         <h6 class="text-muted mt-3">No utility bill follow-ups right now</h6>
-                        <p class="text-muted small">Projects appear here when Utility Bill Required is answered Yes.</p>
+                        <p class="text-muted small">Projects appear here when Utility Bill Uploaded is answered No.</p>
                     </div>
                 </div>
             </div>

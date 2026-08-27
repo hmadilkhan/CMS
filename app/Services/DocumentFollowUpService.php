@@ -21,8 +21,8 @@ use App\Models\User;
  *   MPU           - Engineering owns it. Opens when MPU Required is "yes" and
  *                   the meter spot result is still missing; clears when the
  *                   result comes in.
- *   Utility Bill  - Deal Review owns it. Opens when Utility Bill Required is
- *                   "yes" and no bill has been uploaded; clears when the bill
+ *   Utility Bill  - Deal Review owns it. Opens when Utility Bill Uploaded is
+ *                   "no" and no bill has been uploaded; clears when the bill
  *                   itself is uploaded from the follow up card.
  *   Fire Review   - Permitting owns it. Opens when Fire Review Required is
  *                   "yes" and no fire approval document has been uploaded;
@@ -35,8 +35,10 @@ use App\Models\User;
  * (sub_departments.show_in_move_list = 0), so nothing can be moved out of it
  * by hand. Producing the missing document closes the chase, moves the project
  * on to the release lane, and e-mails the assignee. Answering the department
- * field "no" - the paperwork is not needed after all - closes it too, and the
- * project is released just the same so it is never stranded in a closed lane.
+ * field the other way - the paperwork is not owed after all ("no" for MPU and
+ * fire review, "yes" for the utility bill, whose question is whether the bill
+ * has already been uploaded) - closes it too, and the project is released just
+ * the same so it is never stranded in a closed lane.
  */
 class DocumentFollowUpService
 {
@@ -216,7 +218,9 @@ class DocumentFollowUpService
     public function paperworkRequired(Project $project, string $type): bool
     {
         return match ($type) {
-            self::TYPE_UTILITY_BILL => strtolower((string) $project->utility_bill_required) === 'yes',
+            // Deal Review's field asks whether the bill is already uploaded, so
+            // it is "no" - not "yes" - that means a document is still owed.
+            self::TYPE_UTILITY_BILL => strtolower((string) $project->utility_bill_required) === 'no',
             self::TYPE_FIRE_REVIEW => (int) $project->fire_review_required === 1,
             default => strtolower((string) $project->mpu_required) === 'yes',
         };
@@ -312,7 +316,7 @@ class DocumentFollowUpService
                             $missing->whereNull('meter_spot_result')->orWhere('meter_spot_result', '');
                         });
                 })
-                    ->orWhereRaw('lower(utility_bill_required) = ?', ['yes'])
+                    ->orWhereRaw('lower(utility_bill_required) = ?', ['no'])
                     ->orWhere('fire_review_required', 1);
             })
             ->pluck('id')
@@ -357,7 +361,7 @@ class DocumentFollowUpService
         ]);
 
         $why = match ($type) {
-            self::TYPE_UTILITY_BILL => 'Utility Bill Required is Yes and the bill has not been uploaded yet',
+            self::TYPE_UTILITY_BILL => 'Utility Bill Uploaded is No and the bill has not been uploaded yet',
             self::TYPE_FIRE_REVIEW => 'Fire Review Required is Yes and no fire approval document has been uploaded yet',
             default => 'MPU Required is Yes and the meter spot result is still missing',
         };
@@ -395,7 +399,7 @@ class DocumentFollowUpService
             },
             ProjectDocumentFollowUp::REASON_PROJECT_ARCHIVED => 'the project was archived',
             default => match ($type) {
-                self::TYPE_UTILITY_BILL => 'Utility Bill Required is no longer Yes',
+                self::TYPE_UTILITY_BILL => 'Utility Bill Uploaded is no longer No',
                 self::TYPE_FIRE_REVIEW => 'Fire Review Required is no longer Yes',
                 default => 'MPU Required is no longer Yes',
             },

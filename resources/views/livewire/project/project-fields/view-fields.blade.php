@@ -5,7 +5,7 @@
             <input disabled class="form-control" type="text" value="{{ $project->utility_company }}">
         </div>
         <div class="col-sm-6 mb-3">
-            <label for="utility_bill_required" class="form-label">Utility Bill Required</label>
+            <label for="utility_bill_required" class="form-label">Utility Bill Uploaded</label>
             <input disabled class="form-control" type="text" value="{{ $project->utility_bill_required }}">
         </div>
         <div class="col-sm-6 mb-3">

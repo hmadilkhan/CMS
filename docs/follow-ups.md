@@ -21,7 +21,7 @@ All three are the same code. Only a config row differs.
 |---|---|---|---|
 | Type key | `mpu` | `utility_bill` | `fire_review` |
 | Owner department | Engineering (3) | Deal Review (1) | Permitting (4) |
-| Opens when | `mpu_required` = `yes` | `utility_bill_required` = `yes` | `fire_review_required` = `1` |
+| Opens when | `mpu_required` = `yes` | `utility_bill_required` = `no` | `fire_review_required` = `1` |
 | …and | no `meter_spot_result` | no `utility_bill` file | no `fire_review` file |
 | Intercepted move | Permitting → Installation | Inspection → PTO | Installation → Inspection |
 | Parked lane | 31 Install Pending Document | 32 PTO Pending Document | 29 Inspection Pending Fire Review |
@@ -29,6 +29,11 @@ All three are the same code. Only a config row differs.
 | Cleared by | picking the Meter Spot Result | uploading the bill | uploading the approval |
 | Card collects | a **value** (dropdown) | a **file** | a **file** |
 | Files section | — | "Utility Bills", Deal Review tab | "Fire Approval Documents", Inspection tab |
+
+The utility bill question is the odd one out: its field is labelled **Utility
+Bill Uploaded**, so `no` — not `yes` — is the answer that owes a document.
+`NULL` (unanswered) chases nothing; the field is a required Deal Review field, so
+it cannot stay `NULL` past Deal Review.
 
 Sub-department ids above are fixed records in `sub_departments`. If they are ever
 renumbered, `DocumentFollowUpService::TYPES` must be updated to match.
@@ -73,7 +78,8 @@ Project columns: `mpu_required`, `meter_spot_result`, `utility_bill_required`,
 ## 3. The flow, end to end
 
 ```
-department field answered "yes"
+department field answered so a document is owed
+  ("yes" for MPU and fire review, "no" for Utility Bill Uploaded)
   → DocumentFollowUpService::sync()          opens the chase
   → dashboard card appears for the owning department's assignees
   → project moves through the pipeline normally (e-mails unaffected)
@@ -112,9 +118,11 @@ document received, question answered "no", project archived. The parked lane is
 closed to manual moves, so leaving the project there would strand it forever.
 
 **Utility bill and fire review are closed by the file, not by the dropdown.**
-Setting the department field to "yes" opens the chase; only uploading the
-document closes it. This is why answering "yes" on the project page cannot
-release a project on its own.
+Answering the department field the owing way opens the chase; only uploading the
+document closes it. This is why the project page's dropdown cannot release a
+parked project on its own — except by retracting the answer itself (Utility Bill
+Uploaded back to "yes", Fire Review Required back to "No"), which closes the
+chase as "no longer required" and releases the project like any other close.
 
 **MPU is closed by the value wherever it is entered** (project page or card),
 because the meter spot result *is* the document.
@@ -128,6 +136,11 @@ row to opt it back in.**
 "not answered" and "no fire review needed" were the same value — which makes a
 Permitting requirement impossible to express. Existing 0/1 answers were left
 untouched; only new projects start NULL.
+
+**Utility Bill Uploaded is phrased as the answer, not the requirement.** The
+other two ask whether paperwork is *needed*; this one asks whether the bill is
+already *in*, so the chase opens on "no". `paperworkRequired()` carries the only
+place that difference lives — everything downstream is unchanged.
 
 **Required department fields**: `utility_bill_required` (Deal Review) and
 `fire_review_required` (Permitting) are rows in `project_department_fields`, so a

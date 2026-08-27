@@ -52,7 +52,7 @@ return [
                 'budget' => 'Budgeted amount for the project (financial — restricted).',
                 'description' => 'Free-text notes/description of the project.',
                 'utility_company' => 'The electric utility company serving the property.',
-                'utility_bill_required' => 'Whether the customer utility bill still has to be collected. Answered in Deal Review, and reads like MPU Required: "yes" starts a Utility Bill Follow Up that parks the project in PTO Pending Document until the bill is actually uploaded (a project_files row with category "utility_bill").',
+                'utility_bill_required' => 'Whether the customer utility bill has already been uploaded ("Utility Bill Uploaded" in Deal Review). It reads the opposite way round to MPU Required: "no" means the bill is still owed and starts a Utility Bill Follow Up that parks the project in PTO Pending Document until the bill is actually uploaded (a project_files row with category "utility_bill"); "yes" means nothing is owed.',
                 'ntp_approval_date' => 'Date Notice To Proceed (NTP) was approved — authorization to begin installation work.',
                 'site_survey_link' => 'Link to the site survey document/report for the property.',
                 'hoa' => 'Homeowners Association name (if the property is in an HOA).',
@@ -98,7 +98,7 @@ return [
             'value_maps' => [
                 'mpu_required' => ['1' => 'Yes — MPU required', '0' => 'No', 'Yes' => 'MPU required', 'No' => 'Not required'],
                 'fire_review_required' => ['1' => 'Fire review required', '0' => 'Not required', '' => 'Not answered yet'],
-                'utility_bill_required' => ['yes' => 'Utility bill must be collected', 'no' => 'Utility bill not needed'],
+                'utility_bill_required' => ['yes' => 'Utility bill already uploaded', 'no' => 'Utility bill still to be collected', '' => 'Not answered yet'],
             ],
         ],
 
@@ -357,7 +357,7 @@ return [
 
         'project_document_follow_ups' => [
             'label' => 'Document Follow Ups',
-            'description' => 'The paperwork chases. "mpu": MPU Required is Yes but the meter spot result has not come back (Engineering owns it). "utility_bill": Utility Bill Required is Yes but the bill has not been uploaded (Deal Review owns it). "fire_review": Fire Review Required is Yes but no fire approval document has been uploaded (Permitting owns it). Each parks the project in a pending-document lane until the document arrives.',
+            'description' => 'The paperwork chases. "mpu": MPU Required is Yes but the meter spot result has not come back (Engineering owns it). "utility_bill": Utility Bill Uploaded is No and the bill has not been uploaded (Deal Review owns it). "fire_review": Fire Review Required is Yes but no fire approval document has been uploaded (Permitting owns it). Each parks the project in a pending-document lane until the document arrives.',
             'columns' => [
                 'id' => 'Internal unique ID.',
                 'project_id' => 'The project being chased.',

@@ -27,10 +27,10 @@
                     @enderror
                 </div>
                 <div class="col-sm-4 mb-3 ">
-                    <label for="utility_bill_required" class="form-label" id="requiredfiles">Utility Bill Required</label>
+                    <label for="utility_bill_required" class="form-label" id="requiredfiles">Utility Bill Uploaded</label>
                     <select class="form-select" aria-label="Utility Bill Upload" wire:model.live="utility_bill_required"
                         id="utility_bill_required" name="utility_bill_required">
-                        <option value="">Select Utility Bill Required</option>
+                        <option value="">Select Utility Bill Uploaded</option>
                         <option {{ $project->utility_bill_required == 'yes' ? 'selected' : '' }} value="yes">Yes</option>
                         <option {{ $project->utility_bill_required == 'no' ? 'selected' : '' }} value="no">No</option>
                     </select>
