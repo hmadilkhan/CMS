@@ -102,6 +102,9 @@ class ProjectMovementWorkflowTest extends TestCase
             'start_date' => now()->toDateString(),
             'end_date' => now()->addMonth()->toDateString(),
             'ahj' => 'Movement AHJ',
+            // A Deal Review required field since the Utility Bill chase; "yes"
+            // means the bill is already in, so no chase opens.
+            'utility_bill_required' => 'yes',
         ]);
 
         $task = Task::create([
@@ -190,8 +193,11 @@ class ProjectMovementWorkflowTest extends TestCase
             ->assertStatus(422)
             ->assertJson([
                 'status' => 422,
-                'error' => 'Cannot move project. Missing required fields for the current department.1',
+                'error' => 'This project cannot leave Deal Review until these fields are filled in: Site Survey Link.',
+                'requires' => 'department_fields',
+                'department_name' => 'Deal Review',
                 'missing_fields' => ['site_survey_link'],
+                'missing_field_labels' => ['Site Survey Link'],
             ]);
 
         $this->assertDatabaseHas('projects', [

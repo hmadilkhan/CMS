@@ -127,7 +127,7 @@ class ProjectLivewireWorkflowTest extends TestCase
             'user_id' => $employeeUser->id,
         ]);
 
-        return compact('department', 'subDepartment', 'employee', 'project', 'task');
+        return compact('department', 'subDepartment', 'employee', 'employeeUser', 'project', 'task');
     }
 
     public function test_notes_section_can_save_note_clean_mention_and_create_mention_record(): void
@@ -146,7 +146,11 @@ class ProjectLivewireWorkflowTest extends TestCase
                 'projectDepartmentId' => $fixture['project']->department_id,
                 'viewSource' => 'crm',
             ])
-            ->set('departmentNote', 'Please review @' . $fixture['employee']->id . ':Mention Employee today.')
+            // The @mention list is built from USERS (a sales partner user has no
+            // employee record), so the token carries the user id - see
+            // NotesSection::mount()/mentionedUsers(). The mention row still
+            // resolves back to that user's employee.
+            ->set('departmentNote', 'Please review @' . $fixture['employeeUser']->id . ':Mention Employee today.')
             ->set('showToCustomer', 1)
             ->call('save')
             ->assertHasNoErrors();
