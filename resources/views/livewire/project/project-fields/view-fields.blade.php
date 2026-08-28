@@ -8,10 +8,7 @@
             <label for="utility_bill_required" class="form-label">Utility Bill Uploaded</label>
             <input disabled class="form-control" type="text" value="{{ $project->utility_bill_required }}">
         </div>
-        <div class="col-sm-6 mb-3">
-            <label for="ntp_approval_date" class="form-label">NTP Approval Date</label>
-            <input disabled class="form-control" type="date" value="{{ $project->ntp_approval_date }}">
-        </div>
+        {{-- NTP Approval Date lives in the Zones NTP tab now, not in Deal Review. --}}
         <div class="col-sm-6 ">
             <label for="hoa" class="form-label">HOA</label>
             <input disabled class="form-control" type="text" value="{{ $project->hoa }}">

@@ -11,6 +11,15 @@
         <!-- Menu: main ul -->
 
         <ul class="menu-list flex-grow-1 mt-3">
+            @if (auth()->user()->isZoneOnlyUser())
+            {{-- A Funding-Manager-only user has no Operations side at all:
+                 Zones is their whole application. --}}
+            <li class="collapsed">
+                <a class="m-link {{ request('tab') === 'zones' ? 'active' : '' }}" href="{{ route('projects.index', ['tab' => 'zones']) }}">
+                    <i class="icofont-layers fs-5"></i> <span>Zones</span> <span class=" ms-auto text-end fs-5"></span>
+                </a>
+            </li>
+            @else
             @can('Dashboard')
             <li class="collapsed">
                 <a class="m-link {{ Route::currentRouteName() == 'dashboard' ? 'active' : '' }}" href="{{route('dashboard')}}">
@@ -129,6 +138,14 @@
                 </a>
             </li>
             @endcan
+            @can('View Zones')
+            <li class="collapsed">
+                <a class="m-link {{ request('tab') === 'zones' ? 'active' : '' }}" href="{{ route('projects.index', ['tab' => 'zones']) }}">
+                    <i class="icofont-layers fs-5"></i> <span>Zones</span> <span class=" ms-auto text-end fs-5"></span>
+                </a>
+            </li>
+            @endcan
+            @endif
 
             <li class="collapsed">
                 <a class="m-link " href="{{route('profile.logout')}}">

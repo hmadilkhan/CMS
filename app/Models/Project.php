@@ -6,7 +6,6 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Spatie\Activitylog\LogOptions;
-use Spatie\Activitylog\Traits\LogsActivity;
 
 class Project extends Model
 {
@@ -15,6 +14,10 @@ class Project extends Model
     protected $guarded = [];
 
     protected $with = ["files"];
+
+    protected $casts = [
+        'zone_entered_at' => 'datetime',
+    ];
 
     // public function getActivitylogOptions(): LogOptions
     // {
@@ -26,7 +29,7 @@ class Project extends Model
     //             $changedAttributes = collect($this->getDirty())->keys()->implode(', ');
     //             $userName = auth()->user() ? auth()->user()->name : 'System'; // Get user name or "System" if not available
 
-    //             return "{$userName} has {$eventName} the project" . 
+    //             return "{$userName} has {$eventName} the project" .
     //                    ($changedAttributes ? " with the following updates: {$changedAttributes}" : ".");
     //         });
     // }
@@ -117,5 +120,26 @@ class Project extends Model
     public function siteSurvey()
     {
         return $this->hasOne(SiteSurvey::class, 'project_id', 'id');
+    }
+
+    /** The funding-side lane this project sits in. NULL until it is enrolled. */
+    public function zone()
+    {
+        return $this->belongsTo(Zone::class, 'zone_id', 'id');
+    }
+
+    public function zoneMovements()
+    {
+        return $this->hasMany(ProjectZoneMovement::class, 'project_id', 'id');
+    }
+
+    public function zoneNotes()
+    {
+        return $this->hasMany(ProjectZoneNote::class, 'project_id', 'id');
+    }
+
+    public function zoneFiles()
+    {
+        return $this->hasMany(ProjectZoneFile::class, 'project_id', 'id');
     }
 }

@@ -141,9 +141,13 @@
     @can('Notes Section')
         <div class="col-sm-12 mb-3">
             @php
-                $showEditFields =
-                    ($ghost == 'ghost' && $departmentId == 7) ||
-                    ($ghost != 'ghost' && $departmentId == $projectDepartmentId);
+                // A zone tab writes only in the zone the project is currently in;
+                // every other zone tab is read-only history. A department tab
+                // keeps its own rule: only the department the project is in.
+                $showEditFields = $zoneId
+                    ? $zoneId == $projectZoneId
+                    : ($ghost == 'ghost' && $departmentId == 7) ||
+                        ($ghost != 'ghost' && $departmentId == $projectDepartmentId);
             @endphp
             @if ($showEditFields && $viewSource != 'website')
                 <div class="notes-section">
@@ -182,13 +186,17 @@
                         <!-- Hidden input to store raw version with ID -->
                         <input type="hidden" x-ref="rawNoteInput" wire:model="departmentNote">
 
-                        <!-- Show to Customer Toggle -->
-                        <div class="mt-3 d-flex align-items-center">
-                            <label class="form-check form-switch mb-0">
-                                <input class="form-check-input" type="checkbox" wire:model="showToCustomer" value="1">
-                                <span class="form-check-label ms-2" style="font-size: 0.9rem;">Show to Customer</span>
-                            </label>
-                        </div>
+                        {{-- Zone notes never reach the customer tracking page, so the
+                             toggle would promise something that cannot happen. --}}
+                        @unless ($zoneId)
+                            <!-- Show to Customer Toggle -->
+                            <div class="mt-3 d-flex align-items-center">
+                                <label class="form-check form-switch mb-0">
+                                    <input class="form-check-input" type="checkbox" wire:model="showToCustomer" value="1">
+                                    <span class="form-check-label ms-2" style="font-size: 0.9rem;">Show to Customer</span>
+                                </label>
+                            </div>
+                        @endunless
 
                         <!-- SUGGESTIONS dropdown -->
                         <ul x-show="showSuggestions" class="list-group position-absolute bg-white z-10 suggestions-dropdown"
@@ -213,7 +221,7 @@
             @endif
 
             <div class="note-header mt-4">
-                <i class="icofont-listing-box me-2"></i>Department Notes
+                <i class="icofont-listing-box me-2"></i>{{ $sectionTitle }}
             </div>
             @foreach ($notes as $value)
                 @if ($value->notes != '')
@@ -250,13 +258,15 @@
                                 <!-- Hidden input to store raw version with ID -->
                                 <input type="hidden" x-ref="rawNoteInput" wire:model="departmentNote">
 
-                                <!-- Show to Customer Toggle -->
-                                <div class="mt-3 d-flex align-items-center">
-                                    <label class="form-check form-switch mb-0">
-                                        <input class="form-check-input" type="checkbox" wire:model="showToCustomer" value="1">
-                                        <span class="form-check-label ms-2" style="font-size: 0.9rem;">Show to Customer</span>
-                                    </label>
-                                </div>
+                                @unless ($zoneId)
+                                    <!-- Show to Customer Toggle -->
+                                    <div class="mt-3 d-flex align-items-center">
+                                        <label class="form-check form-switch mb-0">
+                                            <input class="form-check-input" type="checkbox" wire:model="showToCustomer" value="1">
+                                            <span class="form-check-label ms-2" style="font-size: 0.9rem;">Show to Customer</span>
+                                        </label>
+                                    </div>
+                                @endunless
 
                                 <!-- SUGGESTIONS dropdown -->
                                 <ul x-show="showSuggestions"
@@ -291,7 +301,10 @@
                                     <div class="flex-grow-1">
                                         <div class="note-text-display">{{ $value->notes }}</div>
                                     </div>
-                                    @if ($value->user_id == auth()->user()->id && $viewSource != 'website')
+                                    {{-- A past zone tab is read-only: its notes stay
+                                         visible but can no longer be edited or
+                                         deleted. Department tabs are unaffected. --}}
+                                    @if ($value->user_id == auth()->user()->id && $viewSource != 'website' && (!$zoneId || $showEditFields))
                                         <div class="note-actions ms-3">
                                             <div class="note-icon edit" wire:click="editNote({{ $value->id }})">
                                                 <i class="icofont-pencil"></i>

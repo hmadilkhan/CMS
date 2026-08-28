@@ -81,6 +81,9 @@
                 </div>
             </div>
 
+            {{-- The Operational | Zones switch lives on the projects page itself
+                 (projects/index.blade.php), not up here. --}}
+
             <!-- menu toggler -->
             <button class="navbar-toggler p-0 border-0 menu-toggle order-3" type="button" data-bs-toggle="collapse"
                 data-bs-target="#mainHeader">

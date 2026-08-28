@@ -286,6 +286,39 @@ groups a chase's documents into its own section; `sub_departments.show_in_move_l
 marks a lane closed to manual movement (enforced in the UI *and* in
 `ProjectController::moveProject()`).
 
+The same Permitting → Installation move is **also** gated on
+`projects.ntp_approval_date` — not a chase, just a refusal the move modal answers
+with a date input (`ProjectController::ntpApprovalGate()`). It runs **before** the
+MPU interception: NTP first, then the chase parks the project.
+
+## Zones (Funding Manager module)
+
+A second, **funding-side pipeline** that runs beside the department pipeline and
+never writes to it: Pre NTP → NTP → M1 → M2, plus a hidden Archived lane. Built
+for the **Funding Manager** role. **Read `docs/zones.md` before changing any of
+it** — it has the auto-entry rules, the access model, the table layout and the
+gotchas.
+
+Quick orientation: `app/Services/ZoneService.php` is the whole brain;
+`projects.zone_id` + `zone_entered_at` hold the current zone;
+`project_zone_movements` is the history; `project_zone_notes` /
+`project_zone_files` keep zone content out of `department_notes` /
+`project_files`. On a project page the Zones section lives **inside the Project
+Activity tab**, under the department section and styled from the same CSS, with
+a tab for **every** zone — but only the current zone's tab is editable, the rest
+are read-only. Only two zone changes are automatic (Deal
+Review → Pre NTP, Site Survey → NTP while still in Pre NTP) — everything else is
+a manual move and a department move never overrides one. **No zone move is gated
+on a project field.** The **NTP Approval Date** left the Deal Review department
+fields: the NTP zone tab shows it (`config('zones.zone_fields')`) and the
+Permitting → Installation move modal is what enforces it — see
+`docs/follow-ups.md`. The board is the
+**Zones tab of the projects page** (`Operational | Zones` switch at top centre) —
+a Kanban of one column per zone using the projects page's own project cards,
+fetched as a fragment from `zones.board`. Gated by the `View Zones` permission; a
+Funding-Manager-only user gets only the Zones tab and loses the department
+fields/move bar.
+
 ## General development notes
 
 - Email/IMAP: `EmailFetchService`, `app/Console/Commands/FetchEmails.php` / `FetchAllEmails.php`, jobs in `app/Jobs`.

@@ -13,7 +13,7 @@ use Spatie\Permission\Traits\HasRoles;
 
 class User extends Authenticatable
 {
-    use HasApiTokens, HasFactory, Notifiable, HasRoles, Impersonate, SoftDeletes;
+    use HasApiTokens, HasFactory, HasRoles, Impersonate, Notifiable, SoftDeletes;
 
     /**
      * The attributes that are mass assignable.
@@ -89,6 +89,30 @@ class User extends Authenticatable
         return $query->whereHas("roles", function ($query) use ($rolename) {
             $query->where("name", $rolename);
         });
+    }
+
+    /**
+     * A user who works the Zones module and nothing else: they hold the Funding
+     * Manager role and no other. Such a user has no Operations side, so the
+     * Operations|Zones switch is pointless for them and the parts of the project
+     * page that belong to operations (department fields, the department move
+     * bar) are hidden.
+     *
+     * Holding Funding Manager ALONGSIDE another role leaves that other role's
+     * rights untouched.
+     */
+    public function isZoneOnlyUser(): bool
+    {
+        $roles = $this->getRoleNames();
+
+        return $roles->count() === 1
+            && $roles->first() === config('zones.role', 'Funding Manager');
+    }
+
+    /** Holds the Funding Manager role, on its own or beside others. */
+    public function isFundingManager(): bool
+    {
+        return $this->hasRole(config('zones.role', 'Funding Manager'));
     }
 
     public function canImpersonate(): bool

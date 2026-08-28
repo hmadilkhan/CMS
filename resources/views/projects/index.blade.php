@@ -109,6 +109,62 @@
             margin-bottom: 22px;
         }
 
+        /* Operational | Zones - the two workspaces this page holds. */
+        .workspace-tab-row {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 1.5rem;
+        }
+
+        /* Same segmented bar as the Zones board's department strip: 1px orange
+           dividers, white segments, monospace labels, gradient on the active
+           one. Kept centred rather than full width - it is a two-way switch. */
+        .workspace-tabs {
+            display: flex;
+            flex-wrap: nowrap;
+            gap: 1px;
+            padding: 1px;
+            border: 1px solid rgba(240, 122, 36, 0.32) !important;
+            border-radius: 14px;
+            background: rgba(240, 122, 36, 0.32);
+            overflow: hidden;
+            box-shadow: 0 6px 18px -14px rgba(151, 76, 18, 0.55);
+        }
+
+        .workspace-tabs .nav-item {
+            display: flex;
+        }
+
+        .workspace-tabs .nav-link {
+            border: 0 !important;
+            border-radius: 0 !important;
+            min-height: 48px;
+            min-width: 150px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0.6rem 1.4rem;
+            background: #ffffff;
+            color: rgba(120, 53, 15, 0.72) !important;
+            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+            font-size: 0.7rem;
+            font-weight: 600;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+            transition: background 0.2s ease, color 0.2s ease;
+        }
+
+        .workspace-tabs .nav-link:hover {
+            background: var(--solen-primary-soft);
+            color: var(--solen-warm-hover) !important;
+        }
+
+        .workspace-tabs .nav-link.active {
+            background: var(--solen-gradient) !important;
+            color: #ffffff !important;
+            font-weight: 700;
+        }
+
         .premium-lock-card h3 {
             color: #fff;
             text-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
@@ -185,45 +241,96 @@
             }
         }
     </style>
+    @php
+        $canSeeZones = auth()->user()->can('View Zones');
+        $zonesOnly = auth()->user()->isZoneOnlyUser();
+        // The tab the page opens on. A Funding-Manager-only user has no
+        // operations side at all, so Zones is their only workspace.
+        $activeWorkspace = $zonesOnly || request('tab') === 'zones' ? 'zones' : 'operational';
+    @endphp
+
     <div class="container-xxxl">
-        <div class="row align-items-center">
-            <div class="border-0 mb-4">
-                <div class="project-filter-row">
-                    <div class="search-box-wrapper">
-                        <i class="icofont-search search-icon"></i>
-                        <input type="text" class="form-control search-input" id="search"
-                            placeholder="Search by project, email, phone, or address" />
+        @if ($canSeeZones)
+            <div class="workspace-tab-row">
+                <ul class="nav nav-tabs workspace-tabs" role="tablist">
+                    @unless ($zonesOnly)
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link {{ $activeWorkspace === 'operational' ? 'active' : '' }}"
+                                id="workspace-tab-operational" data-bs-toggle="tab"
+                                data-bs-target="#workspace-operational" type="button" role="tab">Operational</button>
+                        </li>
+                    @endunless
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link {{ $activeWorkspace === 'zones' ? 'active' : '' }}"
+                            id="workspace-tab-zones" data-bs-toggle="tab" data-bs-target="#workspace-zones"
+                            type="button" role="tab">Zones</button>
+                    </li>
+                </ul>
+            </div>
+        @endif
+
+        <div class="tab-content">
+            @unless ($canSeeZones && $zonesOnly)
+                <div class="tab-pane fade {{ $activeWorkspace === 'operational' ? 'show active' : '' }}"
+                    id="workspace-operational" role="tabpanel">
+                    <div class="row align-items-center">
+                        <div class="border-0 mb-4">
+                            <div class="project-filter-row">
+                                <div class="search-box-wrapper">
+                                    <i class="icofont-search search-icon"></i>
+                                    <input type="text" class="form-control search-input" id="search"
+                                        placeholder="Search by project, email, phone, or address" />
+                                </div>
+                            </div>
+                            <div class="premium-lock-card department-tabs-card">
+                                <div class="d-flex project-tab flex-wrap justify-content-center">
+                                    @if (count($departments) > 1)
+                                        <ul class="nav nav-tabs rounded prtab-set" role="tablist" style="cursor: pointer;">
+                                            <li class="nav-item"><a class="nav-link active" data-bs-toggle="tab"
+                                                    onclick="projectList('all')" role="tab">All</a></li>
+                                            @foreach ($departments as $department)
+                                                <li class="nav-item"><a class="nav-link" data-bs-toggle="tab"
+                                                        onclick="projectList('{{ $department->id }}')"
+                                                        role="tab">{{ $department->name }}</a></li>
+                                            @endforeach
+                                        </ul>
+                                    @endif
+                                </div>
+                            </div>
+
+                        </div>
+                    </div> <!-- Row end  -->
+                    <div class="row align-items-center">
+                        <div class="col-lg-12 col-md-12 flex-column">
+                            <div class="tab-content mt-4" id="projectlist">
+
+                            </div>
+                        </div>
                     </div>
                 </div>
-                <div class="premium-lock-card department-tabs-card">
-                    <div class="d-flex project-tab flex-wrap justify-content-center">
-                        @if (count($departments) > 1)
-                            <ul class="nav nav-tabs rounded prtab-set" role="tablist" style="cursor: pointer;">
-                                <li class="nav-item"><a class="nav-link active" data-bs-toggle="tab"
-                                        onclick="projectList('all')" role="tab">All</a></li>
-                                @foreach ($departments as $department)
-                                    <li class="nav-item"><a class="nav-link" data-bs-toggle="tab"
-                                            onclick="projectList('{{ $department->id }}')"
-                                            role="tab">{{ $department->name }}</a></li>
-                                @endforeach
-                            </ul>
-                        @endif
+            @endunless
+
+            @if ($canSeeZones)
+                {{-- The board is fetched into here the first time the tab is
+                     opened - see projects.scripts. --}}
+                <div class="tab-pane fade {{ $activeWorkspace === 'zones' ? 'show active' : '' }}"
+                    id="workspace-zones" role="tabpanel">
+                    <div id="zoneBoardContainer" class="mt-4">
+                        <div class="text-center text-muted py-5">
+                            <i class="icofont-spinner icofont-spin fs-3 d-block mb-2"></i>Loading zones...
+                        </div>
                     </div>
                 </div>
-
-            </div>
-        </div> <!-- Row end  -->
-        <div class="row align-items-center">
-            <div class="col-lg-12 col-md-12 flex-column">
-                <div class="tab-content mt-4" id="projectlist">
-
-                </div>
-            </div>
+            @endif
         </div>
+
         <!-- Create Employee-->
         @include('projects.create-model')
     </div>
     @include('projects.delete-modal')
+    @if ($canSeeZones)
+        @include('zones.partials.move-modal', ['movableZones' => app(\App\Services\ZoneService::class)->movableZones()])
+    @endif
 
     @include('projects.scripts')
 @endsection

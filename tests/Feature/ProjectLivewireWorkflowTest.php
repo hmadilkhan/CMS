@@ -223,10 +223,11 @@ class ProjectLivewireWorkflowTest extends TestCase
         $admin = $this->superAdmin();
         $fixture = $this->projectFixture();
 
+        // NTP Approval Date is deliberately absent: it belongs to the funding
+        // side now and is collected in the Zones NTP tab (see docs/zones.md).
         Livewire::actingAs($admin)
             ->test(EditFields::class, ['project' => $fixture['project']])
             ->set('utility_company', 'APS')
-            ->set('ntp_approval_date', '2026-05-06')
             ->set('hoa', 'yes')
             ->set('hoa_phone_number', '555-666-7777')
             ->call('updateProjectFields')
@@ -236,7 +237,6 @@ class ProjectLivewireWorkflowTest extends TestCase
         $this->assertDatabaseHas('projects', [
             'id' => $fixture['project']->id,
             'utility_company' => 'APS',
-            'ntp_approval_date' => '2026-05-06',
             'hoa' => 'yes',
             'hoa_phone_number' => '555-666-7777',
         ]);

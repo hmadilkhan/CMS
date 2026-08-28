@@ -38,14 +38,9 @@
                         <div id="utility_bill_required_message" class="text-danger message mt-2">{{ $message }}</div>
                     @enderror
                 </div>
-                <div class="col-sm-4 mb-3 ">
-                    <label for="ntp_approval_date" class="form-label" id="requiredfiles">NTP Approval Date</label>
-                    <input class="form-control" type="date" id="ntp_approval_date" name="ntp_approval_date"
-                        wire:model="ntp_approval_date">
-                    @error('ntp_approval_date')
-                        <div id="ntp_approval_date_message" class="text-danger message mt-2">{{ $message }}</div>
-                    @enderror
-                </div>
+                {{-- NTP Approval Date is not a Deal Review field any more: the funding
+                     side owns it, and collects it in the Zones NTP tab and on the
+                     NTP -> M1 zone move. See docs/zones.md. --}}
                 <div class="col-sm-4 ">
                     <label for="hoa" class="form-label">HOA</label>
                     <select class="form-select" aria-label="Default select HOA" wire:model.live="hoa" id="hoa"

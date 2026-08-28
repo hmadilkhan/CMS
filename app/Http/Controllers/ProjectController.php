@@ -34,6 +34,7 @@ use App\Services\FinanceMilestoneService;
 use App\Services\NotificationTemplateService;
 use App\Services\ProjectAssignmentService;
 use App\Services\ProjectDateChangeNotifier;
+use App\Services\ZoneService;
 use App\Traits\MediaTrait;
 use Carbon\Carbon;
 use FPDF;
@@ -43,6 +44,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\URL;
+use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Spatie\Activitylog\Models\Activity;
 
@@ -136,6 +138,9 @@ class ProjectController extends Controller
             $project->load('customer');
             app(AhjRegistryService::class)->assignToProject($project);
             app(FinanceMilestoneService::class)->triggerProjectCreated($project);
+            // A new project lands in Deal Review, which is what pulls it into
+            // the Zones module at Pre NTP.
+            app(ZoneService::class)->handleDepartmentArrival($project, 1);
 
             return response()->json(['status' => 200, 'messsage' => 'Project created successfully']);
         } catch (\Throwable $th) {
@@ -252,6 +257,12 @@ class ProjectController extends Controller
             'serviceManagers' => $serviceManagers,
             'serviceTickets' => $serviceTickets,
             'designDetail' => $designDetail,
+            // Zones section. Every zone gets a tab - the ones the project has
+            // been through simply have content in them. The section itself is
+            // hidden for a project that was never enrolled ($project->zone_id).
+            'zoneTabs' => app(ZoneService::class)->movableZones(),
+            'zoneHistory' => app(ZoneService::class)->history($project),
+            'movableZones' => app(ZoneService::class)->movableZones(),
         ]);
     }
 
@@ -366,7 +377,6 @@ class ProjectController extends Controller
 
             $validationArray = array_merge($validationArray, [
                 'utility_company' => 'required_if:forward,2',
-                'ntp_approval_date' => 'required_if:forward,2',
                 'hoa' => 'required_if:forward,2',
                 'hoa_phone_number' => Rule::requiredIf(function () use ($request) {
                     return $request->forward == 2 && ! $request->hoa == 'yes';
@@ -561,6 +571,129 @@ class ProjectController extends Controller
         }
     }
 
+    /** The one move that cannot happen without the NTP approval date. */
+    private const NTP_GATE_FROM_DEPARTMENT = 'Permitting';
+
+    private const NTP_GATE_TO_DEPARTMENT = 'Installation';
+
+    /**
+     * Refuse a Permitting -> Installation move while the project has no NTP
+     * approval date, and let the move modal supply one.
+     *
+     * Returns a 422 carrying `requires: ntp_approval_date` when the date is
+     * still missing - the modal reads that flag, shows a date input and sends
+     * the move again with `ntp_approval_date` filled. Returns NULL when the move
+     * may proceed; the accepted date (if one was supplied) comes back through
+     * $ntpApprovalDate so the caller can save it inside the move's transaction.
+     *
+     * Deliberately checked before the paperwork chases: a project that owes both
+     * the NTP date and an MPU meter spot result is asked for the date first, and
+     * only then parked in the MPU lane.
+     */
+    private function ntpApprovalGate(Project $project, Request $request, ?string &$ntpApprovalDate)
+    {
+        $fromId = Department::where('name', self::NTP_GATE_FROM_DEPARTMENT)->value('id');
+        $toId = Department::where('name', self::NTP_GATE_TO_DEPARTMENT)->value('id');
+
+        $isGatedMove = $fromId && $toId
+            && (int) $project->department_id === (int) $fromId
+            && (int) $request->departmentId === (int) $toId;
+
+        if (! $isGatedMove || ! empty($project->ntp_approval_date)) {
+            return null;
+        }
+
+        $supplied = $request->input('ntp_approval_date');
+
+        if (empty($supplied)) {
+            return response()->json([
+                'status' => 422,
+                'error' => 'This project cannot move to '.self::NTP_GATE_TO_DEPARTMENT.' without the NTP Approval Date.',
+                'requires' => 'ntp_approval_date',
+                'field_label' => 'NTP Approval Date',
+            ], 422);
+        }
+
+        $date = strtotime($supplied);
+
+        if ($date === false) {
+            return response()->json([
+                'status' => 422,
+                'error' => 'Please enter a valid NTP Approval Date.',
+                'requires' => 'ntp_approval_date',
+                'field_label' => 'NTP Approval Date',
+            ], 422);
+        }
+
+        $ntpApprovalDate = date('Y-m-d', $date);
+
+        return null;
+    }
+
+    /**
+     * The label the CRM shows for a project field, so a move refusal can name
+     * the field the way the user sees it on the project form instead of
+     * printing a raw column name like "permitting_submittion_date".
+     *
+     * Anything not listed falls back to a title-cased column name, which reads
+     * well enough for plainly named fields and keeps a new required field from
+     * ever showing up as gibberish.
+     */
+    private const PROJECT_FIELD_LABELS = [
+        'utility_company' => 'Utility Company',
+        'utility_bill_required' => 'Utility Bill Uploaded',
+        'ntp_approval_date' => 'NTP Approval Date',
+        'hoa' => 'HOA',
+        'hoa_phone_number' => 'HOA Phone Number',
+        'ahj' => 'AHJ',
+        'site_survey_link' => 'Site Survey Link',
+        'adders_approve_checkbox' => 'Adders Approved',
+        'mpu_required' => 'MPU Required',
+        'meter_spot_request_date' => 'Meter Spot Request Date',
+        'meter_spot_request_number' => 'Meter Spot Request Number',
+        'meter_spot_result' => 'Meter Spot Result',
+        'production_value_achieved' => 'Production Value Achieved',
+        'permitting_submittion_date' => 'Permit Submission Date',
+        'permitting_approval_date' => 'Permit Approval Date',
+        'actual_permit_fee' => 'Actual Permit Fee',
+        'fire_review_required' => 'Fire Review Required',
+        'hoa_approval_request_date' => 'HOA Approval Request Date',
+        'hoa_approval_date' => 'HOA Approval Date',
+        'solar_install_date' => 'Solar Install Date',
+        'battery_install_date' => 'Battery Install Date',
+        'mpu_install_date' => 'MPU Install Date',
+        'sub_contractor_id' => 'Sub-Contractor',
+        'sub_contractor_user_id' => 'Sub-Contractor User',
+        'monitoring_link' => 'Monitoring Link',
+        'rough_inspection_date' => 'Rough Inspection Date',
+        'final_inspection_date' => 'Final Inspection Date',
+        'fire_inspection_date' => 'Fire Inspection Date',
+        'inspection_approval_date' => 'Inspection Approval Date',
+        'pto_submission_date' => 'PTO Submission Date',
+        'pto_approval_date' => 'PTO Approval Date',
+        'coc_packet_mailed_out_date' => 'COC Packet Mailed Out Date',
+    ];
+
+    private function projectFieldLabel(string $field): string
+    {
+        return self::PROJECT_FIELD_LABELS[$field] ?? Str::headline($field);
+    }
+
+    /**
+     * Of a group of fields that are required together, the ones that are
+     * actually empty. The move gate checks such a group as a whole, but the
+     * refusal must list only the fields the user still has to fill in.
+     *
+     * @param  array<int, string>  $fields
+     * @return array<int, string>
+     */
+    private function emptyFieldsOf(Project $project, array $fields): array
+    {
+        return array_values(array_filter(
+            $fields,
+            fn ($field) => empty($project->$field)
+        ));
+    }
     public function moveProject(Request $request)
     {
         $project = Project::findOrFail($request->projectId);
@@ -633,7 +766,9 @@ class ProjectController extends Controller
                     && in_array($field, ['meter_spot_request_date', 'meter_spot_request_number'])
                     && (empty($project->meter_spot_request_date) || empty($project->meter_spot_request_number))
                 ) {
-                    $missingFields[] = $field;
+                    // Name the field that is actually empty, not the whole pair -
+                    // the user has to be told WHICH one to fill in.
+                    $missingFields = array_merge($missingFields, $this->emptyFieldsOf($project, ['meter_spot_request_date', 'meter_spot_request_number']));
                 }
 
                 // Department 4: Check if HOA approval fields are required
@@ -642,12 +777,12 @@ class ProjectController extends Controller
                     && in_array($field, ['hoa_approval_request_date', 'hoa_approval_date'])
                     && (empty($project->hoa_approval_request_date) || empty($project->hoa_approval_date))
                 ) {
-                    $missingFields[] = $field;
+                    $missingFields = array_merge($missingFields, $this->emptyFieldsOf($project, ['hoa_approval_request_date', 'hoa_approval_date']));
                 }
 
                 // Department 5: Check if MPU install date is required
                 elseif ($currentDepartmentId == 5 && in_array($field, ['mpu_install_date', 'meter_spot_result']) && $project->mpu_required === 'yes' && (empty($project->mpu_install_date) || empty($project->meter_spot_result))) {
-                    $missingFields[] = $field;
+                    $missingFields = array_merge($missingFields, $this->emptyFieldsOf($project, ['mpu_install_date', 'meter_spot_result']));
                 }
 
                 // Department 5: Check sub_contractor_id from customer table
@@ -673,13 +808,35 @@ class ProjectController extends Controller
             }
 
             if (! empty($missingFields)) {
+                $missingFields = array_values(array_unique($missingFields));
+                $missingLabels = array_map(fn ($field) => $this->projectFieldLabel($field), $missingFields);
+                $departmentName = optional($project->department)->name;
+
+                // The message has to name the fields: the old one said only
+                // "missing required fields" (plus a raw department id), which
+                // left the user guessing what to go and fill in.
                 return response()->json([
                     'status' => 422,
-                    'error' => 'Cannot move project. Missing required fields for the current department.'.$currentDepartmentId,
+                    'error' => 'This project cannot leave '.($departmentName ?: 'its current department').' until these fields are filled in: '.implode(', ', $missingLabels).'.',
+                    'requires' => 'department_fields',
+                    'department_name' => $departmentName,
                     'missing_fields' => $missingFields,
+                    'missing_field_labels' => $missingLabels,
                     'requiredFields' => $requiredFields,
                 ], 422);
             }
+        }
+
+        // Installation may not start without the NTP approval date on file.
+        // This is the SAME move the MPU chase intercepts (Permitting ->
+        // Installation) and it deliberately runs FIRST: when a project owes both,
+        // the date is collected here and the chase parks the project on the move
+        // that follows. See docs/follow-ups.md.
+        $ntpApprovalDate = null;
+        $ntpGateResponse = $this->ntpApprovalGate($project, $request, $ntpApprovalDate);
+
+        if ($ntpGateResponse) {
+            return $ntpGateResponse;
         }
 
         // Ensure the sub-department actually belongs to the target department.
@@ -718,10 +875,12 @@ class ProjectController extends Controller
                     'resolved_date' => now(),
                 ]);
 
-            $project->update([
+            $project->update(array_filter([
                 'department_id' => $request->departmentId,
                 'sub_department_id' => $subDepartmentId,
-            ]);
+                // Only set when the move modal collected it - see ntpApprovalGate().
+                'ntp_approval_date' => $ntpApprovalDate,
+            ], fn ($value) => $value !== null));
 
             $emp = app(ProjectAssignmentService::class)->employeeForDepartment((int) $request->departmentId);
 
@@ -764,11 +923,25 @@ class ProjectController extends Controller
                 ->setEvent('move')
                 ->log("{$username} moved the project from {$oldLane->name} to {$newLane->name}.");
 
+            if ($ntpApprovalDate) {
+                activity('project')
+                    ->performedOn($project)
+                    ->causedBy(auth()->user())
+                    ->setEvent('updated')
+                    ->withProperties(['ntp_approval_date' => $ntpApprovalDate])
+                    ->log("{$username} set the NTP Approval Date to {$ntpApprovalDate} while moving the project to {$newLane->name}.");
+            }
+
             if ($forcedFollowUpType) {
                 $project->refresh();
                 $documentFollowUpService->logForcedParkedLane($project, $forcedFollowUpType, $selectedSubDepartmentId);
             }
             DB::commit();
+
+            // The zone side only ever reacts to a department arrival; it never
+            // writes back. A project already moved on by the Funding Manager is
+            // left where it is.
+            app(ZoneService::class)->handleDepartmentArrival($project->refresh(), (int) $request->departmentId);
 
             return response()->json(['status' => 200, 'message' => 'Project Moved Successfully']);
         } catch (\Throwable $th) {

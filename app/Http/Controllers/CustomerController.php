@@ -336,6 +336,8 @@ class CustomerController extends Controller
             DB::commit();
             app(AhjRegistryService::class)->assignToProject($project, $customer);
             app(FinanceMilestoneService::class)->triggerProjectCreated($project);
+            // Deal Review is the department that pulls a project into Zones.
+            app(\App\Services\ZoneService::class)->handleDepartmentArrival($project, 1);
 
             return redirect()->route('customers.index');
         } catch (\Throwable $th) {

@@ -402,10 +402,15 @@
         </div>
 
         @php
+            // A zone tab uploads only into the zone the project is currently in;
+            // every other zone tab is a read-only list. A department tab keeps
+            // its own rule: only the department the project is in.
             $showEditFields =
                 $allowUpload &&
-                (($ghost == 'ghost' && $departmentId == 7) ||
-                    ($ghost != 'ghost' && $departmentId == $projectDepartmentId));
+                ($zoneId
+                    ? $zoneId == $projectZoneId
+                    : ($ghost == 'ghost' && $departmentId == 7) ||
+                        ($ghost != 'ghost' && $departmentId == $projectDepartmentId));
         @endphp
         @if ($showEditFields && $viewSource != 'website')
             <div class="mb-4">
@@ -453,7 +458,9 @@
                         </div>
                     @endif
                     @can('File Delete')
-                        @if ($viewSource != 'website')
+                        {{-- A past zone tab is read-only: its files can be opened
+                             but not removed. Department tabs are unaffected. --}}
+                        @if ($viewSource != 'website' && (!$zoneId || $showEditFields))
                             <div class="delete-icon"
                                 wire:click="$dispatch('deleteConfirmation', {id: {{ $file->id }}})">
                                 <i class="icofont-trash"></i>
@@ -461,8 +468,9 @@
                         @endif
                     @endcan
                 </div>
+                @php $titleEditable = $viewSource != 'website' && (!$zoneId || $showEditFields); @endphp
                 <div class="file-info">
-                    <div class="file-header {{ $viewSource != 'website' ? 'editable-title' : '' }}" contenteditable="{{ $viewSource != 'website' ? 'true' : 'false' }}" data-file-id="{{ $file->id }}"
+                    <div class="file-header {{ $titleEditable ? 'editable-title' : '' }}" contenteditable="{{ $titleEditable ? 'true' : 'false' }}" data-file-id="{{ $file->id }}"
                         x-data="{ originalText: @js($file->header_text ?? 'Untitled') }"
                         x-on:blur="if($el.textContent.trim() !== originalText) { $wire.updateTitle({{ $file->id }}, $el.textContent.trim()); originalText = $el.textContent.trim(); }">
                         {{ $file->header_text ?? 'Untitled' }}</div>

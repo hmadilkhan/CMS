@@ -7,7 +7,9 @@ use App\Models\DepartmentNote;
 use App\Models\Employee;
 use App\Models\NotesMention;
 use App\Models\Project;
+use App\Models\ProjectZoneNote;
 use App\Models\User;
+use App\Models\Zone;
 use App\Notifications\NoteMentionedNotification;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -26,6 +28,18 @@ class NotesSection extends Component
     public $employees;
     public $viewSource = "";
     public $showToCustomer = 0;
+
+    /**
+     * Zone mode. When $zoneId is set this instance belongs to a zone tab, not a
+     * department tab: it reads and writes project_zone_notes instead of
+     * department_notes, and it is editable only in the project's CURRENT zone
+     * ($projectZoneId) - every other zone tab is read-only history. Everything
+     * else - the @mention list, the notifications, the activity log - is
+     * identical.
+     */
+    public $zoneId = null;
+    public $projectZoneId = null;
+    public $sectionTitle = "Department Notes";
 
     protected $listeners = ['refresh' => '$refresh'];
 
@@ -137,9 +151,12 @@ class NotesSection extends Component
      */
     protected function recordMention(User $user, Project $project, string $cleanNote, string $subjectPrefix): void
     {
+        // A zone note still records the project's department, so every existing
+        // mention query keeps working; zone_id says it came from a zone tab.
         NotesMention::create([
             "project_id" => $this->projectId,
-            "department_id" => $this->departmentId,
+            "department_id" => $this->departmentId ?: $project->department_id,
+            "zone_id" => $this->zoneId,
             "employee_id" => Employee::where('user_id', $user->id)->value('id'),
             "user_id" => $user->id,
         ]);
@@ -151,10 +168,16 @@ class NotesSection extends Component
         }
 
         if ($user->email_preference == 1 && !empty($user->email)) {
-            $message = "You have been mentioned in an updated note in the department (" . $project->department->name . ") added by (" . auth()->user()->name . ")";
+            $context = $this->inZoneMode()
+                ? 'zone (' . optional(Zone::find($this->zoneId))->name . ')'
+                : 'department (' . $project->department->name . ')';
+            $label = $this->inZoneMode()
+                ? optional(Zone::find($this->zoneId))->name
+                : $project->department->name;
+            $message = "You have been mentioned in an updated note in the " . $context . " added by (" . auth()->user()->name . ")";
             SendRawEmailJob::dispatch(
                 $user->email,
-                $subjectPrefix . ' - (' . $project->project_name . ') - (' . $project->department->name . ')',
+                $subjectPrefix . ' - (' . $project->project_name . ') - (' . $label . ')',
                 $message
             )->afterCommit();
         }
@@ -163,6 +186,40 @@ class NotesSection extends Component
     protected $rules = [
         'departmentNote' => 'required',
     ];
+
+    /** True while this instance is a zone tab's notes rather than a department's. */
+    protected function inZoneMode(): bool
+    {
+        return !empty($this->zoneId);
+    }
+
+    /** The model this instance reads and writes. */
+    protected function noteModel(): string
+    {
+        return $this->inZoneMode() ? ProjectZoneNote::class : DepartmentNote::class;
+    }
+
+    /** The attributes a new note is created with, per mode. */
+    protected function noteAttributes(string $cleanNote): array
+    {
+        if ($this->inZoneMode()) {
+            return [
+                "project_id" => $this->projectId,
+                "zone_id" => $this->zoneId,
+                "notes" => $cleanNote,
+                "user_id" => auth()->user()->id,
+            ];
+        }
+
+        return [
+            "project_id" => $this->projectId,
+            "task_id" => $this->taskId,
+            "department_id" => $this->departmentId,
+            "notes" => $cleanNote,
+            "user_id" => auth()->user()->id,
+            "show_to_customer" => $this->showToCustomer,
+        ];
+    }
 
     public function save()
     {
@@ -184,14 +241,7 @@ class NotesSection extends Component
                 $this->recordMention($user, $project, $cleanNote, 'New Project Notes Mention');
             }
 
-            DepartmentNote::create([
-                "project_id" => $this->projectId,
-                "task_id" => $this->taskId,
-                "department_id" => $this->departmentId,
-                "notes" => $cleanNote,
-                "user_id" => auth()->user()->id,
-                "show_to_customer" => $this->showToCustomer,
-            ]);
+            ($this->noteModel())::create($this->noteAttributes($cleanNote));
 
             $username = auth()->user()->name;
 
@@ -216,11 +266,18 @@ class NotesSection extends Component
 
     public function editNote($id)
     {
-        $note = DepartmentNote::findOrFail($id);
+        $note = ($this->noteModel())::findOrFail($id);
         $this->editingNoteId = $id;
         $this->departmentNote = $note->notes;
-        $this->showToCustomer = $note->show_to_customer;
         $this->projectId = $note->project_id;
+
+        if ($this->inZoneMode()) {
+            $this->zoneId = $note->zone_id;
+
+            return;
+        }
+
+        $this->showToCustomer = $note->show_to_customer;
         $this->taskId = $note->task_id;
         $this->departmentId = $note->department_id;
     }
@@ -229,7 +286,7 @@ class NotesSection extends Component
     {
         $this->validate();
         try {
-            $note = DepartmentNote::findOrFail($this->editingNoteId);
+            $note = ($this->noteModel())::findOrFail($this->editingNoteId);
             $oldNote = $note->notes;
 
             // Get mentions from the updated note
@@ -250,10 +307,9 @@ class NotesSection extends Component
             }
 
             // Update the note with clean text (only names)
-            $note->update([
-                "notes" => $cleanNote,
-                "show_to_customer" => $this->showToCustomer,
-            ]);
+            $note->update($this->inZoneMode()
+                ? ["notes" => $cleanNote]
+                : ["notes" => $cleanNote, "show_to_customer" => $this->showToCustomer]);
 
             $username = auth()->user()->name;
 
@@ -287,7 +343,7 @@ class NotesSection extends Component
 
     public function deleteNote($id)
     {
-        $note = DepartmentNote::findOrFail($id);
+        $note = ($this->noteModel())::findOrFail($id);
         $note->delete();
         $project = Project::findOrFail($this->projectId);
         $username = auth()->user()->name;
@@ -303,7 +359,9 @@ class NotesSection extends Component
 
     public function render()
     {
-        $notes = DepartmentNote::where("project_id", $this->projectId)->where("department_id", $this->departmentId)->orderBy('id',"DESC")->get();
+        $notes = $this->inZoneMode()
+            ? ProjectZoneNote::with('user')->where("project_id", $this->projectId)->where("zone_id", $this->zoneId)->orderBy('id', "DESC")->get()
+            : DepartmentNote::where("project_id", $this->projectId)->where("department_id", $this->departmentId)->orderBy('id', "DESC")->get();
         $departmentId = $this->departmentId;
         $projectDepartmentId = $this->projectDepartmentId;
         return view('livewire.project.notes-section', compact("notes", "departmentId", "projectDepartmentId"));

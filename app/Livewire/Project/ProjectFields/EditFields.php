@@ -30,8 +30,6 @@ class EditFields extends Component
 
     public $utility_bill_required;
 
-    public $ntp_approval_date;
-
     public $hoa;
 
     public $ahj;
@@ -123,7 +121,6 @@ class EditFields extends Component
         // FIRST DEPARTMENT
         $this->utility_company = $this->project->utility_company;
         $this->utility_bill_required = $this->project->utility_bill_required;
-        $this->ntp_approval_date = $this->project->ntp_approval_date;
         $this->hoa = $this->project->hoa;
         $this->ahj = $this->project->ahj;
         $this->ahj_website_url = $this->project->ahj_website_url;
@@ -186,7 +183,6 @@ class EditFields extends Component
         // if ($this->departmentId == 1) {
         //     $data = [
         //         'utility_company' => 'required_if:departmentId,1|string',
-        //         'ntp_approval_date' => 'required_if:departmentId,1|date',
         //         'hoa' => 'required_if:departmentId,1|string',
         //         'hoa_phone_number' =>  Rule::requiredIf(function () {
         //             return  $this->hoa == "yes";
@@ -195,7 +191,6 @@ class EditFields extends Component
 
         //     $customMessages = [
         //         'utility_company.required_if' => 'The utility company field is required for this department.',
-        //         'ntp_approval_date.required_if' => 'The NTP approval date is required for this department.',
         //         'hoa.required_if' => 'The HOA field is required for this department.',
         //         'hoa_phone_number.required_if' => 'The HOA phone number is required when HOA is marked as "yes".',
         //     ];
@@ -316,7 +311,6 @@ class EditFields extends Component
             $updateItems = array_merge($updateItems, [
                 'utility_company' => $this->utility_company,
                 'utility_bill_required' => $this->utility_bill_required,
-                'ntp_approval_date' => $this->ntp_approval_date,
                 'hoa' => $this->hoa,
                 'hoa_phone_number' => $this->hoa_phone_number,
             ]);

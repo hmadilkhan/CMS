@@ -634,6 +634,86 @@
             box-shadow: 0 8px 22px var(--solen-warm-shadow-soft);
         }
 
+        /* Zones section - borrows the department heading's pill so the two
+           sections of Project Activity read as one design. The status bar is
+           sized to sit directly above the zone tab strip and share its frame. */
+        .zone-status-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1rem;
+            width: 100%;
+            margin: 0 0 0.85rem;
+            padding: 0.7rem 0.7rem 0.7rem 1.15rem;
+            background: var(--workspace-soft, rgba(245, 158, 11, 0.1));
+            border: 1px solid var(--workspace-line, rgba(69, 26, 3, 0.08));
+            border-radius: 14px;
+        }
+
+        .zone-status-info {
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 0.5rem 0.85rem;
+            min-width: 0;
+        }
+
+        .zone-status-label {
+            font-size: 0.66rem;
+            font-weight: 700;
+            letter-spacing: 0.09em;
+            text-transform: uppercase;
+            color: var(--workspace-ink-40, rgba(69, 26, 3, 0.4));
+        }
+
+        .zone-status-name {
+            font-size: 1rem;
+            font-weight: 800;
+            color: var(--workspace-amber, #f59e0b);
+        }
+
+        .zone-status-meta {
+            padding-left: 0.85rem;
+            border-left: 1px solid var(--workspace-line, rgba(69, 26, 3, 0.08));
+            font-size: 0.82rem;
+            color: var(--workspace-ink-60, rgba(69, 26, 3, 0.6));
+        }
+
+        .zone-status-action {
+            flex-shrink: 0;
+            border-radius: 999px;
+            padding-left: 1.1rem;
+            padding-right: 1.1rem;
+            white-space: nowrap;
+        }
+
+        @media (max-width: 575px) {
+            .zone-status-bar {
+                align-items: stretch;
+                flex-direction: column;
+            }
+
+            .zone-status-meta {
+                padding-left: 0;
+                border-left: 0;
+            }
+        }
+
+        .zone-history-item {
+            border-left: 3px solid var(--solen-primary);
+            padding: 0.5rem 0 0.5rem 0.9rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .zone-history-item:last-child {
+            margin-bottom: 0;
+        }
+
+        .zone-history-meta {
+            font-size: 0.82rem;
+            color: #6c757d;
+        }
+
         .project-title-status {
             display: inline-flex;
             align-items: center;
@@ -1370,7 +1450,10 @@
             color: var(--workspace-ink) !important;
         }
 
-        #project-show-page.project-workspace-redesign #departmentDetailTabs {
+        /* The Zones tab bar is the department tab bar. Every rule below is
+           shared by both ids on purpose - restyling one restyles the other. */
+        #project-show-page.project-workspace-redesign #departmentDetailTabs,
+        #project-show-page.project-workspace-redesign #zoneDetailTabs {
             display: flex;
             flex-wrap: nowrap !important;
             gap: 1px;
@@ -1385,16 +1468,20 @@
         }
 
         #project-show-page.project-workspace-redesign #departmentDetailTabs .nav-item,
-        #project-show-page.project-workspace-redesign #departmentDetailTabs .nav-link {
+        #project-show-page.project-workspace-redesign #departmentDetailTabs .nav-link,
+        #project-show-page.project-workspace-redesign #zoneDetailTabs .nav-item,
+        #project-show-page.project-workspace-redesign #zoneDetailTabs .nav-link {
             width: 100%;
             min-width: 0;
         }
 
-        #project-show-page.project-workspace-redesign #departmentDetailTabs .nav-item {
+        #project-show-page.project-workspace-redesign #departmentDetailTabs .nav-item,
+        #project-show-page.project-workspace-redesign #zoneDetailTabs .nav-item {
             flex: 1 1 0;
         }
 
-        #project-show-page.project-workspace-redesign #departmentDetailTabs .nav-link {
+        #project-show-page.project-workspace-redesign #departmentDetailTabs .nav-link,
+        #project-show-page.project-workspace-redesign #zoneDetailTabs .nav-link {
             min-height: 54px;
             display: flex;
             align-items: center;
@@ -1407,7 +1494,8 @@
             text-align: center;
         }
 
-        #project-show-page.project-workspace-redesign #departmentDetailTabs .nav-link.active {
+        #project-show-page.project-workspace-redesign #departmentDetailTabs .nav-link.active,
+        #project-show-page.project-workspace-redesign #zoneDetailTabs .nav-link.active {
             background: var(--workspace-soft) !important;
             color: var(--workspace-amber) !important;
             box-shadow: inset 0 0 0 1px rgba(245, 158, 11, 0.25) !important;
@@ -2373,6 +2461,9 @@
                         </div>
                     @endif
 
+                    {{-- The department move bar belongs to Operations. A
+                         Funding-Manager-only user moves zones, never departments. --}}
+                    @unless (auth()->user()->isZoneOnlyUser())
                     {{-- A project sitting in a closed lane cannot be moved by hand at all. --}}
                     @php
                         $movementLocked = $project->subdepartment && ! $project->subdepartment->show_in_move_list;
@@ -2475,6 +2566,7 @@
                             </div>
                         </nav>
                     </div>
+                    @endunless
 
                 </div>
             </div>
@@ -2657,6 +2749,10 @@
                                                 <div class="row clearfix sample-activity-grid">
                                                     <div class="col-lg-8 col-md-12 mb-3 sample-notes-column">
                                                         @livewire('project.notes-section', ['projectId' => $project->id, 'taskId' => $task->id, 'departmentId' => $department->id, 'projectDepartmentId' => $project->department_id, 'ghost' => $ghost,'viewSource' => 'crm'], key('notes-' . $department->id))
+                                                        {{-- Department fields belong to Operations. A
+                                                             Funding-Manager-only user reads the project but
+                                                             does not drive the department pipeline. --}}
+                                                        @unless (auth()->user()->isZoneOnlyUser())
                                                         <div class="project-section-panel">
                                                             <div class="project-section-header">
                                                                 <i class="icofont-list me-2"></i>Department Fields
@@ -2729,6 +2825,7 @@
                                                                 </div>
                                                             @endif
                                                         </div>
+                                                        @endunless
                                                     </div>
 
                                                     <div class="col-lg-4 col-md-12 mb-3 sample-files-column">
@@ -2778,11 +2875,20 @@
                                         @endforeach
                                     </div>
                                 </div>
+
+                                {{-- The funding-side lanes, rendered with the same
+                                     tab/notes/files layout as the departments above.
+                                     Only for a project that has been enrolled. --}}
+                                @can('View Zones')
+                                    @if ($project->zone_id)
+                                        @include('projects.partial.zones-tab')
+                                    @endif
+                                @endcan
                     </div>
             </div>
         </div>
     </div>
-    
+
 
     <div class="tab-pane fade" id="financial" role="tabpanel">
         <div class="card mt-1">
@@ -3898,6 +4004,13 @@
     </div>
 </div>
 
+{{-- ZONE MOVE MODAL - driven by the [data-zone-move] buttons in the Zones tab. --}}
+@can('View Zones')
+    @if ($project->zone_id)
+        @include('zones.partials.move-modal')
+    @endif
+@endcan
+
 <!-- PROJECT MOVE MODEL -->
 <div class="modal fade" id="moveProjectModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered modal-md modal-dialog-scrollable">
@@ -3913,6 +4026,18 @@
             <div class="modal-body justify-content-center flex-column d-flex">
                 <i class="icofont-aim text-success display-2 text-center mt-2"></i>
                 <p class="mt-4 fs-5 text-center">Are you sure you want to move the project ?</p>
+
+                {{-- Installation cannot start without the NTP approval date. The
+                     block is revealed for that move when the date is missing, and
+                     again if the server refuses the move for the same reason. --}}
+                <div class="d-none" id="moveProjectNtpBlock">
+                    <hr>
+                    <label class="form-label fw-bold" for="moveProjectNtpDate">NTP Approval Date</label>
+                    <input type="date" class="form-control" id="moveProjectNtpDate">
+                    <div class="form-text">This project cannot move to Installation until the NTP approval date is on
+                        file.</div>
+                    <div class="alert alert-danger mt-2 mb-0 d-none" id="moveProjectNtpError"></div>
+                </div>
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
@@ -4031,11 +4156,85 @@
         getSubDepartments($(this).val())
     });
 
+    {{-- The NTP gate: Permitting -> Installation needs the NTP approval date.
+         The server is the real gate (ProjectController::ntpApprovalGate); this
+         only saves the user a rejected click by asking up front. --}}
+    const ntpGate = {
+        fromDepartmentId: @json(\App\Models\Department::where('name', 'Permitting')->value('id')),
+        toDepartmentId: @json(\App\Models\Department::where('name', 'Installation')->value('id')),
+        projectDepartmentId: @json($project->department_id),
+        approvalDateOnFile: @json(!empty($project->ntp_approval_date)),
+    };
+
+    function ntpDateIsNeededFor(departmentId) {
+        return !ntpGate.approvalDateOnFile &&
+            Number(ntpGate.projectDepartmentId) === Number(ntpGate.fromDepartmentId) &&
+            Number(departmentId) === Number(ntpGate.toDepartmentId);
+    }
+
+    function showMoveNtpBlock(message) {
+        $('#moveProjectNtpBlock').removeClass('d-none');
+
+        if (message) {
+            $('#moveProjectNtpError').text(message).removeClass('d-none');
+        }
+
+        $('#moveProjectNtpDate').focus();
+    }
+
+    function resetMoveNtpBlock() {
+        $('#moveProjectNtpBlock').addClass('d-none');
+        $('#moveProjectNtpError').text('').addClass('d-none');
+        $('#moveProjectNtpDate').val('');
+    }
+
+    function escapeMoveHtml(value) {
+        return $('<div>').text(value === null || value === undefined ? '' : value).html();
+    }
+
+    /* A refused move is only useful if it says WHAT is missing, so the fields
+       the server named are listed one per line instead of being left out of the
+       message entirely. Anything else falls back to the server's own text. */
+    function showMoveFailure(payload) {
+        const labels = (payload && payload.missing_field_labels) || [];
+
+        if (labels.length) {
+            const items = labels.map(function(label) {
+                return '<li>' + escapeMoveHtml(label) + '</li>';
+            }).join('');
+            const department = (payload && payload.department_name) ?
+                escapeMoveHtml(payload.department_name) :
+                'this department';
+
+            Swal.fire({
+                icon: 'error',
+                title: 'Missing required fields',
+                html: '<p class="mb-2">Fill these ' + department +
+                    ' fields on the project, then move it again:</p>' +
+                    '<ul style="text-align:left; display:inline-block; margin:0; padding-left:20px;">' +
+                    items + '</ul>'
+            });
+
+            return;
+        }
+
+        Swal.fire(
+            'Failed!',
+            (payload && payload.error) || 'The project could not be moved.',
+            'error'
+        );
+    }
     function moveProjectModal(projectId, taskId, departmentId, subDepartmentId) {
         $('#projectId').val(projectId);
         $('#taskId').val(taskId);
         $('#departmentId').val(departmentId);
         $('#subDepartmentId').val(subDepartmentId);
+        resetMoveNtpBlock();
+
+        if (ntpDateIsNeededFor(departmentId)) {
+            showMoveNtpBlock();
+        }
+
         $("#moveProjectModal").modal("show");
     }
 
@@ -4047,6 +4246,7 @@
 
         $moveButton.prop("disabled", true).text("Moving...");
         $("#moveProjectModal").modal("show");
+        $('#moveProjectNtpError').text('').addClass('d-none');
         $.ajax({
             url: "{{ route('move.project') }}",
             type: 'POST',
@@ -4056,6 +4256,7 @@
                 taskId: $('#taskId').val(),
                 departmentId: $('#departmentId').val(),
                 subDepartmentId: $('#subDepartmentId').val(),
+                ntp_approval_date: $('#moveProjectNtpDate').val(),
             },
             success: function(response) {
                 // console.log(response);
@@ -4069,12 +4270,16 @@
                     $("#moveProjectModal").modal("hide");
                     location.reload();
                 } else if (response.status == 422) {
-                    Swal.fire(
-                        'Failed!',
-                        response.error,
-                        'error'
-                    )
                     $moveButton.prop("disabled", false).text("Move");
+
+                    // A missing NTP approval date is answered inside the modal,
+                    // not by closing it.
+                    if (response.requires === 'ntp_approval_date') {
+                        showMoveNtpBlock(response.error);
+                        return;
+                    }
+
+                    showMoveFailure(response);
                 } else {
                     console.log(500);
                     $moveButton.prop("disabled", false).text("Move");
@@ -4083,12 +4288,13 @@
             error: function(error) {
                 $moveButton.prop("disabled", false).text("Move");
                 if (error.responseJSON && error.responseJSON.status == 422) {
+                    if (error.responseJSON.requires === 'ntp_approval_date') {
+                        showMoveNtpBlock(error.responseJSON.error);
+                        return;
+                    }
+
                     $("#moveProjectModal").modal("hide");
-                    Swal.fire(
-                        'Failed!',
-                        error.responseJSON.error,
-                        'error'
-                    )
+                    showMoveFailure(error.responseJSON);
                 }
                 console.log(error);
             }

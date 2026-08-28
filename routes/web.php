@@ -16,6 +16,7 @@ use App\Http\Controllers\ProjectController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\TaskController;
 use App\Http\Controllers\ToolController;
+use App\Http\Controllers\ZoneController;
 use App\Livewire\AdminDashboard;
 use App\Livewire\DynamicReport;
 use App\Livewire\DynamicReportBuilder;
@@ -115,6 +116,15 @@ Route::middleware('auth')->group(function () {
         Route::post('delete-user-permission', [App\Http\Controllers\PermissionController::class, 'deleteUserPermission'])->name('delete.user.permission');
 
         Route::resource('tasks', TaskController::class);
+    });
+
+    /* ZONES - the funding-side pipeline. The board is a fragment of the
+       projects page's Zones tab; `zones.index` only redirects there. */
+    Route::middleware('can:View Zones')->group(function () {
+        Route::get('zones', [ZoneController::class, 'index'])->name('zones.index');
+        Route::get('zones/board', [ZoneController::class, 'board'])->name('zones.board');
+        Route::post('zones/move', [ZoneController::class, 'move'])->name('zones.move');
+        Route::post('zones/fields', [ZoneController::class, 'fields'])->name('zones.fields');
     });
 
     Route::resource('employees', EmployeeController::class);

@@ -4,6 +4,7 @@ namespace App\Livewire\Project;
 
 use App\Models\Project;
 use App\Models\ProjectFile;
+use App\Models\ProjectZoneFile;
 use Illuminate\Support\Facades\Storage;
 use Livewire\Attributes\On;
 use Livewire\Component;
@@ -31,6 +32,17 @@ class EnhancedFilesSection extends Component
     public $sectionIcon = "icofont-files-stack";
     public $allowUpload = true;
 
+    /**
+     * Zone mode. When $zoneId is set this instance belongs to a zone tab: it
+     * reads and writes project_zone_files instead of project_files, and it
+     * accepts uploads only in the project's CURRENT zone ($projectZoneId) -
+     * every other zone tab is a read-only list. Zone files are kept out of
+     * project_files on purpose - a department file list, the customer page and
+     * the follow-up chases all read that table.
+     */
+    public $zoneId = null;
+    public $projectZoneId = null;
+
     public $showModal = false;
     public $files = [];
     public $uploadedFiles = [];
@@ -48,10 +60,22 @@ class EnhancedFilesSection extends Component
         }
     }
 
+    /** True while this instance is a zone tab's file list. */
+    protected function inZoneMode(): bool
+    {
+        return !empty($this->zoneId);
+    }
+
+    /** The model this instance reads and writes. */
+    protected function fileModel(): string
+    {
+        return $this->inZoneMode() ? ProjectZoneFile::class : ProjectFile::class;
+    }
+
     public function deleteFile()
     {
         if ($this->deleteId != "") {
-            $projectFile = ProjectFile::findOrFail($this->deleteId);
+            $projectFile = ($this->fileModel())::findOrFail($this->deleteId);
             Storage::disk('public')->delete('projects/' . $projectFile->filename);
             $projectFile->delete();
             $this->dispatch('hide-delete-modal', modalId: 'deletefile-' . $this->getId());
@@ -126,7 +150,13 @@ class EnhancedFilesSection extends Component
             $imageName = $file->storeAs('projects', $timestampedName, 'public');
             $imageName = basename($imageName);
 
-            ProjectFile::create([
+            ($this->fileModel())::create($this->inZoneMode() ? [
+                "project_id" => $this->projectId,
+                "zone_id" => $this->zoneId,
+                "user_id" => auth()->id(),
+                "filename" => $imageName,
+                "header_text" => 'Untitled',
+            ] : [
                 "project_id" => $this->projectId,
                 "task_id" => $this->taskId,
                 "department_id" => $this->departmentId,
@@ -148,12 +178,23 @@ class EnhancedFilesSection extends Component
 
     public function updateTitle($fileId, $newTitle)
     {
-        $file = ProjectFile::findOrFail($fileId);
+        $file = ($this->fileModel())::findOrFail($fileId);
         $file->update(['header_text' => $newTitle]);
     }
 
     public function render()
     {
+        if ($this->inZoneMode()) {
+            return view('livewire.project.enhanced-files-section', [
+                'departmentFiles' => ProjectZoneFile::where("project_id", $this->projectId)
+                    ->where("zone_id", $this->zoneId)
+                    ->orderBy('created_at', 'desc')
+                    ->get(),
+                'departmentId' => $this->departmentId,
+                'projectDepartmentId' => $this->projectDepartmentId,
+            ]);
+        }
+
         // A category section (e.g. utility bills) shows that group across the
         // project; the plain section shows the department's ungrouped files.
         $departmentFiles = ProjectFile::where("project_id", $this->projectId)

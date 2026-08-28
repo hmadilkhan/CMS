@@ -38,6 +38,38 @@ it cannot stay `NULL` past Deal Review.
 Sub-department ids above are fixed records in `sub_departments`. If they are ever
 renumbered, `DocumentFollowUpService::TYPES` must be updated to match.
 
+### The NTP approval gate shares the MPU move
+
+**Permitting → Installation is also gated on `projects.ntp_approval_date`.** It
+is not a chase — nothing is parked and nothing is tracked — it simply refuses the
+move while the date is missing and lets the move modal supply one:
+
+- `ProjectController::ntpApprovalGate()` returns `422` with
+  `requires: ntp_approval_date`; the modal reads that flag, reveals a date input
+  and re-sends the same move with the date filled. The date is then written
+  inside the move's own transaction.
+- The modal also reveals the input **up front** for that move when the project
+  has no date, so the user is not made to click into a rejection first. The
+  server stays the real gate.
+
+**This move modal is now the only place Operations collects the date.** The NTP
+Approval Date used to be a Deal Review department field; it was removed from
+both the edit and view panels and its `project_department_fields` row was
+deleted (migration
+`2026_08_28_000007_remove_ntp_approval_date_from_deal_review_fields`), so a
+project can leave Deal Review without it and is asked for it here instead. The
+funding side can also see and fill the date ahead of time in the Zones **NTP**
+tab (`docs/zones.md` §7) — that tab records it, it never gates anything.
+
+**Order matters: the NTP gate runs BEFORE `forcedTypeForMove()`.** A project that
+owes both the NTP date and an MPU meter spot result is asked for the date first;
+only once it is supplied does the move run and the MPU chase park the project in
+lane 31. Never move the gate below the interception — the project would land in
+the parked lane with no NTP date, and the parked lane is closed to manual moves.
+
+The gate resolves its two departments **by name** (`Permitting`, `Installation`),
+like `TYPES` does, so renumbering department ids does not break it.
+
 ---
 
 ## 2. Where the code lives
@@ -163,7 +195,14 @@ the target department would silently land in a parked lane.
 
 **`projectMove()` is dead code.** Its route in `routes/web.php` is commented out;
 every live move goes through `moveProject()`. It is kept in step anyway, but only
-`moveProject()` matters for testing.
+`moveProject()` matters for testing. The NTP approval gate was added to
+`moveProject()` only, for that reason.
+
+**The required-field check still runs first.** `moveProject()` validates the
+current department's `project_department_fields` before the NTP gate, so on
+production a Permitting → Installation move reports missing permitting dates
+before it ever asks for the NTP date. Only the NTP-vs-MPU order was specified;
+this one is unchanged.
 
 **Two files sections come from one component.** `EnhancedFilesSection` renders
 both the department file list and the category sections. `$category` NULL means

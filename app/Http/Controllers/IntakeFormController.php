@@ -231,6 +231,10 @@ class IntakeFormController extends Controller
             }
             DB::commit();
 
+            // Pulls the new project into the Zones module: Deal Review enters at
+            // Pre NTP, a project created straight into Site Survey at NTP.
+            app(\App\Services\ZoneService::class)->handleDepartmentArrival($project, (int) $departmentId);
+
             if ($request->has('schedule_survey') && $request->schedule_survey == 1) {
                 return redirect()->to('/site-surveys/schedule/' . $project->id);
             }

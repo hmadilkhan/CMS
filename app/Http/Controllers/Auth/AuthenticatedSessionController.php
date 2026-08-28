@@ -29,6 +29,9 @@ class AuthenticatedSessionController extends Controller
 
         $request->session()->regenerate();
 
+        // The Zones board is a tab of the projects page, which is HOME anyway;
+        // a Funding-Manager-only user simply lands on that tab (the page hides
+        // the Operational one for them).
         return redirect()->intended(RouteServiceProvider::HOME);
     }
 
