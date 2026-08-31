@@ -25,6 +25,15 @@ class AiQueryPlannerService
         private readonly AiProfiler $profiler
     ) {}
 
+    /**
+     * Refusals the planner issues itself. They are the answer the user must see —
+     * AiChatService checks for them so they are never replaced by small talk or
+     * padded with field suggestions.
+     */
+    public const PERMISSION_DENIED_MESSAGE = 'You do not have permission to access this information.';
+
+    public const WRITE_BLOCKED_MESSAGE = 'I can only read CRM data. Insert, update, delete, and other write operations are not allowed.';
+
     public function plan(string $question, User $user, ?array $previousContext = null, string $conversationMemory = ''): array
     {
         $this->profiler->stage('planner');
@@ -32,7 +41,7 @@ class AiQueryPlannerService
         if ($this->isWriteOperationQuestion($question)) {
             return [
                 'plan' => array_merge($this->unknownPlan(), [
-                    'fallback_message' => 'I can only read CRM data. Insert, update, delete, and other write operations are not allowed.',
+                    'fallback_message' => self::WRITE_BLOCKED_MESSAGE,
                 ]),
                 'openai' => $this->syntheticOpenAiResponse(),
             ];
@@ -1373,8 +1382,13 @@ PROMPT;
             || str_contains($normalized, 'commission');
         $status = $this->extractStatus($normalized);
         $assignedEmployeeName = $this->extractAssignedEmployeeName($normalized);
-        $ticketUserName = $this->extractTicketUserName($normalized);
-        $projectSummaryName = $this->extractProjectSummaryName($normalized);
+        // These two read a PERSON'S or PROJECT'S name out of the question, and
+        // recognise it by its capital letter — so they need the question as the
+        // user typed it, not the lower-cased copy. Passing $normalized made them
+        // return null for every question, silently retiring the named-user ticket
+        // summary and the named-project summary fast paths.
+        $ticketUserName = $this->extractTicketUserName($question);
+        $projectSummaryName = $this->extractProjectSummaryName($question);
         $projectAcceptanceName = $this->extractProjectAcceptanceName($normalized);
         $acceptanceCondition = $this->extractAcceptanceCondition($normalized);
         $dateRange = $this->extractDateRange($question);
@@ -2190,14 +2204,18 @@ PROMPT;
 
     private function extractTicketUserName(string $question): ?string
     {
-        if (! str_contains($question, 'ticket')) {
+        // The patterns below match on the original casing (a name starts with a
+        // capital), so the keyword checks lower-case a copy instead.
+        $lower = mb_strtolower($question);
+
+        if (! str_contains($lower, 'ticket')) {
             return null;
         }
 
         // These phrases indicate aggregate/grouping queries — no specific user intended
         $aggregatePatterns = ['user wise', 'priority wise', 'status wise', 'assigned wise', 'all users', 'all tickets', 'created by users'];
         foreach ($aggregatePatterns as $agg) {
-            if (str_contains($question, $agg)) {
+            if (str_contains($lower, $agg)) {
                 return null;
             }
         }
@@ -2627,7 +2645,7 @@ PROMPT;
             'filters' => [],
             'requires_finance_access' => false,
             'sql' => null,
-            'fallback_message' => 'You do not have permission to access this information.',
+            'fallback_message' => self::PERMISSION_DENIED_MESSAGE,
             'mode' => 'unsupported',
             'confidence' => 1,
             'entities' => [],

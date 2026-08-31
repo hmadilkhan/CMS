@@ -508,8 +508,23 @@ class AiChatService
             return $this->handleLaneMovementQuery($chat, $user, $message, $plan, $log, $startedAt, $planned['openai']);
         }
 
-        // Planner says this is not a CRM question at all → fall back to general chat
-        if ($plan['intent'] === 'unknown' && in_array($plan['mode'] ?? '', ['unsupported', 'unknown'], true)) {
+        // Planner says this is not a CRM question at all → fall back to general chat.
+        // The exception is a plan the planner REFUSED on purpose: a write attempt
+        // or a permission denial. Those carry a specific message that is itself the
+        // answer, and routing them here replaced the refusal with small talk — the
+        // user asking to delete records was chatted at instead of being told the
+        // assistant is read-only. Note a plain unmappable question cannot be told
+        // apart by "has a fallback_message": legacyPlanFromHybrid fills in a
+        // generic one for every unsupported plan, so the refusals are matched by
+        // their own messages.
+        $isPlannerRefusal = in_array($plan['fallback_message'] ?? '', [
+            AiQueryPlannerService::PERMISSION_DENIED_MESSAGE,
+            AiQueryPlannerService::WRITE_BLOCKED_MESSAGE,
+        ], true);
+
+        if ($plan['intent'] === 'unknown'
+            && in_array($plan['mode'] ?? '', ['unsupported', 'unknown'], true)
+            && ! $isPlannerRefusal) {
             return $this->handleGeneralChat($chat, $user, $message, $log, $startedAt);
         }
 
@@ -641,12 +656,23 @@ class AiChatService
             }
             // Append field-dictionary guidance ("Did you mean these fields?") only
             // for genuinely unrecognised questions — NOT when we are asking the user
-            // to disambiguate a matched entity (clarification_required / not_found),
-            // where that guidance is irrelevant noise that clutters the prompt.
-            $isEntityClarification = in_array($plan['mode'] ?? '', ['clarification_required', 'not_found'], true);
-            $assistantMessage = $isEntityClarification
+            // to disambiguate a matched entity (clarification_required / not_found)
+            // and NOT when the planner refused on purpose, where listing fields is
+            // irrelevant noise (and, on a permission denial, points at data the
+            // user may not have).
+            $suppressGuidance = in_array($plan['mode'] ?? '', ['clarification_required', 'not_found'], true)
+                || in_array($fallback, [
+                    AiQueryPlannerService::PERMISSION_DENIED_MESSAGE,
+                    AiQueryPlannerService::WRITE_BLOCKED_MESSAGE,
+                ], true);
+
+            $guidance = $suppressGuidance
+                ? ''
+                : $this->aiFieldDictionaryService->guidanceFor($message, $user);
+
+            $assistantMessage = $guidance === ''
                 ? $fallback
-                : $fallback . "\n\n" . $this->aiFieldDictionaryService->guidanceFor($message, $user);
+                : $fallback . "\n\n" . $guidance;
         } elseif (! ($planValidation['approved'] ?? false)) {
             $assistantMessage = $planValidation['reason']
                 ?? "You don't have permission to access that data. Contact your administrator if you think this is a mistake.";

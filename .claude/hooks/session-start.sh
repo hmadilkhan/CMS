@@ -68,6 +68,12 @@ mkdir -p \
     bootstrap/cache
 chmod -R ug+rwX storage bootstrap/cache
 
+# public/storage → storage/app/public. Uploaded files (logos, project photos)
+# are served through it, so without the link they 404 in a dev session.
+if [ ! -e public/storage ]; then
+    php artisan storage:link >/dev/null 2>&1 || warn "could not create the public/storage link"
+fi
+
 # --------------------------------------------------------------------------
 # 6. Local MariaDB (MySQL) server for the Feature test suite
 # --------------------------------------------------------------------------

@@ -20,6 +20,7 @@ use App\Models\User;
 use App\Models\UserType;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\Storage;
 use Spatie\Permission\Models\Role;
@@ -28,6 +29,46 @@ use Tests\TestCase;
 class ProjectAcceptanceWorkflowTest extends TestCase
 {
     use RefreshDatabase;
+
+    /**
+     * The acceptance PDF stamps two images off the public storage disk: the
+     * company logo and the project's design photo. Neither is in the repository
+     * — on a real installation they are uploaded files — so the PDF path can
+     * only be exercised with stand-ins. They are removed again afterwards.
+     */
+    private function seedPublicImage(string $relativePath): string
+    {
+        // Write to the storage disk and reach it through the public link, the way
+        // the application does — creating public/storage as a real directory here
+        // would leave one behind that storage:link can then never replace.
+        if (! file_exists(public_path('storage'))) {
+            Artisan::call('storage:link');
+        }
+
+        $path = storage_path('app/public/' . $relativePath);
+
+        if (! is_dir(dirname($path))) {
+            mkdir(dirname($path), 0755, true);
+        }
+
+        // FPDF cannot read an alpha channel, so these are plain truecolor images.
+        $image = imagecreatetruecolor(10, 10);
+        imagefilledrectangle($image, 0, 0, 9, 9, imagecolorallocate($image, 255, 255, 255));
+
+        str_ends_with($relativePath, '.png')
+            ? imagepng($image, $path)
+            : imagejpeg($image, $path);
+
+        imagedestroy($image);
+
+        $this->beforeApplicationDestroyed(function () use ($path) {
+            if (is_file($path)) {
+                unlink($path);
+            }
+        });
+
+        return $path;
+    }
 
     private function superAdmin(): User
     {
@@ -230,6 +271,8 @@ class ProjectAcceptanceWorkflowTest extends TestCase
     {
         $admin = $this->superAdmin();
         $fixture = $this->acceptanceFixture();
+        $this->seedPublicImage('solen_logo.png');
+        $this->seedPublicImage('project-acceptance/1727015364-design.jpg');
 
         ProjectAcceptance::create([
             'project_id' => $fixture['project']->id,

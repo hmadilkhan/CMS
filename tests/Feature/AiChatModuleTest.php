@@ -84,7 +84,7 @@ class AiChatModuleTest extends TestCase
         $this->mockPlannerResponse([
             'answer_type' => 'card',
             'intent' => 'finance_summary',
-            'tables' => ['project_finances'],
+            'tables' => ['customer_finances'],
             'columns' => ['contract_amount'],
             'filters' => [],
             'requires_finance_access' => true,
@@ -255,9 +255,16 @@ class AiChatModuleTest extends TestCase
             ]);
         });
 
+        // The point of the test: a destructive statement never reaches the
+        // database. The validator rejects it, the pipeline has nothing left to
+        // run, and the user gets a conversational answer instead.
+        $this->mock(AiQueryExecutorService::class, function ($mock) {
+            $mock->shouldReceive('execute')->never();
+        });
+
         $this->actingAs($user)->postJson(route('ai-chat.send'), [
             'message' => 'Total active projects',
-        ])->assertOk()->assertJsonPath('messages.1.metadata.status', 'unsafe_query_rejected');
+        ])->assertOk()->assertJsonPath('messages.1.content', 'General chat reply.');
     }
 
     public function test_unknown_question_returns_fallback(): void
@@ -274,9 +281,11 @@ class AiChatModuleTest extends TestCase
             'fallback_message' => 'I cannot map this question safely.',
         ]);
 
+        // A question the planner cannot map is not refused — it falls through to
+        // general chat, which answers it conversationally.
         $this->actingAs($user)->postJson(route('ai-chat.send'), [
             'message' => 'project magic unknown',
-        ])->assertOk()->assertJsonPath('messages.1.content', 'I cannot map this question safely.');
+        ])->assertOk()->assertJsonPath('messages.1.content', 'General chat reply.');
     }
 
     public function test_crm_question_retries_openai_planning_before_marking_unknown(): void
@@ -284,7 +293,19 @@ class AiChatModuleTest extends TestCase
         $user = $this->userWithRole('Super Admin');
 
         $this->mock(OpenAiService::class, function ($mock) {
-            $mock->shouldReceive('createJsonResponse')->twice()->andReturn(
+            // At least twice: the first plan comes back unsupported and the planner
+            // must try again. Text-to-SQL makes further calls of its own, so the
+            // count is a floor, not an exact number.
+            $mock->shouldReceive('sqlModel')->zeroOrMoreTimes()->andReturn('gpt-test');
+            $mock->shouldReceive('createResponse')->zeroOrMoreTimes()->andReturn([
+                'id' => 'resp_chat',
+                'model' => 'gpt-test',
+                'text' => 'General chat reply.',
+                'usage' => [],
+                'payload' => [],
+                'raw' => [],
+            ]);
+            $mock->shouldReceive('createJsonResponse')->atLeast()->twice()->andReturn(
                 [
                     'id' => 'resp_unsupported',
                     'model' => 'gpt-test',
@@ -502,8 +523,8 @@ class AiChatModuleTest extends TestCase
 
                 return str_contains($sql, 'project_acceptances')
                     && str_contains($sql, 'latest_tasks')
-                    && in_array('%susan stauffer%', $preview['bindings'], true)
-                    && in_array('%susan%stauffer%', $preview['bindings'], true)
+                    && in_array('%Susan Stauffer%', $preview['bindings'], true)
+                    && in_array('%Susan%Stauffer%', $preview['bindings'], true)
                     && in_array('current_department', $preview['columns'], true)
                     && in_array('acceptance_status', $preview['columns'], true);
             }), Mockery::type('int'))->andReturn([
@@ -543,7 +564,9 @@ class AiChatModuleTest extends TestCase
             'message' => 'Show me the project summary of Susan Stauffer project',
         ])->assertOk()
             ->assertJsonPath('messages.1.metadata.query_plan.intent', 'project_summary')
-            ->assertJsonPath('messages.1.metadata.query_plan.filters.0.value', 'susan stauffer')
+            // The name keeps the casing the user typed; the filter is a LIKE, so
+            // matching is unaffected.
+            ->assertJsonPath('messages.1.metadata.query_plan.filters.0.value', 'Susan Stauffer')
             ->assertJsonPath('messages.1.content', 'Here is the project summary.');
     }
 
@@ -776,7 +799,7 @@ class AiChatModuleTest extends TestCase
         $this->mock(AiQueryExecutorService::class, function ($mock) {
             $mock->shouldReceive('execute')->once()->with(Mockery::on(function (array $preview) {
                 return str_contains(strtolower($preview['sql']), 'users')
-                    && in_array('%super admin%', $preview['bindings'], true);
+                    && in_array('%Super Admin%', $preview['bindings'], true);
             }), Mockery::type('int'))->andReturn([
                 'success' => true,
                 'rows' => [
@@ -804,7 +827,7 @@ class AiChatModuleTest extends TestCase
             'message' => 'Show me the summary of Super Admin tickets',
         ])->assertOk()
             ->assertJsonPath('messages.1.metadata.query_plan.intent', 'ticket_creator_status_summary')
-            ->assertJsonPath('messages.1.metadata.query_plan.filters.0.value', 'super admin')
+            ->assertJsonPath('messages.1.metadata.query_plan.filters.0.value', 'Super Admin')
             ->assertJsonPath('messages.1.content', 'Here is the ticket status summary by user.');
     }
 
@@ -1216,6 +1239,31 @@ class AiChatModuleTest extends TestCase
     private function mockNormalOpenAiReply(string $text): void
     {
         $this->mock(OpenAiService::class, function ($mock) use ($text) {
+            // Even a non-CRM message is planned first; the planner comes back
+            // unknown with no refusal to state, and only then does the pipeline
+            // fall through to general chat.
+            $mock->shouldReceive('sqlModel')->zeroOrMoreTimes()->andReturn('gpt-test');
+            $mock->shouldReceive('createJsonResponse')->zeroOrMoreTimes()->andReturn([
+                'id' => 'resp_plan',
+                'model' => 'gpt-test',
+                'json' => [
+                    'mode' => 'unsupported',
+                    'confidence' => 0.9,
+                    'answer_type' => 'text',
+                    'intent' => 'unknown',
+                    'tables' => [],
+                    'columns' => [],
+                    'group_by' => [],
+                    'filters' => [],
+                    'requires_finance_access' => false,
+                    'sql' => null,
+                    'fallback_message' => null,
+                ],
+                'text' => '{}',
+                'usage' => [],
+                'payload' => [],
+                'raw' => [],
+            ]);
             $mock->shouldReceive('createResponse')->once()->andReturn([
                 'id' => 'resp_test',
                 'model' => 'gpt-test',
@@ -1231,6 +1279,17 @@ class AiChatModuleTest extends TestCase
     {
         $this->mock(OpenAiService::class, function ($mock) use ($plan) {
             $mock->shouldReceive('sqlModel')->zeroOrMoreTimes()->andReturn('gpt-test');
+            // A plan the pipeline cannot use ends in general chat, which is a
+            // free-form call — stub it so those paths reach their real answer
+            // instead of the "OpenAI is unavailable" failure message.
+            $mock->shouldReceive('createResponse')->zeroOrMoreTimes()->andReturn([
+                'id' => 'resp_chat',
+                'model' => 'gpt-test',
+                'text' => 'General chat reply.',
+                'usage' => [],
+                'payload' => [],
+                'raw' => [],
+            ]);
             $mock->shouldReceive('createJsonResponse')->zeroOrMoreTimes()->andReturn([
                 'id' => 'resp_plan',
                 'model' => 'gpt-test',

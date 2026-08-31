@@ -6,13 +6,24 @@ use App\Models\NewTicket as ModelsNewTicket;
 use App\Notifications\NewTicket;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Notification;
 
 class NewTicketController extends Controller
 {
     public function index()
     {
-        Artisan::call('get:leads');
+        // Pulling website leads reads a SEPARATE WordPress database. When that
+        // database is unreachable or not configured, the exception used to take
+        // the whole tickets page down with a 500 — the tickets below have nothing
+        // to do with it. Log it and carry on; the scheduled `get:leads` run still
+        // fails loudly where operators can see it.
+        try {
+            Artisan::call('get:leads');
+        } catch (\Throwable $exception) {
+            Log::warning('Website lead import skipped: ' . $exception->getMessage());
+        }
+
         return view("tickets.index", [
             "pendingTickets" => ModelsNewTicket::where("status", "Pending")
                 ->latest()
