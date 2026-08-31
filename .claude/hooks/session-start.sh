@@ -134,7 +134,7 @@ fi
 # 6b. Report missing PHP extensions the app uses
 # --------------------------------------------------------------------------
 if ! php -m | grep -qi '^bcmath$'; then
-    warn "the bcmath extension is missing — App\\Livewire\\Project\\ProjectFields\\EditFields uses bccomp(), so its production-variance check fails here"
+    log "no bcmath extension here — falling back to the phpseclib/bcmath_compat polyfill"
 fi
 
 # --------------------------------------------------------------------------
