@@ -22,12 +22,7 @@ class AiChatModuleTest extends TestCase
 
     protected function setUp(): void
     {
-        putenv('DB_CONNECTION=sqlite');
-        putenv('DB_DATABASE=:memory:');
-        $_ENV['DB_CONNECTION'] = 'sqlite';
-        $_ENV['DB_DATABASE'] = ':memory:';
-        $_SERVER['DB_CONNECTION'] = 'sqlite';
-        $_SERVER['DB_DATABASE'] = ':memory:';
+        $this->useSqliteTestDatabase();
 
         parent::setUp();
 
@@ -40,6 +35,19 @@ class AiChatModuleTest extends TestCase
         ]);
 
         $this->createAiChatTestSchema();
+    }
+
+    protected function tearDown(): void
+    {
+        // finally: a failing Mockery expectation makes parent::tearDown() throw,
+        // and the database environment must be put back regardless — otherwise
+        // every later test in the process keeps running against this class's
+        // in-memory SQLite database.
+        try {
+            parent::tearDown();
+        } finally {
+            $this->restoreDatabaseEnv();
+        }
     }
 
     public function test_user_can_send_message(): void

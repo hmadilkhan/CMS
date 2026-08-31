@@ -7,6 +7,55 @@ use Illuminate\Support\Facades\Schema;
 
 trait CreatesAiChatTestSchema
 {
+    /**
+     * Environment values overwritten by useSqliteTestDatabase(), so they can be
+     * put back afterwards.
+     *
+     * @var array<string, string|false>
+     */
+    private array $originalDatabaseEnv = [];
+
+    /**
+     * Point the process at an in-memory SQLite database.
+     *
+     * These tests build their own schema instead of running the CRM's MySQL
+     * migrations, so they need SQLite before the application boots. The values
+     * are process-wide, which is why restoreDatabaseEnv() must undo them —
+     * otherwise every test that runs afterwards in the same process silently
+     * moves off the MySQL test database too.
+     */
+    protected function useSqliteTestDatabase(): void
+    {
+        foreach (['DB_CONNECTION' => 'sqlite', 'DB_DATABASE' => ':memory:'] as $key => $value) {
+            $this->originalDatabaseEnv[$key] = getenv($key);
+
+            putenv("{$key}={$value}");
+            $_ENV[$key] = $value;
+            $_SERVER[$key] = $value;
+        }
+    }
+
+    /**
+     * Put the database environment back the way the test runner set it.
+     */
+    protected function restoreDatabaseEnv(): void
+    {
+        foreach ($this->originalDatabaseEnv as $key => $value) {
+            if ($value === false) {
+                putenv($key);
+                unset($_ENV[$key], $_SERVER[$key]);
+
+                continue;
+            }
+
+            putenv("{$key}={$value}");
+            $_ENV[$key] = $value;
+            $_SERVER[$key] = $value;
+        }
+
+        $this->originalDatabaseEnv = [];
+    }
+
     protected function createAiChatTestSchema(): void
     {
         Schema::create('users', function (Blueprint $table) {
@@ -106,6 +155,13 @@ trait CreatesAiChatTestSchema
             $table->unsignedInteger('prompt_tokens')->nullable();
             $table->unsignedInteger('completion_tokens')->nullable();
             $table->unsignedInteger('total_tokens')->nullable();
+            $table->unsignedTinyInteger('openai_calls')->nullable();
+            $table->unsignedInteger('openai_ms')->nullable();
+            $table->unsignedInteger('db_ms')->nullable();
+            $table->string('engine', 32)->nullable();
+            $table->unsignedTinyInteger('fallbacks')->default(0);
+            $table->json('stage_timings')->nullable();
+            $table->char('question_hash', 32)->nullable();
             $table->unsignedInteger('duration_ms')->nullable();
             $table->json('request_payload')->nullable();
             $table->json('response_payload')->nullable();

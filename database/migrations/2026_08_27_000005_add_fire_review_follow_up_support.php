@@ -29,7 +29,12 @@ return new class extends Migration
      */
     public function up(): void
     {
-        DB::statement('ALTER TABLE projects MODIFY fire_review_required TINYINT(1) NULL DEFAULT NULL');
+        // MODIFY is MySQL-only syntax and fails on SQLite, which the AI chat tests
+        // run on; the column keeps whatever nullability the create migration gave
+        // it there.
+        if (DB::getDriverName() === 'mysql') {
+            DB::statement('ALTER TABLE projects MODIFY fire_review_required TINYINT(1) NULL DEFAULT NULL');
+        }
 
         DB::table('project_department_fields')->updateOrInsert(
             ['department_id' => self::PERMITTING_DEPARTMENT_ID, 'field_name' => 'fire_review_required'],
@@ -72,6 +77,9 @@ return new class extends Migration
             ->delete();
 
         DB::statement('UPDATE projects SET fire_review_required = 0 WHERE fire_review_required IS NULL');
-        DB::statement('ALTER TABLE projects MODIFY fire_review_required TINYINT(1) NOT NULL DEFAULT 0');
+
+        if (DB::getDriverName() === 'mysql') {
+            DB::statement('ALTER TABLE projects MODIFY fire_review_required TINYINT(1) NOT NULL DEFAULT 0');
+        }
     }
 };
