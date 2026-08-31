@@ -10,10 +10,52 @@
 
 WEBROOT="${DEPLOY_WEBROOT:-/home/u160855881/domains/solenenergyco.com/public_html/CRM/portal}"
 BRANCH="${DEPLOY_BRANCH:-main}"
-PHP_BIN="${PHP_BIN:-php}"
-COMPOSER_BIN="${COMPOSER_BIN:-composer}"
 
 cd "$WEBROOT" || { echo "❌ Invalid webroot"; exit 1; }
+
+# Triggered from the admin deploy page this runs as the web user, which often
+# has no HOME — and composer and npm both refuse to start without one.
+export HOME="${HOME:-$WEBROOT/storage/app/.deploy-home}"
+export COMPOSER_HOME="${COMPOSER_HOME:-$HOME/.composer}"
+mkdir -p "$COMPOSER_HOME"
+
+# Shared hosting rarely puts the binaries on PATH under the names you expect.
+# Hostinger ships Composer 2 as `composer2` (a plain `composer` there can still
+# be v1, which cannot read a v2 composer.lock), and `php` is often an older
+# build than this app supports. Pick deliberately; PHP_BIN / COMPOSER_BIN still
+# win when they are set.
+find_composer() {
+    if [ -n "${COMPOSER_BIN:-}" ]; then
+        command -v "$COMPOSER_BIN" >/dev/null 2>&1 && echo "$COMPOSER_BIN"
+        return
+    fi
+
+    for candidate in composer2 composer composer.phar; do
+        if command -v "$candidate" >/dev/null 2>&1; then
+            echo "$candidate"
+            return
+        fi
+    done
+}
+
+find_php() {
+    if [ -n "${PHP_BIN:-}" ]; then
+        command -v "$PHP_BIN" >/dev/null 2>&1 && echo "$PHP_BIN"
+        return
+    fi
+
+    for candidate in php php8.3 php8.2 php8.1; do
+        command -v "$candidate" >/dev/null 2>&1 || continue
+
+        if "$candidate" -r 'exit(PHP_VERSION_ID >= 80100 ? 0 : 1);' >/dev/null 2>&1; then
+            echo "$candidate"
+            return
+        fi
+    done
+}
+
+COMPOSER_BIN="$(find_composer)"
+PHP_BIN="$(find_php)"
 
 echo "🚀 Deploying latest code..."
 git fetch origin "$BRANCH" || { echo "❌ git fetch failed"; exit 1; }
@@ -61,12 +103,12 @@ fi
 # PHP dependencies
 # --------------------------------------------------------------------------
 if [ "$NEEDS_COMPOSER" -eq 1 ]; then
-    if command -v "$COMPOSER_BIN" >/dev/null 2>&1; then
-        echo "📦 Installing PHP dependencies..."
+    if [ -n "$COMPOSER_BIN" ]; then
+        echo "📦 Installing PHP dependencies with $COMPOSER_BIN..."
         "$COMPOSER_BIN" install --no-interaction --no-dev --optimize-autoloader \
             || echo "⚠️  composer install failed — run it by hand before trusting this deploy"
     else
-        echo "⚠️  composer not found (set COMPOSER_BIN) — run 'composer install --no-dev --optimize-autoloader' by hand"
+        echo "⚠️  no composer found (tried composer2, composer, composer.phar; set COMPOSER_BIN) — run 'composer install --no-dev --optimize-autoloader' by hand"
     fi
 fi
 
@@ -87,13 +129,13 @@ fi
 # Caches — compiled Blade views and cached config outlive a git pull, so the
 # server keeps serving the old UI until they are cleared
 # --------------------------------------------------------------------------
-if command -v "$PHP_BIN" >/dev/null 2>&1; then
-    echo "🧹 Clearing caches..."
+if [ -n "$PHP_BIN" ]; then
+    echo "🧹 Clearing caches with $PHP_BIN..."
     "$PHP_BIN" artisan view:clear
     "$PHP_BIN" artisan cache:clear
     "$PHP_BIN" artisan config:clear
 else
-    echo "⚠️  php not found (set PHP_BIN) — run 'php artisan view:clear && php artisan cache:clear && php artisan config:clear' by hand"
+    echo "⚠️  no PHP 8.1+ binary found (set PHP_BIN) — run 'php artisan view:clear && php artisan cache:clear && php artisan config:clear' by hand"
 fi
 
 echo "✅ Deploy complete."

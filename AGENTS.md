@@ -293,7 +293,12 @@ the commit before and after):
 - nothing new to pull and nothing out of sync → exits early, no rebuild
 
 Each step is skipped with a warning rather than aborting the deploy if its tool
-is missing; `PHP_BIN` / `COMPOSER_BIN` override the binary names, and
+is missing. Because the admin deploy page runs the script as the web user, the
+script also finds its own binaries and gives itself a `HOME`: Composer 2 is
+`composer2` on this host (a plain `composer` there can still be v1, which cannot
+read a v2 `composer.lock`), so it tries `composer2`, `composer`, `composer.phar`
+in that order, and picks the first `php` that reports 8.1+ over `php8.3` /
+`php8.2` / `php8.1`. `PHP_BIN` / `COMPOSER_BIN` override the search, and
 `DEPLOY_WEBROOT` / `DEPLOY_BRANCH` override the target. **Migrations are not run
 automatically** — `php artisan migrate --force` is still a deliberate manual step.
 
