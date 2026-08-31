@@ -326,16 +326,23 @@ fields/move bar.
 - Deploy helpers: `deploy.sh` / `rollback.sh`. Activity audit via spatie activitylog (`activity_log` table).
 - Tests live in `tests/` (PHPUnit + Dusk). The repo is on branch `main`.
 
-### ⚠️ Deployment gotcha — server shows old UI after `git push`
+### Deployment — what `deploy.sh` does after the pull
 
-`deploy.sh` only runs `git pull`. It does **NOT** clear compiled Blade views or rebuild JS/CSS assets. After any push that touches `.blade.php` files or frontend JS, the server will keep serving stale compiled views and stale JS bundles — so the new UI renders correctly on local but shows the old layout on production.
+`deploy.sh` used to run `git pull` and nothing else, so the server kept serving
+stale compiled Blade views and stale JS bundles: the new UI rendered correctly
+on local but showed the old layout on production. It now does the follow-up work
+itself, driven by what the pull actually changed (`git diff --name-only` between
+the commit before and after):
 
-**After every push that touches Blade views or frontend JS, run on the server:**
-```bash
-php artisan view:clear
-php artisan cache:clear
-php artisan config:clear
-npm run build        # only needed if JS/CSS changed
-```
+- `composer.json` / `composer.lock` moved → `composer install --no-dev --optimize-autoloader`
+- `resources/js`, `resources/css`, `package.json`, or a Vite/Tailwind/PostCSS config moved → `npm install && npm run build`
+- always → `php artisan view:clear`, `cache:clear`, `config:clear`
+- nothing new to pull → exits early, no rebuild
 
-Root cause: shared Hostinger hosting — no CI/CD pipeline, no post-receive hook. Must be run manually via the hosting panel's terminal or SSH after each deploy. Consider adding these commands to `deploy.sh`.
+Each step is skipped with a warning rather than aborting the deploy if its tool
+is missing; `PHP_BIN` / `COMPOSER_BIN` override the binary names, and
+`DEPLOY_WEBROOT` / `DEPLOY_BRANCH` override the target. **Migrations are not run
+automatically** — `php artisan migrate --force` is still a deliberate manual step.
+
+Root cause of all this: shared Hostinger hosting — no CI/CD pipeline, no
+post-receive hook, so the deploy script is the only place this can live.
