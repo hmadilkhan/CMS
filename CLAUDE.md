@@ -326,16 +326,28 @@ fields/move bar.
 - Deploy helpers: `deploy.sh` / `rollback.sh`. Activity audit via spatie activitylog (`activity_log` table).
 - Tests live in `tests/` (PHPUnit + Dusk). The repo is on branch `main`.
 
-### ⚠️ Deployment gotcha — server shows old UI after `git push`
+### Deployment — what `deploy.sh` does after the pull
 
-`deploy.sh` only runs `git pull`. It does **NOT** clear compiled Blade views or rebuild JS/CSS assets. After any push that touches `.blade.php` files or frontend JS, the server will keep serving stale compiled views and stale JS bundles — so the new UI renders correctly on local but shows the old layout on production.
+`deploy.sh` used to run `git pull` and nothing else, so the server kept serving
+stale compiled Blade views and stale JS bundles: the new UI rendered correctly
+on local but showed the old layout on production. It now does the follow-up work
+itself, driven by what the pull actually changed (`git diff --name-only` between
+the commit before and after):
 
-**After every push that touches Blade views or frontend JS, run on the server:**
-```bash
-php artisan view:clear
-php artisan cache:clear
-php artisan config:clear
-npm run build        # only needed if JS/CSS changed
-```
+- `composer.lock` newer than `vendor/composer/installed.json` (or no `vendor/` at all) → `composer install --no-dev --optimize-autoloader`. This one checks the *installed state*, not the pull: the release that first added these steps was itself pulled by the old script, so its own install never ran — a state check catches that, and any hand-made pull, on the next deploy
+- `resources/js`, `resources/css`, `package.json`, or a Vite/Tailwind/PostCSS config moved, or `public/build` is missing → `npm install && npm run build`
+- any of the above, or a pull that brought new commits → `php artisan view:clear`, `cache:clear`, `config:clear`
+- nothing new to pull and nothing out of sync → exits early, no rebuild
 
-Root cause: shared Hostinger hosting — no CI/CD pipeline, no post-receive hook. Must be run manually via the hosting panel's terminal or SSH after each deploy. Consider adding these commands to `deploy.sh`.
+Each step is skipped with a warning rather than aborting the deploy if its tool
+is missing. Because the admin deploy page runs the script as the web user, the
+script also finds its own binaries and gives itself a `HOME`: Composer 2 is
+`composer2` on this host (a plain `composer` there can still be v1, which cannot
+read a v2 `composer.lock`), so it tries `composer2`, `composer`, `composer.phar`
+in that order, and picks the first `php` that reports 8.1+ over `php8.3` /
+`php8.2` / `php8.1`. `PHP_BIN` / `COMPOSER_BIN` override the search, and
+`DEPLOY_WEBROOT` / `DEPLOY_BRANCH` override the target. **Migrations are not run
+automatically** — `php artisan migrate --force` is still a deliberate manual step.
+
+Root cause of all this: shared Hostinger hosting — no CI/CD pipeline, no
+post-receive hook, so the deploy script is the only place this can live.
