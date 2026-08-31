@@ -22,19 +22,45 @@ BEFORE="$(git rev-parse HEAD)"
 git pull origin "$BRANCH" || { echo "❌ git pull failed"; exit 1; }
 AFTER="$(git rev-parse HEAD)"
 
+CHANGED=""
 if [ "$BEFORE" = "$AFTER" ]; then
+    echo "ℹ️  No new commits."
+else
+    CHANGED="$(git diff --name-only "$BEFORE" "$AFTER")"
+    echo "✅ Code updated successfully."
+fi
+
+# --------------------------------------------------------------------------
+# Decide what still needs doing.
+#
+# The composer check looks at the installed state rather than at what this pull
+# changed, because the two do not always line up: the release that first brought
+# these steps into deploy.sh was itself pulled by the OLD script, so its
+# composer install never ran. Comparing composer.lock against what is actually
+# installed catches that, and any hand-made pull, on the next deploy.
+# --------------------------------------------------------------------------
+NEEDS_COMPOSER=0
+if [ ! -f vendor/autoload.php ] || [ composer.lock -nt vendor/composer/installed.json ]; then
+    NEEDS_COMPOSER=1
+fi
+
+NEEDS_ASSETS=0
+if echo "$CHANGED" | grep -qE '^(resources/(js|css)/|package(-lock)?\.json$|vite\.config\.js$|tailwind\.config\.js$|postcss\.config\.js$)'; then
+    NEEDS_ASSETS=1
+fi
+if [ ! -d public/build ]; then
+    NEEDS_ASSETS=1
+fi
+
+if [ "$BEFORE" = "$AFTER" ] && [ "$NEEDS_COMPOSER" -eq 0 ] && [ "$NEEDS_ASSETS" -eq 0 ]; then
     echo "✅ Already up to date — nothing to rebuild."
     exit 0
 fi
 
-CHANGED="$(git diff --name-only "$BEFORE" "$AFTER")"
-
-echo "✅ Code updated successfully."
-
 # --------------------------------------------------------------------------
-# PHP dependencies — only when composer.json / composer.lock moved
+# PHP dependencies
 # --------------------------------------------------------------------------
-if echo "$CHANGED" | grep -qE '^composer\.(json|lock)$'; then
+if [ "$NEEDS_COMPOSER" -eq 1 ]; then
     if command -v "$COMPOSER_BIN" >/dev/null 2>&1; then
         echo "📦 Installing PHP dependencies..."
         "$COMPOSER_BIN" install --no-interaction --no-dev --optimize-autoloader \
@@ -45,9 +71,9 @@ if echo "$CHANGED" | grep -qE '^composer\.(json|lock)$'; then
 fi
 
 # --------------------------------------------------------------------------
-# Frontend build — only when the Vite inputs moved
+# Frontend build — when the Vite inputs moved, or nothing has been built yet
 # --------------------------------------------------------------------------
-if echo "$CHANGED" | grep -qE '^(resources/(js|css)/|package(-lock)?\.json$|vite\.config\.js$|tailwind\.config\.js$|postcss\.config\.js$)'; then
+if [ "$NEEDS_ASSETS" -eq 1 ]; then
     if command -v npm >/dev/null 2>&1; then
         echo "🎨 Building frontend assets..."
         npm install --no-audit --no-fund && npm run build \

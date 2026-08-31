@@ -287,10 +287,10 @@ on local but showed the old layout on production. It now does the follow-up work
 itself, driven by what the pull actually changed (`git diff --name-only` between
 the commit before and after):
 
-- `composer.json` / `composer.lock` moved → `composer install --no-dev --optimize-autoloader`
-- `resources/js`, `resources/css`, `package.json`, or a Vite/Tailwind/PostCSS config moved → `npm install && npm run build`
-- always → `php artisan view:clear`, `cache:clear`, `config:clear`
-- nothing new to pull → exits early, no rebuild
+- `composer.lock` newer than `vendor/composer/installed.json` (or no `vendor/` at all) → `composer install --no-dev --optimize-autoloader`. This one checks the *installed state*, not the pull: the release that first added these steps was itself pulled by the old script, so its own install never ran — a state check catches that, and any hand-made pull, on the next deploy
+- `resources/js`, `resources/css`, `package.json`, or a Vite/Tailwind/PostCSS config moved, or `public/build` is missing → `npm install && npm run build`
+- any of the above, or a pull that brought new commits → `php artisan view:clear`, `cache:clear`, `config:clear`
+- nothing new to pull and nothing out of sync → exits early, no rebuild
 
 Each step is skipped with a warning rather than aborting the deploy if its tool
 is missing; `PHP_BIN` / `COMPOSER_BIN` override the binary names, and
