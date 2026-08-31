@@ -44,6 +44,11 @@ class DeployController extends Controller
             $status = 'failed';
         }
 
+        // artisan runs with --ansi inside composer's post-autoload-dump, and the
+        // page renders the log as escaped text — so the colour codes would show
+        // up as literal "[90m." noise. Strip the terminal escapes.
+        $output = preg_replace('/\e\[[0-9;?]*[a-zA-Z]/', '', $output);
+
         // deploy_logs.output is a TEXT column; keep a long script log from
         // overflowing it.
         $output = Str::limit($output, 60000, "\n… (output truncated)");
