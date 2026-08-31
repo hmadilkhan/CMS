@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use App\Models\DeployLog;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Str;
 
 class DeployController extends Controller
 {
@@ -26,16 +27,26 @@ class DeployController extends Controller
         
         try {
             if ($action === 'deploy') {
-                Artisan::call('deploy:run');
+                $exitCode = Artisan::call('deploy:run');
             } elseif ($action === 'rollback') {
-                Artisan::call('deploy:rollback');
+                $exitCode = Artisan::call('deploy:rollback');
             } else {
                 throw new \Exception('Invalid action');
             }
+
+            // The script's own log — warnings included — only reaches the page
+            // and the deploy log through here. A non-zero exit is a real
+            // failure even though no exception was thrown.
+            $output = trim(Artisan::output());
+            $status = $exitCode === 0 ? 'success' : 'failed';
         } catch (\Throwable $e) {
             $output = $e->getMessage();
             $status = 'failed';
         }
+
+        // deploy_logs.output is a TEXT column; keep a long script log from
+        // overflowing it.
+        $output = Str::limit($output, 60000, "\n… (output truncated)");
 
         DeployLog::create([
             'action' => $action,
