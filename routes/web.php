@@ -61,8 +61,12 @@ Route::get('/track-your-project', function () {
     return view('track-your-project');
 });
 
-Route::get('/admin/deploy', [DeployController::class, 'deploy'])->middleware('auth');
-Route::post('/admin/deploy', [DeployController::class, 'deployAction'])->name('admin.deploy')->middleware('auth');
+// Deploying (and rolling back) production is Super Admin only: 'auth' alone let
+// any signed-in user pull code onto the live site or reset it a commit back.
+Route::middleware(['auth', 'role:Super Admin'])->group(function () {
+    Route::get('/admin/deploy', [DeployController::class, 'deploy']);
+    Route::post('/admin/deploy', [DeployController::class, 'deployAction'])->name('admin.deploy');
+});
 
 Route::post('store-ticket', [App\Http\Controllers\NewTicketController::class, 'store'])->name("store.ticket");
 Route::get('check-website-project/{code}/{email}', [App\Http\Controllers\ProjectController::class, 'checkWebsiteProject'])->name('get.website.project');
