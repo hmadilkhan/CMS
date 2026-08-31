@@ -272,6 +272,42 @@ These fixes are controller/middleware/parser-level and don't change question→a
 
 ---
 
+### Test suite — green, and two bugs it was hiding (DONE)
+
+`./vendor/bin/phpunit` is **169 tests / 995 assertions, all passing**. Getting
+there surfaced two real defects, both fixed:
+
+- **Named-entity fast paths were dead.** `inferKnownPlan` passed the LOWER-CASED
+  question to `extractTicketUserName()` and `extractProjectSummaryName()`, which
+  recognise a name by its capital letter — so both returned null for every
+  question and the `ticket_creator_status_summary` / `project_summary` routes
+  never fired again. They now get the question as typed (their keyword checks
+  lower-case a copy internally). The extracted name keeps the user's casing, so
+  the filter value is now e.g. `Susan Stauffer`; it feeds a `LIKE`, so matching
+  is unchanged.
+- **General chat swallowed the planner's refusals.** `handleQueryPlan` sent every
+  `intent=unknown` + `mode=unsupported` plan to general chat — including the
+  write-operation block and the permission denial, so "delete all projects" got
+  small talk instead of "I can only read CRM data…". Those two messages are now
+  `AiQueryPlannerService::WRITE_BLOCKED_MESSAGE` / `PERMISSION_DENIED_MESSAGE`
+  and bypass the general-chat shortcut. Note a plain unmappable question CANNOT
+  be told apart by "has a fallback_message" — `legacyPlanFromHybrid` fills a
+  generic one in for every unsupported plan — which is why the two refusals are
+  matched by their own constants. Field-dictionary guidance is also suppressed
+  for them (and never appended as an empty block).
+
+Also fixed while the tests were red: `/tickets` ran `Artisan::call('get:leads')`
+inline, so an unreachable WordPress database 500'd the whole page — it is now
+wrapped and logged. Test-side: the AI chat fixture (`CreatesAiChatTestSchema`)
+now creates the CRM tables the deterministic routes query (`customers`,
+`departments`, `projects`, `tasks`, `service_tickets`) instead of individual
+tests building their own; the finance-option workflow test sends the
+`milestone_*` fields the validator gained; and the acceptance-PDF test seeds the
+two images FPDF stamps (they are uploads, not repository files).
+
+**Still not covered:** nothing requires an OpenAI key any more — the planner
+follow-up test stubs `OpenAiService`, so the suite runs offline.
+
 ## Paperwork Follow Ups (MPU / Utility Bill / Fire Review)
 
 Three "chases" that hold a project in a closed lane until a missing document

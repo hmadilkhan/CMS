@@ -126,6 +126,63 @@ trait CreatesAiChatTestSchema
             $table->timestamps();
         });
 
+        // The CRM tables the assistant reaches for on its deterministic routes.
+        // They are here rather than in individual tests because several fast
+        // paths (project detail, row scoping, entity resolution) query them
+        // before any mock gets a chance to intercept.
+        Schema::create('customers', function (Blueprint $table) {
+            $table->id();
+            $table->string('first_name')->nullable();
+            $table->string('last_name')->nullable();
+            $table->unsignedBigInteger('sales_partner_id')->nullable();
+            $table->unsignedBigInteger('sub_contractor_id')->nullable();
+            $table->timestamps();
+            $table->softDeletes();
+        });
+
+        Schema::create('departments', function (Blueprint $table) {
+            $table->id();
+            $table->string('name')->nullable();
+            $table->timestamps();
+            $table->softDeletes();
+        });
+
+        Schema::create('projects', function (Blueprint $table) {
+            $table->id();
+            $table->string('project_name')->nullable();
+            $table->string('code')->nullable();
+            $table->unsignedBigInteger('customer_id')->nullable();
+            $table->unsignedBigInteger('department_id')->nullable();
+            $table->unsignedBigInteger('sub_department_id')->nullable();
+            $table->unsignedBigInteger('sub_contractor_user_id')->nullable();
+            $table->timestamps();
+            $table->softDeletes();
+        });
+
+        Schema::create('tasks', function (Blueprint $table) {
+            $table->id();
+            $table->unsignedBigInteger('project_id');
+            $table->unsignedBigInteger('department_id')->nullable();
+            $table->unsignedBigInteger('employee_id')->nullable();
+            $table->unsignedBigInteger('user_id')->nullable();
+            $table->string('status')->nullable();
+            $table->text('notes')->nullable();
+            $table->text('assign_to_notes')->nullable();
+            $table->timestamps();
+            $table->softDeletes();
+        });
+
+        Schema::create('service_tickets', function (Blueprint $table) {
+            $table->id();
+            $table->unsignedBigInteger('user_id')->nullable();
+            $table->unsignedBigInteger('project_id')->nullable();
+            $table->string('subject')->nullable();
+            $table->string('priority')->nullable();
+            $table->string('status')->nullable();
+            $table->timestamps();
+            $table->softDeletes();
+        });
+
         Schema::create('ai_chats', function (Blueprint $table) {
             $table->id();
             $table->unsignedBigInteger('user_id');

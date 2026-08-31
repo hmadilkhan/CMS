@@ -145,6 +145,9 @@ class OperationsWorkflowTest extends TestCase
             'no_of_days' => 30,
             'holdback' => 1,
             'dollar_watt_value' => 0.25,
+            // Required since finance options grew milestones.
+            'milestone_enabled' => 1,
+            'milestone_amount_source' => 'contract_amount',
         ]);
 
         $createResponse->assertRedirect(route('finance.option.types'));
@@ -173,6 +176,8 @@ class OperationsWorkflowTest extends TestCase
             'no_of_days' => 99,
             'holdback' => 0,
             'dollar_watt_value' => 99,
+            'milestone_enabled' => 0,
+            'milestone_amount_source' => 'customer_portion',
         ]);
 
         $updateResponse->assertRedirect(route('finance.option.types'));

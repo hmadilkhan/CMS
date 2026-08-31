@@ -65,10 +65,13 @@ class AiServicesTest extends TestCase
         $finance = $this->userWithRole('Finance');
         $service = app(AiPermissionService::class);
 
+        // customer_finances is the real finance table; the placeholder
+        // project_finances was removed from ai_schema because it never existed
+        // in the database.
         $this->assertFalse($service->canAccessFinance($employee));
-        $this->assertFalse($service->canAccessTable($employee, 'project_finances'));
+        $this->assertFalse($service->canAccessTable($employee, 'customer_finances'));
         $this->assertTrue($service->canAccessFinance($finance));
-        $this->assertTrue($service->canAccessTable($finance, 'project_finances'));
+        $this->assertTrue($service->canAccessTable($finance, 'customer_finances'));
     }
 
     public function test_ai_sql_validator_rejects_unsafe_sql(): void
@@ -226,11 +229,6 @@ class AiServicesTest extends TestCase
 
     public function test_ai_entity_resolver_asks_clarification_for_ambiguous_project_name(): void
     {
-        \Illuminate\Support\Facades\Schema::create('projects', function (\Illuminate\Database\Schema\Blueprint $table) {
-            $table->id();
-            $table->string('project_name')->nullable();
-        });
-
         \Illuminate\Support\Facades\DB::table('projects')->insert([
             ['project_name' => 'Solar Project A'],
             ['project_name' => 'Solar Project B'],
@@ -932,7 +930,9 @@ class AiServicesTest extends TestCase
     public function test_ai_answer_formatter_appends_forecast_total_row(): void
     {
         $this->mock(OpenAiService::class, function ($mock) {
-            $mock->shouldReceive('createJsonResponse')->once()->andThrow(new \RuntimeException('OpenAI unavailable'));
+            // A report intent carries its own deterministic summary, so the
+            // formatter must not spend an OpenAI call on it at all.
+            $mock->shouldReceive('createJsonResponse')->never();
         });
 
         $formatter = app(AiAnswerFormatterService::class);
@@ -977,7 +977,9 @@ class AiServicesTest extends TestCase
     public function test_ai_answer_formatter_appends_override_total_row(): void
     {
         $this->mock(OpenAiService::class, function ($mock) {
-            $mock->shouldReceive('createJsonResponse')->once()->andThrow(new \RuntimeException('OpenAI unavailable'));
+            // A report intent carries its own deterministic summary, so the
+            // formatter must not spend an OpenAI call on it at all.
+            $mock->shouldReceive('createJsonResponse')->never();
         });
 
         $formatter = app(AiAnswerFormatterService::class);
@@ -1034,7 +1036,9 @@ class AiServicesTest extends TestCase
     public function test_ai_answer_formatter_appends_transaction_total_row(): void
     {
         $this->mock(OpenAiService::class, function ($mock) {
-            $mock->shouldReceive('createJsonResponse')->once()->andThrow(new \RuntimeException('OpenAI unavailable'));
+            // A report intent carries its own deterministic summary, so the
+            // formatter must not spend an OpenAI call on it at all.
+            $mock->shouldReceive('createJsonResponse')->never();
         });
 
         $formatter = app(AiAnswerFormatterService::class);
@@ -1080,7 +1084,9 @@ class AiServicesTest extends TestCase
     public function test_ai_answer_formatter_appends_profitability_total_row(): void
     {
         $this->mock(OpenAiService::class, function ($mock) {
-            $mock->shouldReceive('createJsonResponse')->once()->andThrow(new \RuntimeException('OpenAI unavailable'));
+            // A report intent carries its own deterministic summary, so the
+            // formatter must not spend an OpenAI call on it at all.
+            $mock->shouldReceive('createJsonResponse')->never();
         });
 
         $formatter = app(AiAnswerFormatterService::class);
@@ -1254,7 +1260,37 @@ class AiServicesTest extends TestCase
 
     public function test_planner_ignores_followup_without_previous_context(): void
     {
-        $user    = $this->userWithRole('Admin');
+        $user = $this->userWithRole('Admin');
+
+        // Reaching the planner at all is the point of this test: if the follow-up
+        // shortcut wrongly fired, the plan would be built from $previous without
+        // any model call and come back as crm_list. Stubbing the model keeps the
+        // test hermetic — it needs no API key and makes no network request.
+        $this->mock(OpenAiService::class, function ($mock) {
+            $mock->shouldReceive('sqlModel')->zeroOrMoreTimes()->andReturn('gpt-test');
+            $mock->shouldReceive('createJsonResponse')->zeroOrMoreTimes()->andReturn([
+                'id' => 'resp_plan',
+                'model' => 'gpt-test',
+                'json' => [
+                    'mode' => 'fixed_action',
+                    'confidence' => 0.9,
+                    'answer_type' => 'count',
+                    'intent' => 'crm_count',
+                    'tables' => ['projects'],
+                    'columns' => ['id'],
+                    'group_by' => [],
+                    'filters' => [],
+                    'requires_finance_access' => false,
+                    'sql' => null,
+                    'fallback_message' => null,
+                ],
+                'text' => '{}',
+                'usage' => [],
+                'payload' => [],
+                'raw' => [],
+            ]);
+        });
+
         $planner = app(AiQueryPlannerService::class);
 
         // A self-contained question must NOT be treated as a follow-up even when a
@@ -1272,32 +1308,6 @@ class AiServicesTest extends TestCase
 
     public function test_ai_row_scope_service_scopes_projects_per_role(): void
     {
-        \Illuminate\Support\Facades\Schema::create('customers', function (\Illuminate\Database\Schema\Blueprint $table) {
-            $table->id();
-            $table->unsignedBigInteger('sales_partner_id')->nullable();
-            $table->unsignedBigInteger('sub_contractor_id')->nullable();
-            $table->timestamps();
-            $table->softDeletes();
-        });
-
-        \Illuminate\Support\Facades\Schema::create('projects', function (\Illuminate\Database\Schema\Blueprint $table) {
-            $table->id();
-            $table->unsignedBigInteger('customer_id')->nullable();
-            $table->unsignedBigInteger('department_id')->nullable();
-            $table->unsignedBigInteger('sub_contractor_user_id')->nullable();
-            $table->timestamps();
-            $table->softDeletes();
-        });
-
-        \Illuminate\Support\Facades\Schema::create('tasks', function (\Illuminate\Database\Schema\Blueprint $table) {
-            $table->id();
-            $table->unsignedBigInteger('project_id');
-            $table->unsignedBigInteger('employee_id')->nullable();
-            $table->string('status')->nullable();
-            $table->timestamps();
-            $table->softDeletes();
-        });
-
         $scope = app(\App\Services\AiRowScopeService::class);
 
         // --- Admin: fully unscoped -------------------------------------------------
