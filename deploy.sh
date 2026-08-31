@@ -78,11 +78,21 @@ fi
 # The composer check looks at the installed state rather than at what this pull
 # changed, because the two do not always line up: the release that first brought
 # these steps into deploy.sh was itself pulled by the OLD script, so its
-# composer install never ran. Comparing composer.lock against what is actually
-# installed catches that, and any hand-made pull, on the next deploy.
+# composer install never ran. Checking the installed state catches that, and any
+# hand-made pull, on the next deploy.
+#
+# The state is a stamp this script writes itself, holding the content-hash of
+# the composer.lock it last installed successfully. File timestamps are not
+# enough: a composer install that dies part way can still touch its own
+# metadata, which would look like a finished install and skip the retry
+# forever. The stamp is only written when composer actually succeeds.
 # --------------------------------------------------------------------------
+COMPOSER_STAMP="storage/app/.deploy-composer-hash"
+LOCK_HASH="$(sed -n 's/.*"content-hash": *"\([^"]*\)".*/\1/p' composer.lock | head -1)"
+
 NEEDS_COMPOSER=0
-if [ ! -f vendor/autoload.php ] || [ composer.lock -nt vendor/composer/installed.json ]; then
+if [ ! -f vendor/autoload.php ] || [ -z "$LOCK_HASH" ] || [ ! -f "$COMPOSER_STAMP" ] \
+    || [ "$(cat "$COMPOSER_STAMP" 2>/dev/null)" != "$LOCK_HASH" ]; then
     NEEDS_COMPOSER=1
 fi
 
@@ -116,7 +126,7 @@ if [ "$NEEDS_COMPOSER" -eq 1 ]; then
         if COMPOSER_MAX_PARALLEL_HTTP="${COMPOSER_MAX_PARALLEL_HTTP:-4}" \
             "$COMPOSER_BIN" install --no-interaction --no-progress --prefer-dist \
                 --no-dev --optimize-autoloader; then
-            :
+            printf '%s' "$LOCK_HASH" > "$COMPOSER_STAMP"
         else
             FAILED=1
             echo "⚠️  composer install failed — the vendor directory is NOT up to date"
