@@ -99,15 +99,35 @@ if [ "$BEFORE" = "$AFTER" ] && [ "$NEEDS_COMPOSER" -eq 0 ] && [ "$NEEDS_ASSETS" 
     exit 0
 fi
 
+FAILED=0
+
 # --------------------------------------------------------------------------
 # PHP dependencies
+#
+# --prefer-dist and a small parallel-HTTP budget matter on shared hosting:
+# without a zip archive to unpack composer falls back to `git clone`, and
+# cloning a repo the size of google/apiclient-services runs the account out of
+# processes ("unable to create thread: Resource temporarily unavailable").
 # --------------------------------------------------------------------------
 if [ "$NEEDS_COMPOSER" -eq 1 ]; then
     if [ -n "$COMPOSER_BIN" ]; then
         echo "📦 Installing PHP dependencies with $COMPOSER_BIN..."
-        "$COMPOSER_BIN" install --no-interaction --no-dev --optimize-autoloader \
-            || echo "⚠️  composer install failed — run it by hand before trusting this deploy"
+
+        if COMPOSER_MAX_PARALLEL_HTTP="${COMPOSER_MAX_PARALLEL_HTTP:-4}" \
+            "$COMPOSER_BIN" install --no-interaction --no-progress --prefer-dist \
+                --no-dev --optimize-autoloader; then
+            :
+        else
+            FAILED=1
+            echo "⚠️  composer install failed — the vendor directory is NOT up to date"
+            echo "    composer : $("$COMPOSER_BIN" --version 2>&1 | head -1)"
+            echo "    php      : ${PHP_BIN:-none} $([ -n "$PHP_BIN" ] && "$PHP_BIN" -r 'echo PHP_VERSION;' 2>/dev/null)"
+            echo "    zip ext  : $([ -n "$PHP_BIN" ] && "$PHP_BIN" -r 'echo extension_loaded("zip") ? "yes" : "no";' 2>/dev/null)"
+            echo "    unzip    : $(command -v unzip || echo 'not found')"
+            echo "    (no zip extension and no unzip binary is what forces composer to clone from source)"
+        fi
     else
+        FAILED=1
         echo "⚠️  no composer found (tried composer2, composer, composer.phar; set COMPOSER_BIN) — run 'composer install --no-dev --optimize-autoloader' by hand"
     fi
 fi
@@ -118,9 +138,14 @@ fi
 if [ "$NEEDS_ASSETS" -eq 1 ]; then
     if command -v npm >/dev/null 2>&1; then
         echo "🎨 Building frontend assets..."
-        npm install --no-audit --no-fund && npm run build \
-            || echo "⚠️  asset build failed — the site will keep serving the previous build"
+        if npm install --no-audit --no-fund && npm run build; then
+            :
+        else
+            FAILED=1
+            echo "⚠️  asset build failed — the site will keep serving the previous build"
+        fi
     else
+        FAILED=1
         echo "⚠️  npm not found — run 'npm install && npm run build' by hand"
     fi
 fi
@@ -135,7 +160,13 @@ if [ -n "$PHP_BIN" ]; then
     "$PHP_BIN" artisan cache:clear
     "$PHP_BIN" artisan config:clear
 else
+    FAILED=1
     echo "⚠️  no PHP 8.1+ binary found (set PHP_BIN) — run 'php artisan view:clear && php artisan cache:clear && php artisan config:clear' by hand"
+fi
+
+if [ "$FAILED" -ne 0 ]; then
+    echo "❌ Deploy finished with errors — see the warnings above. The code was pulled, but a step did not complete."
+    exit 1
 fi
 
 echo "✅ Deploy complete."
