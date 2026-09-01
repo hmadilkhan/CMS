@@ -104,6 +104,11 @@ class ServiceTicketController extends Controller
 
     public function adminDashboard()
     {
+        // Every ticket in the company. HomeController routes Super Admins to the
+        // executive dashboard that embeds this list, and Service Managers work
+        // tickets for a living; nobody else was ever sent here.
+        abort_unless(auth()->user()->hasAnyRole(['Super Admin', 'Service Manager']), 403);
+
         $tickets = ServiceTicket::with(['project', 'assignedUser', 'creator'])
             ->orderBy('created_at', 'desc')
             ->get();
@@ -156,8 +161,38 @@ class ServiceTicketController extends Controller
         return back()->with('success', 'Comment added successfully');
     }
 
+    /**
+     * The four ways a person belongs to a ticket, taken from what the code
+     * already does with them:
+     *
+     *  - Super Admin      HomeController sends them to the dashboard that lists
+     *                     every ticket and links straight to these pages.
+     *  - Service Manager  the role tickets are assigned to and worked by.
+     *  - the assignee     ServiceTicketController::dashboard() is exactly
+     *                     "tickets where assigned_to is me".
+     *  - the creator      both views compute $isTicketCreator from user_id and
+     *                     give them the comment box.
+     *
+     * Until now the ticket id alone opened any of it — a ticket's subject, notes,
+     * every comment and every attachment, for any signed-in user.
+     */
+    private function authorizeTicketAccess(ServiceTicket $ticket): void
+    {
+        $user = auth()->user();
+        $userId = (int) $user->id;
+
+        abort_unless(
+            $user->hasAnyRole(['Super Admin', 'Service Manager'])
+                || (int) $ticket->user_id === $userId
+                || (int) $ticket->assigned_to === $userId,
+            403
+        );
+    }
+
     public function showDetails(ServiceTicket $ticket)
     {
+        $this->authorizeTicketAccess($ticket);
+
         $ticket->load(['comments.user', 'comments.files', 'project', 'files' => function($q) {
             $q->whereNull('comment_id');
         }, 'files.uploader']);
@@ -166,6 +201,8 @@ class ServiceTicketController extends Controller
 
     public function showAdminDetails(ServiceTicket $ticket)
     {
+        $this->authorizeTicketAccess($ticket);
+
         $ticket->load(['comments.user', 'comments.files', 'project', 'assignedUser', 'files' => function($q) {
             $q->whereNull('comment_id');
         }, 'files.uploader']);
