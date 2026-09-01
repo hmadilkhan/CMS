@@ -6,6 +6,7 @@ use App\Models\Project;
 use App\Models\ProjectFile;
 use App\Traits\MediaTrait;
 use Illuminate\Support\Facades\Storage;
+use Livewire\Attributes\Locked;
 use Livewire\Attributes\On;
 use App\Livewire\Concerns\AuthorizesProjectAccess;
 use Livewire\Component;
@@ -17,6 +18,7 @@ class FilesSection extends Component
 
     use WithFileUploads, MediaTrait;
 
+    #[Locked]
     public $projectId = "";
     public $taskId = "";
     public $departmentId = "";

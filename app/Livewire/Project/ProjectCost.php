@@ -7,6 +7,7 @@ use App\Models\InverterTypeRate;
 use App\Models\LaborCost;
 use App\Models\ModuleType;
 use App\Models\Project;
+use Livewire\Attributes\Locked;
 use Livewire\Attributes\On;
 use App\Livewire\Concerns\AuthorizesProjectAccess;
 use Livewire\Component;
@@ -17,6 +18,7 @@ class ProjectCost extends Component
 
     public $project;
 
+    #[Locked]
     public $projectId;
     public $internalContractAmount = 0;
     # PRE FIELDS

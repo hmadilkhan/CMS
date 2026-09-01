@@ -435,7 +435,7 @@
                         </div>
                         <div class="col-sm-3">
                             <label class="form-label">Sales Partner</label>
-                            <input disabled value="{{ $project->customer->salespartner->name }}" type="text"
+                            <input disabled value="{{ $project->customer->salespartner?->name }}" type="text"
                                 class="form-control" />
                         </div>
                         <div class="col-sm-3">
@@ -445,13 +445,13 @@
                         </div>
                         <div class="col-sm-3">
                             <label class="form-label">Module Type</label>
-                            <input disabled value="{{ $project->customer->module->name }}" type="text"
+                            <input disabled value="{{ $project->customer->module?->name }}" type="text"
                                 class="form-control" id="module_type_id" name="module_type_id"
                                 placeholder="Module Type">
                         </div>
                         <div class="col-sm-3">
                             <label class="form-label">Inverter Type</label>
-                            <input disabled value="{{ $project->customer->inverter->name }}" type="text"
+                            <input disabled value="{{ $project->customer->inverter?->name }}" type="text"
                                 class="form-control" id="inverter_type_id" name="inverter_type_id"
                                 placeholder="Inverter Type">
                         </div>

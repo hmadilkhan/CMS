@@ -15,6 +15,7 @@ use App\Notifications\NoteMentionedNotification;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Notification;
+use Livewire\Attributes\Locked;
 use Livewire\Component;
 
 class NotesSection extends Component
@@ -22,6 +23,7 @@ class NotesSection extends Component
     use AuthorizesProjectAccess;
 
     public $editingNoteId = null;
+    #[Locked]
     public $projectId = "";
     public $taskId = "";
     public $departmentId = "";
@@ -29,6 +31,7 @@ class NotesSection extends Component
     public $projectDepartmentId = "";
     public $ghost = "";
     public $employees;
+    #[Locked]
     public $viewSource = "";
     public $showToCustomer = 0;
 
@@ -226,6 +229,8 @@ class NotesSection extends Component
 
     public function save()
     {
+        $this->abortIfPublicWebsiteView();
+
         $this->validate();
         try {
             // Optional: get mentions from frontend (pass as hidden input or refetch from note)
@@ -287,6 +292,8 @@ class NotesSection extends Component
 
     public function updateNote()
     {
+        $this->abortIfPublicWebsiteView();
+
         $this->validate();
         try {
             $note = ($this->noteModel())::findOrFail($this->editingNoteId);
@@ -346,6 +353,8 @@ class NotesSection extends Component
 
     public function deleteNote($id)
     {
+        $this->abortIfPublicWebsiteView();
+
         $note = ($this->noteModel())::findOrFail($id);
         $note->delete();
         $project = Project::findOrFail($this->projectId);
