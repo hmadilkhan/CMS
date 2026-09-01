@@ -552,7 +552,9 @@
     @endsection
     @section('scripts')
         <script>
-            showEmails("{{ $project->id }}");
+            {{-- The tracking page is public, so the reference sent to the email
+                 endpoint is encrypted the same way the page's own URL is. --}}
+            showEmails("{{ \Illuminate\Support\Facades\Crypt::encrypt($project->id) }}");
 
             function showEmails(projectId) {
                 $.ajax({

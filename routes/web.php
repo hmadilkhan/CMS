@@ -217,7 +217,13 @@ Route::middleware('auth')->group(function () {
     Route::post('adders-update', [App\Http\Controllers\AdderController::class, 'update'])->name('adders.update');
     Route::post('adders-remove', [App\Http\Controllers\AdderController::class, 'destroy'])->name('adders.remove');
 
-    Route::controller(OperationController::class)->group(function () {
+    // The whole operations catalogue — departments, finance options, dealer fees,
+    // internal redline costs, partners, scripts — sits behind 'User Management',
+    // the same permission the sidebar already uses to decide whether to show this
+    // menu at all. Until now only the menu was hidden: any signed-in user could
+    // still POST to these endpoints and create a department or read internal cost
+    // rates. (Super Admin passes through the Gate::before in AuthServiceProvider.)
+    Route::controller(OperationController::class)->middleware('can:User Management')->group(function () {
         // REDLINE COST
         Route::get('/view-redline-cost/{id?}', 'changeRedlineCostView')->name("view-redline-cost");
         Route::post('/get-redlines-cost', 'getRedlineCostByInverter')->name("get-redline-cost");
