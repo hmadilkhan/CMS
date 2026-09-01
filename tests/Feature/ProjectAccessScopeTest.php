@@ -17,6 +17,7 @@ use App\Models\Task;
 use App\Models\User;
 use App\Models\UserType;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
 use Spatie\Permission\Models\Role;
 use Tests\TestCase;
 
@@ -184,6 +185,45 @@ class ProjectAccessScopeTest extends TestCase
         $this->actingAs($this->user('Employee', 'Super Admin'))
             ->get(route('projects.edit', $project->id))
             ->assertOk();
+    }
+
+    /**
+     * Five notifications link straight to a project page, and a mention reaches
+     * whoever was named — not only whoever the list shows. Following that link
+     * has to work.
+     */
+    public function test_a_user_mentioned_in_a_note_can_open_the_project(): void
+    {
+        $project = $this->project();
+        $mentioned = $this->user('Employee');
+
+        DB::table('notes_mentions')->insert([
+            'project_id' => $project->id,
+            'department_id' => 1,
+            'user_id' => $mentioned->id,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        $this->actingAs($mentioned)->get(route('projects.show', $project->id))->assertOk();
+    }
+
+    /** Someone who worked the project earlier keeps their way back to it. */
+    public function test_a_past_task_holder_can_still_open_the_project(): void
+    {
+        $project = $this->project();
+        $worker = $this->user('Employee');
+        $employee = Employee::create(['name' => $worker->name, 'user_id' => $worker->id]);
+
+        Task::create([
+            'project_id' => $project->id,
+            'employee_id' => $employee->id,
+            'department_id' => 1,
+            'sub_department_id' => 1,
+            'status' => 'Completed',
+        ]);
+
+        $this->actingAs($worker)->get(route('projects.show', $project->id))->assertOk();
     }
 
     public function test_update_writes_only_the_fields_the_edit_form_offers(): void
