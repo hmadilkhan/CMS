@@ -355,6 +355,32 @@ fetched as a fragment from `zones.board`. Gated by the `View Zones` permission; 
 Funding-Manager-only user gets only the Zones tab and loses the department
 fields/move bar.
 
+## Projects board — search and the Pre-Inspection (ghost) lane
+
+The board (`projects.index` → `projects.project-list`, fed by
+`ProjectController::projectQuery()`) draws one lane per sub-department, **except
+the Pre-Inspection lane (sub-department 21)**: that lane is not a real
+sub-department any project sits in — it is filled by `ProjectController::ghostProjects()`,
+a separate query for projects that reached Permitting (department 4) and never
+went past department 7. It shows only the ones whose current task is In-Progress.
+
+Two consequences, both of which were bugs and are now fixed — keep them that way:
+
+- **Anything that filters the board must filter `ghostProjects()` too.** The
+  search box did not, so a project sitting in the Pre-Inspection lane could not
+  be found from search while every other lane answered normally. The search now
+  lives in one place, `ProjectController::applyProjectSearch()`, and both queries
+  call it (`$customersJoined = true` for the ghost query, which already joins
+  `customers` for its age ordering).
+- **The search box keeps the selected department tab.** It used to call
+  `projectList('all')`, which swapped the lane view for the department-grouped
+  one while the department tab still looked selected — and the Pre-Inspection
+  lane exists only in the lane view. `projectList()` with no argument now reuses
+  `currentDepartment` (`resources/views/projects/scripts.blade.php`). Searching
+  across departments is the "All" tab.
+
+Covered by `tests/Feature/ProjectListSearchTest.php`.
+
 ## General development notes
 
 - Email/IMAP: `EmailFetchService`, `app/Console/Commands/FetchEmails.php` / `FetchAllEmails.php`, jobs in `app/Jobs`.

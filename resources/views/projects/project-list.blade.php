@@ -564,7 +564,9 @@
 
                         @if (count($ghostProjects) > 0)
                             @foreach ($ghostProjects as $project)
-                                @if ($project->assignedPerson[0]->status == 'In-Progress')
+                                {{-- Same guard the lane's count uses: a ghost project with no
+                                     task assigned would otherwise blow up the whole board. --}}
+                                @if (!empty($project->assignedPerson[0]) && $project->assignedPerson[0]->status == 'In-Progress')
                                     @php
                                         $acceptanceStatus = 'Not Initiated';
                                         $acceptanceClass = '';
