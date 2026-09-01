@@ -5035,7 +5035,8 @@
                 $("#call_script").html(response);
                 let customer_name =
                     "{{ $project->customer->first_name . ' ' . $project->customer->last_name }}";
-                let salespartner = "{{ $project->customer->salespartner->name }}";
+                {{-- A customer without a sales partner is possible, and used to 500 the page. --}}
+                let salespartner = "{{ $project->customer->salespartner?->name }}";
                 $('#call_script').html(function(i, old) {
                     return old
                         .replace("user_name", "<b>{{ auth()->user()->name }}</b>")
@@ -5084,7 +5085,8 @@
 
                 let customer_name =
                     "{{ $project->customer->first_name . ' ' . $project->customer->last_name }}";
-                let salespartner = "{{ $project->customer->salespartner->name }}";
+                {{-- A customer without a sales partner is possible, and used to 500 the page. --}}
+                let salespartner = "{{ $project->customer->salespartner?->name }}";
                 let code = "{{ $project->code }}";
                 let emailContent = response;
 

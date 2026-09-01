@@ -34,6 +34,7 @@ use App\Services\FinanceMilestoneService;
 use App\Services\NotificationTemplateService;
 use App\Services\ProjectAssignmentService;
 use App\Services\ProjectDateChangeNotifier;
+use App\Services\ProjectService;
 use App\Services\ZoneService;
 use App\Traits\MediaTrait;
 use Carbon\Carbon;
@@ -117,9 +118,13 @@ class ProjectController extends Controller
             DB::beginTransaction();
             $code = Project::orderBy('id', 'DESC')->first('code');
             $subdepartment = SubDepartment::where('department_id', 1)->first();
+            // Built from the validated fields only: Project::$guarded is empty, so
+            // creating from the raw request would let the caller set any column —
+            // department, costs, anything — on the way in.
             $project = Project::create(array_merge(
-                $request->except(['assigntask']),
+                $validated,
                 [
+                    'description' => $request->input('description'),
                     'department_id' => 1,
                     'sub_department_id' => $subdepartment->id,
                 ]
@@ -155,6 +160,8 @@ class ProjectController extends Controller
      */
     public function show(Project $project, Request $request)
     {
+        $this->authorizeProjectAccess($project);
+
         $alertClass = '';
         $alertStatus = false;
         $message = '';
@@ -271,10 +278,30 @@ class ProjectController extends Controller
      */
     public function edit(Project $project)
     {
+        $this->authorizeProjectAccess($project);
+
+        // projects.form iterates $employees for the assignment dropdown; without
+        // it the edit screen died with "Undefined variable $employees" every time.
         return view('projects.form', [
             'project' => $project,
             'customers' => Customer::all(),
+            'employees' => Employee::getUser(1, ['Manager', 'Employee'])->get(),
         ]);
+    }
+
+    /**
+     * Refuse a project the signed-in user would not see in their own list.
+     *
+     * Route-model binding hands the controller whatever id the request names, so
+     * without this an Employee could open — and write to — any project in the
+     * company by typing a different number in the URL.
+     */
+    private function authorizeProjectAccess(Project $project): void
+    {
+        abort_unless(
+            app(ProjectService::class)->canAccessProject(auth()->user(), (int) $project->id),
+            403
+        );
     }
 
     /**
@@ -282,8 +309,24 @@ class ProjectController extends Controller
      */
     public function update(Request $request, Project $project)
     {
+        $this->authorizeProjectAccess($project);
+
+        // Only the fields the edit form actually offers. Project::$guarded is
+        // empty, so handing update() the whole request let any signed-in user
+        // write ANY column — jumping a project into another department past every
+        // move gate, or rewriting its cost figures — just by adding the field to
+        // the request.
+        $validated = $request->validate([
+            'project_name' => ['required', 'string', 'max:255'],
+            'budget' => ['required', 'numeric', 'min:0'],
+            'customer_id' => ['required', 'exists:customers,id'],
+            'start_date' => ['required', 'date'],
+            'end_date' => ['required', 'date', 'after_or_equal:start_date'],
+            'description' => ['nullable', 'string'],
+        ]);
+
         try {
-            $project->update($request->toArray());
+            $project->update($validated);
             $project->refresh();
             app(FinanceMilestoneService::class)->triggerDateMilestones($project, array_intersect(array_keys($request->toArray()), [
                 'permitting_approval_date',
@@ -697,6 +740,8 @@ class ProjectController extends Controller
     public function moveProject(Request $request)
     {
         $project = Project::findOrFail($request->projectId);
+
+        $this->authorizeProjectAccess($project);
 
         if (! $project) {
             return response()->json(['error' => 'Project not found'], 404);
