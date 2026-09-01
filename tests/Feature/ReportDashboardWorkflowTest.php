@@ -23,6 +23,7 @@ use App\Models\User;
 use App\Models\UserType;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Livewire\Livewire;
+use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
 use Tests\TestCase;
 
@@ -68,7 +69,13 @@ class ReportDashboardWorkflowTest extends TestCase
             'user_type_id' => 3,
             'sales_partner_id' => $partner->id,
         ]);
-        $salesUser->assignRole(Role::firstOrCreate(['name' => 'Sales Person']));
+        // The transaction report filters its rows by role for this user, so the
+        // fixture gives them the permission its sidebar link is gated with.
+        $salesRole = Role::firstOrCreate(['name' => 'Sales Person']);
+        $salesRole->givePermissionTo(
+            Permission::firstOrCreate(['name' => 'Transaction Report', 'guard_name' => 'web'])
+        );
+        $salesUser->assignRole($salesRole);
 
         $financeOption = FinanceOption::create([
             'name' => 'Reports Finance',
