@@ -154,13 +154,19 @@ Route::middleware('auth')->group(function () {
     Route::resource('customers', CustomerController::class)->only(['index', 'show']);
     Route::resource('intake-form', IntakeFormController::class);
     Route::resource('projects', ProjectController::class)->except(['show']);
-    Route::resource('module-types', ModuleTypeController::class);
-    Route::resource('office-costs', OfficeCostController::class);
-    Route::resource('labor-costs', LaborCostController::class);
+    // The rest of the operations catalogue. Every one of these is linked from the
+    // same @can('User Management') menu block as the OperationController screens,
+    // and module/labor/office costs are internal cost data — the same figures the
+    // redline page holds.
+    Route::middleware('can:User Management')->group(function () {
+        Route::resource('module-types', ModuleTypeController::class);
+        Route::resource('office-costs', OfficeCostController::class);
+        Route::resource('labor-costs', LaborCostController::class);
 
-    Route::resource('tools', ToolController::class);
-    Route::get('tools-index/{id?}', [App\Http\Controllers\ToolController::class, 'index'])->name('tools.manage');
-    Route::post('tools-delete', [App\Http\Controllers\ToolController::class, 'toolDelete'])->name('tools.delete');
+        Route::resource('tools', ToolController::class);
+        Route::get('tools-index/{id?}', [App\Http\Controllers\ToolController::class, 'index'])->name('tools.manage');
+        Route::post('tools-delete', [App\Http\Controllers\ToolController::class, 'toolDelete'])->name('tools.delete');
+    });
 
     Route::post('get-employees-with-department', [App\Http\Controllers\EmployeeController::class, 'getDepartmentEmployees'])->name('get.employee.department');
 
@@ -241,7 +247,10 @@ Route::middleware('auth')->group(function () {
 
     // ADDERS CONTROLLER
     Route::post('adders-store', [App\Http\Controllers\AdderController::class, 'store'])->name('adders.store');
-    Route::post('adders-update', [App\Http\Controllers\AdderController::class, 'update'])->name('adders.update');
+    // adders-store and adders-remove are the project page's own adder controls,
+    // which every role uses, so they stay open. There is no adders-update here:
+    // the name is declared again further down inside the operations group, and
+    // that later declaration is the one Laravel keeps.
     Route::post('adders-remove', [App\Http\Controllers\AdderController::class, 'destroy'])->name('adders.remove');
 
     // The whole operations catalogue — departments, finance options, dealer fees,
@@ -349,14 +358,14 @@ Route::middleware('auth')->group(function () {
     });
 
     // ASSIGN DEPARTMENT
-    Route::controller(App\Http\Controllers\AssignDepartmentController::class)->group(function () {
+    Route::controller(App\Http\Controllers\AssignDepartmentController::class)->middleware('can:User Management')->group(function () {
         Route::get('/assign-department/{id?}', 'index')->name('assign-department.index');
         Route::post('/assign-department-store', 'store')->name('assign-department.store');
         Route::post('/assign-department-update', 'update')->name('assign-department.update');
         Route::post('/assign-department-delete', 'destroy')->name('assign-department.destroy');
     });
 
-    Route::controller(InverterTypeController::class)->group(function () {
+    Route::controller(InverterTypeController::class)->middleware('can:User Management')->group(function () {
         Route::get('/view-inverter-type/{id?}', 'inverterTypeIndex')->name("view-inverter-type");
         Route::post('/inverter-type-store', 'inverterTypeStore')->name("inverter.type.store");
         Route::post('/inverter-type-update', 'inverterTypeUpdate')->name("inverter.type.update");
