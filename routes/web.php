@@ -372,29 +372,43 @@ Route::middleware('auth')->group(function () {
         Route::post('/inverter-type-delete', 'inverterTypeDelete')->name("inverter.type.delete");
     });
 
+    // Each report is reached from one sidebar link, and each of those links is
+    // already wrapped in its own @can — the export routes are then linked from
+    // inside the report page itself. The routes ask for the same permission the
+    // link does, so nobody's menu changes; without this, profitability, override
+    // and transaction figures were a URL away for any signed-in user, exports
+    // included.
     Route::controller(ReportController::class)->group(function () {
-        Route::get('/reports-profilt', 'profitabilityReport')->name("reports.profit");
-        Route::post('/reports-profilt', 'getProfitabilityReport');
-        Route::get('/profitable-report-excel-export/{from}/{to}', 'getProfitableReportExport')->name("profitable.report.excel.export");
-        Route::get('/profitable-report-pdf-export/{from}/{to}', 'getProfitableReportPdfExport')->name("profitable.report.pdf.export");
+        Route::middleware('can:Profitability Report')->group(function () {
+            Route::get('/reports-profilt', 'profitabilityReport')->name("reports.profit");
+            Route::post('/reports-profilt', 'getProfitabilityReport');
+            Route::get('/profitable-report-excel-export/{from}/{to}', 'getProfitableReportExport')->name("profitable.report.excel.export");
+            Route::get('/profitable-report-pdf-export/{from}/{to}', 'getProfitableReportPdfExport')->name("profitable.report.pdf.export");
+        });
 
         // FORECAST REPORT
-        Route::get('/forecast-report', 'forecastReport')->name("forecast.report");
-        Route::post('/forecast-report', 'getForecastReport');
-        Route::get('/forecast-report-excel-export/{from}/{to}', 'getForecastReportExport')->name("forecast.report.excel.export");
-        Route::get('/forecast-report-pdf-export/{from}/{to}', 'getForecastReportPdfExport')->name("forecast.report.pdf.export");
+        Route::middleware('can:Forecast Report')->group(function () {
+            Route::get('/forecast-report', 'forecastReport')->name("forecast.report");
+            Route::post('/forecast-report', 'getForecastReport');
+            Route::get('/forecast-report-excel-export/{from}/{to}', 'getForecastReportExport')->name("forecast.report.excel.export");
+            Route::get('/forecast-report-pdf-export/{from}/{to}', 'getForecastReportPdfExport')->name("forecast.report.pdf.export");
+        });
 
         // OVERRIDE REPORT
-        Route::get('/override-report', 'overrideReport')->name("override.report");
-        Route::post('/override-report', 'getOverrideReport');
-        Route::get('/override-report-excel-export/{salespartner}/{from}/{to}', 'getOverrideReportExport')->name("override.report.excel.export");
-        Route::get('/override-report-pdf-export/{salespartner}/{from}/{to}', 'getOverrideReportPdfExport')->name("override.report.pdf.export");
+        Route::middleware('can:Override Report')->group(function () {
+            Route::get('/override-report', 'overrideReport')->name("override.report");
+            Route::post('/override-report', 'getOverrideReport');
+            Route::get('/override-report-excel-export/{salespartner}/{from}/{to}', 'getOverrideReportExport')->name("override.report.excel.export");
+            Route::get('/override-report-pdf-export/{salespartner}/{from}/{to}', 'getOverrideReportPdfExport')->name("override.report.pdf.export");
+        });
 
         // TRANSACTION REPORT
-        Route::get('/transaction-report', 'transactionReport')->name("get.transaction.report");
-        Route::post('/transaction-report', 'postTransactionReport')->name("transaction.report");
-        Route::get('/transaction-report-excel-export/{start_date?}/{end_date?}', 'exportTransactionReportExcel')->name("transaction.report.excel.export");
-        Route::get('/transaction-report-pdf-export/{start_date?}/{end_date?}', 'exportTransactionReportPdf')->name("transaction.report.pdf.export");
+        Route::middleware('can:Transaction Report')->group(function () {
+            Route::get('/transaction-report', 'transactionReport')->name("get.transaction.report");
+            Route::post('/transaction-report', 'postTransactionReport')->name("transaction.report");
+            Route::get('/transaction-report-excel-export/{start_date?}/{end_date?}', 'exportTransactionReportExcel')->name("transaction.report.excel.export");
+            Route::get('/transaction-report-pdf-export/{start_date?}/{end_date?}', 'exportTransactionReportPdf')->name("transaction.report.pdf.export");
+        });
 
         //  Route::get("dynamic-report","DynamicReport");
         Route::get("dynamic-report", DynamicReport::class);
