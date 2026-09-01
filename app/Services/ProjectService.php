@@ -9,6 +9,8 @@ use App\Models\SubDepartment;
 use App\Models\Task;
 use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
 
@@ -86,15 +88,74 @@ class ProjectService
             return Project::where("id", $projectId)->exists();
         }
 
-        return Project::where("id", $projectId)
+        $allowed = Project::where("id", $projectId)
             ->where(function ($query) use ($narrowing, $user) {
                 foreach ($narrowing as $role) {
                     $query->orWhere(function ($scoped) use ($role, $user) {
                         $this->applyRolePredicate($scoped, $role, $user);
                     });
                 }
+
+                $this->applyDirectInvolvement($query, $user);
             })
             ->exists();
+
+        if (! $allowed) {
+            // Left behind on purpose: a denial that turns out to be legitimate is
+            // a gap in the rules above, and this is how it gets found instead of
+            // being reported as "the link is broken".
+            Log::warning("Project access denied", [
+                "user_id" => $user->id,
+                "roles" => $user->getRoleNames()->all(),
+                "project_id" => $projectId,
+            ]);
+        }
+
+        return $allowed;
+    }
+
+    /**
+     * Ways a user is tied to one project regardless of what their role's slice of
+     * the list looks like.
+     *
+     * Five notifications deep-link to a project page — a mention in a note, an
+     * assignment, a date change, an incoming email — and they reach whoever is
+     * involved, not only whoever the list shows. Someone who worked the project
+     * earlier, or was mentioned on it, has to be able to follow that link.
+     */
+    private function applyDirectInvolvement($query, User $user): void
+    {
+        $employeeIds = Employee::where("user_id", $user->id)->pluck("id");
+
+        $query
+            // The project points straight at them.
+            ->orWhere("sales_partner_user_id", $user->id)
+            ->orWhere("sub_contractor_user_id", $user->id)
+            // They hold, or ever held, a task on it.
+            ->orWhereExists(function ($sub) use ($employeeIds) {
+                $sub->select(DB::raw(1))
+                    ->from("tasks")
+                    ->whereColumn("tasks.project_id", "projects.id")
+                    ->whereNull("tasks.deleted_at")
+                    ->whereIn("tasks.employee_id", $employeeIds);
+            })
+            // They were mentioned in a note on it.
+            ->orWhereExists(function ($sub) use ($user, $employeeIds) {
+                $sub->select(DB::raw(1))
+                    ->from("notes_mentions")
+                    ->whereColumn("notes_mentions.project_id", "projects.id")
+                    ->where(function ($who) use ($user, $employeeIds) {
+                        $who->where("notes_mentions.user_id", $user->id)
+                            ->orWhereIn("notes_mentions.employee_id", $employeeIds);
+                    });
+            })
+            // They wrote a note on it.
+            ->orWhereExists(function ($sub) use ($user) {
+                $sub->select(DB::raw(1))
+                    ->from("department_notes")
+                    ->whereColumn("department_notes.project_id", "projects.id")
+                    ->where("department_notes.user_id", $user->id);
+            });
     }
 
     /**
