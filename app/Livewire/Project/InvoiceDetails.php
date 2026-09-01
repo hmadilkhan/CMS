@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Project;
 
+use App\Livewire\Concerns\AuthorizesProjectAccess;
 use App\Models\Project;
 use App\Models\ProjectInvoiceDetail;
 use Illuminate\Support\Facades\Storage;
@@ -10,6 +11,8 @@ use Livewire\WithFileUploads;
 
 class InvoiceDetails extends Component
 {
+    use AuthorizesProjectAccess;
+
     use WithFileUploads;
 
     public $projectId;

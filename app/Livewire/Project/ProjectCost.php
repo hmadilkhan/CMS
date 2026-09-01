@@ -8,10 +8,13 @@ use App\Models\LaborCost;
 use App\Models\ModuleType;
 use App\Models\Project;
 use Livewire\Attributes\On;
+use App\Livewire\Concerns\AuthorizesProjectAccess;
 use Livewire\Component;
 
 class ProjectCost extends Component
 {
+    use AuthorizesProjectAccess;
+
     public $project;
 
     public $projectId;
