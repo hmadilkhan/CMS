@@ -9,6 +9,7 @@ use App\Models\SalesPartner;
 use App\Models\User;
 use App\Models\UserType;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
 use Tests\TestCase;
 
@@ -21,7 +22,7 @@ class CustomerAccessScopeTest extends TestCase
 {
     use RefreshDatabase;
 
-    private function user(string $role, ?int $salesPartnerId = null): User
+    private function user(string $role, ?int $salesPartnerId = null, string ...$permissions): User
     {
         UserType::firstOrCreate(['name' => 'Admin']);
 
@@ -29,7 +30,14 @@ class CustomerAccessScopeTest extends TestCase
             'user_type_id' => 1,
             'sales_partner_id' => $salesPartnerId,
         ]);
-        $user->syncRoles([Role::firstOrCreate(['name' => $role, 'guard_name' => 'web'])]);
+
+        $roleModel = Role::firstOrCreate(['name' => $role, 'guard_name' => 'web']);
+
+        foreach ($permissions as $permission) {
+            $roleModel->givePermissionTo(Permission::firstOrCreate(['name' => $permission, 'guard_name' => 'web']));
+        }
+
+        $user->syncRoles([$roleModel]);
 
         return $user->fresh();
     }
@@ -68,7 +76,7 @@ class CustomerAccessScopeTest extends TestCase
         $otherPartner = SalesPartner::create(['name' => 'Someone Elses Partner']);
         $customer = $this->customerWithProject($otherPartner->id);
 
-        $this->actingAs($this->user('Sales Person', $partner->id))
+        $this->actingAs($this->user('Sales Person', $partner->id, 'Delete Customer'))
             ->postJson(route('delete.customer'), ['id' => $customer->id])
             ->assertForbidden();
 
@@ -81,7 +89,7 @@ class CustomerAccessScopeTest extends TestCase
         $partner = SalesPartner::create(['name' => 'Their Partner']);
         $customer = $this->customerWithProject(SalesPartner::create(['name' => 'Other'])->id);
 
-        $this->actingAs($this->user('Sales Person', $partner->id))
+        $this->actingAs($this->user('Sales Person', $partner->id, 'Edit Customer'))
             ->get(route('customers.edit', $customer->id))
             ->assertForbidden();
     }
@@ -91,7 +99,7 @@ class CustomerAccessScopeTest extends TestCase
         $partner = SalesPartner::create(['name' => 'Their Partner']);
         $customer = $this->customerWithProject($partner->id);
 
-        $this->actingAs($this->user('Sales Person', $partner->id))
+        $this->actingAs($this->user('Sales Person', $partner->id, 'Edit Customer'))
             ->get(route('customers.edit', $customer->id))
             ->assertOk();
     }
@@ -101,8 +109,31 @@ class CustomerAccessScopeTest extends TestCase
     {
         $customer = $this->customerWithProject();
 
-        $this->actingAs($this->user('Manager'))
+        $this->actingAs($this->user('Manager', null, 'Edit Customer'))
             ->get(route('customers.edit', $customer->id))
             ->assertOk();
+    }
+
+    /**
+     * The index view only offers Delete to a permission nobody's role currently
+     * holds, so the endpoint that wipes a customer and their projects must ask
+     * for it too.
+     */
+    public function test_deleting_a_customer_needs_the_permission_the_button_is_gated_with(): void
+    {
+        $customer = $this->customerWithProject();
+
+        $this->actingAs($this->user('Manager', null, 'Create Customer', 'Edit Customer'))
+            ->postJson(route('delete.customer'), ['id' => $customer->id])
+            ->assertForbidden();
+
+        $this->assertNotNull(Customer::find($customer->id));
+    }
+
+    public function test_creating_a_customer_needs_the_permission_the_button_is_gated_with(): void
+    {
+        $this->actingAs($this->user('Employee'))
+            ->get(route('customers.create'))
+            ->assertForbidden();
     }
 }
