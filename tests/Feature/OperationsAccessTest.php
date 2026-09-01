@@ -91,4 +91,43 @@ class OperationsAccessTest extends TestCase
 
         $this->assertDatabaseHas('departments', ['name' => 'Super Admin Dept']);
     }
+
+    /**
+     * The rest of the catalogue lives in the same menu block: module, labor and
+     * office costs, tools, inverter types, department assignment.
+     */
+    public function test_the_rest_of_the_catalogue_is_behind_the_same_permission(): void
+    {
+        $employee = $this->user('Employee');
+
+        foreach ([
+            'module-types.index',
+            'office-costs.index',
+            'labor-costs.index',
+            'tools.manage',
+            'view-inverter-type',
+            'assign-department.index',
+        ] as $route) {
+            $this->actingAs($employee)->get(route($route))->assertForbidden();
+        }
+    }
+
+    public function test_a_user_management_holder_still_reaches_the_catalogue(): void
+    {
+        $manager = $this->user('Manager', withUserManagement: true);
+
+        $this->actingAs($manager)->get(route('labor-costs.index'))->assertOk();
+        $this->actingAs($manager)->get(route('module-types.index'))->assertOk();
+    }
+
+    /** The project page's own adder controls stay open — every role uses them. */
+    public function test_the_project_pages_adder_controls_are_not_swept_up(): void
+    {
+        $this->assertNotContains(
+            'Authorize:User Management',
+            collect(app('router')->getRoutes()->getRoutes())
+                ->first(fn ($route) => $route->uri() === 'adders-store')
+                ->gatherMiddleware()
+        );
+    }
 }
