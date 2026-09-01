@@ -164,14 +164,22 @@ Route::middleware('auth')->group(function () {
 
     Route::post('get-employees-with-department', [App\Http\Controllers\EmployeeController::class, 'getDepartmentEmployees'])->name('get.employee.department');
 
-    Route::post('get-finance-option-by-id', [App\Http\Controllers\CustomerController::class, 'getFinanceOptionById'])->name('get.finance.option.by.id');
-    Route::post('get-loan-terms', [App\Http\Controllers\CustomerController::class, 'getLoanTerms'])->name('get.loan.terms');
-    Route::post('get-loan-aprs', [App\Http\Controllers\CustomerController::class, 'getLoanAprs'])->name('get.loan.aprs');
-    Route::post('get-dealer-fee', [App\Http\Controllers\CustomerController::class, 'getDealerFee'])->name('get.dealer.fee');
-    Route::post('get-redline-cost', [App\Http\Controllers\CustomerController::class, 'getRedlineCost'])->name('get.redline.cost');
+    // The pricing an inverter or a loan carries is internal: these return base
+    // cost, dealer fee and APR figures as JSON. The screens that read them are
+    // the customer create/edit forms and the Super-Admin-only redline page, so
+    // the endpoints ask for the same permissions the forms do — otherwise the
+    // page is locked and its numbers are one POST away. get-adders stays open:
+    // the project page uses it too.
+    Route::middleware('permission:Create Customer|Edit Customer')->group(function () {
+        Route::post('get-finance-option-by-id', [App\Http\Controllers\CustomerController::class, 'getFinanceOptionById'])->name('get.finance.option.by.id');
+        Route::post('get-loan-terms', [App\Http\Controllers\CustomerController::class, 'getLoanTerms'])->name('get.loan.terms');
+        Route::post('get-loan-aprs', [App\Http\Controllers\CustomerController::class, 'getLoanAprs'])->name('get.loan.aprs');
+        Route::post('get-dealer-fee', [App\Http\Controllers\CustomerController::class, 'getDealerFee'])->name('get.dealer.fee');
+        Route::post('get-redline-cost', [App\Http\Controllers\CustomerController::class, 'getRedlineCost'])->name('get.redline.cost');
+        Route::post('get-module-types', [App\Http\Controllers\CustomerController::class, 'getModulTypevalue'])->name('get.module.types');
+    });
     Route::post('get-sub-adders', [App\Http\Controllers\CustomerController::class, 'getSubAdders'])->name('get.sub.adders');
     Route::post('get-adders', [App\Http\Controllers\CustomerController::class, 'getAdderDetails'])->name('get.adders');
-    Route::post('get-module-types', [App\Http\Controllers\CustomerController::class, 'getModulTypevalue'])->name('get.module.types');
     // delete-customer is defined above, inside the 'can:Delete Customer' group.
     Route::post('delete-intake-form', [App\Http\Controllers\IntakeFormController::class, 'destroy'])->name('delete.intake-form');
     Route::post('get-sales-partner-users', [App\Http\Controllers\CustomerController::class, 'getSalesPartnerUsers'])->name('get.salespartnets.users');

@@ -136,4 +136,29 @@ class CustomerAccessScopeTest extends TestCase
             ->get(route('customers.create'))
             ->assertForbidden();
     }
+
+    /**
+     * The redline page is Super Admin only now, but the endpoint behind it hands
+     * the same base-cost figure back as JSON. It has to ask for the permissions
+     * the customer forms ask for.
+     */
+    public function test_internal_pricing_endpoints_are_not_open_to_every_signed_in_user(): void
+    {
+        foreach (['get.redline.cost', 'get.dealer.fee', 'get.loan.aprs', 'get.loan.terms', 'get.module.types'] as $route) {
+            $this->actingAs($this->user('Employee'))
+                ->postJson(route($route), ['inverterType' => 1, 'id' => 1])
+                ->assertForbidden();
+        }
+    }
+
+    public function test_someone_who_can_work_the_customer_form_still_reaches_them(): void
+    {
+        $manager = $this->user('Manager', null, 'Edit Customer');
+
+        // 404 is the endpoint's own "no rate for this inverter" answer — the point
+        // is that it is reached at all.
+        $this->actingAs($manager)
+            ->postJson(route('get.redline.cost'), ['inverterType' => 1])
+            ->assertStatus(404);
+    }
 }
