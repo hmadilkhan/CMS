@@ -59,6 +59,36 @@ class Customer extends Model
         return auth()->user()->getRoleNames()[0];
     }
 
+    /**
+     * Is this one customer inside what the user is already shown?
+     *
+     * Mirrors scopeGetCustomers: only Sales Person and Sub-Contractor User have a
+     * narrowed customer list, so only they are narrowed here — a gate must not be
+     * stricter than the list it guards. A user holding several roles gets the
+     * widest of them, since the list itself reads only the first role.
+     */
+    public static function accessibleBy(User $user, int $customerId): bool
+    {
+        $roles = $user->getRoleNames();
+        $narrowed = ["Sales Person", "Sub-Contractor User"];
+
+        if ($roles->intersect($narrowed)->count() !== $roles->count() || $roles->isEmpty()) {
+            return static::where("id", $customerId)->exists();
+        }
+
+        return static::where("id", $customerId)
+            ->where(function ($query) use ($roles, $user) {
+                if ($roles->contains("Sales Person")) {
+                    $query->orWhere("sales_partner_id", $user->sales_partner_id);
+                }
+
+                if ($roles->contains("Sub-Contractor User")) {
+                    $query->orWhere("sub_contractor_id", $user->sales_partner_id);
+                }
+            })
+            ->exists();
+    }
+
     public function scopeGetCustomers($query) 
     {
         if ($this->getRoleName() == "Sales Person") {
