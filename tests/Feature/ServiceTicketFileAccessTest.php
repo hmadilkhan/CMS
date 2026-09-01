@@ -139,4 +139,42 @@ class ServiceTicketFileAccessTest extends TestCase
 
         $this->assertSame('Resolved', $ticket->refresh()->status);
     }
+
+    public function test_an_unrelated_user_cannot_open_a_ticket(): void
+    {
+        $ticket = $this->ticketFile($this->user())->ticket;
+
+        $this->actingAs($this->user())
+            ->get(route('service-tickets.details', $ticket->id))
+            ->assertForbidden();
+
+        $this->actingAs($this->user())
+            ->get(route('service-tickets.admin-details', $ticket->id))
+            ->assertForbidden();
+    }
+
+    public function test_the_creator_the_assignee_a_service_manager_and_a_super_admin_can_open_a_ticket(): void
+    {
+        $creator = $this->user();
+        $assignee = $this->user();
+        $ticket = $this->ticketFile($creator)->ticket;
+        $ticket->update(['assigned_to' => $assignee->id]);
+
+        foreach ([$creator, $assignee, $this->user('Service Manager'), $this->user('Super Admin')] as $viewer) {
+            $this->actingAs($viewer)
+                ->get(route('service-tickets.details', $ticket->id))
+                ->assertOk();
+        }
+    }
+
+    public function test_the_all_tickets_dashboard_is_not_open_to_everyone(): void
+    {
+        $this->actingAs($this->user())
+            ->get(route('service.admin.dashboard'))
+            ->assertForbidden();
+
+        $this->actingAs($this->user('Service Manager'))
+            ->get(route('service.admin.dashboard'))
+            ->assertOk();
+    }
 }
