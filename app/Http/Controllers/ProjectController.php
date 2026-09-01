@@ -1396,23 +1396,7 @@ class ProjectController extends Controller
             $query->where('department_id', $request->id);
             $subdepartmentsQuery->where('department_id', $request->id);
         }
-        if ($request->search != '') {
-            $search = '%'.$request->search.'%';
-            $query->where(function ($projectQuery) use ($search) {
-                $projectQuery->where('project_name', 'like', $search)
-                    ->orWhere('code', 'like', $search)
-                    ->orWhereHas('customer', function ($q) use ($search) {
-                        $q->where('first_name', 'like', $search)
-                            ->orWhere('last_name', 'like', $search)
-                            ->orWhere('email', 'like', $search)
-                            ->orWhere('phone', 'like', $search)
-                            ->orWhere('street', 'like', $search)
-                            ->orWhere('city', 'like', $search)
-                            ->orWhere('state', 'like', $search)
-                            ->orWhere('zipcode', 'like', $search);
-                    });
-            });
-        }
+        $this->applyProjectSearch($query, $request->search);
         if ($request->id == 'all') {
             $subdepartmentsQuery->groupBy('department_id');
         }
@@ -1426,11 +1410,56 @@ class ProjectController extends Controller
             'projects' => $query->get(),
             'subdepartments' => $subdepartmentsQuery->orderBy('order', 'asc')->get(),
             'departments' => $departments,
-            'ghostProjects' => $this->ghostProjects(),
+            'ghostProjects' => $this->ghostProjects($request),
         ];
     }
 
-    public function ghostProjects()
+    /**
+     * The projects board's search box, in one place.
+     *
+     * The Pre-Inspection (ghost) lane is filled by its own query
+     * (ghostProjects()), so while this lived inline in projectQuery() that lane
+     * answered no search at all: searching for a project sitting in it returned
+     * nothing, while every other lane answered normally.
+     *
+     * $customersJoined says the caller has already joined `customers` (the ghost
+     * query has, for its age ordering) - the customer fields are then matched on
+     * that join instead of through the relation.
+     */
+    protected function applyProjectSearch($query, $term, bool $customersJoined = false)
+    {
+        $term = trim((string) $term);
+
+        if ($term === '') {
+            return $query;
+        }
+
+        $search = '%'.$term.'%';
+        $customerColumns = ['first_name', 'last_name', 'email', 'phone', 'street', 'city', 'state', 'zipcode'];
+
+        return $query->where(function ($projectQuery) use ($search, $customersJoined, $customerColumns) {
+            $projectQuery->where('projects.project_name', 'like', $search)
+                ->orWhere('projects.code', 'like', $search);
+
+            if ($customersJoined) {
+                foreach ($customerColumns as $column) {
+                    $projectQuery->orWhere('customers.'.$column, 'like', $search);
+                }
+
+                return;
+            }
+
+            $projectQuery->orWhereHas('customer', function ($q) use ($search, $customerColumns) {
+                $q->where(function ($customerQuery) use ($search, $customerColumns) {
+                    foreach ($customerColumns as $column) {
+                        $customerQuery->orWhere($column, 'like', $search);
+                    }
+                });
+            });
+        });
+    }
+
+    public function ghostProjects(?Request $request = null)
     {
         // Fetch the project IDs that meet your condition
         $projectIds = Task::where('department_id', 4) // Ensure it was in department 4 at least once
@@ -1458,6 +1487,10 @@ class ProjectController extends Controller
             $query->where('is_view', 1);
         }]);
         $query->whereIn('projects.id', $projectIds);
+
+        // Same search box as every other lane - `customers` is already joined
+        // above, so the customer fields are matched on that join.
+        $this->applyProjectSearch($query, $request?->search, true);
 
         return $query->get();
         // Fetch all tasks for those projects that match your conditions

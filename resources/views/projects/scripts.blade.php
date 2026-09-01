@@ -2,16 +2,28 @@
 <script type="text/javascript">
     $('.select2').select2();
 
+    // The department tab the board is currently showing. The search box has to
+    // reuse it: it used to force 'all', which silently swapped the lane view for
+    // the department-grouped one - and the Pre-Inspection (ghost) lane only
+    // exists in the lane view, so searching for a project sitting in it found
+    // nothing. Calling projectList() with no argument keeps the current tab.
+    // Declared before the first call below: projectList() writes to it.
+    let currentDepartment = "{{ $selectedDepartment }}";
+
     // A Funding-Manager-only user has no Operational tab, so nothing to load.
     @unless (auth()->user()->isZoneOnlyUser())
     projectList("{{$selectedDepartment}}");
     @endunless
+
     function projectList(value) {
+        if (typeof value !== "undefined" && value !== null) {
+            currentDepartment = value;
+        }
         let search = $("#search").val();
         $.ajax({
             method: "POST",
             url: "{{ route('projects.list') }}",
-            data : {"_token": "{{ csrf_token() }}",id:value,search:search},
+            data : {"_token": "{{ csrf_token() }}",id:currentDepartment,search:search},
             success: function(response) {
                 $('#projectlist').empty();
                 $('#projectlist').append(response);
@@ -30,7 +42,7 @@
     $("#search").on("input", function() {
         clearTimeout(projectSearchTimer);
         projectSearchTimer = setTimeout(function() {
-            projectList('all');
+            projectList();
         }, 250);
     });
 
