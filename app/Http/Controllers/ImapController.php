@@ -11,7 +11,9 @@ use App\Models\Project;
 use App\Models\Task;
 use App\Notifications\EmailReceivedNotification;
 use App\Traits\MediaTrait;
+use Illuminate\Contracts\Encryption\DecryptException;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Storage;
 use Webklex\IMAP\Facades\Client;
@@ -156,7 +158,21 @@ class ImapController extends Controller
 
     public function showEmails(Request $request)
     {
-        $project = Project::with("emails", "emails.attachments", "emails.user")->where("id", $request->project_id)->first();
+        // This endpoint has no auth: it is called by the public project-tracking
+        // page, which a customer reaches through an emailed link carrying an
+        // ENCRYPTED project reference. The reference has to stay encrypted here
+        // too — reading a plain id straight off the request let anyone walk
+        // 1, 2, 3 … and read every project's email correspondence, bodies and
+        // all, without ever holding a tracking link.
+        try {
+            $projectId = Crypt::decrypt($request->input("project_id"));
+        } catch (DecryptException) {
+            abort(404);
+        }
+
+        $project = Project::with("emails", "emails.attachments", "emails.user")->find($projectId);
+
+        abort_if($project === null, 404);
 
         return view("projects.partial.show-emails", [
             "project" => $project,
