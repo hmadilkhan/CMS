@@ -132,8 +132,8 @@ class OperationsAccessTest extends TestCase
     }
 
     /**
-     * The employee screens are offered by one sidebar link, wrapped in
-     * @can('View Employees'); the routes behind it asked for nothing.
+     * The employee screens are offered by one sidebar link, wrapped in a
+     * "View Employees" check; the routes behind it asked for nothing.
      */
     public function test_the_employee_screens_need_the_view_employees_permission(): void
     {
