@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Project;
 
+use App\Livewire\Concerns\AuthorizesProjectAccess;
 use App\Models\Project;
 use App\Models\ProjectFile;
 use App\Models\ProjectZoneFile;
@@ -12,6 +13,8 @@ use Livewire\WithFileUploads;
 
 class EnhancedFilesSection extends Component
 {
+    use AuthorizesProjectAccess;
+
     use WithFileUploads;
 
     public $projectId = "";

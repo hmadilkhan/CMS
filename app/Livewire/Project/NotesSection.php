@@ -3,6 +3,7 @@
 namespace App\Livewire\Project;
 
 use App\Jobs\SendRawEmailJob;
+use App\Livewire\Concerns\AuthorizesProjectAccess;
 use App\Models\DepartmentNote;
 use App\Models\Employee;
 use App\Models\NotesMention;
@@ -18,6 +19,8 @@ use Livewire\Component;
 
 class NotesSection extends Component
 {
+    use AuthorizesProjectAccess;
+
     public $editingNoteId = null;
     public $projectId = "";
     public $taskId = "";

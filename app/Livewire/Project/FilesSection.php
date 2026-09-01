@@ -7,11 +7,14 @@ use App\Models\ProjectFile;
 use App\Traits\MediaTrait;
 use Illuminate\Support\Facades\Storage;
 use Livewire\Attributes\On;
+use App\Livewire\Concerns\AuthorizesProjectAccess;
 use Livewire\Component;
 use Livewire\WithFileUploads;
 
 class FilesSection extends Component
 {
+    use AuthorizesProjectAccess;
+
     use WithFileUploads, MediaTrait;
 
     public $projectId = "";
