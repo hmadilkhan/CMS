@@ -376,6 +376,8 @@ class CustomerController extends Controller
      */
     public function edit(Customer $customer)
     {
+        $this->authorizeCustomerAccess((int) $customer->id);
+
         return view('customer.edit', [
             'customer' => $customer,
             'financeoptions' => FinanceOption::all(),
@@ -395,6 +397,8 @@ class CustomerController extends Controller
      */
     public function update(Request $request, Customer $customer)
     {
+        $this->authorizeCustomerAccess((int) $customer->id);
+
         $request->validate($this->customerValidationRules($request));
 
         try {
@@ -460,12 +464,29 @@ class CustomerController extends Controller
     /**
      * Remove the specified resource from storage.
      */
+    /**
+     * Refuse a customer the signed-in user is not shown in their own list.
+     */
+    private function authorizeCustomerAccess(int $customerId): void
+    {
+        abort_unless(Customer::accessibleBy(auth()->user(), $customerId), 403);
+    }
+
     public function destroy(Request $request)
     {
+        // This deletes the customer AND every project of theirs, off an id taken
+        // straight from the request — it had neither a validation rule nor an
+        // access check.
+        $validated = $request->validate([
+            'id' => ['required', 'exists:customers,id'],
+        ]);
+
+        $this->authorizeCustomerAccess((int) $validated['id']);
+
         try {
             DB::beginTransaction();
-            Project::where('customer_id', $request->id)->delete();
-            Customer::where('id', $request->id)->delete();
+            Project::where('customer_id', $validated['id'])->delete();
+            Customer::where('id', $validated['id'])->delete();
             DB::commit();
 
             return response()->json(['status' => 200, 'message' => 'Customer Deleted Successfully.']);

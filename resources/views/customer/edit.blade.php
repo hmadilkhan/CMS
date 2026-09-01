@@ -38,9 +38,9 @@
             @method('PUT')
             @csrf
             <input type="hidden" id="overwrite_base_price" name="overwrite_base_price"
-                value="{{ old('overwrite_base_price', $customer->project->overwrite_base_price) }}" />
+                value="{{ old('overwrite_base_price', $customer->project?->overwrite_base_price) }}" />
             <input type="hidden" id="overwrite_panel_price" name="overwrite_panel_price"
-                value="{{ old('overwrite_panel_price', $customer->project->overwrite_panel_price) }}" />
+                value="{{ old('overwrite_panel_price', $customer->project?->overwrite_panel_price) }}" />
             <div class="card operation-card customer-section-card mb-3">
                 <div class="card-header">
                     <h4 class="card-title"><span class="section-icon"><i class="icofont-user"></i></span>Customer
@@ -163,7 +163,7 @@
                                     <option value="">Select Sales Partner User</option>
                                     @foreach ($users as $user)
                                         <option
-                                            {{ old('sales_partner_user_id', $customer->project->sales_partner_user_id) == $user->id ? 'selected' : '' }}
+                                            {{ old('sales_partner_user_id', $customer->project?->sales_partner_user_id) == $user->id ? 'selected' : '' }}
                                             value="{{ $user->id }}">
                                             {{ $user->name }}
                                         </option>
@@ -440,7 +440,7 @@
                                 <option value="">Select Finance Option</option>
                                 @foreach ($financeoptions as $financeOption)
                                     <option
-                                        {{ old('finance_option_id', $customer->finances->finance_option_id) == $financeOption->id ? 'selected' : '' }}
+                                        {{ old('finance_option_id', $customer->finances?->finance_option_id) == $financeOption->id ? 'selected' : '' }}
                                         value="{{ $financeOption->id }}">
                                         {{ $financeOption->name }}
                                     </option>
@@ -474,7 +474,7 @@
                             <label for="contract_amount" class="form-label">Contract Amount</label>
                             <input type="text" class="form-control" id="contract_amount" name="contract_amount"
                                 placeholder="Contract Amount" onblur="dealerFee()"
-                                value="{{ old('contract_amount', $customer->finances->contract_amount) }}">
+                                value="{{ old('contract_amount', $customer->finances?->contract_amount) }}">
                             @error('contract_amount')
                                 <div class="text-danger message mt-2">{{ $message }}</div>
                             @enderror
@@ -483,7 +483,7 @@
                             <label for="third_party_credit" class="form-label">Third Party Credit</label>
                             <input type="text" class="form-control" id="third_party_credit" name="third_party_credit"
                                 placeholder="Third Party Credit"
-                                value="{{ old('third_party_credit', $customer->finances->third_party_credit ?? 0) }}">
+                                value="{{ old('third_party_credit', $customer->finances?->third_party_credit ?? 0) }}">
                             @error('third_party_credit')
                                 <div class="text-danger message mt-2">{{ $message }}</div>
                             @enderror
@@ -492,7 +492,7 @@
                             <label for="customer_portion" class="form-label">Customer Portion</label>
                             <input readonly type="text" class="form-control" id="customer_portion"
                                 name="customer_portion" placeholder="Customer Portion"
-                                value="{{ old('customer_portion', $customer->finances->customer_portion ?? 0) }}">
+                                value="{{ old('customer_portion', $customer->finances?->customer_portion ?? 0) }}">
                             @error('customer_portion')
                                 <div class="text-danger message mt-2">{{ $message }}</div>
                             @enderror
@@ -501,7 +501,7 @@
                             <label for="redline_costs" class="form-label">Redline Costs</label>
                             <input type="text" class="form-control" id="redline_costs" name="redline_costs"
                                 placeholder="Redline Costs"
-                                value="{{ old('redline_costs', $customer->finances->redline_costs) }}">
+                                value="{{ old('redline_costs', $customer->finances?->redline_costs) }}">
                             @error('redline_costs')
                                 <div class="text-danger message mt-2">{{ $message }}</div>
                             @enderror
@@ -509,7 +509,7 @@
                         <div class="col-sm-3 mb-3">
                             <label for="adders" class="form-label">Adders</label>
                             <input type="text" class="form-control" id="adders_amount" name="adders_amount"
-                                placeholder="Adders" value="{{ old('adders_amount', $customer->finances->adders) }}">
+                                placeholder="Adders" value="{{ old('adders_amount', $customer->finances?->adders) }}">
                             @error('adders')
                                 <div class="text-danger message mt-2">{{ $message }}</div>
                             @enderror
@@ -518,7 +518,7 @@
                             <label for="commission" class="form-label">Commission</label>
                             <input type="text" class="form-control" id="commission" name="commission"
                                 placeholder="Commission"
-                                value="{{ old('commission', $customer->finances->commission) }}">
+                                value="{{ old('commission', $customer->finances?->commission) }}">
                             @error('commission')
                                 <div class="text-danger message mt-2">{{ $message }}</div>
                             @enderror
@@ -527,7 +527,7 @@
                             <label for="dealer_fee" class="form-label">Dealer Fee</label>
                             <input readonly type="text" class="form-control" id="dealer_fee" name="dealer_fee"
                                 placeholder="Dealer Fee"
-                                value="{{ old('dealer_fee', $customer->finances->dealer_fee) }}">
+                                value="{{ old('dealer_fee', $customer->finances?->dealer_fee) }}">
                             @error('dealer_fee')
                                 <div class="text-danger message mt-2">{{ $message }}</div>
                             @enderror
@@ -536,7 +536,7 @@
                             <label for="dealer_fee_amount" class="form-label">Dealer Fee Amount</label>
                             <input type="text" class="form-control" id="dealer_fee_amount" name="dealer_fee_amount"
                                 placeholder="Dealer Fee Amount"
-                                value="{{ old('dealer_fee_amount', $customer->finances->dealer_fee_amount) }}">
+                                value="{{ old('dealer_fee_amount', $customer->finances?->dealer_fee_amount) }}">
                             @error('dealer_fee_amount')
                                 <div class="text-danger message mt-2">{{ $message }}</div>
                             @enderror
@@ -556,11 +556,11 @@
         var moduleCost = 0;
         var systemSize = 0;
         var baseCost = 0;
-        var oldFinanceOptionId = @json(old('finance_option_id', $customer->finances->finance_option_id));
-        var oldLoanTermId = @json(old('loan_term_id', $customer->finances->loan_term_id));
-        var oldLoanAprId = @json(old('loan_apr_id', $customer->finances->loan_apr_id));
+        var oldFinanceOptionId = @json(old('finance_option_id', $customer->finances?->finance_option_id));
+        var oldLoanTermId = @json(old('loan_term_id', $customer->finances?->loan_term_id));
+        var oldLoanAprId = @json(old('loan_apr_id', $customer->finances?->loan_apr_id));
         var oldModuleTypeId = @json(old('module_type_id', $customer->module_type_id));
-        var oldSalesPartnerUserId = @json(old('sales_partner_user_id', $customer->project->sales_partner_user_id));
+        var oldSalesPartnerUserId = @json(old('sales_partner_user_id', $customer->project?->sales_partner_user_id));
         $(document).ready(function() {
             $(".loandiv").css("display", "none");
             $("#soldProductionValueDiv").css("display", "none");
@@ -1016,7 +1016,7 @@
         // })
 
         // function getSubContractorUsers(id) {
-        //     let sub_contractor_user_id = "{{ $customer->project->sub_contractor_user_id }}";
+        //     let sub_contractor_user_id = "{{ $customer->project?->sub_contractor_user_id }}";
         //     $.ajax({
         //         method: "POST",
         //         url: "{{ route('get.subcontractors.users') }}",
