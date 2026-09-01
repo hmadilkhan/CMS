@@ -557,9 +557,22 @@ class SiteSurveyController extends Controller
         return response()->json(['success' => true]);
     }
 
+    /**
+     * Starting and completing a survey is the technician's own act, and the only
+     * screen that calls either is the technician app — whose list already comes
+     * back scoped to the signed-in technician. Without this the survey id was the
+     * only thing needed to mark anybody's visit started or finished.
+     */
+    private function authorizeAssignedTechnician(SiteSurvey $survey): void
+    {
+        abort_unless((int) $survey->technician_id === (int) auth()->id(), 403);
+    }
+
     public function startSurvey(Request $request, $id)
     {
         $survey = SiteSurvey::findOrFail($id);
+        $this->authorizeAssignedTechnician($survey);
+
         $survey->update([
             'status' => 'in_progress',
             'actual_start_time' => now()
@@ -571,6 +584,8 @@ class SiteSurveyController extends Controller
     public function completeSurvey(Request $request, $id)
     {
         $survey = SiteSurvey::findOrFail($id);
+        $this->authorizeAssignedTechnician($survey);
+
         $survey->update([
             'status' => 'completed',
             'actual_end_time' => now(),
