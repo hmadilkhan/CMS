@@ -164,8 +164,22 @@ class ServiceTicketController extends Controller
 
     public function deleteFile(ServiceTicketFile $file)
     {
+        // The file id was the only thing guarding this: any signed-in user could
+        // delete any ticket's attachment, off disk and out of the database. The
+        // rule matches addComment above — the people the ticket belongs to.
+        $ticket = $file->ticket;
+        $userId = (int) auth()->id();
+
+        abort_unless(
+            (int) $file->uploaded_by === $userId
+                || ($ticket && (int) $ticket->user_id === $userId)
+                || ($ticket && (int) $ticket->assigned_to === $userId),
+            403
+        );
+
         Storage::disk('public')->delete($file->file_path);
         $file->delete();
+
         return back()->with('success', 'File deleted successfully');
     }
 }
