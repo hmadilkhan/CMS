@@ -130,4 +130,33 @@ class OperationsAccessTest extends TestCase
                 ->gatherMiddleware()
         );
     }
+
+    /**
+     * The employee screens are offered by one sidebar link, wrapped in a
+     * "View Employees" check; the routes behind it asked for nothing.
+     */
+    public function test_the_employee_screens_need_the_view_employees_permission(): void
+    {
+        $this->actingAs($this->user('Employee'))
+            ->get(route('employees.index'))
+            ->assertForbidden();
+    }
+
+    public function test_a_view_employees_holder_reaches_them(): void
+    {
+        $user = $this->user('Manager');
+        $user->roles->first()->givePermissionTo(
+            \Spatie\Permission\Models\Permission::firstOrCreate(['name' => 'View Employees', 'guard_name' => 'web'])
+        );
+
+        $this->actingAs($user->fresh())->get(route('employees.index'))->assertOk();
+    }
+
+    /** The projects list fills its assignment dropdown from this one. */
+    public function test_the_projects_list_employee_lookup_stays_open(): void
+    {
+        $this->actingAs($this->user('Employee'))
+            ->postJson(route('get.employee.department'), ['department_id' => 1])
+            ->assertSuccessful();
+    }
 }

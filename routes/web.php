@@ -131,7 +131,11 @@ Route::middleware('auth')->group(function () {
         Route::post('zones/fields', [ZoneController::class, 'fields'])->name('zones.fields');
     });
 
-    Route::resource('employees', EmployeeController::class);
+    // The only way into the employee screens is the sidebar link, which is
+    // wrapped in @can('View Employees'). get-employees-with-department is left
+    // out of the group on purpose: the projects list calls it to fill the
+    // assignment dropdown, and every role uses that page.
+    Route::resource('employees', EmployeeController::class)->middleware('can:View Employees');
     // The customer index view already gates its buttons with these permissions —
     // Create/Edit belong to Manager (and Super Admin through the Gate::before),
     // Delete to Super Admin alone. The routes now hold the same line, so the id
