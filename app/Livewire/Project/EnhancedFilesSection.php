@@ -7,6 +7,7 @@ use App\Models\Project;
 use App\Models\ProjectFile;
 use App\Models\ProjectZoneFile;
 use Illuminate\Support\Facades\Storage;
+use Livewire\Attributes\Locked;
 use Livewire\Attributes\On;
 use Livewire\Component;
 use Livewire\WithFileUploads;
@@ -17,12 +18,14 @@ class EnhancedFilesSection extends Component
 
     use WithFileUploads;
 
+    #[Locked]
     public $projectId = "";
     public $taskId = "";
     public $departmentId = "";
     public $projectDepartmentId = "";
     public $ghost;
     public $deleteId;
+    #[Locked]
     public $viewSource = "";
 
     /**
@@ -77,6 +80,8 @@ class EnhancedFilesSection extends Component
 
     public function deleteFile()
     {
+        $this->abortIfPublicWebsiteView();
+
         if ($this->deleteId != "") {
             $projectFile = ($this->fileModel())::findOrFail($this->deleteId);
             Storage::disk('public')->delete('projects/' . $projectFile->filename);
@@ -139,6 +144,8 @@ class EnhancedFilesSection extends Component
 
     public function save()
     {
+        $this->abortIfPublicWebsiteView();
+
         if (empty($this->uploadedFiles)) {
             $this->addError('files', 'Please upload at least one file.');
             return;
@@ -181,6 +188,8 @@ class EnhancedFilesSection extends Component
 
     public function updateTitle($fileId, $newTitle)
     {
+        $this->abortIfPublicWebsiteView();
+
         $file = ($this->fileModel())::findOrFail($fileId);
         $file->update(['header_text' => $newTitle]);
     }

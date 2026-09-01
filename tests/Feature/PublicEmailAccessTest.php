@@ -6,6 +6,8 @@ use App\Models\Customer;
 use App\Models\Department;
 use App\Models\Email;
 use App\Models\Project;
+use App\Models\SubDepartment;
+use App\Models\Task;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Crypt;
 use Tests\TestCase;
@@ -72,5 +74,41 @@ class PublicEmailAccessTest extends TestCase
 
         $response->assertOk();
         $this->assertStringContainsString('CONFIDENTIAL contract terms', $response->getContent());
+    }
+
+    /**
+     * The customer-facing page end to end: it must still render, and the
+     * reference it puts in its own JavaScript must still fetch the emails.
+     * A raw id is refused, so the page has to be sending the encrypted one.
+     */
+    public function test_the_customer_tracking_page_still_renders_and_its_email_call_works(): void
+    {
+        $project = $this->projectWithEmail();
+
+        SubDepartment::firstOrCreate(['id' => 1], ['name' => 'New Deals', 'department_id' => 1]);
+        Task::create([
+            'project_id' => $project->id,
+            'department_id' => 1,
+            'sub_department_id' => 1,
+            'status' => 'In-Progress',
+        ]);
+
+        // No login: this is the link a customer follows from their email.
+        $page = $this->get('/track-your-project/'.Crypt::encrypt($project->code));
+        $page->assertOk();
+
+        // Pull the reference the page's own script passes to showEmails(...).
+        preg_match('/showEmails\("([^"]+)"\)/', $page->getContent(), $matches);
+        $this->assertNotEmpty($matches, 'The tracking page no longer calls showEmails with a reference.');
+
+        $this->assertNotSame(
+            (string) $project->id,
+            $matches[1],
+            'The page is still sending the raw project id.'
+        );
+
+        $this->post('/show-website-emails', ['project_id' => $matches[1]])
+            ->assertOk()
+            ->assertSee('CONFIDENTIAL contract terms');
     }
 }

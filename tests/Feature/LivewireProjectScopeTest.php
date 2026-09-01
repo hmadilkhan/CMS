@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Livewire\Project\EnhancedFilesSection;
 use App\Livewire\Project\NotesSection;
 use App\Models\Customer;
 use App\Models\Department;
@@ -14,6 +15,7 @@ use App\Models\Task;
 use App\Models\User;
 use App\Models\UserType;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Livewire\Features\SupportLockedProperties\CannotUpdateLockedPropertyException;
 use Livewire\Livewire;
 use Spatie\Permission\Models\Role;
 use Tests\TestCase;
@@ -107,5 +109,71 @@ class LivewireProjectScopeTest extends TestCase
         Livewire::actingAs($user)
             ->test(NotesSection::class, ['projectId' => $mine->id, 'departmentId' => 1])
             ->assertOk();
+    }
+
+    public function test_the_project_a_component_points_at_cannot_be_changed_by_the_browser(): void
+    {
+        $mine = $this->project('My Project');
+        $theirs = $this->project('Their Project');
+
+        $user = $this->employee();
+        $this->assignTo($user, $mine);
+
+        $this->expectException(CannotUpdateLockedPropertyException::class);
+
+        Livewire::actingAs($user)
+            ->test(NotesSection::class, ['projectId' => $mine->id, 'departmentId' => 1])
+            ->set('projectId', $theirs->id);
+    }
+
+    /**
+     * The public tracking page is the one place these components run without a
+     * user, so website mode skips the project check. A logged-in user must not
+     * be able to talk their way into it.
+     */
+    public function test_a_user_cannot_switch_a_component_into_the_public_website_mode(): void
+    {
+        $mine = $this->project('My Project');
+
+        $user = $this->employee();
+        $this->assignTo($user, $mine);
+
+        $this->expectException(CannotUpdateLockedPropertyException::class);
+
+        Livewire::actingAs($user)
+            ->test(NotesSection::class, ['projectId' => $mine->id, 'departmentId' => 1])
+            ->set('viewSource', 'website');
+    }
+
+    public function test_the_customer_tracking_page_components_still_render_without_a_login(): void
+    {
+        $project = $this->project('Tracked Project');
+
+        Livewire::test(NotesSection::class, [
+            'projectId' => $project->id,
+            'departmentId' => 1,
+            'viewSource' => 'website',
+        ])->assertOk();
+
+        Livewire::test(EnhancedFilesSection::class, [
+            'projectId' => $project->id,
+            'departmentId' => 1,
+            'viewSource' => 'website',
+        ])->assertOk();
+    }
+
+    public function test_the_public_page_cannot_write_notes(): void
+    {
+        $project = $this->project('Tracked Project');
+
+        Livewire::test(NotesSection::class, [
+            'projectId' => $project->id,
+            'departmentId' => 1,
+            'viewSource' => 'website',
+        ])->set('departmentNote', 'posted by a stranger')
+            ->call('save')
+            ->assertForbidden();
+
+        $this->assertDatabaseCount('department_notes', 0);
     }
 }
