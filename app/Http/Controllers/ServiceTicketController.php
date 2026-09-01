@@ -61,6 +61,16 @@ class ServiceTicketController extends Controller
 
     public function update(Request $request, ServiceTicket $ticket)
     {
+        // The same rule both ticket views already apply: they only offer the
+        // status control, and only send this request, when the signed-in user is
+        // the Service Manager the ticket is assigned to ($isAssignedServiceManager).
+        // The server was not asking, so a plain PUT resolved anybody's ticket.
+        abort_unless(
+            auth()->user()->hasRole('Service Manager')
+                && (int) $ticket->assigned_to === (int) auth()->id(),
+            403
+        );
+
         $request->validate([
             'notes' => 'nullable|string',
             'status' => 'required|in:Pending,Resolved'

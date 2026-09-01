@@ -11,6 +11,7 @@ use App\Models\ServiceTicketFile;
 use App\Models\User;
 use App\Models\UserType;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Storage;
 use Spatie\Permission\Models\Role;
 use Tests\TestCase;
@@ -103,5 +104,39 @@ class ServiceTicketFileAccessTest extends TestCase
             ->assertRedirect();
 
         $this->assertNull(ServiceTicketFile::find($file->id));
+    }
+
+    /**
+     * Resolving a ticket is the assigned Service Manager's act — the views only
+     * offer the control to them, and only send the request for them.
+     */
+    public function test_only_the_assigned_service_manager_can_resolve_a_ticket(): void
+    {
+        // Resolving notifies the creator; this test is about who may resolve.
+        Notification::fake();
+
+        $creator = $this->user();
+        $manager = $this->user('Service Manager');
+        $ticket = $this->ticketFile($creator)->ticket;
+        $ticket->update(['assigned_to' => $manager->id]);
+
+        // The person who raised it cannot close it.
+        $this->actingAs($creator)
+            ->put(route('service-tickets.update', $ticket->id), ['status' => 'Resolved'])
+            ->assertForbidden();
+
+        // Nor can a Service Manager it is not assigned to.
+        $this->actingAs($this->user('Service Manager'))
+            ->put(route('service-tickets.update', $ticket->id), ['status' => 'Resolved'])
+            ->assertForbidden();
+
+        $this->assertSame('Pending', $ticket->refresh()->status);
+
+        // The assigned one can.
+        $this->actingAs($manager)
+            ->put(route('service-tickets.update', $ticket->id), ['status' => 'Resolved'])
+            ->assertRedirect();
+
+        $this->assertSame('Resolved', $ticket->refresh()->status);
     }
 }
