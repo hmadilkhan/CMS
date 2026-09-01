@@ -132,7 +132,26 @@ Route::middleware('auth')->group(function () {
     });
 
     Route::resource('employees', EmployeeController::class);
-    Route::resource('customers', CustomerController::class);
+    // The customer index view already gates its buttons with these permissions —
+    // Create/Edit belong to Manager (and Super Admin through the Gate::before),
+    // Delete to Super Admin alone. The routes now hold the same line, so the id
+    // in the URL is no longer the only thing standing in front of them.
+    // customers/create must be declared before the resource, or customers/{customer}
+    // swallows it and the create screen 404s.
+    Route::middleware('can:Create Customer')->group(function () {
+        Route::get('customers/create', [CustomerController::class, 'create'])->name('customers.create');
+        Route::post('customers', [CustomerController::class, 'store'])->name('customers.store');
+    });
+    Route::middleware('can:Edit Customer')->group(function () {
+        Route::get('customers/{customer}/edit', [CustomerController::class, 'edit'])->name('customers.edit');
+        Route::put('customers/{customer}', [CustomerController::class, 'update'])->name('customers.update');
+        Route::patch('customers/{customer}', [CustomerController::class, 'update']);
+    });
+    Route::middleware('can:Delete Customer')->group(function () {
+        Route::delete('customers/{customer}', [CustomerController::class, 'destroy'])->name('customers.destroy');
+        Route::post('delete-customer', [CustomerController::class, 'destroy'])->name('delete.customer');
+    });
+    Route::resource('customers', CustomerController::class)->only(['index', 'show']);
     Route::resource('intake-form', IntakeFormController::class);
     Route::resource('projects', ProjectController::class)->except(['show']);
     Route::resource('module-types', ModuleTypeController::class);
@@ -153,7 +172,7 @@ Route::middleware('auth')->group(function () {
     Route::post('get-sub-adders', [App\Http\Controllers\CustomerController::class, 'getSubAdders'])->name('get.sub.adders');
     Route::post('get-adders', [App\Http\Controllers\CustomerController::class, 'getAdderDetails'])->name('get.adders');
     Route::post('get-module-types', [App\Http\Controllers\CustomerController::class, 'getModulTypevalue'])->name('get.module.types');
-    Route::post('delete-customer', [App\Http\Controllers\CustomerController::class, 'destroy'])->name('delete.customer');
+    // delete-customer is defined above, inside the 'can:Delete Customer' group.
     Route::post('delete-intake-form', [App\Http\Controllers\IntakeFormController::class, 'destroy'])->name('delete.intake-form');
     Route::post('get-sales-partner-users', [App\Http\Controllers\CustomerController::class, 'getSalesPartnerUsers'])->name('get.salespartnets.users');
     Route::post('get-sub-contractor-users', [App\Http\Controllers\CustomerController::class, 'getSubContractorUsers'])->name('get.subcontractors.users');
