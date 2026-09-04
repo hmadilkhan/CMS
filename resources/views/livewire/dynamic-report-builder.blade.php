@@ -251,9 +251,31 @@
                                     </div>
                                     <div class="col-md-4">
                                         <label class="form-label">Value</label>
-                                        <input type="text" wire:model="filterValue" class="form-control"
-                                            placeholder="Enter filter value"
-                                            @if (in_array($filterOperator, ['IS NULL', 'IS NOT NULL'])) disabled @endif>
+                                        {{-- The value input follows the field: a lookup column (finance
+                                             option, department, ...) stores an id, so it offers the names
+                                             to pick from instead of asking for the id. --}}
+                                        @php
+                                            $filterType = $filterField ? $this->getFieldType($filterField) : 'text';
+                                            $singleValue = !in_array($filterOperator, ['IN', 'NOT IN', 'BETWEEN', 'IS NULL', 'IS NOT NULL']);
+                                        @endphp
+                                        @if (in_array($filterOperator, ['IS NULL', 'IS NOT NULL']))
+                                            <input type="text" class="form-control" value="No value required" disabled>
+                                        @elseif ($filterType === 'dropdown' && $singleValue)
+                                            <select wire:model="filterValue" class="form-select">
+                                                <option value="">Select value...</option>
+                                                @foreach ($this->getDropdownOptions($filterField) as $value => $label)
+                                                    <option value="{{ $value }}">{{ $label }}</option>
+                                                @endforeach
+                                            </select>
+                                        @elseif ($filterType === 'date' && $singleValue)
+                                            <input type="date" wire:model="filterValue" class="form-control">
+                                        @elseif ($filterType === 'number' && $singleValue)
+                                            <input type="number" step="any" wire:model="filterValue"
+                                                class="form-control" placeholder="Enter filter value">
+                                        @else
+                                            <input type="text" wire:model="filterValue" class="form-control"
+                                                placeholder="Enter filter value">
+                                        @endif
                                         <small class="text-muted">
                                             @if ($filterOperator === 'IN' || $filterOperator === 'NOT IN')
                                                 Use comma-separated values
@@ -280,7 +302,7 @@
                                                 <span class="badge bg-warning text-dark d-flex align-items-center">
                                                     {{ $filter['field_name'] }} {{ $filter['operator'] }}
                                                     @if (!in_array($filter['operator'], ['IS NULL', 'IS NOT NULL']))
-                                                        "{{ $filter['value'] }}"
+                                                        "{{ $filter['value_label'] ?? $filter['value'] }}"
                                                     @endif
                                                     <button type="button"
                                                         wire:click="removeFilter({{ $index }})"

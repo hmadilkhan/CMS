@@ -3,6 +3,7 @@
 namespace App\Livewire;
 
 use App\Exports\DynamicReportExport;
+use App\Livewire\Concerns\DescribesReportFields;
 use App\Livewire\Concerns\JoinsReportTables;
 use App\Models\Customer;
 use App\Models\SavedReport;
@@ -16,6 +17,7 @@ use Maatwebsite\Excel\Facades\Excel;
 
 class ReportRunner extends Component
 {
+    use DescribesReportFields;
     use JoinsReportTables;
 
     #[Title('Run Saved Reports')]
@@ -176,12 +178,7 @@ class ReportRunner extends Component
         // Select fields with proper aliasing
         $selectFields = [];
         foreach ($this->permittedFields() as $field) {
-            $fieldName = str_contains($field, '.') ? substr($field, strrpos($field, '.') + 1) : $field;
-            if ($field === 'customer_finances.adders') {
-                $selectFields[] = DB::raw('customer_finances.adders as adders_amount');
-            } else {
-                $selectFields[] = DB::raw("{$field} as {$fieldName}");
-            }
+            $selectFields[] = DB::raw("{$field} as {$this->fieldAlias($field)}");
         }
 
         // Add customer ID for calculated fields processing
@@ -245,12 +242,8 @@ class ReportRunner extends Component
 
         foreach ($this->permittedFields() as $field) {
             if ($field !== 'customers.id') {
-                $fieldName = str_contains($field, '.') ? substr($field, strrpos($field, '.') + 1) : $field;
-                if ($field === 'customer_finances.adders') {
-                    $fieldName = 'adders_amount';
-                }
                 $columns[] = [
-                    'field' => $fieldName,
+                    'field' => $this->fieldAlias($field),
                     'name' => $availableFields[$field] ?? $field,
                     'type' => 'data',
                 ];
@@ -441,9 +434,12 @@ class ReportRunner extends Component
             // CustomerFinance fields
             'customer_finances.id' => 'Customer Finance ID',
             'customer_finances.customer_id' => 'Customer Finance Customer ID',
-            'customer_finances.finance_option_id' => 'Finance Option',
-            'customer_finances.loan_term_id' => 'Loan Term',
-            'customer_finances.loan_apr_id' => 'Loan APR',
+            'customer_finances.finance_option_id' => 'Finance Option ID',
+            'customer_finances.loan_term_id' => 'Loan Term ID',
+            'customer_finances.loan_apr_id' => 'Loan APR ID',
+            'finance_options.name' => 'Finance Option',
+            'loan_terms.year' => 'Loan Term (Years)',
+            'loan_aprs.apr' => 'Loan APR (%)',
             'customer_finances.contract_amount' => 'Contract Amount',
             'customer_finances.redline_costs' => 'Redline Costs',
             'customer_finances.adders' => 'Adders',
@@ -468,95 +464,6 @@ class ReportRunner extends Component
         }
 
         return $fields;
-    }
-
-    public function getFieldType($field)
-    {
-        $fieldTypes = [
-            // Date fields
-            'customers.created_at' => 'date',
-            'customers.sold_date' => 'date',
-            'projects.start_date' => 'date',
-            'projects.end_date' => 'date',
-            'projects.completion_date' => 'date',
-            'projects.created_at' => 'date',
-            'projects.updated_at' => 'date',
-            'projects.ntp_approval_date' => 'date',
-            'projects.meter_spot_requestd_date' => 'date',
-            'projects.permitting_submittion_date' => 'date',
-            'projects.permitting_approval_date' => 'date',
-            'projects.hoa_approval_request_date' => 'date',
-            'projects.hoa_approval_date' => 'date',
-            'projects.solar_install_date' => 'date',
-            'projects.battery_install_date' => 'date',
-            'projects.mpu_install_date' => 'date',
-            'projects.rough_inspection_date' => 'date',
-            'projects.final_inspection_date' => 'date',
-            'projects.pto_submission_date' => 'date',
-            'projects.pto_approval_date' => 'date',
-            'projects.coc_packet_mailed_out_date' => 'date',
-            'projects.fire_inspection_date' => 'date',
-            'customer_finances.created_at' => 'date',
-            'customer_finances.updated_at' => 'date',
-
-            // Number fields
-            'customers.panel_qty' => 'number',
-            'customers.inverter_qty' => 'number',
-            'projects.budget' => 'number',
-            'sales_partners.commission_rate' => 'number',
-            'module_types.wattage' => 'number',
-            'inverter_types.wattage' => 'number',
-            'inverter_types.inverter_efficiency_rating' => 'number',
-            'customer_finances.contract_amount' => 'number',
-            'customer_finances.redline_costs' => 'number',
-            'customer_finances.adders' => 'number',
-            'customer_finances.commission' => 'number',
-            'customer_finances.dealer_fee_amount' => 'number',
-            'customer_finances.third_party_credit' => 'number',
-            'customer_finances.customer_portion' => 'number',
-            'customer_finances.holdback_amount' => 'number',
-            'customer_finances.module_type_cost' => 'number',
-            'customer_finances.inverter_base_cost' => 'number',
-            'customer_finances.total_overwrite_base_price' => 'number',
-            'customer_finances.total_overwrite_panel_price' => 'number',
-            'projects.actual_material_cost' => 'number',
-            'projects.actual_labor_cost' => 'number',
-            'projects.actual_permit_fee' => 'number',
-            'projects.actual_office_cost' => 'number',
-
-            // Dropdown fields
-            // 'customers.state' => 'dropdown',
-            'departments.name' => 'dropdown',
-            'projects.department_id' => 'dropdown',
-            'projects.sub_department_id' => 'dropdown',
-            'sub_departments.name' => 'dropdown',
-            'sales_partners.name' => 'dropdown',
-            'module_types.name' => 'dropdown',
-            'inverter_types.name' => 'dropdown',
-        ];
-
-        return $fieldTypes[$field] ?? 'text';
-    }
-
-    public function getDropdownOptions($field)
-    {
-        switch ($field) {
-
-            case 'projects.department_id':
-            case 'departments.name':
-                return \App\Models\Department::pluck('name', 'id')->toArray();
-            case 'projects.sub_department_id':
-            case 'sub_departments.name' :
-                return \App\Models\SubDepartment::pluck('name', 'name')->toArray();
-            case 'sales_partners.name':
-                return \App\Models\SalesPartner::pluck('name', 'name')->toArray();
-            case 'module_types.name':
-                return \App\Models\ModuleType::pluck('name', 'name')->toArray();
-            case 'inverter_types.name':
-                return \App\Models\InverterType::pluck('name', 'name')->toArray();
-            default:
-                return [];
-        }
     }
 
     public function exportExcel()
