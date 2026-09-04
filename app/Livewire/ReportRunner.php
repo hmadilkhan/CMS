@@ -3,6 +3,7 @@
 namespace App\Livewire;
 
 use App\Exports\DynamicReportExport;
+use App\Livewire\Concerns\JoinsReportTables;
 use App\Models\Customer;
 use App\Models\SavedReport;
 use Illuminate\Support\Facades\DB;
@@ -15,6 +16,8 @@ use Maatwebsite\Excel\Facades\Excel;
 
 class ReportRunner extends Component
 {
+    use JoinsReportTables;
+
     #[Title('Run Saved Reports')]
     public $selectedReportId = '';
 
@@ -193,48 +196,10 @@ class ReportRunner extends Component
 
     private function addJoins($query)
     {
-        $fieldsString = implode(',', $this->permittedFields());
-
-        // Include filter fields to ensure proper joins
-        if (! empty($this->selectedReport->filters)) {
-            $filterFields = array_column($this->selectedReport->filters, 'field');
-            $fieldsString .= ','.implode(',', $filterFields);
-        }
-
-        // Always join projects if project fields are selected
-        if (str_contains($fieldsString, 'projects.')) {
-            $query->leftJoin('projects', 'customers.id', '=', 'projects.customer_id');
-        }
-
-        // Join sales partners
-        if (str_contains($fieldsString, 'sales_partners.')) {
-            $query->leftJoin('sales_partners', 'customers.sales_partner_id', '=', 'sales_partners.id');
-        }
-
-        // Join departments
-        if (str_contains($fieldsString, 'departments.')) {
-            $query->leftJoin('projects', 'customers.id', '=', 'projects.customer_id')
-                ->leftJoin('departments', 'projects.department_id', '=', 'departments.id');
-        }
-
-        if (str_contains($fieldsString, 'sub_departments.')) {
-            $query->leftJoin('projects', 'customers.id', '=', 'projects.customer_id')
-                ->leftJoin('sub_departments', 'projects.sub_department_id', '=', 'sub_departments.id');
-        }
-
-        // Join module and inverter types
-        if (str_contains($fieldsString, 'module_types.')) {
-            $query->leftJoin('module_types', 'customers.module_type_id', '=', 'module_types.id');
-        }
-
-        if (str_contains($fieldsString, 'inverter_types.')) {
-            $query->leftJoin('inverter_types', 'customers.inverter_type_id', '=', 'inverter_types.id');
-        }
-
-        // Join customer finances
-        if (str_contains($fieldsString, 'customer_finances.')) {
-            $query->leftJoin('customer_finances', 'customers.id', '=', 'customer_finances.customer_id');
-        }
+        $this->applyReportJoins(
+            $query,
+            $this->reportJoinFields($this->permittedFields(), $this->permittedFilters())
+        );
     }
 
     private function applyFilter($query, $filter, $value)
