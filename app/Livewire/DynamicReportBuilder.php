@@ -3,6 +3,7 @@
 namespace App\Livewire;
 
 use App\Exports\DynamicReportExport;
+use App\Livewire\Concerns\DescribesReportFields;
 use App\Livewire\Concerns\JoinsReportTables;
 use App\Models\Customer;
 use App\Models\Project;
@@ -18,6 +19,7 @@ use Maatwebsite\Excel\Facades\Excel;
 
 class DynamicReportBuilder extends Component
 {
+    use DescribesReportFields;
     use JoinsReportTables;
 
     #[Title('Dynamic Report Builder')]
@@ -188,9 +190,12 @@ class DynamicReportBuilder extends Component
             // CustomerFinance fields (all fields from migration)
             'customer_finances.id' => 'Customer Finance ID',
             'customer_finances.customer_id' => 'Customer Finance Customer ID',
-            'customer_finances.finance_option_id' => 'Finance Option',
-            'customer_finances.loan_term_id' => 'Loan Term',
-            'customer_finances.loan_apr_id' => 'Loan APR',
+            'customer_finances.finance_option_id' => 'Finance Option ID',
+            'customer_finances.loan_term_id' => 'Loan Term ID',
+            'customer_finances.loan_apr_id' => 'Loan APR ID',
+            'finance_options.name' => 'Finance Option',
+            'loan_terms.year' => 'Loan Term (Years)',
+            'loan_aprs.apr' => 'Loan APR (%)',
             'customer_finances.contract_amount' => 'Contract Amount',
             'customer_finances.redline_costs' => 'Redline Costs',
             'customer_finances.adders' => 'Adders',
@@ -339,6 +344,9 @@ class DynamicReportBuilder extends Component
             'operator' => $this->filterOperator,
             'value' => $this->filterValue,
             'field_name' => $this->availableFields[$this->filterField] ?? $this->filterField,
+            // A lookup filter files an id; the chip and the runner show the
+            // name the user picked it by.
+            'value_label' => $this->dropdownLabel($this->filterField, $this->filterValue),
         ];
 
         $this->reset(['filterField', 'filterOperator', 'filterValue']);
@@ -636,14 +644,7 @@ class DynamicReportBuilder extends Component
         // Select fields with proper aliasing
         $selectFields = [];
         foreach ($this->permittedFields($this->selectedFields) as $field) {
-            // Create alias to match the column field names (without table prefix)
-            $fieldName = str_contains($field, '.') ? substr($field, strrpos($field, '.') + 1) : $field;
-            // Special case for customer_finances.adders
-            if ($field === 'customer_finances.adders') {
-                $selectFields[] = DB::raw('customer_finances.adders as adders_amount');
-            } else {
-                $selectFields[] = DB::raw("{$field} as {$fieldName}");
-            }
+            $selectFields[] = DB::raw("{$field} as {$this->fieldAlias($field)}");
         }
 
         // Add customer ID for calculated fields processing
@@ -751,14 +752,8 @@ class DynamicReportBuilder extends Component
 
         foreach ($this->permittedFields($this->selectedFields) as $field) {
             if ($field !== 'customers.id') { // Skip ID column used for calculations
-                // Extract the field name without table prefix for better data mapping
-                $fieldName = str_contains($field, '.') ? substr($field, strrpos($field, '.') + 1) : $field;
-                // Special case for customer_finances.adders
-                if ($field === 'customer_finances.adders') {
-                    $fieldName = 'adders_amount';
-                }
                 $columns[] = [
-                    'field' => $fieldName, // Use field name without table prefix
+                    'field' => $this->fieldAlias($field),
                     'name' => $this->availableFields[$field] ?? $field,
                     'type' => 'data',
                 ];

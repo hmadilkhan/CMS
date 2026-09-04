@@ -75,8 +75,22 @@ trait JoinsReportTables
             $join('inverter_types', 'customers.inverter_type_id', 'inverter_types.id');
         }
 
-        if ($needs('customer_finances')) {
+        // The finance plan, term and APR are names hanging off the customer's
+        // finance row, so that row is joined for them too.
+        if ($needs('customer_finances') || $needs('finance_options') || $needs('loan_terms') || $needs('loan_aprs')) {
             $join('customer_finances', 'customers.id', 'customer_finances.customer_id');
+        }
+
+        if ($needs('finance_options')) {
+            $join('finance_options', 'customer_finances.finance_option_id', 'finance_options.id');
+        }
+
+        if ($needs('loan_terms')) {
+            $join('loan_terms', 'customer_finances.loan_term_id', 'loan_terms.id');
+        }
+
+        if ($needs('loan_aprs')) {
+            $join('loan_aprs', 'customer_finances.loan_apr_id', 'loan_aprs.id');
         }
     }
 
