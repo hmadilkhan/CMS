@@ -8,6 +8,7 @@ use App\Models\SavedReport;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
+use Livewire\Attributes\Locked;
 use Livewire\Attributes\Title;
 use Livewire\Component;
 use Maatwebsite\Excel\Facades\Excel;
@@ -32,6 +33,7 @@ class ReportRunner extends Component
     public $showResults = false;
 
     // Available operators (same as DynamicReportBuilder)
+    #[Locked]
     public $operators = [
         '=' => 'Equals',
         '!=' => 'Not Equals',
@@ -58,7 +60,11 @@ class ReportRunner extends Component
     public function updatedSelectedReportId()
     {
         if ($this->selectedReportId) {
-            $this->selectedReport = SavedReport::find($this->selectedReportId);
+            // The dropdown only lists this user's own reports, and the id comes
+            // back from the browser, so the lookup asks for the owner too.
+            $this->selectedReport = SavedReport::where('id', $this->selectedReportId)
+                ->where('user_id', auth()->id())
+                ->first();
             $this->filterValues = [];
             $this->reportData = [];
             $this->showResults = false;
@@ -105,6 +111,37 @@ class ReportRunner extends Component
         $this->processCalculatedFields();
     }
 
+    /**
+     * A saved report's fields are spliced into the query as raw SQL, and the
+     * holdback column is only in the field list for users allowed to see it.
+     * So the saved list is matched against what this user may report on -
+     * anything else is dropped rather than queried.
+     */
+    private function permittedFields(): array
+    {
+        $allowed = array_keys($this->getAvailableFields());
+
+        return array_values(array_filter(
+            (array) ($this->selectedReport->selected_fields ?? []),
+            fn ($field) => is_string($field) && in_array($field, $allowed, true)
+        ));
+    }
+
+    private function permittedFilters(): array
+    {
+        $allowed = array_keys($this->getAvailableFields());
+        $operators = array_keys($this->operators);
+
+        // Filters keep their saved position: the runner's inputs are indexed by
+        // it, so a dropped filter must not renumber the ones after it.
+        return array_filter(
+            (array) ($this->selectedReport->filters ?? []),
+            fn ($filter) => is_array($filter)
+                && in_array($filter['field'] ?? null, $allowed, true)
+                && in_array($filter['operator'] ?? null, $operators, true)
+        );
+    }
+
     private function buildQueryFromSavedReport()
     {
         $query = Customer::query();
@@ -114,7 +151,7 @@ class ReportRunner extends Component
 
         // Apply user-provided filter values to the saved filters (only if value is provided)
         if (! empty($this->selectedReport->filters)) {
-            foreach ($this->selectedReport->filters as $index => $filter) {
+            foreach ($this->permittedFilters() as $index => $filter) {
                 // Skip filters that don't have values (except IS NULL/IS NOT NULL)
                 if (in_array($filter['operator'], ['IS NULL', 'IS NOT NULL']) ||
                     ! empty($this->filterValues[$index]) ||
@@ -135,7 +172,7 @@ class ReportRunner extends Component
 
         // Select fields with proper aliasing
         $selectFields = [];
-        foreach ($this->selectedReport->selected_fields as $field) {
+        foreach ($this->permittedFields() as $field) {
             $fieldName = str_contains($field, '.') ? substr($field, strrpos($field, '.') + 1) : $field;
             if ($field === 'customer_finances.adders') {
                 $selectFields[] = DB::raw('customer_finances.adders as adders_amount');
@@ -145,7 +182,7 @@ class ReportRunner extends Component
         }
 
         // Add customer ID for calculated fields processing
-        if (! in_array('customers.id', $this->selectedReport->selected_fields)) {
+        if (! in_array('customers.id', $this->permittedFields(), true)) {
             $selectFields[] = DB::raw('customers.id as id');
         }
 
@@ -156,7 +193,7 @@ class ReportRunner extends Component
 
     private function addJoins($query)
     {
-        $fieldsString = implode(',', $this->selectedReport->selected_fields);
+        $fieldsString = implode(',', $this->permittedFields());
 
         // Include filter fields to ensure proper joins
         if (! empty($this->selectedReport->filters)) {
@@ -241,7 +278,7 @@ class ReportRunner extends Component
         // Get available fields (same logic as DynamicReportBuilder)
         $availableFields = $this->getAvailableFields();
 
-        foreach ($this->selectedReport->selected_fields as $field) {
+        foreach ($this->permittedFields() as $field) {
             if ($field !== 'customers.id') {
                 $fieldName = str_contains($field, '.') ? substr($field, strrpos($field, '.') + 1) : $field;
                 if ($field === 'customer_finances.adders') {
@@ -357,7 +394,7 @@ class ReportRunner extends Component
     private function getAvailableFields()
     {
         // Same available fields as DynamicReportBuilder
-        return [
+        $fields = [
             // Customer fields
             'customers.id' => 'Customer ID',
             'customers.first_name' => 'Customer First Name',
@@ -448,9 +485,24 @@ class ReportRunner extends Component
             'customer_finances.commission' => 'Commission',
             'customer_finances.dealer_fee' => 'Dealer Fee',
             'customer_finances.dealer_fee_amount' => 'Dealer Fee Amount',
+            'customer_finances.third_party_credit' => 'Third Party Credit',
+            'customer_finances.customer_portion' => 'Customer Portion',
+            'customer_finances.module_type_cost' => 'Module Type Cost',
+            'customer_finances.inverter_base_cost' => 'Inverter Base Cost',
+            'customer_finances.total_overwrite_base_price' => 'Total Overwrite Base Price',
+            'customer_finances.total_overwrite_panel_price' => 'Total Overwrite Panel Price',
             'customer_finances.created_at' => 'Customer Finance Created Date',
             'customer_finances.updated_at' => 'Customer Finance Updated Date',
         ];
+
+        // The holdback amount sits behind its own permission on the project
+        // page, so the report follows the same rule instead of publishing it
+        // to everyone who can run a report.
+        if (auth()->user()?->can('Holdback Amount')) {
+            $fields['customer_finances.holdback_amount'] = 'Holdback Amount';
+        }
+
+        return $fields;
     }
 
     public function getFieldType($field)
@@ -495,6 +547,13 @@ class ReportRunner extends Component
             'customer_finances.adders' => 'number',
             'customer_finances.commission' => 'number',
             'customer_finances.dealer_fee_amount' => 'number',
+            'customer_finances.third_party_credit' => 'number',
+            'customer_finances.customer_portion' => 'number',
+            'customer_finances.holdback_amount' => 'number',
+            'customer_finances.module_type_cost' => 'number',
+            'customer_finances.inverter_base_cost' => 'number',
+            'customer_finances.total_overwrite_base_price' => 'number',
+            'customer_finances.total_overwrite_panel_price' => 'number',
             'projects.actual_material_cost' => 'number',
             'projects.actual_labor_cost' => 'number',
             'projects.actual_permit_fee' => 'number',

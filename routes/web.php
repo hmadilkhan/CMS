@@ -414,11 +414,17 @@ Route::middleware('auth')->group(function () {
             Route::get('/transaction-report-pdf-export/{start_date?}/{end_date?}', 'exportTransactionReportPdf')->name("transaction.report.pdf.export");
         });
 
-        //  Route::get("dynamic-report","DynamicReport");
-        Route::get("dynamic-report", DynamicReport::class);
-        Route::get("report-builder", DynamicReportBuilder::class)->name("report-builder");
-        Route::get("report-runner", ReportRunner::class)->name("report-runner");
-        Route::get("dynamic-report-builder", DynamicReportBuilder::class)->name("dynamic-report-builder");
+        // The builder and runner links are already wrapped in @can('Report
+        // Builder') in the sidebar, so the routes ask for the same permission -
+        // the menu does not change for anyone, but the finance columns these
+        // screens can report on are no longer a URL away for any signed-in user.
+        Route::middleware('can:Report Builder')->group(function () {
+            //  Route::get("dynamic-report","DynamicReport");
+            Route::get("dynamic-report", DynamicReport::class);
+            Route::get("report-builder", DynamicReportBuilder::class)->name("report-builder");
+            Route::get("report-runner", ReportRunner::class)->name("report-runner");
+            Route::get("dynamic-report-builder", DynamicReportBuilder::class)->name("dynamic-report-builder");
+        });
     });
 
     Route::controller(AuroraController::class)->group(function () {
