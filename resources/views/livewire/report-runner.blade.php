@@ -172,14 +172,12 @@
                                                         @if ($this->filterUsesPicker($filter))
                                                             {{-- Several picks are one filter: the runner turns
                                                                  them into IN / NOT IN when the report runs. --}}
-                                                            <select wire:model="filterValues.{{ $index }}"
-                                                                class="form-select" multiple size="4">
-                                                                @foreach ($this->getDropdownOptions($filter['field']) as $value => $label)
-                                                                    <option value="{{ $value }}">
-                                                                        {{ $label }}</option>
-                                                                @endforeach
-                                                            </select>
-                                                            <small class="text-muted">Hold Ctrl (Cmd on a Mac) to pick more than one</small>
+                                                            @include('livewire.partials.filter-picker', [
+                                                                'options' => $this->getDropdownOptions($filter['field']),
+                                                                'selected' => $filterValues[$index] ?? [],
+                                                                'model' => 'filterValues.' . $index,
+                                                                'pickerKey' => 'filter-picker-' . $index . '-' . $filter['field'],
+                                                            ])
                                                         @elseif ($fieldType === 'dropdown')
                                                             <select wire:model="filterValues.{{ $index }}"
                                                                 class="form-select">
@@ -215,7 +213,8 @@
                                                                 placeholder="Enter value for {{ $filter['field_name'] ?? $filter['field'] }}">
                                                         @endif
                                                         <small class="text-muted">
-                                                            @if ($filter['operator'] === 'IN' || $filter['operator'] === 'NOT IN')
+                                                            @if ($this->filterUsesPicker($filter))
+                                                            @elseif ($filter['operator'] === 'IN' || $filter['operator'] === 'NOT IN')
                                                                 Use comma-separated values
                                                             @elseif($filter['operator'] === 'BETWEEN')
                                                                 Use format: start,end (or use comma-separated values)

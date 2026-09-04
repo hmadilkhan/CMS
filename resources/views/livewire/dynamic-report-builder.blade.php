@@ -234,7 +234,7 @@
                                 <div class="row g-3 align-items-end">
                                     <div class="col-md-4">
                                         <label class="form-label">Field</label>
-                                        <select wire:model="filterField" class="form-select">
+                                        <select wire:model.live="filterField" class="form-select">
                                             <option value="">Select Field</option>
                                             @foreach ($this->availableFields as $field => $name)
                                                 <option value="{{ $field }}">{{ $name }}</option>
@@ -243,7 +243,7 @@
                                     </div>
                                     <div class="col-md-2">
                                         <label class="form-label">Operator</label>
-                                        <select wire:model="filterOperator" class="form-select">
+                                        <select wire:model.live="filterOperator" class="form-select">
                                             @foreach ($operators as $op => $name)
                                                 <option value="{{ $op }}">{{ $name }}</option>
                                             @endforeach
@@ -262,11 +262,12 @@
                                         @if (in_array($filterOperator, ['IS NULL', 'IS NOT NULL']))
                                             <input type="text" class="form-control" value="No value required" disabled>
                                         @elseif ($usesPicker)
-                                            <select wire:model="filterValueList" class="form-select" multiple size="4">
-                                                @foreach ($this->getDropdownOptions($filterField) as $value => $label)
-                                                    <option value="{{ $value }}">{{ $label }}</option>
-                                                @endforeach
-                                            </select>
+                                            @include('livewire.partials.filter-picker', [
+                                                'options' => $this->getDropdownOptions($filterField),
+                                                'selected' => $filterValueList,
+                                                'model' => 'filterValueList',
+                                                'pickerKey' => 'filter-picker-' . $filterField . '-' . $filterOperator,
+                                            ])
                                         @elseif ($filterType === 'date' && $singleValue)
                                             <input type="date" wire:model="filterValue" class="form-control">
                                         @elseif ($filterType === 'number' && $singleValue)
@@ -278,7 +279,6 @@
                                         @endif
                                         <small class="text-muted">
                                             @if ($usesPicker)
-                                                Hold Ctrl (Cmd on a Mac) to pick more than one
                                             @elseif ($filterOperator === 'IN' || $filterOperator === 'NOT IN')
                                                 Use comma-separated values
                                             @elseif($filterOperator === 'BETWEEN')
