@@ -169,7 +169,18 @@
                                                             value="No value required" disabled>
                                                     @else
                                                         @php $fieldType = $this->getFieldType($filter['field']) @endphp
-                                                        @if ($fieldType === 'dropdown')
+                                                        @if ($this->filterUsesPicker($filter))
+                                                            {{-- Several picks are one filter: the runner turns
+                                                                 them into IN / NOT IN when the report runs. --}}
+                                                            <select wire:model="filterValues.{{ $index }}"
+                                                                class="form-select" multiple size="4">
+                                                                @foreach ($this->getDropdownOptions($filter['field']) as $value => $label)
+                                                                    <option value="{{ $value }}">
+                                                                        {{ $label }}</option>
+                                                                @endforeach
+                                                            </select>
+                                                            <small class="text-muted">Hold Ctrl (Cmd on a Mac) to pick more than one</small>
+                                                        @elseif ($fieldType === 'dropdown')
                                                             <select wire:model="filterValues.{{ $index }}"
                                                                 class="form-select">
                                                                 <option value="">Select value...</option>

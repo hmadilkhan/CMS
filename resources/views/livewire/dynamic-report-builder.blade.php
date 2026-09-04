@@ -257,12 +257,12 @@
                                         @php
                                             $filterType = $filterField ? $this->getFieldType($filterField) : 'text';
                                             $singleValue = !in_array($filterOperator, ['IN', 'NOT IN', 'BETWEEN', 'IS NULL', 'IS NOT NULL']);
+                                            $usesPicker = $this->filterFieldUsesPicker();
                                         @endphp
                                         @if (in_array($filterOperator, ['IS NULL', 'IS NOT NULL']))
                                             <input type="text" class="form-control" value="No value required" disabled>
-                                        @elseif ($filterType === 'dropdown' && $singleValue)
-                                            <select wire:model="filterValue" class="form-select">
-                                                <option value="">Select value...</option>
+                                        @elseif ($usesPicker)
+                                            <select wire:model="filterValueList" class="form-select" multiple size="4">
                                                 @foreach ($this->getDropdownOptions($filterField) as $value => $label)
                                                     <option value="{{ $value }}">{{ $label }}</option>
                                                 @endforeach
@@ -277,7 +277,9 @@
                                                 placeholder="Enter filter value">
                                         @endif
                                         <small class="text-muted">
-                                            @if ($filterOperator === 'IN' || $filterOperator === 'NOT IN')
+                                            @if ($usesPicker)
+                                                Hold Ctrl (Cmd on a Mac) to pick more than one
+                                            @elseif ($filterOperator === 'IN' || $filterOperator === 'NOT IN')
                                                 Use comma-separated values
                                             @elseif($filterOperator === 'BETWEEN')
                                                 Use format: start,end
