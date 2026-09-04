@@ -51,6 +51,13 @@ class DynamicReportBuilder extends Component
 
     public $filterValue = '';
 
+    /**
+     * The picks from a lookup dropdown. It is a multi-select - "projects in
+     * Permitting or Installation" is one filter, not two reports - so the
+     * value arrives as a list and is stored comma separated for IN / NOT IN.
+     */
+    public $filterValueList = [];
+
     // Calculated field form
     public $calcFieldName = '';
 
@@ -331,25 +338,75 @@ class DynamicReportBuilder extends Component
         $this->showResults = false;
     }
 
+    /** True while the value input for the filter being added is the picker. */
+    public function filterFieldUsesPicker(): bool
+    {
+        return $this->filterUsesPicker([
+            'field' => $this->filterField,
+            'operator' => $this->filterOperator,
+        ]);
+    }
+
     public function addFilter()
     {
+        $usesPicker = $this->filterFieldUsesPicker();
+
         $this->validate([
             'filterField' => 'required',
             'filterOperator' => 'required',
-            'filterValue' => 'required_unless:filterOperator,IS NULL,IS NOT NULL',
+            $usesPicker ? 'filterValueList' : 'filterValue' => 'required_unless:filterOperator,IS NULL,IS NOT NULL',
+        ], [
+            'filterValueList.required_unless' => 'Please pick at least one value.',
         ]);
+
+        [$operator, $value, $label] = $usesPicker
+            ? $this->pickedFilterValue()
+            : [$this->filterOperator, $this->filterValue, $this->dropdownLabel($this->filterField, $this->filterValue)];
 
         $this->filters[] = [
             'field' => $this->filterField,
-            'operator' => $this->filterOperator,
-            'value' => $this->filterValue,
+            'operator' => $operator,
+            'value' => $value,
             'field_name' => $this->availableFields[$this->filterField] ?? $this->filterField,
-            // A lookup filter files an id; the chip and the runner show the
-            // name the user picked it by.
-            'value_label' => $this->dropdownLabel($this->filterField, $this->filterValue),
+            // A lookup filter files ids; the chip and the runner show the names
+            // they were picked by.
+            'value_label' => $label,
         ];
 
-        $this->reset(['filterField', 'filterOperator', 'filterValue']);
+        $this->reset(['filterField', 'filterOperator', 'filterValue', 'filterValueList']);
+    }
+
+    /**
+     * The picked values as one filter: several of them mean IN (or NOT IN),
+     * because "= 3,7" matches nothing and would look like missing data.
+     *
+     * @return array{0: string, 1: string, 2: string}
+     */
+    private function pickedFilterValue(): array
+    {
+        $values = array_values(array_filter(
+            (array) $this->filterValueList,
+            fn ($value) => $value !== '' && $value !== null
+        ));
+
+        $operator = match (true) {
+            count($values) > 1 && $this->filterOperator === '=' => 'IN',
+            count($values) > 1 && $this->filterOperator === '!=' => 'NOT IN',
+            default => $this->filterOperator,
+        };
+
+        $labels = array_map(
+            fn ($value) => $this->dropdownLabel($this->filterField, $value) ?? $value,
+            $values
+        );
+
+        return [$operator, implode(',', $values), implode(', ', $labels)];
+    }
+
+    /** A new field means the old pick no longer applies. */
+    public function updatedFilterField(): void
+    {
+        $this->reset(['filterValue', 'filterValueList']);
     }
 
     public function removeFilter($index)

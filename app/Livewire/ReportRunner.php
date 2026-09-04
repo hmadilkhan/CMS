@@ -78,7 +78,7 @@ class ReportRunner extends Component
             if ($this->selectedReport && ! empty($this->selectedReport->filters)) {
                 foreach ($this->selectedReport->filters as $index => $filter) {
                     if (! in_array($filter['operator'], ['IS NULL', 'IS NOT NULL'])) {
-                        $this->filterValues[$index] = '';
+                        $this->filterValues[$index] = $this->filterUsesPicker($filter) ? [] : '';
                         $this->filterStartDate[$index] = '';
                         $this->filterEndDate[$index] = '';
                     }
@@ -168,6 +168,25 @@ class ReportRunner extends Component
                         $filterValue = $this->filterStartDate[$index].','.$this->filterEndDate[$index];
                     } else {
                         $filterValue = $this->filterValues[$index] ?? $filter['value'];
+                    }
+
+                    // A picker filter comes back as a list of picks; several of
+                    // them mean IN (or NOT IN), since "= 3,7" matches nothing.
+                    if (is_array($filterValue)) {
+                        $filterValue = array_values(array_filter(
+                            $filterValue,
+                            fn ($value) => $value !== '' && $value !== null
+                        ));
+
+                        if (count($filterValue) > 1) {
+                            $filter['operator'] = match ($filter['operator']) {
+                                '=' => 'IN',
+                                '!=' => 'NOT IN',
+                                default => $filter['operator'],
+                            };
+                        }
+
+                        $filterValue = implode(',', $filterValue);
                     }
 
                     $this->applyFilter($query, $filter, $filterValue);

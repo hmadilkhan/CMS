@@ -141,6 +141,18 @@ trait DescribesReportFields
             ?? (str_contains($field, '.') ? substr($field, strrpos($field, '.') + 1) : $field);
     }
 
+    /**
+     * True while a saved filter's value should be picked from the list rather
+     * than typed. Several picks are allowed, so it covers IN / NOT IN too.
+     *
+     * @param  array{field?: string, operator?: string}  $filter
+     */
+    public function filterUsesPicker(array $filter): bool
+    {
+        return $this->getFieldType($filter['field'] ?? '') === 'dropdown'
+            && in_array($filter['operator'] ?? '', ['=', '!=', 'IN', 'NOT IN'], true);
+    }
+
     /** The label a dropdown value is shown with, for the chip and the header. */
     protected function dropdownLabel(string $field, $value): ?string
     {

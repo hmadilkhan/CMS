@@ -81,7 +81,7 @@ class ReportFilterInputsTest extends TestCase
             ->set('selectedFields', ['customers.first_name'])
             ->set('filterField', 'customer_finances.finance_option_id')
             ->set('filterOperator', '=')
-            ->set('filterValue', (string) $cash->id)
+            ->set('filterValueList', [(string) $cash->id])
             ->call('addFilter');
 
         // The chip reads as the plan, not as its id.
@@ -153,5 +153,105 @@ class ReportFilterInputsTest extends TestCase
             ->test(ReportRunner::class)
             ->set('selectedReportId', $report->id)
             ->assertSee('Cash');
+    }
+
+    public function test_several_plans_can_be_picked_in_one_filter(): void
+    {
+        $cash = FinanceOption::create(['name' => 'Cash']);
+        $loan = FinanceOption::create(['name' => 'Sunlight 25yr']);
+        $lease = FinanceOption::create(['name' => 'Lease']);
+
+        $this->customerOn($cash, 'Paid');
+        $this->customerOn($loan, 'Financed');
+        $this->customerOn($lease, 'Leased');
+
+        $component = Livewire::actingAs($this->user())
+            ->test(DynamicReportBuilder::class)
+            ->set('selectedFields', ['customers.first_name'])
+            ->set('filterField', 'customer_finances.finance_option_id')
+            ->set('filterOperator', '=')
+            ->set('filterValueList', [(string) $cash->id, (string) $loan->id])
+            ->call('addFilter');
+
+        // "= 3,7" would match nothing, so two picks become IN.
+        $filter = $component->get('filters')[0];
+        $this->assertSame('IN', $filter['operator']);
+        $this->assertSame('Cash, Sunlight 25yr', $filter['value_label']);
+
+        $names = $component->call('generateReport')
+            ->get('reportData')
+            ->pluck('first_name')
+            ->sort()
+            ->values()
+            ->all();
+
+        $this->assertSame(['Financed', 'Paid'], $names);
+    }
+
+    public function test_several_picks_can_also_exclude(): void
+    {
+        $cash = FinanceOption::create(['name' => 'Cash']);
+        $loan = FinanceOption::create(['name' => 'Sunlight 25yr']);
+        $lease = FinanceOption::create(['name' => 'Lease']);
+
+        $this->customerOn($cash, 'Paid');
+        $this->customerOn($loan, 'Financed');
+        $this->customerOn($lease, 'Leased');
+
+        $component = Livewire::actingAs($this->user())
+            ->test(DynamicReportBuilder::class)
+            ->set('selectedFields', ['customers.first_name'])
+            ->set('filterField', 'customer_finances.finance_option_id')
+            ->set('filterOperator', '!=')
+            ->set('filterValueList', [(string) $cash->id, (string) $loan->id])
+            ->call('addFilter');
+
+        $this->assertSame('NOT IN', $component->get('filters')[0]['operator']);
+
+        $rows = $component->call('generateReport')->get('reportData');
+
+        $this->assertCount(1, $rows);
+        $this->assertSame('Leased', $rows->first()->first_name);
+    }
+
+    public function test_the_runner_applies_several_picks_as_one_filter(): void
+    {
+        $cash = FinanceOption::create(['name' => 'Cash']);
+        $loan = FinanceOption::create(['name' => 'Sunlight 25yr']);
+        $lease = FinanceOption::create(['name' => 'Lease']);
+
+        $this->customerOn($cash, 'Paid');
+        $this->customerOn($loan, 'Financed');
+        $this->customerOn($lease, 'Leased');
+
+        $user = $this->user();
+
+        $report = SavedReport::create([
+            'name' => 'By plan',
+            'report_type' => 'By plan',
+            'selected_fields' => ['customers.first_name'],
+            'filters' => [[
+                'field' => 'customer_finances.finance_option_id',
+                'operator' => '=',
+                'value' => (string) $cash->id,
+                'field_name' => 'Finance Option ID',
+            ]],
+            'calculated_fields' => [],
+            'query' => '{}',
+            'user_id' => $user->id,
+        ]);
+
+        $names = Livewire::actingAs($user)
+            ->test(ReportRunner::class)
+            ->set('selectedReportId', $report->id)
+            ->set('filterValues.0', [(string) $cash->id, (string) $lease->id])
+            ->call('runReport')
+            ->get('reportData')
+            ->pluck('first_name')
+            ->sort()
+            ->values()
+            ->all();
+
+        $this->assertSame(['Leased', 'Paid'], $names);
     }
 }
