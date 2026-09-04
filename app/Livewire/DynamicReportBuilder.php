@@ -10,6 +10,7 @@ use App\Models\User;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
+use Livewire\Attributes\Locked;
 use Livewire\Attributes\Title;
 use Livewire\Component;
 use Maatwebsite\Excel\Facades\Excel;
@@ -71,6 +72,7 @@ class DynamicReportBuilder extends Component
     ];
 
     // Available operators
+    #[Locked]
     public $operators = [
         '=' => 'Equals',
         '!=' => 'Not Equals',
@@ -192,9 +194,22 @@ class DynamicReportBuilder extends Component
             'customer_finances.commission' => 'Commission',
             'customer_finances.dealer_fee' => 'Dealer Fee',
             'customer_finances.dealer_fee_amount' => 'Dealer Fee Amount',
+            'customer_finances.third_party_credit' => 'Third Party Credit',
+            'customer_finances.customer_portion' => 'Customer Portion',
+            'customer_finances.module_type_cost' => 'Module Type Cost',
+            'customer_finances.inverter_base_cost' => 'Inverter Base Cost',
+            'customer_finances.total_overwrite_base_price' => 'Total Overwrite Base Price',
+            'customer_finances.total_overwrite_panel_price' => 'Total Overwrite Panel Price',
             'customer_finances.created_at' => 'Customer Finance Created Date',
             'customer_finances.updated_at' => 'Customer Finance Updated Date',
         ];
+
+        // The holdback amount sits behind its own permission on the project
+        // page, so the report follows the same rule instead of publishing it
+        // to everyone who can run a report.
+        if (auth()->user()?->can('Holdback Amount')) {
+            $baseFields['customer_finances.holdback_amount'] = 'Holdback Amount';
+        }
 
         // Add finance fields for profitability report
         if ($this->reportType === 'profitability') {
@@ -470,8 +485,8 @@ class DynamicReportBuilder extends Component
             SavedReport::create([
                 'name' => $this->reportName,
                 'report_type' => $this->reportName,
-                'selected_fields' => $this->selectedFields,
-                'filters' => $this->filters,
+                'selected_fields' => $this->permittedFields($this->selectedFields),
+                'filters' => $this->permittedFilters(),
                 'calculated_fields' => $this->calculatedFields,
                 'query' => json_encode($queryWithBindings),
                 'user_id' => auth()->user()->id,
@@ -528,8 +543,8 @@ class DynamicReportBuilder extends Component
             $report->update([
                 'name' => $this->reportName,
                 'report_type' => $this->reportName,
-                'selected_fields' => $this->selectedFields,
-                'filters' => $this->filters,
+                'selected_fields' => $this->permittedFields($this->selectedFields),
+                'filters' => $this->permittedFilters(),
                 'calculated_fields' => $this->calculatedFields,
                 'query' => json_encode($queryWithBindings),
             ]);
@@ -569,6 +584,37 @@ class DynamicReportBuilder extends Component
         $this->processCalculatedFields();
     }
 
+    /**
+     * $selectedFields and $filters are public Livewire properties, so the
+     * browser owns them - and a selected field is spliced into the query as
+     * raw SQL ("<field> as <alias>"), which is a way into the database for
+     * anything that is not a real column. Both are therefore matched against
+     * the field list this component itself offers before the query is built;
+     * anything else is dropped rather than queried.
+     */
+    private function permittedFields(array $fields): array
+    {
+        $allowed = array_keys($this->availableFields);
+
+        return array_values(array_filter(
+            $fields,
+            fn ($field) => is_string($field) && in_array($field, $allowed, true)
+        ));
+    }
+
+    private function permittedFilters(): array
+    {
+        $allowed = array_keys($this->availableFields);
+        $operators = array_keys($this->operators);
+
+        return array_values(array_filter(
+            $this->filters,
+            fn ($filter) => is_array($filter)
+                && in_array($filter['field'] ?? null, $allowed, true)
+                && in_array($filter['operator'] ?? null, $operators, true)
+        ));
+    }
+
     private function buildQuery()
     {
         $query = Customer::query();
@@ -577,7 +623,7 @@ class DynamicReportBuilder extends Component
         $this->addJoins($query);
 
         // Add filters
-        foreach ($this->filters as $filter) {
+        foreach ($this->permittedFilters() as $filter) {
             $this->applyFilter($query, $filter);
         }
 
@@ -586,7 +632,7 @@ class DynamicReportBuilder extends Component
 
         // Select fields with proper aliasing
         $selectFields = [];
-        foreach ($this->selectedFields as $field) {
+        foreach ($this->permittedFields($this->selectedFields) as $field) {
             // Create alias to match the column field names (without table prefix)
             $fieldName = str_contains($field, '.') ? substr($field, strrpos($field, '.') + 1) : $field;
             // Special case for customer_finances.adders
@@ -614,7 +660,7 @@ class DynamicReportBuilder extends Component
 
         // Load necessary relations for the selected fields
         $relationsToLoad = [];
-        $fieldsString = implode(',', $this->selectedFields);
+        $fieldsString = implode(',', $this->permittedFields($this->selectedFields));
 
         if (str_contains($fieldsString, 'sales_partners.')) {
             $relationsToLoad[] = 'salespartner';
@@ -647,7 +693,7 @@ class DynamicReportBuilder extends Component
 
     private function addJoins($query)
     {
-        $fieldsString = implode(',', $this->selectedFields);
+        $fieldsString = implode(',', $this->permittedFields($this->selectedFields));
 
         // Always join projects if project fields are selected
         if (str_contains($fieldsString, 'projects.')) {
@@ -738,7 +784,7 @@ class DynamicReportBuilder extends Component
     {
         $columns = [];
 
-        foreach ($this->selectedFields as $field) {
+        foreach ($this->permittedFields($this->selectedFields) as $field) {
             if ($field !== 'customers.id') { // Skip ID column used for calculations
                 // Extract the field name without table prefix for better data mapping
                 $fieldName = str_contains($field, '.') ? substr($field, strrpos($field, '.') + 1) : $field;
