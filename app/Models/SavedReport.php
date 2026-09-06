@@ -14,6 +14,8 @@ class SavedReport extends Model
         'report_type',
         'selected_fields',
         'group_by',
+        'group_by_2',
+        'summaries',
         'filters',
         'calculated_fields',
         'query',
@@ -22,6 +24,7 @@ class SavedReport extends Model
 
     protected $casts = [
         'selected_fields' => 'array',
+        'summaries' => 'array',
         'filters' => 'array',
         'calculated_fields' => 'array',
     ];

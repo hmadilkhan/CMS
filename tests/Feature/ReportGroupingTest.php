@@ -75,11 +75,11 @@ class ReportGroupingTest extends TestCase
         $this->assertCount(2, $groups);
         $this->assertSame('Cash', $groups[0]['value']);
         $this->assertSame(2, $groups[0]['count']);
-        $this->assertEquals(25000, $groups[0]['sums']['contract_amount']);
+        $this->assertEquals(25000, $groups[0]['aggregates']['contract_amount']);
         $this->assertCount(2, $groups[0]['rows']);
 
         $this->assertSame('GoodLeap Financing', $groups[1]['value']);
-        $this->assertEquals(30000, $groups[1]['sums']['contract_amount']);
+        $this->assertEquals(30000, $groups[1]['aggregates']['contract_amount']);
     }
 
     public function test_the_report_carries_one_total(): void
@@ -87,7 +87,7 @@ class ReportGroupingTest extends TestCase
         $totals = $this->grouped()->get('previewTotals');
 
         $this->assertSame(3, $totals['count']);
-        $this->assertEquals(55000, $totals['sums']['contract_amount']);
+        $this->assertEquals(55000, $totals['aggregates']['contract_amount']);
     }
 
     public function test_subtotals_cover_every_record_not_only_the_previewed_rows(): void
@@ -107,7 +107,7 @@ class ReportGroupingTest extends TestCase
         // 25 rows on screen, but the subtotal is all 30.
         $this->assertCount(25, $component->get('reportData'));
         $this->assertSame(30, $component->get('previewGroups')[0]['count']);
-        $this->assertEquals(30000, $component->get('previewGroups')[0]['sums']['contract_amount']);
+        $this->assertEquals(30000, $component->get('previewGroups')[0]['aggregates']['contract_amount']);
     }
 
     public function test_a_filter_narrows_the_subtotals_too(): void
@@ -130,7 +130,7 @@ class ReportGroupingTest extends TestCase
 
         $this->assertCount(1, $groups);
         $this->assertSame('GoodLeap Financing', $groups[0]['value']);
-        $this->assertEquals(30000, $component->get('previewTotals')['sums']['contract_amount']);
+        $this->assertEquals(30000, $component->get('previewTotals')['aggregates']['contract_amount']);
     }
 
     public function test_the_grouping_is_saved_with_the_report(): void

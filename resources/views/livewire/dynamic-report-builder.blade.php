@@ -105,6 +105,16 @@
             white-space: nowrap;
         }
 
+        .report-builder .rb-summary-select {
+            border: 1px solid #eadfce;
+            border-radius: 4px;
+            background: #ffffff;
+            color: #a94f1f;
+            font-size: 10.5px;
+            padding: 1px 3px;
+            max-width: 78px;
+        }
+
         .report-builder .rb-icon-btn {
             border: 0;
             background: transparent;
@@ -325,18 +335,44 @@
 
                 <div class="rb-scroll">
                     <div class="rb-section-label">Group rows</div>
-                    <select wire:model.live="groupBy" class="form-select mb-3">
+                    <select wire:model.live="groupBy" class="form-select mb-2">
                         <option value="">No grouping</option>
                         @foreach ($this->availableFields as $field => $name)
                             <option value="{{ $field }}">{{ $name }}</option>
                         @endforeach
                     </select>
 
+                    @if ($groupBy)
+                        <div class="rb-section-label">…then by</div>
+                        <select wire:model.live="groupBy2" class="form-select mb-3">
+                            <option value="">Nothing</option>
+                            @foreach ($this->availableFields as $field => $name)
+                                @if ($field !== $groupBy)
+                                    <option value="{{ $field }}">{{ $name }}</option>
+                                @endif
+                            @endforeach
+                        </select>
+                    @endif
+
                     <div class="rb-section-label">Columns ({{ count($selectedFields) }})</div>
 
                     @forelse ($selectedFields as $index => $field)
-                        <div class="rb-col">
+                        {{-- keyed by the field: without it a reorder can leave
+                             one column's summary picker showing another's --}}
+                        <div class="rb-col" wire:key="column-{{ str_replace('.', '-', $field) }}">
                             <span class="rb-col-name">{{ $this->availableFields[$field] ?? $field }}</span>
+                            @if ($this->getFieldType($field) === 'number')
+                                {{-- What this column says in the subtotal rows. --}}
+                                <select class="rb-summary-select"
+                                    wire:change="setColumnSummary('{{ $field }}', $event.target.value)"
+                                    title="How this column is summarised">
+                                    @foreach ($this->summaryOptions() as $key => $label)
+                                        <option value="{{ $key }}"
+                                            @selected($this->summaryFor($field) === $key)>{{ $label }}</option>
+                                    @endforeach
+                                    <option value="none" @selected(!$this->isSummarised($field))>—</option>
+                                </select>
+                            @endif
                             <button type="button" class="rb-icon-btn" title="Move up"
                                 wire:click="moveFieldUp({{ $index }})">
                                 <i class="icofont-simple-up"></i>
@@ -506,42 +542,25 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                @if ($groupBy && !empty($previewGroups))
+                                @if (!empty($previewGroups))
                                     @foreach ($previewGroups as $group)
-                                        <tr class="rb-group-row">
-                                            <td colspan="{{ count($reportColumns) }}">
-                                                <span class="fw-bold">{{ $this->groupHeading($group['value']) }}</span>
-                                                <span class="ms-2">{{ number_format($group['count']) }}
-                                                    {{ Str::plural('record', $group['count']) }}</span>
-                                            </td>
-                                        </tr>
-
-                                        @foreach ($group['rows'] as $row)
-                                            @include('livewire.partials.report-row', ['row' => $row])
-                                        @endforeach
-
-                                        <tr class="rb-subtotal-row">
-                                            @foreach ($reportColumns as $index => $column)
-                                                <td class="{{ ($column['numeric'] ?? false) ? 'rb-num' : '' }}">
-                                                    @if ($index === 0)
-                                                        Subtotal
-                                                    @elseif (($column['numeric'] ?? false) && isset($group['sums'][$column['field']]))
-                                                        {{ number_format($group['sums'][$column['field']], 2) }}
-                                                    @endif
-                                                </td>
-                                            @endforeach
-                                        </tr>
+                                        @include('livewire.partials.report-group', [
+                                            'group' => $group,
+                                            'depth' => 0,
+                                        ])
                                     @endforeach
 
+                                    @php
+                                        $totalLabel =
+                                            'Total · ' .
+                                            number_format($previewTotals['count']) .
+                                            ' ' .
+                                            Str::plural('record', $previewTotals['count']);
+                                    @endphp
                                     <tr class="rb-total-row">
-                                        @foreach ($reportColumns as $index => $column)
-                                            <td class="{{ ($column['numeric'] ?? false) ? 'rb-num' : '' }}">
-                                                @if ($index === 0)
-                                                    Total · {{ number_format($previewTotals['count']) }}
-                                                    {{ Str::plural('record', $previewTotals['count']) }}
-                                                @elseif (($column['numeric'] ?? false) && isset($previewTotals['sums'][$column['field']]))
-                                                    {{ number_format($previewTotals['sums'][$column['field']], 2) }}
-                                                @endif
+                                        @foreach ($this->summaryCells($previewTotals['aggregates'] ?? [], $totalLabel) as $index => $cell)
+                                            <td class="{{ ($reportColumns[$index]['numeric'] ?? false) ? 'rb-num' : '' }}">
+                                                {{ $cell }}
                                             </td>
                                         @endforeach
                                     </tr>

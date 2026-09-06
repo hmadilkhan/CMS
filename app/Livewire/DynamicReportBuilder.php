@@ -46,11 +46,22 @@ class DynamicReportBuilder extends Component
      */
     public $groupBy = '';
 
-    /** @var array<int, array{value: string|null, count: int, sums: array, rows: array}> */
+    /** The second level, shown inside each first-level group. */
+    public $groupBy2 = '';
+
+    /**
+     * How each numeric column is summarised: field => sum|avg|min|max|count,
+     * or 'none' to leave it out of the subtotals. Summed unless said otherwise.
+     *
+     * @var array<string, string>
+     */
+    public $columnSummaries = [];
+
+    /** @var array<int, array> the group tree behind the preview */
     public $previewGroups = [];
 
-    /** @var array{count: int, sums: array} */
-    public $previewTotals = ['count' => 0, 'sums' => []];
+    /** @var array{count: int, aggregates: array} */
+    public $previewTotals = ['count' => 0, 'aggregates' => []];
 
     /** Typed into the field list's search box. */
     public $fieldSearch = '';
@@ -60,6 +71,7 @@ class DynamicReportBuilder extends Component
      * query, capped, so picking a column or a filter shows what it does to the
      * data instead of describing it.
      */
+    #[Locked]
     public $previewLimit = 25;
 
     public $previewCount = 0;
@@ -419,7 +431,7 @@ class DynamicReportBuilder extends Component
             $this->reportColumns = [];
             $this->previewCount = 0;
             $this->previewGroups = [];
-            $this->previewTotals = ['count' => 0, 'sums' => []];
+            $this->previewTotals = ['count' => 0, 'aggregates' => []];
             $this->showResults = false;
             $this->previewError = 'This combination of fields could not be previewed.';
         }
@@ -432,43 +444,107 @@ class DynamicReportBuilder extends Component
      */
     private function buildGroups(array $fields): void
     {
-        $groupField = $this->permittedGroupField();
+        $groupFields = $this->groupFields();
 
-        if ($groupField === '') {
+        if ($groupFields === []) {
             $this->previewGroups = [];
-            $this->previewTotals = ['count' => 0, 'sums' => []];
+            $this->previewTotals = ['count' => 0, 'aggregates' => []];
 
             return;
         }
 
-        $summaries = $this->groupSummaries(
-            fn () => $this->baseQuery(),
-            $groupField,
-            $this->summableFields($fields)
-        );
+        $aggregates = $this->aggregatedColumns($fields, $this->columnSummaries);
+        $base = fn () => $this->baseQuery();
 
-        $this->previewGroups = $this->groupRows($this->reportData, $summaries);
-        $this->previewTotals = $this->grandTotals($summaries);
+        $this->previewGroups = $this->attachRows(
+            $this->groupTree($base, $groupFields, $aggregates),
+            $this->reportData,
+            count($groupFields)
+        );
+        $this->previewTotals = $this->reportTotals($base, $aggregates);
     }
 
-    /** How a group is headed in the table: the field it groups by, then its value. */
-    public function groupHeading($value): string
+    /**
+     * Change how one numeric column is summarised. 'none' is a choice, not an
+     * absence - forgetting it would put the column straight back to summed.
+     */
+    public function setColumnSummary(string $field, string $function): void
     {
-        $label = $this->availableFields[$this->groupBy] ?? $this->groupBy;
+        if (array_key_exists($function, static::summaryFunctions()) || $function === 'none') {
+            $this->columnSummaries[$field] = $function;
+        } else {
+            unset($this->columnSummaries[$field]);
+        }
+
+        $this->refreshPreview();
+    }
+
+    /** The function a column is summarised by, for the outline's picker. */
+    public function summaryFor(string $field): string
+    {
+        return $this->columnSummaries[$field] ?? 'sum';
+    }
+
+    /** The summary functions offered in the outline's per-column picker. */
+    public function summaryOptions(): array
+    {
+        return static::summaryFunctions();
+    }
+
+    /** A summary figure as it is shown: two decimals, or a dash for nothing. */
+    public function formatSummary($value): string
+    {
+        return $value === null ? '—' : number_format((float) $value, 2);
+    }
+
+    /**
+     * A subtotal or total line as cells aligned with the report's columns, so
+     * a summarised first column keeps its figure instead of losing it to the
+     * label.
+     *
+     * @return array<int, string>
+     */
+    public function summaryCells(array $aggregates, string $label): array
+    {
+        return $this->summaryRowCells($this->reportColumns, $aggregates, $label);
+    }
+
+    /** A group's value as it is shown, for the subtotal line. */
+    public function groupLabelFor($value): string
+    {
+        return $this->groupLabel($value);
+    }
+
+    /** True while this column carries a figure in the subtotal rows. */
+    public function isSummarised(string $field): bool
+    {
+        return $this->getFieldType($field) === 'number'
+            && array_key_exists($this->summaryFor($field), static::summaryFunctions());
+    }
+
+    /** How a group is headed in the table: the field of its level, then its value. */
+    public function groupHeading($value, int $depth = 0): string
+    {
+        $field = $this->groupFields()[$depth] ?? '';
+        $label = $this->availableFields[$field] ?? $field;
 
         return $label.': '.$this->groupLabel($value);
     }
 
-    /** Group the report by a field, or pass '' to stop grouping. */
-    public function setGroupBy(string $field): void
+    public function updatedGroupBy(): void
     {
-        $this->groupBy = in_array($field, array_keys($this->availableFields), true) ? $field : '';
+        // Dropping the first level drops the second with it: a report cannot be
+        // grouped by its inner field alone.
+        if ($this->groupBy === '') {
+            $this->groupBy2 = '';
+        }
+
         $this->refreshPreview();
     }
 
-    public function updatedGroupBy(): void
+    public function updatedGroupBy2(): void
     {
-        $this->setGroupBy((string) $this->groupBy);
+        $this->refreshPreview();
     }
 
     /** True while the preview is showing fewer rows than the report holds. */
@@ -674,6 +750,8 @@ class DynamicReportBuilder extends Component
         $this->reportType = $report->report_type;
         $this->selectedFields = $report->selected_fields ?? [];
         $this->groupBy = $report->group_by ?? '';
+        $this->groupBy2 = $report->group_by_2 ?? '';
+        $this->columnSummaries = $report->summaries ?? [];
         $this->filters = $report->filters ?? [];
         $this->calculatedFields = $report->calculated_fields ?? [];
         $this->refreshPreview();
@@ -746,7 +824,9 @@ class DynamicReportBuilder extends Component
                 'name' => $this->reportName,
                 'report_type' => $this->reportName,
                 'selected_fields' => $this->permittedFields($this->selectedFields),
-                'group_by' => $this->permittedGroupField() ?: null,
+                'group_by' => $this->groupFields()[0] ?? null,
+                'group_by_2' => $this->groupFields()[1] ?? null,
+                'summaries' => $this->columnSummaries ?: null,
                 'filters' => $this->permittedFilters(),
                 'calculated_fields' => $this->calculatedFields,
                 'query' => json_encode($queryWithBindings),
@@ -805,7 +885,9 @@ class DynamicReportBuilder extends Component
                 'name' => $this->reportName,
                 'report_type' => $this->reportName,
                 'selected_fields' => $this->permittedFields($this->selectedFields),
-                'group_by' => $this->permittedGroupField() ?: null,
+                'group_by' => $this->groupFields()[0] ?? null,
+                'group_by_2' => $this->groupFields()[1] ?? null,
+                'summaries' => $this->columnSummaries ?: null,
                 'filters' => $this->permittedFilters(),
                 'calculated_fields' => $this->calculatedFields,
                 'query' => json_encode($queryWithBindings),
@@ -825,6 +907,10 @@ class DynamicReportBuilder extends Component
         return redirect()->route('report-runner');
     }
 
+    /**
+     * Kept for anything that asks for the report explicitly; it runs the same
+     * preview the builder shows, so there is only ever one way rows are built.
+     */
     public function generateReport()
     {
         try {
@@ -836,14 +922,7 @@ class DynamicReportBuilder extends Component
             throw $e;
         }
 
-        $query = $this->buildQuery();
-        $this->reportData = $query->get();
-        $this->reportColumns = $this->buildColumns();
-
-        $this->showResults = true;
-
-        // Process calculated fields
-        $this->processCalculatedFields();
+        $this->refreshPreview();
     }
 
     /**
@@ -896,10 +975,17 @@ class DynamicReportBuilder extends Component
         return $query;
     }
 
-    /** The field the rows are grouped by, or '' when it is not one this user may use. */
-    private function permittedGroupField(): string
+    /**
+     * The fields the rows are grouped by, outermost first - only the ones this
+     * user may report on, and never the same field twice.
+     *
+     * @return array<int, string>
+     */
+    public function groupFields(): array
     {
-        return $this->permittedFields([$this->groupBy])[0] ?? '';
+        $fields = $this->permittedFields([$this->groupBy, $this->groupBy2]);
+
+        return array_values(array_unique(array_slice($fields, 0, self::MAX_GROUP_LEVELS)));
     }
 
     private function buildQuery()
@@ -912,10 +998,10 @@ class DynamicReportBuilder extends Component
             $selectFields[] = DB::raw("{$field} as {$this->fieldAlias($field)}");
         }
 
-        // A grouped report carries its group's value on every row, so the rows
-        // can be laid out under their group header.
-        if ($groupField = $this->permittedGroupField()) {
-            $selectFields[] = DB::raw($groupField.' as '.self::GROUP_ALIAS);
+        // A grouped report carries each level's value on every row, so the rows
+        // can be laid out under their group headers.
+        foreach ($this->groupFields() as $depth => $groupField) {
+            $selectFields[] = DB::raw($groupField.' as '.self::GROUP_ALIASES[$depth]);
             $query->orderBy(DB::raw($groupField));
         }
 
@@ -969,11 +1055,7 @@ class DynamicReportBuilder extends Component
 
     private function addJoins($query)
     {
-        $fields = $this->permittedFields($this->selectedFields);
-
-        if ($groupField = $this->permittedGroupField()) {
-            $fields[] = $groupField;
-        }
+        $fields = array_merge($this->permittedFields($this->selectedFields), $this->groupFields());
 
         $this->applyReportJoins(
             $query,
@@ -1251,99 +1333,140 @@ class DynamicReportBuilder extends Component
         return (string) $value;
     }
 
+    /**
+     * One cell of an export, formatted as the screen formats it.
+     */
+    private function exportCell($row, array $column): string
+    {
+        $value = $this->getNestedProperty($row, $column['field']);
+
+        if ($column['field'] === 'adders_amount') {
+            // Always flatten adders_amount from finances
+            if (is_array($row) && isset($row['finances']['adders'])) {
+                $value = $row['finances']['adders'];
+            } elseif (is_object($row) && isset($row->finances) && isset($row->finances->adders)) {
+                $value = $row->finances->adders;
+            }
+        }
+
+        if ($column['type'] === 'calculated') {
+            $value = is_object($row) ? ($row->{$column['field']} ?? 'N/A') : ($row[$column['field']] ?? 'N/A');
+        }
+
+        if (is_numeric($value) && ! is_string($value)) {
+            $value = number_format($value, (is_float($value + 0) && floor($value + 0) != ($value + 0)) ? 2 : 0);
+        }
+
+        if ($value === null || (is_string($value) && trim($value) === '')) {
+            $value = '-';
+        }
+
+        return (string) $value;
+    }
+
+    /**
+     * The whole report for an export - every row, not the capped preview on
+     * screen, with the group headings and subtotals it is read with.
+     */
+    private function exportRows(): array
+    {
+        $fields = $this->permittedFields($this->selectedFields);
+
+        if ($fields === []) {
+            return [];
+        }
+
+        // The preview forgives a query it cannot run; an export has to as well,
+        // or a report that previews at 25 rows and fails on the full set throws
+        // the page away instead of saying so.
+        try {
+            return $this->buildExportRows($fields);
+        } catch (\Throwable $th) {
+            Log::error('Report export failed: '.$th->getMessage());
+            session()->flash('error', 'This report could not be exported.');
+
+            return [];
+        }
+    }
+
+    private function buildExportRows(array $fields): array
+    {
+
+        $rows = $this->buildQuery()->get();
+        $columns = $this->buildColumns();
+
+        foreach ($this->calculatedFields as $calcField) {
+            $key = 'calc_'.Str::slug($calcField['name'], '_');
+
+            foreach ($rows as $row) {
+                $row->{$key} = $this->evaluateExpression($calcField['expression'], $row);
+            }
+        }
+
+        $groups = [];
+        $totals = ['count' => 0, 'aggregates' => []];
+
+        if ($this->groupFields() !== []) {
+            $aggregates = $this->aggregatedColumns($fields, $this->columnSummaries);
+            $base = fn () => $this->baseQuery();
+            $groups = $this->attachRows(
+                $this->groupTree($base, $this->groupFields(), $aggregates),
+                $rows,
+                count($this->groupFields())
+            );
+            $totals = $this->reportTotals($base, $aggregates);
+        }
+
+        return $this->exportTable($columns, $rows, $groups, $totals, fn ($row, $column) => $this->exportCell($row, $column));
+    }
+
     public function exportExcel()
     {
-        if (empty($this->reportData)) {
-            session()->flash('error', 'No data to export. Please generate a report first.');
+        $results = $this->exportRows();
+
+        if ($results === []) {
+            session()->flash('error', 'No data to export. Pick a field first.');
 
             return;
         }
 
-        $results = [];
-        foreach ($this->reportData as $row) {
-            $rowData = [];
-            foreach ($this->reportColumns as $column) {
-                $value = $this->getNestedProperty($row, $column['field']);
-                if ($column['field'] === 'adders_amount') {
-                    // Always flatten adders_amount from finances
-                    if (is_array($row) && isset($row['finances']['adders'])) {
-                        $value = $row['finances']['adders'];
-                    } elseif (is_object($row) && isset($row->finances) && isset($row->finances->adders)) {
-                        $value = $row->finances->adders;
-                    }
-                }
-                if ($column['type'] === 'calculated') {
-                    $value = is_object($row) ? ($row->{$column['field']} ?? 'N/A') : (isset($row[$column['field']]) ? $row[$column['field']] : 'N/A');
-                }
-                if (is_numeric($value) && ! is_string($value)) {
-                    $value = number_format($value, (is_float($value + 0) && floor($value + 0) != ($value + 0)) ? 2 : 0);
-                }
-                // If value is null, empty string, or only whitespace, show '-'
-                if ($value === null || (is_string($value) && trim($value) === '')) {
-                    $value = '-';
-                }
-                $rowData[] = $value;
-            }
-            $results[] = $rowData;
-        }
-
-        $filename = $this->reportTypes[$this->reportType].'_'.date('Y-m-d_H-i-s').'.xlsx';
-
         return Excel::download(
-            new DynamicReportExport($results, $this->reportColumns),
-            $filename
+            new DynamicReportExport($results, $this->buildColumns()),
+            $this->exportFilename('xlsx')
         );
     }
 
     public function exportPdf()
     {
-        if (empty($this->reportData)) {
-            session()->flash('error', 'No data to export. Please generate a report first.');
+        $results = $this->exportRows();
+
+        if ($results === []) {
+            session()->flash('error', 'No data to export. Pick a field first.');
 
             return;
         }
 
-        $results = [];
-        foreach ($this->reportData as $row) {
-            $rowData = [];
-            foreach ($this->reportColumns as $column) {
-                $value = $this->getNestedProperty($row, $column['field']);
-                if ($column['field'] === 'adders_amount') {
-                    // Always flatten adders_amount from finances
-                    if (is_array($row) && isset($row['finances']['adders'])) {
-                        $value = $row['finances']['adders'];
-                    } elseif (is_object($row) && isset($row->finances) && isset($row->finances->adders)) {
-                        $value = $row->finances->adders;
-                    }
-                }
-                if ($column['type'] === 'calculated') {
-                    $value = is_object($row) ? ($row->{$column['field']} ?? 'N/A') : (isset($row[$column['field']]) ? $row[$column['field']] : 'N/A');
-                }
-                if (is_numeric($value) && ! is_string($value)) {
-                    $value = number_format($value, (is_float($value + 0) && floor($value + 0) != ($value + 0)) ? 2 : 0);
-                }
-                // If value is null, empty string, or only whitespace, show '-'
-                if ($value === null || (is_string($value) && trim($value) === '')) {
-                    $value = '-';
-                }
-                $rowData[] = $value;
-            }
-            $results[] = $rowData;
-        }
-
-        $filename = $this->reportTypes[$this->reportType].'_'.date('Y-m-d_H-i-s').'.pdf';
-
         return Excel::download(
-            new DynamicReportExport($results, $this->reportColumns),
-            $filename,
+            new DynamicReportExport($results, $this->buildColumns()),
+            $this->exportFilename('pdf'),
             \Maatwebsite\Excel\Excel::DOMPDF
         );
+    }
+
+    /** The file an export is offered as: the report's own name, then the date. */
+    private function exportFilename(string $extension): string
+    {
+        $name = trim((string) $this->reportName) ?: 'Report';
+
+        return Str::slug($name, '_').'_'.date('Y-m-d_H-i-s').'.'.$extension;
     }
 
     public function clearAll()
     {
         $this->selectedFields = [];
         $this->groupBy = '';
+        $this->groupBy2 = '';
+        $this->columnSummaries = [];
         $this->filters = [];
         $this->calculatedFields = [];
         $this->reportData = [];
