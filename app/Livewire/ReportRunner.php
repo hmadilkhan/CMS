@@ -4,6 +4,7 @@ namespace App\Livewire;
 
 use App\Exports\DynamicReportExport;
 use App\Livewire\Concerns\DescribesReportFields;
+use App\Livewire\Concerns\GroupsReportRows;
 use App\Livewire\Concerns\JoinsReportTables;
 use App\Models\Customer;
 use App\Models\SavedReport;
@@ -18,6 +19,7 @@ use Maatwebsite\Excel\Facades\Excel;
 class ReportRunner extends Component
 {
     use DescribesReportFields;
+    use GroupsReportRows;
     use JoinsReportTables;
 
     #[Title('Run Saved Reports')]
@@ -36,6 +38,22 @@ class ReportRunner extends Component
     public $reportColumns = [];
 
     public $showResults = false;
+
+    /** How many records the report matched, whatever is on this page. */
+    public $rowCount = 0;
+
+    public $page = 1;
+
+    public $perPage = 50;
+
+    /** @var array<int, array{value: string|null, count: int, sums: array, rows: array}> */
+    public $groups = [];
+
+    /** @var array{count: int, sums: array} */
+    public $totals = ['count' => 0, 'sums' => []];
+
+    /** Bars for the summary chart: label, value and width, biggest first. */
+    public $chart = [];
 
     // Available operators (same as DynamicReportBuilder)
     #[Locked]
@@ -73,6 +91,9 @@ class ReportRunner extends Component
             $this->filterValues = [];
             $this->reportData = [];
             $this->showResults = false;
+            $this->page = 1;
+            $this->groups = [];
+            $this->chart = [];
 
             // Initialize filter values for each filter in the saved report
             if ($this->selectedReport && ! empty($this->selectedReport->filters)) {
@@ -96,6 +117,7 @@ class ReportRunner extends Component
         }
 
         try {
+            $this->page = 1;
             $this->getReportData();
             $this->showResults = true;
             session()->flash('success', 'Report executed successfully!');
@@ -108,12 +130,120 @@ class ReportRunner extends Component
         }
     }
 
-    private function getReportData()
+    /**
+     * Run the report for the screen: this page of rows, the true record count,
+     * and - when the report is grouped - the groups, their subtotals and the
+     * report's total, all measured over every matching record.
+     */
+    private function getReportData(bool $everyRow = false)
     {
         $query = $this->buildQueryFromSavedReport();
+        $this->rowCount = (clone $query)->count();
+
+        if (! $everyRow) {
+            $query->limit($this->perPage)->offset(($this->page - 1) * $this->perPage);
+        }
+
         $this->reportData = $query->get();
         $this->reportColumns = $this->buildColumnsFromSavedReport();
         $this->processCalculatedFields();
+        $this->buildGroups();
+        $this->buildChart();
+    }
+
+    /** The field this report groups by, if the user may report on it. */
+    private function groupField(): string
+    {
+        $groupBy = (string) ($this->selectedReport->group_by ?? '');
+
+        return array_key_exists($groupBy, $this->getAvailableFields()) ? $groupBy : '';
+    }
+
+    private function buildGroups(): void
+    {
+        $groupField = $this->groupField();
+
+        if ($groupField === '') {
+            $this->groups = [];
+            $this->totals = ['count' => 0, 'sums' => []];
+
+            return;
+        }
+
+        $summaries = $this->groupSummaries(
+            fn () => $this->baseQueryFromSavedReport(),
+            $groupField,
+            $this->summableFields($this->permittedFields())
+        );
+
+        $this->groups = $this->groupRows($this->reportData, $summaries);
+        $this->totals = $this->grandTotals($summaries);
+    }
+
+    /**
+     * The chart above a grouped report: one bar per group, measuring its first
+     * numeric column. Without a grouping or a number to measure there is
+     * nothing honest to draw, so nothing is drawn.
+     */
+    private function buildChart(): void
+    {
+        $this->chart = [];
+
+        if ($this->groups === []) {
+            return;
+        }
+
+        $summable = $this->summableFields($this->permittedFields());
+
+        if ($summable === []) {
+            return;
+        }
+
+        $alias = reset($summable);
+        $field = array_key_first($summable);
+        $largest = max(array_map(fn ($group) => abs($group['sums'][$alias] ?? 0), $this->groups));
+
+        if ($largest <= 0) {
+            return;
+        }
+
+        $bars = [];
+
+        foreach ($this->groups as $group) {
+            $value = $group['sums'][$alias] ?? 0;
+            $bars[] = [
+                'label' => $this->groupLabel($group['value']),
+                'value' => $value,
+                'width' => round(abs($value) / $largest * 100, 2),
+            ];
+        }
+
+        usort($bars, fn ($a, $b) => $b['value'] <=> $a['value']);
+
+        $this->chart = [
+            'measure' => $this->getAvailableFields()[$field] ?? $field,
+            'bars' => $bars,
+        ];
+    }
+
+    public function gotoPage(int $page): void
+    {
+        $this->page = max(1, min($page, $this->lastPage()));
+        $this->getReportData();
+    }
+
+    public function lastPage(): int
+    {
+        return max(1, (int) ceil($this->rowCount / max(1, $this->perPage)));
+    }
+
+    /** How a group is headed: the field it groups by, then its value. */
+    public function groupHeading($value): string
+    {
+        $field = $this->groupField();
+        $label = $this->getAvailableFields()[$field] ?? $field;
+
+        return $label.': '.$this->groupLabel($value);
     }
 
     /**
@@ -147,7 +277,8 @@ class ReportRunner extends Component
         );
     }
 
-    private function buildQueryFromSavedReport()
+    /** Joins and filters, with nothing selected yet - the report's population. */
+    private function baseQueryFromSavedReport()
     {
         $query = Customer::query();
 
@@ -194,6 +325,13 @@ class ReportRunner extends Component
             }
         }
 
+        return $query;
+    }
+
+    private function buildQueryFromSavedReport()
+    {
+        $query = $this->baseQueryFromSavedReport();
+
         // Select fields with proper aliasing
         $selectFields = [];
         foreach ($this->permittedFields() as $field) {
@@ -205,6 +343,13 @@ class ReportRunner extends Component
             $selectFields[] = DB::raw('customers.id as id');
         }
 
+        // A grouped report carries its group's value on every row, so the rows
+        // can be laid out under their group header.
+        if ($groupField = $this->groupField()) {
+            $selectFields[] = DB::raw($groupField.' as '.self::GROUP_ALIAS);
+            $query->orderBy(DB::raw($groupField));
+        }
+
         $query->select($selectFields);
 
         return $query;
@@ -212,9 +357,15 @@ class ReportRunner extends Component
 
     private function addJoins($query)
     {
+        $fields = $this->permittedFields();
+
+        if ($groupField = $this->groupField()) {
+            $fields[] = $groupField;
+        }
+
         $this->applyReportJoins(
             $query,
-            $this->reportJoinFields($this->permittedFields(), $this->permittedFilters())
+            $this->reportJoinFields($fields, $this->permittedFilters())
         );
     }
 
@@ -265,6 +416,7 @@ class ReportRunner extends Component
                     'field' => $this->fieldAlias($field),
                     'name' => $availableFields[$field] ?? $field,
                     'type' => 'data',
+                    'numeric' => $this->getFieldType($field) === 'number',
                 ];
             }
         }
@@ -493,7 +645,7 @@ class ReportRunner extends Component
             return;
         }
 
-        $this->getReportData();
+        $this->getReportData(everyRow: true);
 
         $results = [];
         foreach ($this->reportData as $row) {
@@ -530,7 +682,7 @@ class ReportRunner extends Component
             return;
         }
 
-        $this->getReportData();
+        $this->getReportData(everyRow: true);
 
         $results = [];
         foreach ($this->reportData as $row) {

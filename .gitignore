@@ -31,3 +31,7 @@ chromedriver.exe
 chromedriver
 .env.dusk.local
 database/testing.sqlite
+
+# generated report-builder mockup canvas (2.5 MB; rebuilt from the .dc.html files)
+.design/*.html
+!.design/*.dc.html

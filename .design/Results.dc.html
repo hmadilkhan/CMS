@@ -1,0 +1,238 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600;700&display=swap">
+  <style>
+    body { margin: 0; font-family: "Open Sans", system-ui, sans-serif; }
+    a { color: #a94f1f; } a:hover { color: #78350f; }
+    .sr { font-variant-numeric: tabular-nums; }
+  </style>
+</helmet>
+
+<div style="display: flex; width: 1440px; height: 900px; background: #ffffff; color: #342416; font-size: 13px;">
+
+  <div style="width: 72px; background: #000000; display: flex; flex-direction: column; align-items: center; padding: 16px 0; gap: 22px; flex-shrink: 0;">
+    <div style="width: 40px; height: 40px; border-radius: 50%; background: rgba(255,255,255,0.96); display: flex; align-items: center; justify-content: center; box-shadow: 0 0 42px rgba(255,246,229,0.46);">
+      <span style="font-size: 11px; font-weight: 700; letter-spacing: 0.5px; color: #c8642d;">SOL</span>
+    </div>
+    <div style="display: flex; flex-direction: column; gap: 18px; align-items: center;">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.55)" stroke-width="1.6"><path d="M3 10.5 12 4l9 6.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg>
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.55)" stroke-width="1.6"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9h18M9 20V9"/></svg>
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.55)" stroke-width="1.6"><path d="M12 3a9 9 0 1 0 9 9h-9z"/><path d="M14 3.5A8 8 0 0 1 20.5 10H14z"/></svg>
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#f19828" stroke-width="1.8"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.55)" stroke-width="1.6"><circle cx="12" cy="8" r="3.2"/><path d="M5 20c0-3.6 3.1-5.5 7-5.5s7 1.9 7 5.5"/></svg>
+    </div>
+  </div>
+
+  <div style="flex: 1; display: flex; flex-direction: column; min-width: 0;">
+
+    <div style="height: 60px; flex-shrink: 0; border-bottom: 1px solid #eadfce; display: flex; align-items: center; gap: 16px; padding: 0 20px;">
+      <div style="display: flex; flex-direction: column; gap: 2px;">
+        <div style="display: flex; align-items: center; gap: 6px; font-size: 11px; color: #7c6f60;">
+          <span>Reports</span>
+          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#7c6f60" stroke-width="2.4"><path d="M9 5l7 7-7 7"/></svg>
+          <span>Finance</span>
+        </div>
+        <span style="font-size: 16px; font-weight: 700;">Prepaid PPA Pipeline</span>
+      </div>
+      <div style="flex-grow: 1;"></div>
+      <span class="sr" style="font-size: 11.5px; color: #7c6f60;">Run 12:47 PM &middot; 1.2s</span>
+      <div style="display: flex; align-items: center; gap: 8px;">
+        <button style="display: flex; align-items: center; gap: 6px; height: 34px; padding: 0 12px; border: 1px solid #eadfce; border-radius: 6px; background: #ffffff; color: #342416; font: inherit; font-size: 12.5px;">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#a94f1f" stroke-width="1.8"><path d="M12 15V4M8 11l4 4 4-4"/><path d="M4 17v2a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-2"/></svg>
+          CSV
+        </button>
+        <button style="display: flex; align-items: center; gap: 6px; height: 34px; padding: 0 12px; border: 1px solid #eadfce; border-radius: 6px; background: #ffffff; color: #342416; font: inherit; font-size: 12.5px;">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#a94f1f" stroke-width="1.8"><path d="M6 3h8l4 4v14H6z"/><path d="M14 3v5h4"/></svg>
+          PDF
+        </button>
+        <button style="display: flex; align-items: center; gap: 6px; height: 34px; padding: 0 14px; border: 1px solid transparent; border-radius: 6px; background: linear-gradient(135deg, #ffc18f 0%, #ee8f45 56%, #c8642d 100%); color: #ffffff; font: inherit; font-size: 12.5px; font-weight: 600; box-shadow: 0 12px 30px -18px rgba(151,76,18,0.55);">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="1.9"><path d="M4 20h4l10-10-4-4L4 16z"/></svg>
+          Edit report
+        </button>
+      </div>
+    </div>
+
+    <!-- applied filters, editable at run time -->
+    <div style="height: 46px; flex-shrink: 0; border-bottom: 1px solid #eadfce; display: flex; align-items: center; gap: 8px; padding: 0 20px;">
+      <span style="font-size: 11.5px; color: #7c6f60;">Filters</span>
+      <span style="display: inline-flex; align-items: center; gap: 6px; height: 26px; padding: 0 10px; border-radius: 6px; border: 1px solid rgba(240,122,36,0.22); background: rgba(240,122,36,0.1); color: #a94f1f; font-size: 12px; font-weight: 600;">
+        Finance Option: Cash, GoodLeap Financing
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#a94f1f" stroke-width="2.6"><path d="M6 9l6 6 6-6"/></svg>
+      </span>
+      <span style="display: inline-flex; align-items: center; gap: 6px; height: 26px; padding: 0 10px; border-radius: 6px; border: 1px solid #eadfce; color: #5c4632; font-size: 12px;">
+        Sold Date: 01 Jul – 30 Sep 2026
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#7c6f60" stroke-width="2.6"><path d="M6 9l6 6 6-6"/></svg>
+      </span>
+      <span style="display: inline-flex; align-items: center; gap: 6px; height: 26px; padding: 0 10px; border-radius: 6px; border: 1px solid #eadfce; color: #5c4632; font-size: 12px;">
+        Contract Amount &gt; 25,000
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#7c6f60" stroke-width="2.6"><path d="M6 9l6 6 6-6"/></svg>
+      </span>
+      <div style="flex-grow: 1;"></div>
+      <span class="sr" style="font-size: 12px; color: #5c4632;">244 projects &middot; $10,057,190 total</span>
+    </div>
+
+    <div style="flex: 1; display: flex; flex-direction: column; min-height: 0; padding: 16px 20px; gap: 14px;">
+
+      <!-- chart -->
+      <div style="flex-shrink: 0; border: 1px solid #eadfce; border-radius: 8px; padding: 14px 16px; box-shadow: 0 18px 48px -34px rgba(52,36,22,0.45);">
+        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 12px;">
+          <span style="font-size: 13px; font-weight: 700;">Contract value by finance option</span>
+          <span style="font-size: 11.5px; color: #7c6f60;">Sum of Contract Amount</span>
+          <div style="flex-grow: 1;"></div>
+          <div style="display: flex; gap: 6px;">
+            <span style="display: inline-flex; align-items: center; justify-content: center; width: 30px; height: 26px; border-radius: 6px; border: 1px solid rgba(240,122,36,0.22); background: rgba(240,122,36,0.1);">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#a94f1f" stroke-width="1.9"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>
+            </span>
+            <span style="display: inline-flex; align-items: center; justify-content: center; width: 30px; height: 26px; border-radius: 6px; border: 1px solid #eadfce;">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#7c6f60" stroke-width="1.9"><path d="M4 17l5-6 4 4 6-8"/></svg>
+            </span>
+            <span style="display: inline-flex; align-items: center; justify-content: center; width: 30px; height: 26px; border-radius: 6px; border: 1px solid #eadfce;">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#7c6f60" stroke-width="1.9"><circle cx="12" cy="12" r="8"/><path d="M12 4v8h8"/></svg>
+            </span>
+          </div>
+        </div>
+
+        <div style="display: flex; flex-direction: column; gap: 10px;">
+          <div style="display: grid; grid-template-columns: 180px 1fr 110px; align-items: center; gap: 12px;">
+            <span style="font-size: 12.5px; color: #5c4632;">GoodLeap Financing</span>
+            <span style="display: block; height: 22px; background: #eadfce; border-radius: 4px; position: relative;">
+              <span style="position: absolute; inset: 0 32% 0 0; background: linear-gradient(90deg, #ffc18f 0%, #ee8f45 56%, #c8642d 100%); border-radius: 4px;"></span>
+            </span>
+            <span class="sr" style="font-size: 12.5px; font-weight: 600; text-align: right;">$6,842,310</span>
+          </div>
+          <div style="display: grid; grid-template-columns: 180px 1fr 110px; align-items: center; gap: 12px;">
+            <span style="font-size: 12.5px; color: #5c4632;">Cash</span>
+            <span style="display: block; height: 22px; background: #eadfce; border-radius: 4px; position: relative;">
+              <span style="position: absolute; inset: 0 68% 0 0; background: linear-gradient(90deg, #ffc18f 0%, #ee8f45 56%, #c8642d 100%); border-radius: 4px;"></span>
+            </span>
+            <span class="sr" style="font-size: 12.5px; font-weight: 600; text-align: right;">$3,214,880</span>
+          </div>
+          <div style="display: grid; grid-template-columns: 180px 1fr 110px; align-items: center; gap: 12px; opacity: 0.45;">
+            <span style="font-size: 12.5px; color: #5c4632;">Concert Financing</span>
+            <span style="display: block; height: 22px; background: #eadfce; border-radius: 4px; position: relative;">
+              <span style="position: absolute; inset: 0 71% 0 0; background: #cdbda8; border-radius: 4px;"></span>
+            </span>
+            <span class="sr" style="font-size: 12.5px; text-align: right;">filtered out</span>
+          </div>
+          <div style="display: grid; grid-template-columns: 180px 1fr 110px; align-items: center; gap: 12px;">
+            <span></span>
+            <span style="display: flex; justify-content: space-between; font-size: 11px; color: #a49686;">
+              <span class="sr">$0</span><span class="sr">$2M</span><span class="sr">$4M</span><span class="sr">$6M</span><span class="sr">$8M</span>
+            </span>
+            <span></span>
+          </div>
+        </div>
+      </div>
+
+      <!-- table -->
+      <div style="flex: 1; min-height: 0; border: 1px solid #eadfce; border-radius: 8px; overflow: hidden; display: flex; flex-direction: column;">
+        <div style="display: grid; grid-template-columns: 1fr 210px 150px 150px 150px 130px; border-bottom: 1px solid #eadfce; background: #ffffff;">
+          <div style="padding: 10px 14px; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.03em; color: #7c6f60;">Customer</div>
+          <div style="padding: 10px 14px; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.03em; color: #7c6f60;">Project</div>
+          <div style="padding: 10px 14px; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.03em; color: #7c6f60; text-align: right;">Contract</div>
+          <div style="padding: 10px 14px; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.03em; color: #7c6f60; text-align: right;">3rd Party Credit</div>
+          <div style="padding: 10px 14px; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.03em; color: #7c6f60; text-align: right;">Customer Portion</div>
+          <div style="padding: 10px 14px; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.03em; color: #7c6f60;">Install</div>
+        </div>
+
+        <div style="flex: 1; overflow: hidden;">
+          <div style="display: flex; align-items: center; gap: 8px; padding: 9px 14px; background: rgba(240,122,36,0.1); border-bottom: 1px solid #eadfce;">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#a94f1f" stroke-width="2.6"><path d="M6 9l6 6 6-6"/></svg>
+            <span style="font-size: 12.5px; font-weight: 700; color: #a94f1f;">GoodLeap Financing</span>
+            <span class="sr" style="font-size: 11.5px; color: #a94f1f;">148 projects</span>
+          </div>
+
+          <div style="display: grid; grid-template-columns: 1fr 210px 150px 150px 150px 130px; border-bottom: 1px solid #f5eee2;">
+            <div style="padding: 9px 14px 9px 30px; font-size: 12.5px;">Okafor, Chidi</div>
+            <div style="padding: 9px 14px; font-size: 12.5px; color: #5c4632;">Mission Blvd</div>
+            <div class="sr" style="padding: 9px 14px; font-size: 12.5px; text-align: right;">$52,110.00</div>
+            <div class="sr" style="padding: 9px 14px; font-size: 12.5px; text-align: right;">$12,400.00</div>
+            <div class="sr" style="padding: 9px 14px; font-size: 12.5px; text-align: right;">$39,710.00</div>
+            <div class="sr" style="padding: 9px 14px; font-size: 12.5px; color: #5c4632;">14 Aug 2026</div>
+          </div>
+          <div style="display: grid; grid-template-columns: 1fr 210px 150px 150px 150px 130px; border-bottom: 1px solid #f5eee2;">
+            <div style="padding: 9px 14px 9px 30px; font-size: 12.5px;">Bianchi, Elena</div>
+            <div style="padding: 9px 14px; font-size: 12.5px; color: #5c4632;">Redwood Ct</div>
+            <div class="sr" style="padding: 9px 14px; font-size: 12.5px; text-align: right;">$44,275.00</div>
+            <div class="sr" style="padding: 9px 14px; font-size: 12.5px; text-align: right;">$10,000.00</div>
+            <div class="sr" style="padding: 9px 14px; font-size: 12.5px; text-align: right;">$34,275.00</div>
+            <div class="sr" style="padding: 9px 14px; font-size: 12.5px; color: #5c4632;">22 Aug 2026</div>
+          </div>
+          <div style="display: grid; grid-template-columns: 1fr 210px 150px 150px 150px 130px; border-bottom: 1px solid #f5eee2;">
+            <div style="padding: 9px 14px 9px 30px; font-size: 12.5px;">Nakamura, Ren</div>
+            <div style="padding: 9px 14px; font-size: 12.5px; color: #5c4632;">Foothill Rd</div>
+            <div class="sr" style="padding: 9px 14px; font-size: 12.5px; text-align: right;">$61,040.00</div>
+            <div class="sr" style="padding: 9px 14px; font-size: 12.5px; text-align: right;">$15,800.00</div>
+            <div class="sr" style="padding: 9px 14px; font-size: 12.5px; text-align: right;">$45,240.00</div>
+            <div class="sr" style="padding: 9px 14px; font-size: 12.5px; color: #5c4632;">03 Sep 2026</div>
+          </div>
+          <div style="display: grid; grid-template-columns: 1fr 210px 150px 150px 150px 130px; border-bottom: 1px solid #eadfce;">
+            <div style="padding: 9px 14px 9px 30px; font-size: 12px; font-weight: 700; color: #5c4632;">Subtotal</div>
+            <div></div>
+            <div class="sr" style="padding: 9px 14px; font-size: 12.5px; font-weight: 700; text-align: right;">$6,842,310</div>
+            <div class="sr" style="padding: 9px 14px; font-size: 12.5px; font-weight: 700; text-align: right;">$1,588,200</div>
+            <div class="sr" style="padding: 9px 14px; font-size: 12.5px; font-weight: 700; text-align: right;">$5,254,110</div>
+            <div></div>
+          </div>
+
+          <div style="display: flex; align-items: center; gap: 8px; padding: 9px 14px; background: rgba(240,122,36,0.1); border-bottom: 1px solid #eadfce;">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#a94f1f" stroke-width="2.6"><path d="M6 9l6 6 6-6"/></svg>
+            <span style="font-size: 12.5px; font-weight: 700; color: #a94f1f;">Cash</span>
+            <span class="sr" style="font-size: 11.5px; color: #a94f1f;">96 projects</span>
+          </div>
+          <div style="display: grid; grid-template-columns: 1fr 210px 150px 150px 150px 130px; border-bottom: 1px solid #f5eee2;">
+            <div style="padding: 9px 14px 9px 30px; font-size: 12.5px;">Yunjiao-Guan</div>
+            <div style="padding: 9px 14px; font-size: 12.5px; color: #5c4632;">61st Ave</div>
+            <div class="sr" style="padding: 9px 14px; font-size: 12.5px; text-align: right;">$46,335.50</div>
+            <div class="sr" style="padding: 9px 14px; font-size: 12.5px; text-align: right;">$0.00</div>
+            <div class="sr" style="padding: 9px 14px; font-size: 12.5px; text-align: right;">$46,335.50</div>
+            <div class="sr" style="padding: 9px 14px; font-size: 12.5px; color: #5c4632;">09 Jul 2026</div>
+          </div>
+          <div style="display: grid; grid-template-columns: 1fr 210px 150px 150px 150px 130px; border-bottom: 1px solid #eadfce;">
+            <div style="padding: 9px 14px 9px 30px; font-size: 12px; font-weight: 700; color: #5c4632;">Subtotal</div>
+            <div></div>
+            <div class="sr" style="padding: 9px 14px; font-size: 12.5px; font-weight: 700; text-align: right;">$3,214,880</div>
+            <div class="sr" style="padding: 9px 14px; font-size: 12.5px; font-weight: 700; text-align: right;">$0</div>
+            <div class="sr" style="padding: 9px 14px; font-size: 12.5px; font-weight: 700; text-align: right;">$3,214,880</div>
+            <div></div>
+          </div>
+
+          <div style="display: grid; grid-template-columns: 1fr 210px 150px 150px 150px 130px; background: rgba(240,122,36,0.1); border-top: 1px solid rgba(240,122,36,0.22);">
+            <div style="padding: 11px 14px; font-size: 12.5px; font-weight: 700; color: #a94f1f;">Total &middot; 244 projects</div>
+            <div></div>
+            <div class="sr" style="padding: 11px 14px; font-size: 13px; font-weight: 700; text-align: right; color: #a94f1f;">$10,057,190</div>
+            <div class="sr" style="padding: 11px 14px; font-size: 13px; font-weight: 700; text-align: right; color: #a94f1f;">$1,588,200</div>
+            <div class="sr" style="padding: 11px 14px; font-size: 13px; font-weight: 700; text-align: right; color: #a94f1f;">$8,468,990</div>
+            <div></div>
+          </div>
+        </div>
+
+        <div style="height: 44px; flex-shrink: 0; border-top: 1px solid #eadfce; display: flex; align-items: center; gap: 12px; padding: 0 14px;">
+          <span class="sr" style="font-size: 12px; color: #7c6f60;">Showing 1–50 of 244</span>
+          <div style="flex-grow: 1;"></div>
+          <div style="display: flex; gap: 6px;">
+            <span style="display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px; border: 1px solid #eadfce; border-radius: 6px; color: #a49686;">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#a49686" stroke-width="2.4"><path d="M15 6l-6 6 6 6"/></svg>
+            </span>
+            <span class="sr" style="display: inline-flex; align-items: center; justify-content: center; min-width: 28px; height: 28px; padding: 0 8px; border-radius: 6px; background: linear-gradient(135deg, #ffc18f 0%, #ee8f45 56%, #c8642d 100%); color: #ffffff; font-size: 12px; font-weight: 600;">1</span>
+            <span class="sr" style="display: inline-flex; align-items: center; justify-content: center; min-width: 28px; height: 28px; padding: 0 8px; border: 1px solid #eadfce; border-radius: 6px; font-size: 12px;">2</span>
+            <span class="sr" style="display: inline-flex; align-items: center; justify-content: center; min-width: 28px; height: 28px; padding: 0 8px; border: 1px solid #eadfce; border-radius: 6px; font-size: 12px;">3</span>
+            <span style="display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px; border: 1px solid #eadfce; border-radius: 6px;">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#5c4632" stroke-width="2.4"><path d="M9 6l6 6-6 6"/></svg>
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</x-dc>
+</body>
+</html>
