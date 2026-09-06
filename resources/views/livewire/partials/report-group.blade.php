@@ -22,14 +22,10 @@
 @endif
 
 <tr class="rb-subtotal-row">
-    @foreach ($reportColumns as $index => $column)
-        <td class="{{ ($column['numeric'] ?? false) ? 'rb-num' : '' }}"
+    @foreach ($this->summaryCells($group['aggregates'] ?? [], 'Subtotal · ' . $this->groupLabelFor($group['value'])) as $index => $cell)
+        <td class="{{ ($reportColumns[$index]['numeric'] ?? false) ? 'rb-num' : '' }}"
             @if ($index === 0) style="padding-left: {{ 14 + $depth * 18 }}px;" @endif>
-            @if ($index === 0)
-                Subtotal · {{ $this->groupLabelFor($group['value']) }}
-            @elseif (isset($group['aggregates'][$column['field']]))
-                {{ $this->formatSummary($group['aggregates'][$column['field']]) }}
-            @endif
+            {{ $cell }}
         </td>
     @endforeach
 </tr>

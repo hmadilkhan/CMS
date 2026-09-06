@@ -357,7 +357,9 @@
                     <div class="rb-section-label">Columns ({{ count($selectedFields) }})</div>
 
                     @forelse ($selectedFields as $index => $field)
-                        <div class="rb-col">
+                        {{-- keyed by the field: without it a reorder can leave
+                             one column's summary picker showing another's --}}
+                        <div class="rb-col" wire:key="column-{{ str_replace('.', '-', $field) }}">
                             <span class="rb-col-name">{{ $this->availableFields[$field] ?? $field }}</span>
                             @if ($this->getFieldType($field) === 'number')
                                 {{-- What this column says in the subtotal rows. --}}
@@ -548,15 +550,17 @@
                                         ])
                                     @endforeach
 
+                                    @php
+                                        $totalLabel =
+                                            'Total · ' .
+                                            number_format($previewTotals['count']) .
+                                            ' ' .
+                                            Str::plural('record', $previewTotals['count']);
+                                    @endphp
                                     <tr class="rb-total-row">
-                                        @foreach ($reportColumns as $index => $column)
-                                            <td class="{{ ($column['numeric'] ?? false) ? 'rb-num' : '' }}">
-                                                @if ($index === 0)
-                                                    Total · {{ number_format($previewTotals['count']) }}
-                                                    {{ Str::plural('record', $previewTotals['count']) }}
-                                                @elseif (isset($previewTotals['aggregates'][$column['field']]))
-                                                    {{ $this->formatSummary($previewTotals['aggregates'][$column['field']]) }}
-                                                @endif
+                                        @foreach ($this->summaryCells($previewTotals['aggregates'] ?? [], $totalLabel) as $index => $cell)
+                                            <td class="{{ ($reportColumns[$index]['numeric'] ?? false) ? 'rb-num' : '' }}">
+                                                {{ $cell }}
                                             </td>
                                         @endforeach
                                     </tr>

@@ -148,4 +148,57 @@ class ReportExportTest extends TestCase
 
         $this->assertCount(60, $rows);
     }
+
+    public function test_a_summarised_first_column_keeps_its_figure(): void
+    {
+        $cash = FinanceOption::create(['name' => 'Cash']);
+        $this->deals($cash, 2, 1000);
+
+        // The only column is the one being summed, so the label has nowhere to
+        // go - the figure is what matters and must survive.
+        $component = Livewire::actingAs($this->user())
+            ->test(DynamicReportBuilder::class)
+            ->set('selectedFields', ['customer_finances.contract_amount'])
+            ->set('groupBy', 'finance_options.name')
+            ->call('refreshPreview');
+
+        [$rows] = $this->captureExport(fn () => $component->call('exportExcel'));
+
+        $flat = array_map(fn ($row) => implode('|', $row), $rows);
+
+        $this->assertContains('2,000.00', $flat, 'the subtotal lost its figure to the label');
+        $this->assertSame('2,000.00', end($flat), 'the total lost its figure to the label');
+    }
+
+    public function test_a_missing_group_value_is_its_own_group(): void
+    {
+        $cash = FinanceOption::create(['name' => 'Cash']);
+        $blank = FinanceOption::create(['name' => '']);
+
+        $this->deals($cash, 1, 1000);
+        $this->deals($blank, 1, 2000);
+
+        // A customer with no finance row at all: its group value is NULL, which
+        // must not share a bucket with the empty-named plan.
+        Customer::create(['first_name' => 'No finance', 'last_name' => 'Doe']);
+
+        $component = Livewire::actingAs($this->user())
+            ->test(DynamicReportBuilder::class)
+            ->set('selectedFields', ['customers.first_name', 'customer_finances.contract_amount'])
+            ->set('groupBy', 'finance_options.name')
+            ->call('refreshPreview');
+
+        $groups = $component->get('previewGroups');
+
+        // three groups, and each holds exactly the row it counted
+        $this->assertCount(3, $groups);
+
+        foreach ($groups as $group) {
+            $this->assertCount(
+                $group['count'],
+                $group['rows'],
+                'a group printed rows it does not own'
+            );
+        }
+    }
 }

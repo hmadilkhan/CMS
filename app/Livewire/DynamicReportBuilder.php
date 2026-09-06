@@ -431,7 +431,7 @@ class DynamicReportBuilder extends Component
             $this->reportColumns = [];
             $this->previewCount = 0;
             $this->previewGroups = [];
-            $this->previewTotals = ['count' => 0, 'sums' => []];
+            $this->previewTotals = ['count' => 0, 'aggregates' => []];
             $this->showResults = false;
             $this->previewError = 'This combination of fields could not be previewed.';
         }
@@ -495,6 +495,18 @@ class DynamicReportBuilder extends Component
     public function formatSummary($value): string
     {
         return $value === null ? '—' : number_format((float) $value, 2);
+    }
+
+    /**
+     * A subtotal or total line as cells aligned with the report's columns, so
+     * a summarised first column keeps its figure instead of losing it to the
+     * label.
+     *
+     * @return array<int, string>
+     */
+    public function summaryCells(array $aggregates, string $label): array
+    {
+        return $this->summaryRowCells($this->reportColumns, $aggregates, $label);
     }
 
     /** A group's value as it is shown, for the subtotal line. */
@@ -976,12 +988,6 @@ class DynamicReportBuilder extends Component
         return array_values(array_unique(array_slice($fields, 0, self::MAX_GROUP_LEVELS)));
     }
 
-    /** The first grouping level, or '' - kept for the query's row ordering. */
-    private function permittedGroupField(): string
-    {
-        return $this->groupFields()[0] ?? '';
-    }
-
     private function buildQuery()
     {
         $query = $this->baseQuery();
@@ -1369,6 +1375,22 @@ class DynamicReportBuilder extends Component
         if ($fields === []) {
             return [];
         }
+
+        // The preview forgives a query it cannot run; an export has to as well,
+        // or a report that previews at 25 rows and fails on the full set throws
+        // the page away instead of saying so.
+        try {
+            return $this->buildExportRows($fields);
+        } catch (\Throwable $th) {
+            Log::error('Report export failed: '.$th->getMessage());
+            session()->flash('error', 'This report could not be exported.');
+
+            return [];
+        }
+    }
+
+    private function buildExportRows(array $fields): array
+    {
 
         $rows = $this->buildQuery()->get();
         $columns = $this->buildColumns();

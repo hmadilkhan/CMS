@@ -335,15 +335,17 @@
                                         ])
                                     @endforeach
 
+                                    @php
+                                        $totalLabel =
+                                            'Total · ' .
+                                            number_format($totals['count']) .
+                                            ' ' .
+                                            Str::plural('record', $totals['count']);
+                                    @endphp
                                     <tr class="rr-total-row">
-                                        @foreach ($reportColumns as $index => $column)
-                                            <td class="{{ ($column['numeric'] ?? false) ? 'rr-num' : '' }}">
-                                                @if ($index === 0)
-                                                    Total · {{ number_format($totals['count']) }}
-                                                    {{ Str::plural('record', $totals['count']) }}
-                                                @elseif (isset($totals['aggregates'][$column['field']]))
-                                                    {{ $this->formatSummary($totals['aggregates'][$column['field']]) }}
-                                                @endif
+                                        @foreach ($this->summaryCells($totals['aggregates'] ?? [], $totalLabel) as $index => $cell)
+                                            <td class="{{ ($reportColumns[$index]['numeric'] ?? false) ? 'rr-num' : '' }}">
+                                                {{ $cell }}
                                             </td>
                                         @endforeach
                                     </tr>

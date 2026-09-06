@@ -276,6 +276,18 @@ class ReportRunner extends Component
         return $value === null ? '—' : number_format((float) $value, 2);
     }
 
+    /**
+     * A subtotal or total line as cells aligned with the report's columns, so
+     * a summarised first column keeps its figure instead of losing it to the
+     * label.
+     *
+     * @return array<int, string>
+     */
+    public function summaryCells(array $aggregates, string $label): array
+    {
+        return $this->summaryRowCells($this->reportColumns, $aggregates, $label);
+    }
+
     /** A group's value as it is shown, for the subtotal line. */
     public function groupLabelFor($value): string
     {

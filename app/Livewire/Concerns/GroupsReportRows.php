@@ -168,7 +168,7 @@ trait GroupsReportRows
             ];
         }
 
-        usort($nodes, fn ($a, $b) => strcmp(implode('|', array_map('strval', $a['path'])), implode('|', array_map('strval', $b['path']))));
+        usort($nodes, fn ($a, $b) => strcmp($this->pathKey($a['path']), $this->pathKey($b['path'])));
 
         return $nodes;
     }
@@ -186,21 +186,32 @@ trait GroupsReportRows
             $path = [];
 
             for ($level = 0; $level < $depth; $level++) {
-                $path[] = (string) ($row->{self::GROUP_ALIASES[$level]} ?? '');
+                $path[] = $row->{self::GROUP_ALIASES[$level]} ?? null;
             }
 
-            $byPath[implode('|', $path)][] = $row;
+            $byPath[$this->pathKey($path)][] = $row;
         }
 
         return $this->fillRows($tree, $byPath, $depth);
+    }
+
+    /**
+     * A group path as one key. A missing value and an empty one are different
+     * groups - sharing a key would print every row of both under each.
+     */
+    private function pathKey(array $path): string
+    {
+        return implode('|', array_map(
+            fn ($value) => $value === null ? "\0null" : (string) $value,
+            $path
+        ));
     }
 
     private function fillRows(array $nodes, array $byPath, int $depth): array
     {
         foreach ($nodes as $index => $node) {
             if (count($node['path']) === $depth) {
-                $key = implode('|', array_map('strval', $node['path']));
-                $nodes[$index]['rows'] = $byPath[$key] ?? [];
+                $nodes[$index]['rows'] = $byPath[$this->pathKey($node['path'])] ?? [];
             }
 
             if (! empty($node['children'])) {
@@ -285,10 +296,33 @@ trait GroupsReportRows
 
     private function exportSummaryRow(array $columns, string $label, array $aggregates): array
     {
+        return $this->summaryRowCells($columns, $aggregates, $label);
+    }
+
+    /**
+     * A subtotal or total line, cell by cell: every summarised column carries
+     * its figure, and the label takes the first column that has none. When
+     * every column is summarised the label is dropped rather than a figure -
+     * the group's own heading above it already says which group this is.
+     *
+     * @return array<int, string>
+     */
+    protected function summaryRowCells(array $columns, array $aggregates, string $label): array
+    {
+        $labelIndex = null;
+
+        foreach ($columns as $index => $column) {
+            if (! array_key_exists($column['field'], $aggregates)) {
+                $labelIndex = $index;
+
+                break;
+            }
+        }
+
         $cells = [];
 
         foreach ($columns as $index => $column) {
-            if ($index === 0) {
+            if ($index === $labelIndex) {
                 $cells[] = $label;
 
                 continue;
@@ -307,9 +341,16 @@ trait GroupsReportRows
         return $value === null || $value === '' ? 'Not set' : (string) $value;
     }
 
-    /** Group values come back from the database, so compare them as text. */
+    /**
+     * Group values come back from the database, so compare them as text - but
+     * a missing value is its own group, never the same as an empty one.
+     */
     private function sameValue($a, $b): bool
     {
+        if ($a === null || $b === null) {
+            return $a === null && $b === null;
+        }
+
         return (string) $a === (string) $b;
     }
 }
