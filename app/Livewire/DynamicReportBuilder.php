@@ -37,6 +37,20 @@ class DynamicReportBuilder extends Component
 
     public $showResults = false;
 
+    /** Typed into the field list's search box. */
+    public $fieldSearch = '';
+
+    /**
+     * The preview under the builder is the report itself, run small: the same
+     * query, capped, so picking a column or a filter shows what it does to the
+     * data instead of describing it.
+     */
+    public $previewLimit = 25;
+
+    public $previewCount = 0;
+
+    public $previewError = '';
+
     public $reportName = '';
 
     // Edit functionality
@@ -111,6 +125,8 @@ class DynamicReportBuilder extends Component
             $this->reportType = 'profitability';
             $this->setDefaultFields();
         }
+
+        $this->refreshPreview();
     }
 
     public function getAvailableFieldsProperty()
@@ -267,6 +283,7 @@ class DynamicReportBuilder extends Component
 
         // Reset calculated fields builder
         $this->clearCalcBuilder();
+        $this->refreshPreview();
     }
 
     private function setDefaultFields()
@@ -308,6 +325,112 @@ class DynamicReportBuilder extends Component
         }
     }
 
+    /**
+     * The field list, grouped the way someone looks for a field, and narrowed
+     * by the search box. Empty groups drop out so a search shows only hits.
+     *
+     * @return array<string, array<string, string>>
+     */
+    public function getFieldGroupsProperty(): array
+    {
+        $groups = [
+            'Customer' => ['customers.'],
+            'Project' => ['projects.'],
+            'Sales Partner' => ['sales_partners.'],
+            'Department & Lane' => ['departments.', 'sub_departments.'],
+            'Equipment' => ['module_types.', 'inverter_types.'],
+            'Finance' => ['customer_finances.', 'finance_options.', 'loan_terms.', 'loan_aprs.'],
+        ];
+
+        $search = trim(mb_strtolower((string) $this->fieldSearch));
+        $grouped = [];
+
+        foreach ($groups as $label => $prefixes) {
+            foreach ($this->availableFields as $field => $name) {
+                foreach ($prefixes as $prefix) {
+                    if (! str_starts_with($field, $prefix)) {
+                        continue;
+                    }
+
+                    if ($search === ''
+                        || str_contains(mb_strtolower($name), $search)
+                        || str_contains(mb_strtolower($field), $search)) {
+                        $grouped[$label][$field] = $name;
+                    }
+
+                    break;
+                }
+            }
+        }
+
+        return $grouped;
+    }
+
+    /** How many fields the search is choosing from, for the search box's label. */
+    public function getFieldCountProperty(): int
+    {
+        return count($this->availableFields);
+    }
+
+    /**
+     * Run the report small and show it. Called after every change that alters
+     * what the report would return, so the preview is never stale.
+     */
+    public function refreshPreview(): void
+    {
+        $this->previewError = '';
+        $fields = $this->permittedFields($this->selectedFields);
+
+        if ($fields === []) {
+            $this->reportData = [];
+            $this->reportColumns = [];
+            $this->previewCount = 0;
+            $this->showResults = false;
+
+            return;
+        }
+
+        try {
+            $query = $this->buildQuery();
+            $this->previewCount = (clone $query)->count();
+            $this->reportData = $query->limit($this->previewLimit)->get();
+            $this->reportColumns = $this->buildColumns();
+            $this->processCalculatedFields();
+            $this->showResults = true;
+        } catch (\Throwable $th) {
+            Log::error('Report preview failed: '.$th->getMessage());
+            $this->reportData = [];
+            $this->reportColumns = [];
+            $this->previewCount = 0;
+            $this->showResults = false;
+            $this->previewError = 'This combination of fields could not be previewed.';
+        }
+    }
+
+    /** True while the preview is showing fewer rows than the report holds. */
+    public function getPreviewTruncatedProperty(): bool
+    {
+        return $this->previewCount > count($this->reportData);
+    }
+
+    public function moveFieldUp(int $index): void
+    {
+        if ($index > 0 && isset($this->selectedFields[$index])) {
+            [$this->selectedFields[$index - 1], $this->selectedFields[$index]]
+                = [$this->selectedFields[$index], $this->selectedFields[$index - 1]];
+            $this->refreshPreview();
+        }
+    }
+
+    public function moveFieldDown(int $index): void
+    {
+        if (isset($this->selectedFields[$index + 1])) {
+            [$this->selectedFields[$index + 1], $this->selectedFields[$index]]
+                = [$this->selectedFields[$index], $this->selectedFields[$index + 1]];
+            $this->refreshPreview();
+        }
+    }
+
     public function addField($field)
     {
         if (! in_array($field, $this->selectedFields)) {
@@ -319,6 +442,7 @@ class DynamicReportBuilder extends Component
     {
         unset($this->selectedFields[$index]);
         $this->selectedFields = array_values($this->selectedFields);
+        $this->refreshPreview();
     }
 
     public function toggleField($field)
@@ -333,9 +457,7 @@ class DynamicReportBuilder extends Component
             $this->selectedFields[] = $field;
         }
 
-        // Reset report data when fields change
-        $this->reportData = [];
-        $this->showResults = false;
+        $this->refreshPreview();
     }
 
     /** True while the value input for the filter being added is the picker. */
@@ -374,6 +496,7 @@ class DynamicReportBuilder extends Component
         ];
 
         $this->reset(['filterField', 'filterOperator', 'filterValue', 'filterValueList']);
+        $this->refreshPreview();
     }
 
     /**
@@ -413,6 +536,7 @@ class DynamicReportBuilder extends Component
     {
         unset($this->filters[$index]);
         $this->filters = array_values($this->filters);
+        $this->refreshPreview();
     }
 
     public function addToCalcBuilder()
@@ -487,6 +611,7 @@ class DynamicReportBuilder extends Component
         $this->selectedFields = $report->selected_fields ?? [];
         $this->filters = $report->filters ?? [];
         $this->calculatedFields = $report->calculated_fields ?? [];
+        $this->refreshPreview();
     }
 
     public function useCalcBuilder()
@@ -508,12 +633,14 @@ class DynamicReportBuilder extends Component
 
         $this->reset(['calcFieldName', 'calcFieldExpression']);
         $this->clearCalcBuilder();
+        $this->refreshPreview();
     }
 
     public function removeCalculatedField($index)
     {
         unset($this->calculatedFields[$index]);
         $this->calculatedFields = array_values($this->calculatedFields);
+        $this->refreshPreview();
     }
 
     public function saveReport()
@@ -1127,6 +1254,7 @@ class DynamicReportBuilder extends Component
         $this->showResults = false;
         $this->clearCalcBuilder();
         $this->setDefaultFields();
+        $this->refreshPreview();
     }
 
     public function render()
