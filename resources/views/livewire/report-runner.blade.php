@@ -329,29 +329,10 @@
                             <tbody>
                                 @if (!empty($groups))
                                     @foreach ($groups as $group)
-                                        <tr class="rr-group-row">
-                                            <td colspan="{{ count($reportColumns) }}">
-                                                {{ $this->groupHeading($group['value']) }}
-                                                <span class="fw-normal ms-2">{{ number_format($group['count']) }}
-                                                    {{ Str::plural('record', $group['count']) }}</span>
-                                            </td>
-                                        </tr>
-
-                                        @foreach ($group['rows'] as $row)
-                                            @include('livewire.partials.report-row-runner', ['row' => $row])
-                                        @endforeach
-
-                                        <tr class="rr-subtotal-row">
-                                            @foreach ($reportColumns as $index => $column)
-                                                <td class="{{ ($column['numeric'] ?? false) ? 'rr-num' : '' }}">
-                                                    @if ($index === 0)
-                                                        Subtotal
-                                                    @elseif (($column['numeric'] ?? false) && isset($group['sums'][$column['field']]))
-                                                        {{ number_format($group['sums'][$column['field']], 2) }}
-                                                    @endif
-                                                </td>
-                                            @endforeach
-                                        </tr>
+                                        @include('livewire.partials.report-group-runner', [
+                                            'group' => $group,
+                                            'depth' => 0,
+                                        ])
                                     @endforeach
 
                                     <tr class="rr-total-row">
@@ -360,8 +341,8 @@
                                                 @if ($index === 0)
                                                     Total · {{ number_format($totals['count']) }}
                                                     {{ Str::plural('record', $totals['count']) }}
-                                                @elseif (($column['numeric'] ?? false) && isset($totals['sums'][$column['field']]))
-                                                    {{ number_format($totals['sums'][$column['field']], 2) }}
+                                                @elseif (isset($totals['aggregates'][$column['field']]))
+                                                    {{ $this->formatSummary($totals['aggregates'][$column['field']]) }}
                                                 @endif
                                             </td>
                                         @endforeach

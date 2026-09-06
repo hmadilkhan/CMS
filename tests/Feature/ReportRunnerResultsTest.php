@@ -84,9 +84,9 @@ class ReportRunnerResultsTest extends TestCase
 
         $groups = $component->get('groups');
         $this->assertCount(2, $groups);
-        $this->assertEquals(10000, $groups[0]['sums']['contract_amount']);
-        $this->assertEquals(50000, $groups[1]['sums']['contract_amount']);
-        $this->assertEquals(60000, $component->get('totals')['sums']['contract_amount']);
+        $this->assertEquals(10000, $groups[0]['aggregates']['contract_amount']);
+        $this->assertEquals(50000, $groups[1]['aggregates']['contract_amount']);
+        $this->assertEquals(60000, $component->get('totals')['aggregates']['contract_amount']);
 
         // biggest bar first, scaled to the largest group
         $chart = $component->get('chart');
@@ -130,7 +130,7 @@ class ReportRunnerResultsTest extends TestCase
         $this->assertCount(50, $component->get('reportData'));
         $this->assertSame(60, $component->get('rowCount'));
         $this->assertSame(60, $component->get('groups')[0]['count']);
-        $this->assertEquals(60000, $component->get('totals')['sums']['contract_amount']);
+        $this->assertEquals(60000, $component->get('totals')['aggregates']['contract_amount']);
 
         $component->call('gotoPage', 2);
         $this->assertCount(10, $component->get('reportData'));
@@ -173,7 +173,7 @@ class ReportRunnerResultsTest extends TestCase
             ->call('runReport');
 
         $this->assertSame('GoodLeap Financing', $component->get('groups')[0]['value']);
-        $this->assertEquals(30000, $component->get('totals')['sums']['contract_amount']);
+        $this->assertEquals(30000, $component->get('totals')['aggregates']['contract_amount']);
 
         // the saved report is untouched
         $this->assertSame((string) $cash->id, $report->fresh()->filters[0]['value']);
