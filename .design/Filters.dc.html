@@ -1,0 +1,125 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600;700&display=swap">
+  <style>
+    body { margin: 0; font-family: "Open Sans", system-ui, sans-serif; }
+    a { color: #a94f1f; } a:hover { color: #78350f; }
+  </style>
+</helmet>
+
+<div style="width: 520px; height: 900px; background: #ffffff; color: #342416; font-size: 13px; display: flex; flex-direction: column; border-left: 1px solid #eadfce;">
+
+  <div style="height: 52px; flex-shrink: 0; border-bottom: 1px solid #eadfce; display: flex; align-items: center; gap: 10px; padding: 0 20px;">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#a94f1f" stroke-width="1.8"><path d="M3 5h18l-7 8v6l-4 2v-8z"/></svg>
+    <span style="font-size: 13px; font-weight: 700;">Edit filter</span>
+    <div style="flex-grow: 1;"></div>
+    <span style="font-size: 11.5px; color: #7c6f60;">Filter 3 of 3</span>
+  </div>
+
+  <div style="flex: 1; padding: 20px; display: flex; flex-direction: column; gap: 16px; min-height: 0;">
+
+    <div style="display: flex; flex-direction: column; gap: 6px;">
+      <span style="font-size: 11.5px; color: #7c6f60;">Field</span>
+      <div style="display: flex; align-items: center; gap: 10px; height: 38px; padding: 0 12px; border: 1px solid #eadfce; border-radius: 6px;">
+        <span style="font-size: 11px; font-weight: 700; color: #a49686;">Aa</span>
+        <span style="flex-grow: 1; font-size: 13px; font-weight: 600;">Finance Option</span>
+        <span style="font-size: 11px; color: #7c6f60; border: 1px solid #eadfce; border-radius: 4px; padding: 1px 6px;">Finance</span>
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#7c6f60" stroke-width="2.4"><path d="M6 9l6 6 6-6"/></svg>
+      </div>
+    </div>
+
+    <div style="display: flex; flex-direction: column; gap: 6px;">
+      <span style="font-size: 11.5px; color: #7c6f60;">Operator</span>
+      <div style="display: flex; gap: 6px;">
+        <span style="flex-grow: 1; text-align: center; padding: 8px 0; border-radius: 6px; border: 1px solid rgba(240,122,36,0.22); background: rgba(240,122,36,0.1); color: #a94f1f; font-size: 12.5px; font-weight: 600;">is any of</span>
+        <span style="flex-grow: 1; text-align: center; padding: 8px 0; border-radius: 6px; border: 1px solid #eadfce; color: #5c4632; font-size: 12.5px;">is none of</span>
+        <span style="flex-grow: 1; text-align: center; padding: 8px 0; border-radius: 6px; border: 1px solid #eadfce; color: #5c4632; font-size: 12.5px;">is empty</span>
+      </div>
+    </div>
+
+    <div style="display: flex; flex-direction: column; gap: 6px;">
+      <span style="font-size: 11.5px; color: #7c6f60;">Values</span>
+
+      <div style="border: 1px solid rgba(240,122,36,0.24); border-radius: 6px; box-shadow: 0 0 0 3px rgba(240,122,36,0.18);">
+        <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 6px; padding: 8px 10px;">
+          <span style="display: inline-flex; align-items: center; gap: 6px; background: rgba(240,122,36,0.1); border: 1px solid rgba(240,122,36,0.22); border-radius: 5px; padding: 4px 8px; font-size: 12px; color: #a94f1f; font-weight: 600;">
+            Cash
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#a94f1f" stroke-width="2.6"><path d="M6 6l12 12M18 6L6 18"/></svg>
+          </span>
+          <span style="display: inline-flex; align-items: center; gap: 6px; background: rgba(240,122,36,0.1); border: 1px solid rgba(240,122,36,0.22); border-radius: 5px; padding: 4px 8px; font-size: 12px; color: #a94f1f; font-weight: 600;">
+            GoodLeap Financing
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#a94f1f" stroke-width="2.6"><path d="M6 6l12 12M18 6L6 18"/></svg>
+          </span>
+          <span style="flex-grow: 1; min-width: 90px; font-size: 12.5px; color: #a49686;">Type to search&hellip;</span>
+        </div>
+
+        <div style="border-top: 1px solid #eadfce; max-height: 236px; overflow: hidden;">
+          <div style="display: flex; align-items: center; gap: 10px; padding: 9px 12px; background: rgba(240,122,36,0.1);">
+            <span style="width: 15px; height: 15px; border-radius: 3px; background: linear-gradient(135deg, #ffc18f 0%, #ee8f45 56%, #c8642d 100%); display: inline-flex; align-items: center; justify-content: center;">
+              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="3.4"><path d="M5 12.5l4.5 4.5L19 7"/></svg>
+            </span>
+            <span style="flex-grow: 1; font-size: 12.5px; font-weight: 600;">Cash</span>
+            <span style="font-size: 11.5px; color: #7c6f60;">96</span>
+          </div>
+          <div style="display: flex; align-items: center; gap: 10px; padding: 9px 12px;">
+            <span style="width: 15px; height: 15px; border-radius: 3px; border: 1px solid #cdbda8; display: inline-block;"></span>
+            <span style="flex-grow: 1; font-size: 12.5px;">Concert Financing</span>
+            <span style="font-size: 11.5px; color: #7c6f60;">73</span>
+          </div>
+          <div style="display: flex; align-items: center; gap: 10px; padding: 9px 12px; background: rgba(240,122,36,0.1);">
+            <span style="width: 15px; height: 15px; border-radius: 3px; background: linear-gradient(135deg, #ffc18f 0%, #ee8f45 56%, #c8642d 100%); display: inline-flex; align-items: center; justify-content: center;">
+              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="3.4"><path d="M5 12.5l4.5 4.5L19 7"/></svg>
+            </span>
+            <span style="flex-grow: 1; font-size: 12.5px; font-weight: 600;">GoodLeap Financing</span>
+            <span style="font-size: 11.5px; color: #7c6f60;">148</span>
+          </div>
+          <div style="display: flex; align-items: center; gap: 10px; padding: 9px 12px;">
+            <span style="width: 15px; height: 15px; border-radius: 3px; border: 1px solid #cdbda8; display: inline-block;"></span>
+            <span style="flex-grow: 1; font-size: 12.5px;">GoodLeap TPO</span>
+            <span style="font-size: 11.5px; color: #7c6f60;">55</span>
+          </div>
+          <div style="display: flex; align-items: center; gap: 10px; padding: 9px 12px;">
+            <span style="width: 15px; height: 15px; border-radius: 3px; border: 1px solid #cdbda8; display: inline-block;"></span>
+            <span style="flex-grow: 1; font-size: 12.5px;">Sunlight 25yr</span>
+            <span style="font-size: 11.5px; color: #7c6f60;">0</span>
+          </div>
+        </div>
+      </div>
+
+      <span style="font-size: 11.5px; color: #7c6f60;">Picking more than one value matches any of them.</span>
+    </div>
+
+    <div style="border-top: 1px solid #eadfce; padding-top: 14px; display: flex; flex-direction: column; gap: 10px;">
+      <div style="display: flex; align-items: center; gap: 8px;">
+        <span style="width: 15px; height: 15px; border-radius: 3px; background: linear-gradient(135deg, #ffc18f 0%, #ee8f45 56%, #c8642d 100%); display: inline-flex; align-items: center; justify-content: center;">
+          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="3.4"><path d="M5 12.5l4.5 4.5L19 7"/></svg>
+        </span>
+        <span style="font-size: 12.5px;">Let whoever runs this report change these values</span>
+      </div>
+      <div style="display: flex; align-items: center; gap: 8px;">
+        <span style="width: 15px; height: 15px; border-radius: 3px; border: 1px solid #cdbda8; display: inline-block;"></span>
+        <span style="font-size: 12.5px; color: #5c4632;">Lock this filter to the saved values</span>
+      </div>
+    </div>
+
+    <div style="flex-grow: 1;"></div>
+
+    <div style="display: flex; align-items: center; justify-content: space-between; gap: 10px;">
+      <span style="font-size: 12px; color: #7c6f60;">244 of 372 projects match</span>
+      <div style="display: flex; gap: 8px;">
+        <button style="height: 36px; padding: 0 14px; border: 1px solid #eadfce; border-radius: 6px; background: #ffffff; color: #342416; font: inherit; font-size: 12.5px;">Cancel</button>
+        <button style="height: 36px; padding: 0 18px; border: 1px solid transparent; border-radius: 6px; background: linear-gradient(135deg, #ffc18f 0%, #ee8f45 56%, #c8642d 100%); color: #ffffff; font: inherit; font-size: 12.5px; font-weight: 600; box-shadow: 0 12px 30px -18px rgba(151,76,18,0.55);">Apply filter</button>
+      </div>
+    </div>
+  </div>
+</div>
+</x-dc>
+</body>
+</html>
