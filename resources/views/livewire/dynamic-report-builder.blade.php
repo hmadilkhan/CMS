@@ -199,6 +199,26 @@
             vertical-align: top;
         }
 
+        .report-builder .rb-group-row td {
+            background: rgba(240, 122, 36, 0.1);
+            color: #a94f1f;
+            font-size: 12.5px;
+            border-bottom: 1px solid #eadfce;
+        }
+
+        .report-builder .rb-subtotal-row td {
+            font-weight: 700;
+            border-bottom: 1px solid #eadfce;
+            background: #ffffff;
+        }
+
+        .report-builder .rb-total-row td {
+            font-weight: 700;
+            color: #a94f1f;
+            background: rgba(240, 122, 36, 0.1);
+            border-top: 1px solid rgba(240, 122, 36, 0.22);
+        }
+
         .report-builder .rb-num {
             text-align: right;
             font-variant-numeric: tabular-nums;
@@ -304,6 +324,14 @@
                 </div>
 
                 <div class="rb-scroll">
+                    <div class="rb-section-label">Group rows</div>
+                    <select wire:model.live="groupBy" class="form-select mb-3">
+                        <option value="">No grouping</option>
+                        @foreach ($this->availableFields as $field => $name)
+                            <option value="{{ $field }}">{{ $name }}</option>
+                        @endforeach
+                    </select>
+
                     <div class="rb-section-label">Columns ({{ count($selectedFields) }})</div>
 
                     @forelse ($selectedFields as $index => $field)
@@ -471,35 +499,57 @@
                             <thead>
                                 <tr>
                                     @foreach ($reportColumns as $column)
-                                        <th>{{ $column['name'] }}</th>
+                                        <th class="{{ ($column['numeric'] ?? false) ? 'rb-num' : '' }}">
+                                            {{ $column['name'] }}
+                                        </th>
                                     @endforeach
                                 </tr>
                             </thead>
                             <tbody>
-                                @foreach ($reportData as $row)
-                                    <tr>
-                                        @foreach ($reportColumns as $column)
-                                            @php
-                                                $value =
-                                                    $column['type'] === 'calculated'
-                                                        ? $row->{$column['field']} ?? 'N/A'
-                                                        : $this->getNestedProperty($row, $column['field']);
-                                                $numeric = is_numeric($value) && !is_string($value);
-                                                if ($numeric) {
-                                                    $value = number_format(
-                                                        $value,
-                                                        is_float($value + 0) && floor($value + 0) != $value + 0 ? 2 : 0,
-                                                    );
-                                                }
-                                            @endphp
-                                            <td class="{{ $numeric ? 'rb-num' : '' }}">
-                                                <div style="max-width: 320px; word-wrap: break-word;">
-                                                    {{ $value === null || $value === '' ? '—' : $value }}
-                                                </div>
+                                @if ($groupBy && !empty($previewGroups))
+                                    @foreach ($previewGroups as $group)
+                                        <tr class="rb-group-row">
+                                            <td colspan="{{ count($reportColumns) }}">
+                                                <span class="fw-bold">{{ $this->groupHeading($group['value']) }}</span>
+                                                <span class="ms-2">{{ number_format($group['count']) }}
+                                                    {{ Str::plural('record', $group['count']) }}</span>
+                                            </td>
+                                        </tr>
+
+                                        @foreach ($group['rows'] as $row)
+                                            @include('livewire.partials.report-row', ['row' => $row])
+                                        @endforeach
+
+                                        <tr class="rb-subtotal-row">
+                                            @foreach ($reportColumns as $index => $column)
+                                                <td class="{{ ($column['numeric'] ?? false) ? 'rb-num' : '' }}">
+                                                    @if ($index === 0)
+                                                        Subtotal
+                                                    @elseif (($column['numeric'] ?? false) && isset($group['sums'][$column['field']]))
+                                                        {{ number_format($group['sums'][$column['field']], 2) }}
+                                                    @endif
+                                                </td>
+                                            @endforeach
+                                        </tr>
+                                    @endforeach
+
+                                    <tr class="rb-total-row">
+                                        @foreach ($reportColumns as $index => $column)
+                                            <td class="{{ ($column['numeric'] ?? false) ? 'rb-num' : '' }}">
+                                                @if ($index === 0)
+                                                    Total · {{ number_format($previewTotals['count']) }}
+                                                    {{ Str::plural('record', $previewTotals['count']) }}
+                                                @elseif (($column['numeric'] ?? false) && isset($previewTotals['sums'][$column['field']]))
+                                                    {{ number_format($previewTotals['sums'][$column['field']], 2) }}
+                                                @endif
                                             </td>
                                         @endforeach
                                     </tr>
-                                @endforeach
+                                @else
+                                    @foreach ($reportData as $row)
+                                        @include('livewire.partials.report-row', ['row' => $row])
+                                    @endforeach
+                                @endif
                             </tbody>
                         </table>
                     @elseif ($showResults)

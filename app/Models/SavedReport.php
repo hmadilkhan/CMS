@@ -13,6 +13,7 @@ class SavedReport extends Model
         'name',
         'report_type',
         'selected_fields',
+        'group_by',
         'filters',
         'calculated_fields',
         'query',

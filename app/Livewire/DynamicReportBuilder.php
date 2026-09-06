@@ -4,6 +4,7 @@ namespace App\Livewire;
 
 use App\Exports\DynamicReportExport;
 use App\Livewire\Concerns\DescribesReportFields;
+use App\Livewire\Concerns\GroupsReportRows;
 use App\Livewire\Concerns\JoinsReportTables;
 use App\Models\Customer;
 use App\Models\Project;
@@ -20,6 +21,7 @@ use Maatwebsite\Excel\Facades\Excel;
 class DynamicReportBuilder extends Component
 {
     use DescribesReportFields;
+    use GroupsReportRows;
     use JoinsReportTables;
 
     #[Title('Dynamic Report Builder')]
@@ -36,6 +38,19 @@ class DynamicReportBuilder extends Component
     public $reportColumns = [];
 
     public $showResults = false;
+
+    /**
+     * The field the report's rows are grouped by, if any. A grouped report
+     * shows a header, its records and a subtotal per group, and one total for
+     * the report - which is how these numbers are read out loud.
+     */
+    public $groupBy = '';
+
+    /** @var array<int, array{value: string|null, count: int, sums: array, rows: array}> */
+    public $previewGroups = [];
+
+    /** @var array{count: int, sums: array} */
+    public $previewTotals = ['count' => 0, 'sums' => []];
 
     /** Typed into the field list's search box. */
     public $fieldSearch = '';
@@ -396,15 +411,64 @@ class DynamicReportBuilder extends Component
             $this->reportData = $query->limit($this->previewLimit)->get();
             $this->reportColumns = $this->buildColumns();
             $this->processCalculatedFields();
+            $this->buildGroups($fields);
             $this->showResults = true;
         } catch (\Throwable $th) {
             Log::error('Report preview failed: '.$th->getMessage());
             $this->reportData = [];
             $this->reportColumns = [];
             $this->previewCount = 0;
+            $this->previewGroups = [];
+            $this->previewTotals = ['count' => 0, 'sums' => []];
             $this->showResults = false;
             $this->previewError = 'This combination of fields could not be previewed.';
         }
+    }
+
+    /**
+     * Group the fetched rows and work out the subtotals. The sums come from
+     * their own GROUP BY over every matching record, not from the capped rows
+     * on screen, so a subtotal is never a subtotal of 25.
+     */
+    private function buildGroups(array $fields): void
+    {
+        $groupField = $this->permittedGroupField();
+
+        if ($groupField === '') {
+            $this->previewGroups = [];
+            $this->previewTotals = ['count' => 0, 'sums' => []];
+
+            return;
+        }
+
+        $summaries = $this->groupSummaries(
+            fn () => $this->baseQuery(),
+            $groupField,
+            $this->summableFields($fields)
+        );
+
+        $this->previewGroups = $this->groupRows($this->reportData, $summaries);
+        $this->previewTotals = $this->grandTotals($summaries);
+    }
+
+    /** How a group is headed in the table: the field it groups by, then its value. */
+    public function groupHeading($value): string
+    {
+        $label = $this->availableFields[$this->groupBy] ?? $this->groupBy;
+
+        return $label.': '.$this->groupLabel($value);
+    }
+
+    /** Group the report by a field, or pass '' to stop grouping. */
+    public function setGroupBy(string $field): void
+    {
+        $this->groupBy = in_array($field, array_keys($this->availableFields), true) ? $field : '';
+        $this->refreshPreview();
+    }
+
+    public function updatedGroupBy(): void
+    {
+        $this->setGroupBy((string) $this->groupBy);
     }
 
     /** True while the preview is showing fewer rows than the report holds. */
@@ -609,6 +673,7 @@ class DynamicReportBuilder extends Component
         $this->reportName = $report->name;
         $this->reportType = $report->report_type;
         $this->selectedFields = $report->selected_fields ?? [];
+        $this->groupBy = $report->group_by ?? '';
         $this->filters = $report->filters ?? [];
         $this->calculatedFields = $report->calculated_fields ?? [];
         $this->refreshPreview();
@@ -681,6 +746,7 @@ class DynamicReportBuilder extends Component
                 'name' => $this->reportName,
                 'report_type' => $this->reportName,
                 'selected_fields' => $this->permittedFields($this->selectedFields),
+                'group_by' => $this->permittedGroupField() ?: null,
                 'filters' => $this->permittedFilters(),
                 'calculated_fields' => $this->calculatedFields,
                 'query' => json_encode($queryWithBindings),
@@ -739,6 +805,7 @@ class DynamicReportBuilder extends Component
                 'name' => $this->reportName,
                 'report_type' => $this->reportName,
                 'selected_fields' => $this->permittedFields($this->selectedFields),
+                'group_by' => $this->permittedGroupField() ?: null,
                 'filters' => $this->permittedFilters(),
                 'calculated_fields' => $this->calculatedFields,
                 'query' => json_encode($queryWithBindings),
@@ -810,7 +877,8 @@ class DynamicReportBuilder extends Component
         ));
     }
 
-    private function buildQuery()
+    /** Joins and filters, with nothing selected yet - the report's population. */
+    private function baseQuery()
     {
         $query = Customer::query();
 
@@ -825,10 +893,30 @@ class DynamicReportBuilder extends Component
         // Add date filters based on report type
         $this->addDateFilters($query);
 
+        return $query;
+    }
+
+    /** The field the rows are grouped by, or '' when it is not one this user may use. */
+    private function permittedGroupField(): string
+    {
+        return $this->permittedFields([$this->groupBy])[0] ?? '';
+    }
+
+    private function buildQuery()
+    {
+        $query = $this->baseQuery();
+
         // Select fields with proper aliasing
         $selectFields = [];
         foreach ($this->permittedFields($this->selectedFields) as $field) {
             $selectFields[] = DB::raw("{$field} as {$this->fieldAlias($field)}");
+        }
+
+        // A grouped report carries its group's value on every row, so the rows
+        // can be laid out under their group header.
+        if ($groupField = $this->permittedGroupField()) {
+            $selectFields[] = DB::raw($groupField.' as '.self::GROUP_ALIAS);
+            $query->orderBy(DB::raw($groupField));
         }
 
         // Add customer ID for calculated fields processing
@@ -881,9 +969,15 @@ class DynamicReportBuilder extends Component
 
     private function addJoins($query)
     {
+        $fields = $this->permittedFields($this->selectedFields);
+
+        if ($groupField = $this->permittedGroupField()) {
+            $fields[] = $groupField;
+        }
+
         $this->applyReportJoins(
             $query,
-            $this->reportJoinFields($this->permittedFields($this->selectedFields), $this->permittedFilters()),
+            $this->reportJoinFields($fields, $this->permittedFilters()),
             // A profitability report is about the finance figures whether or
             // not one of its columns was picked.
             $this->reportType === 'profitability' ? ['customer_finances'] : []
@@ -940,6 +1034,7 @@ class DynamicReportBuilder extends Component
                     'field' => $this->fieldAlias($field),
                     'name' => $this->availableFields[$field] ?? $field,
                     'type' => 'data',
+                    'numeric' => $this->getFieldType($field) === 'number',
                 ];
             }
         }
@@ -1248,6 +1343,7 @@ class DynamicReportBuilder extends Component
     public function clearAll()
     {
         $this->selectedFields = [];
+        $this->groupBy = '';
         $this->filters = [];
         $this->calculatedFields = [];
         $this->reportData = [];
