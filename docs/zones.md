@@ -98,6 +98,39 @@ wrong stage.
 Consequence to remember: **a project with no zone shows no Zones section** on its
 project page, and appears on no lane.
 
+### The catch-up (`zones:backfill`)
+
+The client later asked for every *active* project - everything not sitting in
+the operations Archive - to appear on the funding board, placed by the
+department it is in. That is a **one-off catch-up, not a new rule**:
+
+| Department | Zone |
+|---|---|
+| 1 Deal Review | Pre NTP |
+| 2 Site Survey, 3 Engineering, 4 Permitting | NTP |
+| 5 Installation, 6 Inspection | M1 |
+| 7 PTO, 8 Certificate of Completion | M2 |
+| 9 Archive | left alone |
+
+`php artisan zones:backfill [--dry-run] [--limit=]` places every project that
+has **no zone yet**; the mapping lives in `config('zones.backfill')` and the
+command is `App\Console\Commands\BackfillProjectZones`.
+
+What it deliberately does not do:
+
+- **It never touches a project that already has a zone**, so a placement the
+  Funding Manager made by hand outranks it, as everywhere else in this module.
+- **It changes nothing about how projects are enrolled from now on.** The two
+  rules in §3 are untouched: a new project still enters at Deal Review and is
+  still promoted at Site Survey, and reaching Permitting still moves no zone.
+  Run the catch-up once; new work carries on as before.
+
+`zone_entered_at` is set from the first task opened in the project's current
+department, not from the moment the command ran, so the board's "in this zone"
+reads as the age of the real stage. Each placement writes an `is_auto` movement
+row, so the history says the system did it. Running it twice places nothing the
+second time. Covered by `tests/Feature/ZoneBackfillTest.php`.
+
 ---
 
 ## 5. The board
