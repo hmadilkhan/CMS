@@ -142,6 +142,42 @@ class ZoneService
     }
 
     /**
+     * Where a project already down the pipeline belongs on the funding board,
+     * from the department it is in. Only the one-off catch-up uses this - the
+     * automatic rules above are unchanged and still decide everything that
+     * happens from now on.
+     */
+    public function backfillZoneFor(int $departmentId): ?Zone
+    {
+        if (in_array($departmentId, (array) config('zones.backfill.skip_departments', []), true)) {
+            return null;
+        }
+
+        $slug = config('zones.backfill.departments.'.$departmentId);
+
+        return $slug ? $this->zoneBySlug($slug) : null;
+    }
+
+    /**
+     * Place a project that has no zone yet, as part of the catch-up. A project
+     * the Funding Manager has already placed is left exactly where it is.
+     *
+     * @param  \DateTimeInterface|null  $enteredAt  when it reached this stage,
+     *                                              so the board's "in this zone"
+     *                                              reads from the real date
+     */
+    public function backfill(Project $project, Zone $zone, ?\DateTimeInterface $enteredAt = null, ?string $note = null): bool
+    {
+        if ($project->zone_id) {
+            return false;
+        }
+
+        $this->applyMove($project, $zone, null, $note ?? 'Enrolled in Zones.', true, $enteredAt);
+
+        return true;
+    }
+
+    /**
      * The project fields a zone's own tab collects, keyed by column name. Empty
      * for every zone that collects nothing - which is all of them but NTP.
      *
@@ -158,14 +194,15 @@ class ZoneService
      * Write the move: the project's current zone, the clock the board's "days in
      * zone" reads, and the history row the zone tabs are built from.
      */
-    private function applyMove(Project $project, Zone $zone, ?int $userId, ?string $note, bool $isAuto): void
+    private function applyMove(Project $project, Zone $zone, ?int $userId, ?string $note, bool $isAuto, ?\DateTimeInterface $enteredAt = null): void
     {
         $fromZoneId = $project->zone_id;
+        $enteredAt = $enteredAt ?? now();
 
-        DB::transaction(function () use ($project, $zone, $fromZoneId, $userId, $note, $isAuto) {
+        DB::transaction(function () use ($project, $zone, $fromZoneId, $userId, $note, $isAuto, $enteredAt) {
             $project->forceFill([
                 'zone_id' => $zone->id,
-                'zone_entered_at' => now(),
+                'zone_entered_at' => $enteredAt,
             ])->save();
 
             ProjectZoneMovement::create([

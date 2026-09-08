@@ -45,6 +45,34 @@ return [
     ],
 
     /*
+     * A one-off catch-up: where a project that is already down the pipeline
+     * belongs on the funding board, read from the department it sits in.
+     *
+     * This is NOT how projects get their zone from now on - the two rules
+     * above are, and they are unchanged. It exists only so `zones:backfill`
+     * can place the existing backlog once, and it never touches a project the
+     * Funding Manager has already put somewhere.
+     */
+    'backfill' => [
+        'departments' => [
+            1 => 'pre_ntp',   // Deal Review
+            2 => 'ntp',       // Site Survey        - before installation
+            3 => 'ntp',       // Engineering        - before installation
+            4 => 'ntp',       // Permitting         - before installation
+            5 => 'm1',        // Installation
+            6 => 'm1',        // Inspection
+            7 => 'm2',        // PTO                - after inspection
+            8 => 'm2',        // Certificate of Completion
+        ],
+
+        /*
+         * Departments the catch-up leaves alone. 9 is the operations Archive
+         * lane: "active" means everything not sitting in it.
+         */
+        'skip_departments' => [9],
+    ],
+
+    /*
      * The lane that is kept off the board. It stays a valid move destination and
      * is read back through the board's Archived view.
      */
