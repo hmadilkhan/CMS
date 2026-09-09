@@ -330,14 +330,26 @@ class EditFields extends Component
                 $negative = $project->customer->finances->finance->negative_variance * -1; // Make negative
                 $sold_production_value = $project->customer->sold_production_value;
 
-                // if ($sold_production_value == "" || $sold_production_value == null) {
-                //     $this->addError('production_value_achieved', "Sold Production Value is required.");
-                //     return;
-                // }
-                if ($sold_production_value != '' || $sold_production_value != null) {
-                    $calculatePercentage = ((($this->production_value_achieved / $sold_production_value) - 1) * 100);
+                if ($this->production_value_achieved !== null && $this->production_value_achieved !== '' && ! is_numeric($this->production_value_achieved)) {
+                    $this->addError('production_value_achieved', 'Production Value Achieved must be a number.');
 
-                    if (bccomp($calculatePercentage, $negative, 2) <= 0 || bccomp($calculatePercentage, $positive, 2) >= 0) {
+                    return;
+                }
+
+                // Only two real numbers can be compared: a blank achieved value
+                // has nothing to check yet, and a sold value of 0 (or blank) has
+                // no percentage to measure against - dividing by it used to be a
+                // fatal error, which is what the 500 was.
+                if (is_numeric($this->production_value_achieved) && is_numeric($sold_production_value) && (float) $sold_production_value != 0.0) {
+                    $calculatePercentage = ((((float) $this->production_value_achieved / (float) $sold_production_value) - 1) * 100);
+
+                    // bccomp only accepts plain decimal strings, so never hand it
+                    // a float that stringifies in scientific notation.
+                    $percentage = number_format($calculatePercentage, 6, '.', '');
+                    $negative = number_format((float) $negative, 6, '.', '');
+                    $positive = number_format((float) $positive, 6, '.', '');
+
+                    if (bccomp($percentage, $negative, 2) <= 0 || bccomp($percentage, $positive, 2) >= 0) {
                         $this->addError('production_value_achieved', 'Calculated Percentage ('.number_format($calculatePercentage, 2).'%) is exceeding the allowed variance range.');
 
                         return;
@@ -351,7 +363,7 @@ class EditFields extends Component
                 'meter_spot_request_date' => $this->meter_spot_request_date,
                 'meter_spot_request_number' => $this->meter_spot_request_number,
             ], $this->production_requirement == 1 ? [
-                'production_value_achieved' => $this->production_value_achieved,
+                'production_value_achieved' => $this->production_value_achieved === '' ? null : $this->production_value_achieved,
             ] : []);
         }
 
