@@ -4026,18 +4026,6 @@
             <div class="modal-body justify-content-center flex-column d-flex">
                 <i class="icofont-aim text-success display-2 text-center mt-2"></i>
                 <p class="mt-4 fs-5 text-center">Are you sure you want to move the project ?</p>
-
-                {{-- Installation cannot start without the NTP approval date. The
-                     block is revealed for that move when the date is missing, and
-                     again if the server refuses the move for the same reason. --}}
-                <div class="d-none" id="moveProjectNtpBlock">
-                    <hr>
-                    <label class="form-label fw-bold" for="moveProjectNtpDate">NTP Approval Date</label>
-                    <input type="date" class="form-control" id="moveProjectNtpDate">
-                    <div class="form-text">This project cannot move to Installation until the NTP approval date is on
-                        file.</div>
-                    <div class="alert alert-danger mt-2 mb-0 d-none" id="moveProjectNtpError"></div>
-                </div>
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
@@ -4156,37 +4144,10 @@
         getSubDepartments($(this).val())
     });
 
-    {{-- The NTP gate: Permitting -> Installation needs the NTP approval date.
-         The server is the real gate (ProjectController::ntpApprovalGate); this
-         only saves the user a rejected click by asking up front. --}}
-    const ntpGate = {
-        fromDepartmentId: @json(\App\Models\Department::where('name', 'Permitting')->value('id')),
-        toDepartmentId: @json(\App\Models\Department::where('name', 'Installation')->value('id')),
-        projectDepartmentId: @json($project->department_id),
-        approvalDateOnFile: @json(!empty($project->ntp_approval_date)),
-    };
-
-    function ntpDateIsNeededFor(departmentId) {
-        return !ntpGate.approvalDateOnFile &&
-            Number(ntpGate.projectDepartmentId) === Number(ntpGate.fromDepartmentId) &&
-            Number(departmentId) === Number(ntpGate.toDepartmentId);
-    }
-
-    function showMoveNtpBlock(message) {
-        $('#moveProjectNtpBlock').removeClass('d-none');
-
-        if (message) {
-            $('#moveProjectNtpError').text(message).removeClass('d-none');
-        }
-
-        $('#moveProjectNtpDate').focus();
-    }
-
-    function resetMoveNtpBlock() {
-        $('#moveProjectNtpBlock').addClass('d-none');
-        $('#moveProjectNtpError').text('').addClass('d-none');
-        $('#moveProjectNtpDate').val('');
-    }
+    {{-- The NTP approval date is no longer asked for here. Permitting ->
+         Installation goes through, and a project with no date waits in Install
+         Pending Document until the funding side files it from the Zones NTP
+         tab - see docs/follow-ups.md. --}}
 
     function escapeMoveHtml(value) {
         return $('<div>').text(value === null || value === undefined ? '' : value).html();
@@ -4229,12 +4190,6 @@
         $('#taskId').val(taskId);
         $('#departmentId').val(departmentId);
         $('#subDepartmentId').val(subDepartmentId);
-        resetMoveNtpBlock();
-
-        if (ntpDateIsNeededFor(departmentId)) {
-            showMoveNtpBlock();
-        }
-
         $("#moveProjectModal").modal("show");
     }
 
@@ -4246,7 +4201,6 @@
 
         $moveButton.prop("disabled", true).text("Moving...");
         $("#moveProjectModal").modal("show");
-        $('#moveProjectNtpError').text('').addClass('d-none');
         $.ajax({
             url: "{{ route('move.project') }}",
             type: 'POST',
@@ -4256,7 +4210,6 @@
                 taskId: $('#taskId').val(),
                 departmentId: $('#departmentId').val(),
                 subDepartmentId: $('#subDepartmentId').val(),
-                ntp_approval_date: $('#moveProjectNtpDate').val(),
             },
             success: function(response) {
                 // console.log(response);
@@ -4271,14 +4224,6 @@
                     location.reload();
                 } else if (response.status == 422) {
                     $moveButton.prop("disabled", false).text("Move");
-
-                    // A missing NTP approval date is answered inside the modal,
-                    // not by closing it.
-                    if (response.requires === 'ntp_approval_date') {
-                        showMoveNtpBlock(response.error);
-                        return;
-                    }
-
                     showMoveFailure(response);
                 } else {
                     console.log(500);
@@ -4288,11 +4233,6 @@
             error: function(error) {
                 $moveButton.prop("disabled", false).text("Move");
                 if (error.responseJSON && error.responseJSON.status == 422) {
-                    if (error.responseJSON.requires === 'ntp_approval_date') {
-                        showMoveNtpBlock(error.responseJSON.error);
-                        return;
-                    }
-
                     $("#moveProjectModal").modal("hide");
                     showMoveFailure(error.responseJSON);
                 }
