@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Department;
 use App\Models\Project;
 use App\Models\Zone;
+use App\Services\DocumentFollowUpService;
 use App\Services\ZoneService;
 use Illuminate\Http\Request;
 
@@ -58,10 +59,9 @@ class ZoneController extends Controller
     /**
      * Move one project to another zone. The only write this board makes.
      *
-     * No zone move is gated on a project field. The NTP Approval Date is asked
-     * for on the department side instead, on Permitting -> Installation
-     * (`ProjectController::ntpApprovalGate`), where it is followed by the MPU
-     * chase - see docs/follow-ups.md.
+     * No zone move is gated on a project field. The NTP Approval Date is filed
+     * from this side's NTP tab (`fields()` below), and filing it is what lets a
+     * project out of Install Pending Document - see docs/follow-ups.md.
      */
     public function move(Request $request)
     {
@@ -160,6 +160,12 @@ class ZoneController extends Controller
         foreach ($updates as $column => $value) {
             $this->logFieldChange($project, $fields[$column]['label'], $value, 'from the '.$zone->name.' zone');
         }
+
+        // Filing the NTP Approval Date here is what releases a project waiting
+        // in Install Pending Document: Operations no longer refuses that move,
+        // it parks the project until the funding side answers. See
+        // docs/follow-ups.md.
+        app(DocumentFollowUpService::class)->sync($project->refresh());
 
         return response()->json([
             'status' => 200,

@@ -322,10 +322,12 @@ groups a chase's documents into its own section; `sub_departments.show_in_move_l
 marks a lane closed to manual movement (enforced in the UI *and* in
 `ProjectController::moveProject()`).
 
-The same Permitting → Installation move is **also** gated on
-`projects.ntp_approval_date` — not a chase, just a refusal the move modal answers
-with a date input (`ProjectController::ntpApprovalGate()`). It runs **before** the
-MPU interception: NTP first, then the chase parks the project.
+A **fourth chase** rides the same Permitting → Installation move: the NTP
+approval date. It used to be a refusal answered by a date input in the move
+modal; the move now goes through, the project waits in Install Pending Document,
+and the **Funding Manager files the date from the Zones NTP tab**, which releases
+it. It is the only chase whose document comes from outside Operations, so it has
+no dashboard card and opens at the move rather than when the date goes missing.
 
 ## Zones (Funding Manager module)
 
@@ -346,9 +348,9 @@ are read-only. Only two zone changes are automatic (Deal
 Review → Pre NTP, Site Survey → NTP while still in Pre NTP) — everything else is
 a manual move and a department move never overrides one. **No zone move is gated
 on a project field.** The **NTP Approval Date** left the Deal Review department
-fields: the NTP zone tab shows it (`config('zones.zone_fields')`) and the
-Permitting → Installation move modal is what enforces it — see
-`docs/follow-ups.md`. The board is the
+fields: the NTP zone tab is now the only place it is collected, and filing it
+there is what releases a project parked in Install Pending Document by the
+Permitting → Installation move — see `docs/follow-ups.md`. The board is the
 **Zones tab of the projects page** (`Operational | Zones` switch at top centre) —
 a Kanban of one column per zone using the projects page's own project cards,
 fetched as a fragment from `zones.board`. Gated by the `View Zones` permission; a

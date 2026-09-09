@@ -615,64 +615,6 @@ class ProjectController extends Controller
     }
 
     /** The one move that cannot happen without the NTP approval date. */
-    private const NTP_GATE_FROM_DEPARTMENT = 'Permitting';
-
-    private const NTP_GATE_TO_DEPARTMENT = 'Installation';
-
-    /**
-     * Refuse a Permitting -> Installation move while the project has no NTP
-     * approval date, and let the move modal supply one.
-     *
-     * Returns a 422 carrying `requires: ntp_approval_date` when the date is
-     * still missing - the modal reads that flag, shows a date input and sends
-     * the move again with `ntp_approval_date` filled. Returns NULL when the move
-     * may proceed; the accepted date (if one was supplied) comes back through
-     * $ntpApprovalDate so the caller can save it inside the move's transaction.
-     *
-     * Deliberately checked before the paperwork chases: a project that owes both
-     * the NTP date and an MPU meter spot result is asked for the date first, and
-     * only then parked in the MPU lane.
-     */
-    private function ntpApprovalGate(Project $project, Request $request, ?string &$ntpApprovalDate)
-    {
-        $fromId = Department::where('name', self::NTP_GATE_FROM_DEPARTMENT)->value('id');
-        $toId = Department::where('name', self::NTP_GATE_TO_DEPARTMENT)->value('id');
-
-        $isGatedMove = $fromId && $toId
-            && (int) $project->department_id === (int) $fromId
-            && (int) $request->departmentId === (int) $toId;
-
-        if (! $isGatedMove || ! empty($project->ntp_approval_date)) {
-            return null;
-        }
-
-        $supplied = $request->input('ntp_approval_date');
-
-        if (empty($supplied)) {
-            return response()->json([
-                'status' => 422,
-                'error' => 'This project cannot move to '.self::NTP_GATE_TO_DEPARTMENT.' without the NTP Approval Date.',
-                'requires' => 'ntp_approval_date',
-                'field_label' => 'NTP Approval Date',
-            ], 422);
-        }
-
-        $date = strtotime($supplied);
-
-        if ($date === false) {
-            return response()->json([
-                'status' => 422,
-                'error' => 'Please enter a valid NTP Approval Date.',
-                'requires' => 'ntp_approval_date',
-                'field_label' => 'NTP Approval Date',
-            ], 422);
-        }
-
-        $ntpApprovalDate = date('Y-m-d', $date);
-
-        return null;
-    }
-
     /**
      * The label the CRM shows for a project field, so a move refusal can name
      * the field the way the user sees it on the project form instead of
@@ -873,17 +815,6 @@ class ProjectController extends Controller
         }
 
         // Installation may not start without the NTP approval date on file.
-        // This is the SAME move the MPU chase intercepts (Permitting ->
-        // Installation) and it deliberately runs FIRST: when a project owes both,
-        // the date is collected here and the chase parks the project on the move
-        // that follows. See docs/follow-ups.md.
-        $ntpApprovalDate = null;
-        $ntpGateResponse = $this->ntpApprovalGate($project, $request, $ntpApprovalDate);
-
-        if ($ntpGateResponse) {
-            return $ntpGateResponse;
-        }
-
         // Ensure the sub-department actually belongs to the target department.
         // Prevents a mismatched pair (e.g. department 3 + sub_department 1) from
         // being saved, which would hide the project from its department tab.
@@ -901,6 +832,15 @@ class ProjectController extends Controller
         // in that chase's lane whatever lane was picked, and only this move
         // skips the assignment e-mail.
         $documentFollowUpService = app(DocumentFollowUpService::class);
+
+        // The NTP approval date is chased, not demanded: Permitting ->
+        // Installation used to be refused while the date was missing, and now
+        // the move goes through and parks the project in Install Pending
+        // Document until the funding side files the date from the Zones NTP
+        // tab. Opening it here - before the interception below reads it - is
+        // what keeps the chase from starting on every dateless project.
+        $documentFollowUpService->openChasesForMove($project, $request->departmentId);
+
         $forcedFollowUpType = $documentFollowUpService->forcedTypeForMove($project, $request->departmentId);
         $selectedSubDepartmentId = $subDepartmentId;
 
@@ -920,12 +860,10 @@ class ProjectController extends Controller
                     'resolved_date' => now(),
                 ]);
 
-            $project->update(array_filter([
+            $project->update([
                 'department_id' => $request->departmentId,
                 'sub_department_id' => $subDepartmentId,
-                // Only set when the move modal collected it - see ntpApprovalGate().
-                'ntp_approval_date' => $ntpApprovalDate,
-            ], fn ($value) => $value !== null));
+            ]);
 
             $emp = app(ProjectAssignmentService::class)->employeeForDepartment((int) $request->departmentId);
 
@@ -967,15 +905,6 @@ class ProjectController extends Controller
                 ])
                 ->setEvent('move')
                 ->log("{$username} moved the project from {$oldLane->name} to {$newLane->name}.");
-
-            if ($ntpApprovalDate) {
-                activity('project')
-                    ->performedOn($project)
-                    ->causedBy(auth()->user())
-                    ->setEvent('updated')
-                    ->withProperties(['ntp_approval_date' => $ntpApprovalDate])
-                    ->log("{$username} set the NTP Approval Date to {$ntpApprovalDate} while moving the project to {$newLane->name}.");
-            }
 
             if ($forcedFollowUpType) {
                 $project->refresh();

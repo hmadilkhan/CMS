@@ -12,19 +12,20 @@ use App\Models\SubDepartment;
 use App\Models\Task;
 use App\Models\User;
 use App\Models\UserType;
+use App\Models\Zone;
 use App\Services\DocumentFollowUpService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
 use Tests\TestCase;
 
 /**
- * Permitting -> Installation is gated on the NTP approval date: without it the
- * move is refused and the move modal asks for the date.
- *
- * It is the same move the MPU chase intercepts, and the gate deliberately runs
- * first - see docs/follow-ups.md.
+ * The NTP approval date is chased, not demanded. Permitting -> Installation used
+ * to be refused while the date was missing; the move now goes through and the
+ * project waits in Install Pending Document - closed to manual moves - until the
+ * funding side files the date from the Zones NTP tab. See docs/follow-ups.md.
  */
-class ProjectNtpApprovalGateTest extends TestCase
+class ProjectNtpApprovalFollowUpTest extends TestCase
 {
     use RefreshDatabase;
 
@@ -143,40 +144,105 @@ class ProjectNtpApprovalGateTest extends TestCase
         ], $extra));
     }
 
-    public function test_the_move_to_installation_is_refused_without_an_ntp_approval_date(): void
+    /** The funding side, filing the date from the NTP zone tab. */
+    private function fileNtpDateFromTheZone(Project $project, string $date)
+    {
+        $ntp = Zone::where('slug', 'ntp')->firstOrFail();
+        $project->forceFill(['zone_id' => $ntp->id, 'zone_entered_at' => now()])->save();
+
+        $user = User::factory()->create(['user_type_id' => 1]);
+        $role = Role::firstOrCreate(['name' => 'Funding Manager']);
+        $role->givePermissionTo(Permission::firstOrCreate(['name' => 'View Zones', 'guard_name' => 'web']));
+        $user->assignRole($role);
+
+        return $this->actingAs($user)->postJson(route('zones.fields'), [
+            'project_id' => $project->id,
+            'zone_id' => $ntp->id,
+            'ntp_approval_date' => $date,
+        ]);
+    }
+
+    public function test_the_move_goes_through_and_parks_the_project_instead_of_being_refused(): void
     {
         $fixture = $this->fixture();
 
         $this->moveToInstallation($fixture)
-            ->assertStatus(422)
-            ->assertJson([
-                'status' => 422,
-                'requires' => 'ntp_approval_date',
-                'field_label' => 'NTP Approval Date',
-            ]);
-
-        // Nothing moved.
-        $this->assertSame(
-            $fixture['permitting']->id,
-            (int) $fixture['project']->refresh()->department_id
-        );
-    }
-
-    public function test_supplying_the_date_in_the_move_request_saves_it_and_lets_the_move_through(): void
-    {
-        $fixture = $this->fixture();
-
-        $this->moveToInstallation($fixture, ['ntp_approval_date' => '2026-08-20'])
             ->assertOk()
             ->assertJson(['status' => 200]);
 
         $project = $fixture['project']->refresh();
 
         $this->assertSame($fixture['installation']->id, (int) $project->department_id);
-        $this->assertSame('2026-08-20', substr((string) $project->ntp_approval_date, 0, 10));
+        $this->assertSame(31, (int) $project->sub_department_id, 'The project should be waiting in Install Pending Document.');
+        $this->assertTrue(
+            ProjectDocumentFollowUp::pending()
+                ->where('project_id', $project->id)
+                ->where('type', DocumentFollowUpService::TYPE_NTP_APPROVAL)
+                ->exists()
+        );
     }
 
-    public function test_a_project_that_already_has_the_date_moves_without_being_asked(): void
+    public function test_a_parked_project_cannot_be_moved_by_hand(): void
+    {
+        $fixture = $this->fixture();
+        $this->moveToInstallation($fixture)->assertOk();
+
+        $inspection = Department::create(['id' => 6, 'name' => 'Inspection']);
+        $inspectionLane = SubDepartment::create([
+            'id' => 16,
+            'department_id' => $inspection->id,
+            'name' => 'Inspection Not Scheduled',
+            'show_in_move_list' => 1,
+        ]);
+
+        $task = Task::where('project_id', $fixture['project']->id)->latest('id')->firstOrFail();
+
+        $this->actingAs($this->superAdmin())->postJson(route('move.project'), [
+            'projectId' => $fixture['project']->id,
+            'taskId' => $task->id,
+            'departmentId' => $inspection->id,
+            'subDepartmentId' => $inspectionLane->id,
+        ])->assertStatus(422);
+
+        $this->assertSame(31, (int) $fixture['project']->refresh()->sub_department_id);
+    }
+
+    public function test_filing_the_date_from_the_zone_releases_the_project(): void
+    {
+        $fixture = $this->fixture();
+        $this->moveToInstallation($fixture)->assertOk();
+
+        $this->fileNtpDateFromTheZone($fixture['project']->refresh(), '2026-08-20')
+            ->assertOk()
+            ->assertJson(['status' => 200]);
+
+        $project = $fixture['project']->refresh();
+
+        $this->assertSame('2026-08-20', substr((string) $project->ntp_approval_date, 0, 10));
+        $this->assertSame(12, (int) $project->sub_department_id, 'The project should be back in Install Not Scheduled.');
+        $this->assertFalse(
+            ProjectDocumentFollowUp::pending()
+                ->where('project_id', $project->id)
+                ->where('type', DocumentFollowUpService::TYPE_NTP_APPROVAL)
+                ->exists()
+        );
+    }
+
+    public function test_the_new_task_follows_the_project_out_of_the_parked_lane(): void
+    {
+        $fixture = $this->fixture();
+        $this->moveToInstallation($fixture)->assertOk();
+        $this->fileNtpDateFromTheZone($fixture['project']->refresh(), '2026-08-20')->assertOk();
+
+        $task = Task::where('project_id', $fixture['project']->id)
+            ->whereIn('status', ['In-Progress', 'Hold'])
+            ->latest('id')
+            ->firstOrFail();
+
+        $this->assertSame(12, (int) $task->sub_department_id);
+    }
+
+    public function test_a_project_that_already_has_the_date_is_not_parked(): void
     {
         $fixture = $this->fixture(['ntp_approval_date' => '2026-07-01']);
 
@@ -184,31 +250,22 @@ class ProjectNtpApprovalGateTest extends TestCase
             ->assertOk()
             ->assertJson(['status' => 200]);
 
+        $project = $fixture['project']->refresh();
+
+        $this->assertSame($fixture['installation']->id, (int) $project->department_id);
+        $this->assertSame($fixture['installLane']->id, (int) $project->sub_department_id);
         $this->assertSame(
-            $fixture['installation']->id,
-            (int) $fixture['project']->refresh()->department_id
+            0,
+            ProjectDocumentFollowUp::where('project_id', $project->id)
+                ->where('type', DocumentFollowUpService::TYPE_NTP_APPROVAL)
+                ->count()
         );
     }
 
-    public function test_an_invalid_date_is_rejected_and_asked_for_again(): void
+    public function test_other_moves_do_not_open_the_chase(): void
     {
         $fixture = $this->fixture();
 
-        $this->moveToInstallation($fixture, ['ntp_approval_date' => 'not a date'])
-            ->assertStatus(422)
-            ->assertJson(['requires' => 'ntp_approval_date']);
-
-        $this->assertSame(
-            $fixture['permitting']->id,
-            (int) $fixture['project']->refresh()->department_id
-        );
-    }
-
-    public function test_other_moves_are_not_gated_by_the_ntp_approval_date(): void
-    {
-        $fixture = $this->fixture();
-
-        // Permitting -> back to a second Permitting lane: not the gated move.
         $otherLane = SubDepartment::create([
             'id' => 2,
             'department_id' => $fixture['permitting']->id,
@@ -222,38 +279,39 @@ class ProjectNtpApprovalGateTest extends TestCase
             'departmentId' => $fixture['permitting']->id,
             'subDepartmentId' => $otherLane->id,
         ])->assertOk()->assertJson(['status' => 200]);
-    }
-
-    public function test_the_ntp_date_is_collected_before_the_mpu_chase_parks_the_project(): void
-    {
-        $fixture = $this->fixture(['mpu_required' => 'yes']);
-
-        ProjectDocumentFollowUp::create([
-            'project_id' => $fixture['project']->id,
-            'type' => DocumentFollowUpService::TYPE_MPU,
-            'status' => 'Pending',
-            'opened_at' => now(),
-        ]);
-
-        // NTP wins the first round: the move is refused, not parked.
-        $this->moveToInstallation($fixture)
-            ->assertStatus(422)
-            ->assertJson(['requires' => 'ntp_approval_date']);
 
         $this->assertSame(
-            $fixture['permitting']->id,
-            (int) $fixture['project']->refresh()->department_id
+            0,
+            ProjectDocumentFollowUp::where('project_id', $fixture['project']->id)->count()
         );
+    }
 
-        // With the date supplied the move runs, and now the MPU chase parks it.
-        $this->moveToInstallation($fixture, ['ntp_approval_date' => '2026-08-20'])
-            ->assertOk()
-            ->assertJson(['status' => 200]);
+    public function test_the_ntp_date_alone_does_not_release_a_project_the_mpu_chase_is_also_holding(): void
+    {
+        // Both chases park in Install Pending Document, and both are owed.
+        $fixture = $this->fixture(['mpu_required' => 'yes']);
+
+        $this->moveToInstallation($fixture)->assertOk();
 
         $project = $fixture['project']->refresh();
+        $this->assertSame(31, (int) $project->sub_department_id);
 
-        $this->assertSame($fixture['installation']->id, (int) $project->department_id);
-        $this->assertSame('2026-08-20', substr((string) $project->ntp_approval_date, 0, 10));
-        $this->assertSame(31, (int) $project->sub_department_id, 'The MPU chase should have parked the project.');
+        $this->fileNtpDateFromTheZone($project, '2026-08-20')->assertOk();
+
+        // The meter spot result is still missing, so the lane still holds it.
+        $project = $fixture['project']->refresh();
+        $this->assertSame(31, (int) $project->sub_department_id);
+        $this->assertTrue(
+            ProjectDocumentFollowUp::pending()
+                ->where('project_id', $project->id)
+                ->where('type', DocumentFollowUpService::TYPE_MPU)
+                ->exists()
+        );
+
+        // Answering the meter spot result too lets it out.
+        $project->forceFill(['meter_spot_result' => 'same'])->save();
+        app(DocumentFollowUpService::class)->sync($project->refresh());
+
+        $this->assertSame(12, (int) $fixture['project']->refresh()->sub_department_id);
     }
 }

@@ -17,18 +17,18 @@ assignee.
 
 All three are the same code. Only a config row differs.
 
-| | **MPU** | **Utility Bill** | **Fire Review** |
-|---|---|---|---|
-| Type key | `mpu` | `utility_bill` | `fire_review` |
-| Owner department | Engineering (3) | Deal Review (1) | Permitting (4) |
-| Opens when | `mpu_required` = `yes` | `utility_bill_required` = `no` | `fire_review_required` = `1` |
-| …and | no `meter_spot_result` | no `utility_bill` file | no `fire_review` file |
-| Intercepted move | Permitting → Installation | Inspection → PTO | Installation → Inspection |
-| Parked lane | 31 Install Pending Document | 32 PTO Pending Document | 29 Inspection Pending Fire Review |
-| Release lane | 12 Install Not Scheduled | 18 PTO | 16 Inspection Not Scheduled |
-| Cleared by | picking the Meter Spot Result | uploading the bill | uploading the approval |
-| Card collects | a **value** (dropdown) | a **file** | a **file** |
-| Files section | — | "Utility Bills", Deal Review tab | "Fire Approval Documents", Inspection tab |
+| | **MPU** | **Utility Bill** | **Fire Review** | **NTP Approval** |
+|---|---|---|---|---|
+| Type key | `mpu` | `utility_bill` | `fire_review` | `ntp_approval` |
+| Owner department | Engineering (3) | Deal Review (1) | Permitting (4) | — (the funding side) |
+| Opens when | `mpu_required` = `yes` | `utility_bill_required` = `no` | `fire_review_required` = `1` | the intercepted move happens |
+| …and | no `meter_spot_result` | no `utility_bill` file | no `fire_review` file | no `ntp_approval_date` |
+| Intercepted move | Permitting → Installation | Inspection → PTO | Installation → Inspection | Permitting → Installation |
+| Parked lane | 31 Install Pending Document | 32 PTO Pending Document | 29 Inspection Pending Fire Review | 31 Install Pending Document |
+| Release lane | 12 Install Not Scheduled | 18 PTO | 16 Inspection Not Scheduled | 12 Install Not Scheduled |
+| Cleared by | picking the Meter Spot Result | uploading the bill | uploading the approval | filing the date in the Zones **NTP** tab |
+| Card collects | a **value** (dropdown) | a **file** | a **file** | — (no Operations card) |
+| Files section | — | "Utility Bills", Deal Review tab | "Fire Approval Documents", Inspection tab | — |
 
 The utility bill question is the odd one out: its field is labelled **Utility
 Bill Uploaded**, so `no` — not `yes` — is the answer that owes a document.
@@ -38,37 +38,44 @@ it cannot stay `NULL` past Deal Review.
 Sub-department ids above are fixed records in `sub_departments`. If they are ever
 renumbered, `DocumentFollowUpService::TYPES` must be updated to match.
 
-### The NTP approval gate shares the MPU move
+### The NTP approval chase (was a gate)
 
-**Permitting → Installation is also gated on `projects.ntp_approval_date`.** It
-is not a chase — nothing is parked and nothing is tracked — it simply refuses the
-move while the date is missing and lets the move modal supply one:
+**Permitting → Installation no longer asks for `projects.ntp_approval_date`.** It
+used to: `ProjectController::ntpApprovalGate()` refused the move and the move
+modal collected the date. Operations had to chase the funding side for a number
+it does not own, and the project stood still in Permitting meanwhile.
 
-- `ProjectController::ntpApprovalGate()` returns `422` with
-  `requires: ntp_approval_date`; the modal reads that flag, reveals a date input
-  and re-sends the same move with the date filled. The date is then written
-  inside the move's own transaction.
-- The modal also reveals the input **up front** for that move when the project
-  has no date, so the user is not made to click into a rejection first. The
-  server stays the real gate.
+It is now the fourth chase, and the only one whose document arrives from
+**outside Operations**:
 
-**This move modal is now the only place Operations collects the date.** The NTP
-Approval Date used to be a Deal Review department field; it was removed from
-both the edit and view panels and its `project_department_fields` row was
-deleted (migration
-`2026_08_28_000007_remove_ntp_approval_date_from_deal_review_fields`), so a
-project can leave Deal Review without it and is asked for it here instead. The
-funding side can also see and fill the date ahead of time in the Zones **NTP**
-tab (`docs/zones.md` §7) — that tab records it, it never gates anything.
+- The move goes through. The project lands in **31 Install Pending Document**
+  (the MPU lane) instead of the lane the user picked, and that lane is closed to
+  manual moves, so it waits there.
+- The **Funding Manager files the date in the Zones NTP tab**
+  (`ZoneController::fields`, `config('zones.zone_fields')`). That write calls
+  `DocumentFollowUpService::sync()`, which resolves the chase and releases the
+  project into **12 Install Not Scheduled**, e-mailing the assignee like every
+  other release.
+- There is **no dashboard card**: nobody in Operations can answer it, so the
+  chase is invisible there by design (`HomeController` names the three carded
+  types explicitly, so a fourth type adds nothing).
 
-**Order matters: the NTP gate runs BEFORE `forcedTypeForMove()`.** A project that
-owes both the NTP date and an MPU meter spot result is asked for the date first;
-only once it is supplied does the move run and the MPU chase park the project in
-lane 31. Never move the gate below the interception — the project would land in
-the parked lane with no NTP date, and the parked lane is closed to manual moves.
+Two mechanics are particular to it, both deliberate:
 
-The gate resolves its two departments **by name** (`Permitting`, `Installation`),
-like `TYPES` does, so renumbering department ids does not break it.
+**It opens at the move, not when the date goes missing** (`'opens_on_move' =>
+true`, read by `DocumentFollowUpService::openChasesForMove()`, called from
+`moveProject()` before the interception). Every project lacks the date at the
+start of its life; chasing it from Deal Review would open a chase on the whole
+pipeline. `syncAll()` deliberately does **not** look for dateless projects
+either — only already-open rows are reconciled.
+
+**Two chases share lane 31**, so `releaseFromParkedLane()` refuses to let a
+project out while *another* pending chase parks it in the same lane
+(`parkedByAnotherChase()`). A project owing both the meter spot result and the
+NTP date waits for both; whichever arrives second releases it.
+
+Order no longer matters between this and MPU — both park in the same lane, and
+`forcedTypeForMove()` returning either one produces the same move.
 
 ---
 
@@ -195,14 +202,19 @@ the target department would silently land in a parked lane.
 
 **`projectMove()` is dead code.** Its route in `routes/web.php` is commented out;
 every live move goes through `moveProject()`. It is kept in step anyway, but only
-`moveProject()` matters for testing. The NTP approval gate was added to
-`moveProject()` only, for that reason.
+`moveProject()` matters for testing. The NTP chase is opened from `moveProject()`
+only, for that reason.
 
 **The required-field check still runs first.** `moveProject()` validates the
-current department's `project_department_fields` before the NTP gate, so on
-production a Permitting → Installation move reports missing permitting dates
-before it ever asks for the NTP date. Only the NTP-vs-MPU order was specified;
-this one is unchanged.
+current department's `project_department_fields` before anything else, so a
+Permitting → Installation move still reports missing permitting dates before the
+project can be parked at all.
+
+**The NTP chase cannot be answered from the dashboard endpoint.** Its
+`value_options` is empty, so `DocumentFollowUpController::update()`'s
+`Rule::in($config['value_options'])` refuses every value - which is the intended
+dead end: the date is filed from the Zones NTP tab and nowhere else. Give it
+options and it becomes answerable from Operations again.
 
 **Two files sections come from one component.** `EnhancedFilesSection` renders
 both the department file list and the category sections. `$category` NULL means

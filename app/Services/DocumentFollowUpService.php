@@ -48,6 +48,8 @@ class DocumentFollowUpService
 
     public const TYPE_FIRE_REVIEW = 'fire_review';
 
+    public const TYPE_NTP_APPROVAL = 'ntp_approval';
+
     /** A project parked here is out of every chase. */
     public const ARCHIVED_DEPARTMENT = 'Archived';
 
@@ -94,6 +96,30 @@ class DocumentFollowUpService
             'value_column' => null,
             'value_options' => [],
             'file_category' => ProjectFile::CATEGORY_FIRE_REVIEW,
+        ],
+
+        /*
+         * The NTP approval date. This one is answered by the FUNDING side, from
+         * the Zones NTP tab - not by an Operations dashboard card - so it opens
+         * at the move it parks rather than the moment the date goes missing
+         * ('opens_on_move'), and it has no card of its own.
+         *
+         * It used to be a refusal instead of a chase: Permitting -> Installation
+         * was blocked until someone typed the date into the move modal. The move
+         * now goes through and the project waits in Install Pending Document
+         * until the Funding Manager files the date.
+         */
+        self::TYPE_NTP_APPROVAL => [
+            'label' => 'NTP Approval Follow Up',
+            'owner_department' => 'Permitting',
+            'from_department' => 'Permitting',
+            'to_department' => 'Installation',
+            'parked_sub_department_id' => 31,
+            'released_sub_department_id' => 12,
+            'value_column' => 'ntp_approval_date',
+            'value_options' => [],
+            'file_category' => null,
+            'opens_on_move' => true,
         ],
     ];
 
@@ -222,6 +248,9 @@ class DocumentFollowUpService
             // it is "no" - not "yes" - that means a document is still owed.
             self::TYPE_UTILITY_BILL => strtolower((string) $project->utility_bill_required) === 'no',
             self::TYPE_FIRE_REVIEW => (int) $project->fire_review_required === 1,
+            // Every project needs the date eventually; what makes it a chase is
+            // the move, so this only says whether the date is still missing.
+            self::TYPE_NTP_APPROVAL => trim((string) $project->ntp_approval_date) === '',
             default => strtolower((string) $project->mpu_required) === 'yes',
         };
     }
@@ -363,6 +392,7 @@ class DocumentFollowUpService
         $why = match ($type) {
             self::TYPE_UTILITY_BILL => 'Utility Bill Uploaded is No and the bill has not been uploaded yet',
             self::TYPE_FIRE_REVIEW => 'Fire Review Required is Yes and no fire approval document has been uploaded yet',
+            self::TYPE_NTP_APPROVAL => 'the project is moving to Installation and the NTP Approval Date is not on file yet',
             default => 'MPU Required is Yes and the meter spot result is still missing',
         };
 
@@ -395,12 +425,14 @@ class DocumentFollowUpService
             ProjectDocumentFollowUp::REASON_DOCUMENT_RECEIVED => match ($type) {
                 self::TYPE_UTILITY_BILL => 'the utility bill was uploaded',
                 self::TYPE_FIRE_REVIEW => 'the fire approval document was uploaded',
+                self::TYPE_NTP_APPROVAL => 'the NTP Approval Date was filed as '.$project->ntp_approval_date,
                 default => 'meter spot result "'.$project->meter_spot_result.'" was filled in',
             },
             ProjectDocumentFollowUp::REASON_PROJECT_ARCHIVED => 'the project was archived',
             default => match ($type) {
                 self::TYPE_UTILITY_BILL => 'Utility Bill Uploaded is no longer No',
                 self::TYPE_FIRE_REVIEW => 'Fire Review Required is no longer Yes',
+                self::TYPE_NTP_APPROVAL => 'the NTP Approval Date is on file',
                 default => 'MPU Required is no longer Yes',
             },
         };
@@ -439,6 +471,35 @@ class DocumentFollowUpService
         return null;
     }
 
+    /**
+     * Open the chases that only start at the move they park. Called with the
+     * move's target department BEFORE the move is written, so the interception
+     * below sees a pending chase.
+     *
+     * Without this the NTP chase would have to open the moment a project has no
+     * date - which is every project, from Deal Review on, chased for a date
+     * nobody needs yet.
+     */
+    public function openChasesForMove(Project $project, $targetDepartmentId, ?User $causer = null): void
+    {
+        foreach (self::types() as $type) {
+            if (empty($this->config($type)['opens_on_move'])) {
+                continue;
+            }
+
+            if ((int) $project->department_id !== (int) $this->fromDepartmentId($type)
+                || (int) $targetDepartmentId !== (int) $this->toDepartmentId($type)) {
+                continue;
+            }
+
+            if ($this->hasPending($project->id, $type) || ! $this->needsFollowUp($project, $type)) {
+                continue;
+            }
+
+            $this->open($project, $type, $causer);
+        }
+    }
+
     /** Note the forced lane on the project once the move has been written. */
     public function logForcedParkedLane(Project $project, string $type, $selectedSubDepartmentId, ?User $causer = null): void
     {
@@ -469,6 +530,14 @@ class DocumentFollowUpService
 
         if ((int) $project->department_id !== (int) $this->toDepartmentId($type)
             || (int) $project->sub_department_id !== $parkedId) {
+            return false;
+        }
+
+        // Install Pending Document is the parked lane of two chases (the meter
+        // spot result and the NTP approval date). Clearing one of them is not
+        // permission to leave while the other is still owed - the project would
+        // walk out of the lane that is holding it for the other document.
+        if ($this->parkedByAnotherChase($project, $type, $parkedId)) {
             return false;
         }
 
@@ -503,6 +572,23 @@ class DocumentFollowUpService
         }
 
         return true;
+    }
+
+    /** Another chase, still open, parks projects in this same lane. */
+    protected function parkedByAnotherChase(Project $project, string $type, int $parkedId): bool
+    {
+        foreach (self::types() as $other) {
+            if ($other === $type) {
+                continue;
+            }
+
+            if ((int) $this->parkedSubDepartmentId($other) === $parkedId
+                && $this->hasPending($project->id, $other)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /* ---------------------------------------------------------------- helpers */

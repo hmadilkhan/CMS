@@ -263,12 +263,18 @@ alone:
   Review without it;
 - the column stays and every existing value stays.
 
-**Operations still asks for the date, on the move that actually needs it.**
-Permitting → Installation is refused without it and the move modal collects it
-right there (`ProjectController::ntpApprovalGate`, ahead of the MPU chase — see
-`docs/follow-ups.md`). That gate is the enforcement; the NTP zone tab is where
-the funding side can see and fill the date ahead of time. The intake form and
-the customer-create form still capture it on creation.
+**Filing it here is what releases a project waiting for it.** Operations used to
+be refused the Permitting → Installation move without the date; that move now
+goes through and parks the project in **Install Pending Document**, a lane closed
+to manual moves, until this tab supplies the date — see the NTP approval chase in
+`docs/follow-ups.md`. So this tab is not a convenience any more: it is the only
+place the date is collected, and the project cannot leave the parked lane until
+the funding side files it. The intake form and the customer-create form still
+capture it on creation, which keeps such a project from ever being parked.
+
+`ZoneController::fields()` therefore calls `DocumentFollowUpService::sync()`
+after the write. Do not remove that call — without it the project stays parked
+with the date already on file.
 
 ### The field in the tab
 
@@ -298,8 +304,8 @@ arbitrary project column. Each write gets its own activity-log line.
 
 Zone moves stay free in both directions, the archive included. A zone field is
 something the funding side records, never something that blocks a zone move —
-the NTP Approval Date is enforced on the department side, on Permitting →
-Installation, and nowhere else.
+the NTP Approval Date holds up a *department* move (it parks the project in
+Install Pending Document), never a zone one.
 
 ---
 ## 8. Access
