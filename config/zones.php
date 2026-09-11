@@ -29,6 +29,18 @@ return [
     ],
 
     /*
+     * A paperwork chase whose document the FUNDING side owns moves the project
+     * into that zone when it parks, so the tab that collects the field is the
+     * project's own tab and the Funding Manager finds it on the right lane.
+     *
+     * One-directional, like the promotion above: a project the Funding Manager
+     * has already pushed further along is left exactly where it is.
+     */
+    'follow_up_zones' => [
+        'ntp_approval' => 'ntp',
+    ],
+
+    /*
      * Fields the funding side fills in from a zone's own tab, keyed by zone
      * slug and then by the `projects` column they write. A field listed here
      * belongs to the funding side alone - keep it out of the department field

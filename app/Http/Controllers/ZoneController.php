@@ -112,13 +112,6 @@ class ZoneController extends Controller
         $project = Project::findOrFail($validated['project_id']);
         $zone = Zone::findOrFail($validated['zone_id']);
 
-        if ((int) $project->zone_id !== (int) $zone->id) {
-            return response()->json([
-                'status' => 422,
-                'message' => 'Only the zone the project is in can be edited.',
-            ], 422);
-        }
-
         $fields = $this->zones->fieldsFor($zone);
 
         if (empty($fields)) {
@@ -128,10 +121,29 @@ class ZoneController extends Controller
             ], 422);
         }
 
+        $followUps = app(DocumentFollowUpService::class);
+        $isCurrentZone = (int) $project->zone_id === (int) $zone->id;
+
+        // Every other zone tab is read-only - except for a field a paperwork
+        // chase is actually waiting on. That field is what releases the project
+        // from its parked lane and only this side can file it, so refusing it
+        // because the project sits in another zone would strand the project.
+        $writable = array_filter(
+            array_keys($fields),
+            fn ($column) => $isCurrentZone || $followUps->isAwaitingColumn($project, $column)
+        );
+
+        if ($writable === []) {
+            return response()->json([
+                'status' => 422,
+                'message' => 'Only the zone the project is in can be edited.',
+            ], 422);
+        }
+
         $updates = [];
 
         foreach ($fields as $column => $field) {
-            if (! $request->has($column)) {
+            if (! $request->has($column) || ! in_array($column, $writable, true)) {
                 continue;
             }
 

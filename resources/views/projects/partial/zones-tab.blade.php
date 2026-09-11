@@ -81,7 +81,16 @@
                              gated on it - Operations asks for it on the Permitting ->
                              Installation move. Editable in the project's current zone
                              only, like the notes and files beside it. --}}
-                        @php $zoneFields = app(\App\Services\ZoneService::class)->fieldsFor($zone); @endphp
+                        @php
+                            $zoneFields = app(\App\Services\ZoneService::class)->fieldsFor($zone);
+                            $followUps = app(\App\Services\DocumentFollowUpService::class);
+                            // A field a chase is waiting on stays writable wherever the
+                            // project's zone is - filing it is what releases the project.
+                            $awaitedFields = collect(array_keys($zoneFields))
+                                ->filter(fn($column) => $followUps->isAwaitingColumn($project, $column))
+                                ->values();
+                            $canSaveZoneFields = $isCurrentZone || $awaitedFields->isNotEmpty();
+                        @endphp
                         @if (!empty($zoneFields))
                             <div class="project-section-panel">
                                 <div class="project-section-header">
@@ -104,10 +113,14 @@
                                                 <input class="form-control" type="{{ $fieldType }}"
                                                     id="zone-field-{{ $zone->id }}-{{ $column }}"
                                                     name="{{ $column }}" value="{{ $fieldValue }}"
-                                                    @disabled(!$isCurrentZone)>
+                                                    @disabled(!$isCurrentZone && !$awaitedFields->contains($column))>
+                                                @if (!$isCurrentZone && $awaitedFields->contains($column))
+                                                    <small class="text-muted">This project is waiting on this date
+                                                        before it can leave its installation lane.</small>
+                                                @endif
                                             </div>
                                         @endforeach
-                                        @if ($isCurrentZone)
+                                        @if ($canSaveZoneFields)
                                             <div class="col-12 d-flex align-items-center gap-2">
                                                 <button type="submit" class="btn btn-primary btn-sm">
                                                     <i class="icofont-save me-1"></i>Save

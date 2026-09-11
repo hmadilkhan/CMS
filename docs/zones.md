@@ -276,6 +276,22 @@ capture it on creation, which keeps such a project from ever being parked.
 after the write. Do not remove that call — without it the project stays parked
 with the date already on file.
 
+**Two rules bend for a field a chase is waiting on**, and both are needed or the
+project is stranded — the field is what releases it and only this side can file
+it:
+
+- **Parking moves the project onto this lane.** When the Permitting →
+  Installation move parks a project for the NTP chase,
+  `ZoneService::enterForFollowUp()` (`config('zones.follow_up_zones')`) promotes
+  it to **NTP** so the tab collecting the date is its *current* zone. It is
+  one-directional like every other automatic move: a project the Funding Manager
+  already pushed to M1/M2 stays there.
+- **The awaited field stays writable from its own tab even then.** A project in
+  M1 still shows an editable NTP Approval Date (and a Save button) while the
+  chase is open — `DocumentFollowUpService::isAwaitingColumn()` is what both the
+  tab and `fields()` ask. Every other field in every other zone tab keeps the
+  read-only rule exactly as before.
+
 ### The field in the tab
 
 `config('zones.zone_fields')` maps a zone slug to the `projects` columns its tab

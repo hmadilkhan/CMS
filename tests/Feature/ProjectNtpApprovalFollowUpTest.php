@@ -162,6 +162,32 @@ class ProjectNtpApprovalFollowUpTest extends TestCase
         ]);
     }
 
+    public function test_the_date_can_be_filed_while_the_project_sits_in_an_earlier_zone(): void
+    {
+        $fixture = $this->fixture();
+        $this->moveToInstallation($fixture)->assertOk();
+
+        // The funding side has not advanced this project: it is still in Pre NTP,
+        // which is where most parked projects actually are.
+        $project = $fixture['project']->refresh();
+        $preNtp = Zone::where('slug', 'pre_ntp')->firstOrFail();
+        $project->forceFill(['zone_id' => $preNtp->id, 'zone_entered_at' => now()])->save();
+
+        $ntp = Zone::where('slug', 'ntp')->firstOrFail();
+        $user = User::factory()->create(['user_type_id' => 1]);
+        $role = Role::firstOrCreate(['name' => 'Funding Manager']);
+        $role->givePermissionTo(Permission::firstOrCreate(['name' => 'View Zones', 'guard_name' => 'web']));
+        $user->assignRole($role);
+
+        $this->actingAs($user)->postJson(route('zones.fields'), [
+            'project_id' => $project->id,
+            'zone_id' => $ntp->id,
+            'ntp_approval_date' => '2026-08-20',
+        ])->assertOk();
+
+        $this->assertSame(12, (int) $fixture['project']->refresh()->sub_department_id);
+    }
+
     public function test_the_move_goes_through_and_parks_the_project_instead_of_being_refused(): void
     {
         $fixture = $this->fixture();
@@ -313,5 +339,54 @@ class ProjectNtpApprovalFollowUpTest extends TestCase
         app(DocumentFollowUpService::class)->sync($project->refresh());
 
         $this->assertSame(12, (int) $fixture['project']->refresh()->sub_department_id);
+    }
+
+    public function test_parking_puts_the_project_on_the_funding_side_s_ntp_lane(): void
+    {
+        $fixture = $this->fixture();
+
+        // No zone at all, which is where most of the backlog is.
+        $fixture['project']->forceFill(['zone_id' => null, 'zone_entered_at' => null])->save();
+
+        $this->moveToInstallation($fixture)->assertOk();
+
+        $this->assertSame('NTP', $fixture['project']->refresh()->zone?->name);
+    }
+
+    public function test_a_project_the_funding_side_moved_further_along_is_not_pulled_back(): void
+    {
+        $fixture = $this->fixture();
+
+        $m1 = Zone::where('slug', 'm1')->firstOrFail();
+        $fixture['project']->forceFill(['zone_id' => $m1->id, 'zone_entered_at' => now()])->save();
+
+        $this->moveToInstallation($fixture)->assertOk();
+
+        $this->assertSame('M1', $fixture['project']->refresh()->zone?->name);
+    }
+
+    public function test_a_zone_field_nothing_is_waiting_on_is_still_read_only_from_another_zone(): void
+    {
+        // Date already on file, so no chase opens and nothing is owed.
+        $fixture = $this->fixture(['ntp_approval_date' => '2026-07-01']);
+        $this->moveToInstallation($fixture)->assertOk();
+
+        $project = $fixture['project']->refresh();
+        $preNtp = Zone::where('slug', 'pre_ntp')->firstOrFail();
+        $project->forceFill(['zone_id' => $preNtp->id, 'zone_entered_at' => now()])->save();
+
+        $ntp = Zone::where('slug', 'ntp')->firstOrFail();
+        $user = User::factory()->create(['user_type_id' => 1]);
+        $role = Role::firstOrCreate(['name' => 'Funding Manager']);
+        $role->givePermissionTo(Permission::firstOrCreate(['name' => 'View Zones', 'guard_name' => 'web']));
+        $user->assignRole($role);
+
+        $this->actingAs($user)->postJson(route('zones.fields'), [
+            'project_id' => $project->id,
+            'zone_id' => $ntp->id,
+            'ntp_approval_date' => '2026-09-09',
+        ])->assertStatus(422);
+
+        $this->assertSame('2026-07-01', substr((string) $project->refresh()->ntp_approval_date, 0, 10));
     }
 }
