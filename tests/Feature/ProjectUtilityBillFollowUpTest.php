@@ -2,14 +2,19 @@
 
 namespace Tests\Feature;
 
+use App\Livewire\Project\EnhancedFilesSection;
 use App\Models\Customer;
 use App\Models\Department;
 use App\Models\Project;
 use App\Models\ProjectDocumentFollowUp;
 use App\Models\ProjectFile;
 use App\Models\SalesPartner;
+use App\Models\User;
+use App\Models\UserType;
 use App\Services\DocumentFollowUpService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Livewire\Livewire;
+use Spatie\Permission\Models\Role;
 use Tests\TestCase;
 
 /**
@@ -55,14 +60,14 @@ class ProjectUtilityBillFollowUpTest extends TestCase
         ], $attributes));
     }
 
-    private function uploadTheBill(Project $project): void
+    private function uploadTheBill(Project $project, string $filename = 'utility_bill.pdf'): ProjectFile
     {
-        ProjectFile::create([
+        return ProjectFile::create([
             'project_id' => $project->id,
             'task_id' => 0,
             'department_id' => 1,
-            'filename' => 'utility_bill.pdf',
-            'header_text' => 'Utility Bill.pdf',
+            'filename' => $filename,
+            'header_text' => $filename,
             'category' => ProjectFile::CATEGORY_UTILITY_BILL,
         ]);
     }
@@ -120,6 +125,128 @@ class ProjectUtilityBillFollowUpTest extends TestCase
 
         $service->sync($project);
         $service->sync($project->refresh());
+
+        $this->assertSame('no', $project->refresh()->utility_bill_required);
+        $this->assertTrue($service->hasPending($project->id, DocumentFollowUpService::TYPE_UTILITY_BILL));
+    }
+
+    public function test_deleting_the_only_bill_puts_the_answer_back_to_no_and_re_opens_the_chase(): void
+    {
+        $service = app(DocumentFollowUpService::class);
+        $project = $this->project();
+
+        $service->sync($project);
+        $bill = $this->uploadTheBill($project);
+        $service->sync($project->refresh());
+
+        $this->assertSame('yes', $project->refresh()->utility_bill_required);
+
+        $bill->delete();
+        $service->sync($project->refresh());
+
+        $this->assertSame('no', $project->refresh()->utility_bill_required);
+        $this->assertTrue($service->hasPending($project->id, DocumentFollowUpService::TYPE_UTILITY_BILL));
+    }
+
+    public function test_one_bill_left_keeps_the_answer_at_yes(): void
+    {
+        $service = app(DocumentFollowUpService::class);
+        $project = $this->project();
+
+        $service->sync($project);
+        $first = $this->uploadTheBill($project, 'bill_one.pdf');
+        $this->uploadTheBill($project, 'bill_two.pdf');
+        $service->sync($project->refresh());
+
+        $first->delete();
+        $service->sync($project->refresh());
+
+        $this->assertSame('yes', $project->refresh()->utility_bill_required);
+        $this->assertFalse($service->hasPending($project->id, DocumentFollowUpService::TYPE_UTILITY_BILL));
+    }
+
+    public function test_an_answer_given_by_hand_is_never_overruled_by_the_empty_section(): void
+    {
+        // "yes" with no file of its own is a real answer - the bill came in on
+        // paper, or lives among the ordinary department files. Nothing to chase
+        // and nothing to rewrite.
+        $service = app(DocumentFollowUpService::class);
+        $project = $this->project(['utility_bill_required' => 'yes']);
+
+        $service->sync($project);
+        $service->sync($project->refresh());
+
+        $this->assertSame('yes', $project->refresh()->utility_bill_required);
+        $this->assertFalse($service->hasPending($project->id, DocumentFollowUpService::TYPE_UTILITY_BILL));
+    }
+
+    public function test_retracting_the_question_by_hand_is_not_flipped_back(): void
+    {
+        // Answering "yes" on the project page closes the chase as no longer
+        // required. No bill was ever uploaded, so the empty section must not
+        // drag the answer back to "no" on the next sync.
+        $service = app(DocumentFollowUpService::class);
+        $project = $this->project();
+
+        $service->sync($project);
+        $this->assertTrue($service->hasPending($project->id, DocumentFollowUpService::TYPE_UTILITY_BILL));
+
+        $project->forceFill(['utility_bill_required' => 'yes'])->save();
+        $service->sync($project->refresh());
+        $service->sync($project->refresh());
+
+        $this->assertSame('yes', $project->refresh()->utility_bill_required);
+        $this->assertFalse($service->hasPending($project->id, DocumentFollowUpService::TYPE_UTILITY_BILL));
+    }
+
+    public function test_a_deleted_bill_is_picked_up_by_the_dashboard_reconcile(): void
+    {
+        $service = app(DocumentFollowUpService::class);
+        $project = $this->project();
+
+        $service->sync($project);
+        $bill = $this->uploadTheBill($project);
+        $service->sync($project->refresh());
+        $this->assertSame('yes', $project->refresh()->utility_bill_required);
+
+        // Deleted through a path nobody hooked: syncAll() still has to find it,
+        // even though "yes" keeps the project out of the owing-a-document query.
+        $bill->delete();
+        $service->syncAll();
+
+        $this->assertSame('no', $project->refresh()->utility_bill_required);
+        $this->assertTrue($service->hasPending($project->id, DocumentFollowUpService::TYPE_UTILITY_BILL));
+    }
+
+    public function test_deleting_the_bill_from_the_utility_bills_section_answers_the_field_straight_away(): void
+    {
+        // The section is read-only for uploads, but a user with File Delete can
+        // still remove a bill from it - that is the path this has to cover, not
+        // just the reconcile.
+        $service = app(DocumentFollowUpService::class);
+        $project = $this->project();
+
+        $service->sync($project);
+        $bill = $this->uploadTheBill($project);
+        $service->sync($project->refresh());
+        $this->assertSame('yes', $project->refresh()->utility_bill_required);
+
+        UserType::firstOrCreate(['id' => 1], ['name' => 'Admin']);
+        $admin = User::factory()->create(['user_type_id' => 1]);
+        $admin->assignRole(Role::firstOrCreate(['name' => 'Super Admin']));
+
+        Livewire::actingAs($admin)
+            ->test(EnhancedFilesSection::class, [
+                'projectId' => $project->id,
+                'taskId' => 0,
+                'departmentId' => 1,
+                'projectDepartmentId' => $project->department_id,
+                'viewSource' => 'crm',
+                'category' => ProjectFile::CATEGORY_UTILITY_BILL,
+                'allowUpload' => false,
+            ])
+            ->call('deleteConfirmation', $bill->id)
+            ->call('deleteFile');
 
         $this->assertSame('no', $project->refresh()->utility_bill_required);
         $this->assertTrue($service->hasPending($project->id, DocumentFollowUpService::TYPE_UTILITY_BILL));

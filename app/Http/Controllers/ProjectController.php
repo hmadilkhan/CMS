@@ -1644,6 +1644,13 @@ class ProjectController extends Controller
                 $this->removeImage('projects/', $file->filename);
                 $file->delete();
 
+                // A chase's document leaving the project takes its answer with
+                // it: the field the files write follows them back and the chase
+                // re-opens - see docs/follow-ups.md.
+                if ($file->category && ($project = Project::find($file->project_id))) {
+                    app(DocumentFollowUpService::class)->sync($project, auth()->user());
+                }
+
                 return response()->json(['status' => 200, 'message' => 'File delete successfully']);
             } catch (\Throwable $th) {
                 return response()->json(['status' => 500, 'message' => 'File not found']);
