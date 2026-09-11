@@ -27,6 +27,7 @@ All three are the same code. Only a config row differs.
 | Parked lane | 31 Install Pending Document | 32 PTO Pending Document | 29 Inspection Pending Fire Review | 31 Install Pending Document |
 | Release lane | 12 Install Not Scheduled | 18 PTO | 16 Inspection Not Scheduled | 12 Install Not Scheduled |
 | Cleared by | picking the Meter Spot Result | uploading the bill | uploading the approval | filing the date in the Zones **NTP** tab |
+| Field after clearing | the result is the field | flips to **yes** | stays `1` — it *was* required | the date is the field |
 | Card collects | a **value** (dropdown) | a **file** | a **file** | — (no Operations card) |
 | Files section | — | "Utility Bills", Deal Review tab | "Fire Approval Documents", Inspection tab | — |
 
@@ -34,6 +35,16 @@ The utility bill question is the odd one out: its field is labelled **Utility
 Bill Uploaded**, so `no` — not `yes` — is the answer that owes a document.
 `NULL` (unanswered) chases nothing; the field is a required Deal Review field, so
 it cannot stay `NULL` past Deal Review.
+
+Because that field asks whether the document is already *in*, the document is
+also its answer: uploading the bill writes `utility_bill_required = yes` as well
+as closing the chase, so the project page never shows "Utility Bill Uploaded: no"
+next to a filed bill. This is `answered_by_document` in the type's config, read by
+`DocumentFollowUpService::answerFieldFromDocument()`, which runs on every
+`syncType()` — whether or not a chase is open — and only writes when the document
+is really there and the field does not already say so. The other three fields ask
+whether paperwork is *required*, and that stays true after it arrives, so they
+have no `answered_by_document` entry and are never rewritten.
 
 Sub-department ids above are fixed records in `sub_departments`. If they are ever
 renumbered, `DocumentFollowUpService::TYPES` must be updated to match.
@@ -140,7 +151,8 @@ department field answered so a document is owed
   → project is stuck: the parked lane is closed to manual moves
   → assignee produces the document on the dashboard card
       → DocumentFollowUpController::update()
-      → syncType() → resolve() → releaseFromParkedLane()
+      → syncType() → answerFieldFromDocument() (utility bill only: field → yes)
+                   → resolve() → releaseFromParkedLane()
       → project moves to the release lane, assignee IS e-mailed
 ```
 
@@ -188,8 +200,13 @@ untouched; only new projects start NULL.
 
 **Utility Bill Uploaded is phrased as the answer, not the requirement.** The
 other two ask whether paperwork is *needed*; this one asks whether the bill is
-already *in*, so the chase opens on "no". `paperworkRequired()` carries the only
-place that difference lives — everything downstream is unchanged.
+already *in*, so the chase opens on "no" — and the upload flips it back to "yes"
+rather than leaving the field contradicting the filed bill. `paperworkRequired()`
+and `answered_by_document` carry the only two places that difference lives —
+everything downstream is unchanged. One consequence, and it is the intended one:
+deleting the bill afterwards no longer re-opens the chase, because the field now
+says "yes" — exactly as if someone had answered it by hand. Re-answering it "no"
+opens the chase again.
 
 **Required department fields**: `utility_bill_required` (Deal Review) and
 `fire_review_required` (Permitting) are rows in `project_department_fields`, so a
@@ -232,6 +249,14 @@ both the department file list and the category sections. `$category` NULL means
 whole project". `allowUpload => false` hides the upload button on the category
 sections, because those documents are collected from the dashboard card.
 
+**The field flip is logged like every other step.** It writes a
+`document_follow_up_field_answered` activity event and a `[Utility Bill Follow Up]`
+department note, so the project history shows *why* the answer changed — three
+lines land together: the upload, the field answer, the chase clearing. The one
+place the flip is silent is the backfill migration
+(`2026_09_11_000001_backfill_utility_bill_uploaded_answer`), which set straight
+the projects whose bill was already filed while the field still read "no".
+
 **Blade caching.** `php artisan view:cache` does not lint the compiled PHP. To
 really validate a Blade change: compile, then `php -l` the files in
 `storage/framework/views/*.php`.
@@ -250,6 +275,9 @@ really validate a Blade change: compile, then `php -l` the files in
    `value_options` (collects a value).
 4. Extend `paperworkRequired()` with the new column's test. Everything else —
    opening, closing, interception, release, e-mail, logging — is already generic.
+   If the new field asks whether the document is already *in* (rather than
+   whether it is needed), give it an `answered_by_document` entry so producing
+   the document writes the field too.
 5. If it collects a file: add a `CATEGORY_*` constant to `ProjectFile`, and
    render an `EnhancedFilesSection` instance for it under the relevant department
    tab in `show.blade.php`.

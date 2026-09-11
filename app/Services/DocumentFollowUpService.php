@@ -23,7 +23,8 @@ use App\Models\User;
  *                   result comes in.
  *   Utility Bill  - Deal Review owns it. Opens when Utility Bill Uploaded is
  *                   "no" and no bill has been uploaded; clears when the bill
- *                   itself is uploaded from the follow up card.
+ *                   itself is uploaded from the follow up card, which also
+ *                   turns that field to "yes" - the bill IS the answer to it.
  *   Fire Review   - Permitting owns it. Opens when Fire Review Required is
  *                   "yes" and no fire approval document has been uploaded;
  *                   clears when that document is uploaded from the card.
@@ -85,6 +86,20 @@ class DocumentFollowUpService
             'value_column' => null,
             'value_options' => [],
             'file_category' => ProjectFile::CATEGORY_UTILITY_BILL,
+            /*
+             * The only chase whose department field asks whether the document is
+             * already IN rather than whether it is needed, so the document that
+             * closes the chase also answers the field: once the bill is on the
+             * project, "Utility Bill Uploaded" reads Yes by itself. The other
+             * chases ask whether paperwork is required, and that answer stays
+             * true after the paperwork arrives - nothing to flip there.
+             */
+            'answered_by_document' => [
+                'column' => 'utility_bill_required',
+                'value' => 'yes',
+                'label' => 'Utility Bill Uploaded',
+                'because' => 'the bill was uploaded',
+            ],
         ],
         self::TYPE_FIRE_REVIEW => [
             'label' => 'Fire Review Follow Up',
@@ -300,6 +315,11 @@ class DocumentFollowUpService
 
     public function syncType(Project $project, string $type, ?User $causer = null): void
     {
+        // The document answers the department field on the way past: this runs
+        // before the chase is looked at, and whether or not one is open, so a
+        // project whose bill arrived through any path still ends up reading Yes.
+        $this->answerFieldFromDocument($project, $type, $causer);
+
         $pending = $this->pendingFor($project->id, $type);
 
         if ($this->needsFollowUp($project, $type)) {
@@ -449,6 +469,44 @@ class DocumentFollowUpService
             ],
             $causer
         );
+    }
+
+    /**
+     * Some chases ask whether the paperwork is already in, not whether it is
+     * needed ("Utility Bill Uploaded"). For those the document IS the answer,
+     * so filing it writes the field too - leaving the field saying "no" after
+     * the bill is on the project is simply wrong, and it is the answer everyone
+     * reads on the project page.
+     *
+     * Only writes when the document is actually there and the field does not
+     * already say so, so it is safe to call on every sync.
+     */
+    public function answerFieldFromDocument(Project $project, string $type, ?User $causer = null): bool
+    {
+        $answer = $this->config($type)['answered_by_document'] ?? null;
+
+        if (! $answer || ! $this->documentReceived($project, $type)) {
+            return false;
+        }
+
+        $column = $answer['column'];
+
+        if (strtolower(trim((string) $project->{$column})) === strtolower($answer['value'])) {
+            return false;
+        }
+
+        $project->update([$column => $answer['value']]);
+
+        $this->record(
+            $project,
+            $type,
+            'document_follow_up_field_answered',
+            $answer['label'].' set to '.ucfirst($answer['value']).' automatically because '.$answer['because'].'.',
+            ['column' => $column, 'value' => $answer['value']],
+            $causer
+        );
+
+        return true;
     }
 
     /* ------------------------------------------------------------- lane moves */
