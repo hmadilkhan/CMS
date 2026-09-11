@@ -6,6 +6,7 @@ use App\Livewire\Concerns\AuthorizesProjectAccess;
 use App\Models\Project;
 use App\Models\ProjectFile;
 use App\Models\ProjectZoneFile;
+use App\Services\DocumentFollowUpService;
 use Illuminate\Support\Facades\Storage;
 use Livewire\Attributes\Locked;
 use Livewire\Attributes\On;
@@ -86,6 +87,18 @@ class EnhancedFilesSection extends Component
             $projectFile = ($this->fileModel())::findOrFail($this->deleteId);
             Storage::disk('public')->delete('projects/' . $projectFile->filename);
             $projectFile->delete();
+
+            // A chase's document has just left the project. The field the files
+            // answer ("Utility Bill Uploaded") has to follow them back, and the
+            // chase re-opens with it - see docs/follow-ups.md.
+            if (!$this->inZoneMode() && $projectFile->category) {
+                $project = Project::find($projectFile->project_id);
+
+                if ($project) {
+                    app(DocumentFollowUpService::class)->sync($project, auth()->user());
+                }
+            }
+
             $this->dispatch('hide-delete-modal', modalId: 'deletefile-' . $this->getId());
             $this->reset(['deleteId']);
             $this->dispatch('refreshComponent');

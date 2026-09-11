@@ -23,7 +23,8 @@ use App\Models\User;
  *                   result comes in.
  *   Utility Bill  - Deal Review owns it. Opens when Utility Bill Uploaded is
  *                   "no" and no bill has been uploaded; clears when the bill
- *                   itself is uploaded from the follow up card.
+ *                   itself is uploaded from the follow up card, which also
+ *                   turns that field to "yes" - the bill IS the answer to it.
  *   Fire Review   - Permitting owns it. Opens when Fire Review Required is
  *                   "yes" and no fire approval document has been uploaded;
  *                   clears when that document is uploaded from the card.
@@ -85,6 +86,23 @@ class DocumentFollowUpService
             'value_column' => null,
             'value_options' => [],
             'file_category' => ProjectFile::CATEGORY_UTILITY_BILL,
+            /*
+             * The only chase whose department field asks whether the document is
+             * already IN rather than whether it is needed, so the files ARE the
+             * answer to it and the field follows them in both directions: one
+             * bill on the project and "Utility Bill Uploaded" reads Yes; the last
+             * one removed and it reads No again, which re-opens the chase. The
+             * other chases ask whether paperwork is required, and that answer
+             * stays true after the paperwork arrives - nothing to flip there.
+             */
+            'answered_by_document' => [
+                'column' => 'utility_bill_required',
+                'value' => 'yes',
+                'value_when_missing' => 'no',
+                'label' => 'Utility Bill Uploaded',
+                'because' => 'the bill was uploaded',
+                'because_missing' => 'the uploaded bill was removed',
+            ],
         ],
         self::TYPE_FIRE_REVIEW => [
             'label' => 'Fire Review Follow Up',
@@ -300,6 +318,12 @@ class DocumentFollowUpService
 
     public function syncType(Project $project, string $type, ?User $causer = null): void
     {
+        // The documents answer the department field on the way past: this runs
+        // before the chase is looked at, and whether or not one is open, so a
+        // project whose bill arrived (or was deleted again) through any path
+        // still ends up reading what its files say.
+        $this->syncFieldToDocuments($project, $type, $causer);
+
         $pending = $this->pendingFor($project->id, $type);
 
         if ($this->needsFollowUp($project, $type)) {
@@ -330,6 +354,15 @@ class DocumentFollowUpService
         $this->releaseFromParkedLane($project, $type, $causer);
     }
 
+    /** The chases whose department field is written from their documents. */
+    public function typesAnsweredByDocument(): array
+    {
+        return array_values(array_filter(
+            self::types(),
+            fn ($type) => ! empty($this->config($type)['answered_by_document'])
+        ));
+    }
+
     /**
      * Reconcile every project that either belongs on a list or is on one now.
      * Cheap - the candidate set is only the projects still missing a document
@@ -350,6 +383,12 @@ class DocumentFollowUpService
             })
             ->pluck('id')
             ->merge(ProjectDocumentFollowUp::pending()->pluck('project_id'))
+            // A field the documents answered can go stale the moment one of them
+            // is deleted, and the project has left the candidate query above by
+            // then (its answer is "yes" now), so keep those in the set.
+            ->merge(ProjectDocumentFollowUp::whereIn('type', $this->typesAnsweredByDocument())
+                ->where('resolved_reason', ProjectDocumentFollowUp::REASON_DOCUMENT_RECEIVED)
+                ->pluck('project_id'))
             ->unique();
 
         if ($candidateIds->isEmpty()) {
@@ -449,6 +488,86 @@ class DocumentFollowUpService
             ],
             $causer
         );
+    }
+
+    /**
+     * Some chases ask whether the paperwork is already in, not whether it is
+     * needed ("Utility Bill Uploaded"). For those the files ARE the answer, so
+     * the field follows them: one document on the project and it reads "yes";
+     * the last one deleted and it reads "no" again, which re-opens the chase.
+     * Leaving the field saying "no" next to a filed bill - or "yes" next to an
+     * empty section - is simply wrong, and that field is what everyone reads on
+     * the project page.
+     *
+     * The count is what matters, not which upload: deleting one of two bills
+     * changes nothing, because documentReceived() still finds one.
+     *
+     * Going back to "no" is deliberately narrower than coming forward. It only
+     * happens when the "yes" is one the documents themselves put there
+     * (answeredByDocument()) - a project someone answered "yes" by hand, with
+     * its bill on paper or filed among the ordinary department files, is never
+     * contradicted, and neither is a "yes" typed to retract the question.
+     *
+     * Only ever writes when the field does not already say what the files say,
+     * so it is safe to call on every sync.
+     */
+    public function syncFieldToDocuments(Project $project, string $type, ?User $causer = null): bool
+    {
+        $answer = $this->config($type)['answered_by_document'] ?? null;
+
+        if (! $answer) {
+            return false;
+        }
+
+        $hasDocument = $this->documentReceived($project, $type);
+
+        if (! $hasDocument && ! $this->answeredByDocument($project, $type)) {
+            return false;
+        }
+
+        $value = $hasDocument ? $answer['value'] : ($answer['value_when_missing'] ?? null);
+
+        if ($value === null) {
+            return false;
+        }
+
+        $column = $answer['column'];
+
+        if (strtolower(trim((string) $project->{$column})) === strtolower($value)) {
+            return false;
+        }
+
+        $project->update([$column => $value]);
+
+        $this->record(
+            $project,
+            $type,
+            'document_follow_up_field_answered',
+            $answer['label'].' set to '.ucfirst($value).' automatically because '
+                .($hasDocument ? $answer['because'] : $answer['because_missing']).'.',
+            ['column' => $column, 'value' => $value],
+            $causer
+        );
+
+        return true;
+    }
+
+    /**
+     * The field's current answer is the one the document wrote: this chase's
+     * last word on the project is that the document arrived. Anything else -
+     * never chased, closed because the question was retracted, still open -
+     * means the answer is somebody's own, and the files do not overrule it.
+     */
+    protected function answeredByDocument(Project $project, string $type): bool
+    {
+        $last = ProjectDocumentFollowUp::where('project_id', $project->id)
+            ->ofType($type)
+            ->latest('id')
+            ->first();
+
+        return $last
+            && $last->status === ProjectDocumentFollowUp::STATUS_RESOLVED
+            && $last->resolved_reason === ProjectDocumentFollowUp::REASON_DOCUMENT_RECEIVED;
     }
 
     /* ------------------------------------------------------------- lane moves */

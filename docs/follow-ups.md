@@ -27,6 +27,7 @@ All three are the same code. Only a config row differs.
 | Parked lane | 31 Install Pending Document | 32 PTO Pending Document | 29 Inspection Pending Fire Review | 31 Install Pending Document |
 | Release lane | 12 Install Not Scheduled | 18 PTO | 16 Inspection Not Scheduled | 12 Install Not Scheduled |
 | Cleared by | picking the Meter Spot Result | uploading the bill | uploading the approval | filing the date in the Zones **NTP** tab |
+| Field after clearing | the result is the field | flips to **yes**, and back to **no** if every bill is deleted | stays `1` — it *was* required | the date is the field |
 | Card collects | a **value** (dropdown) | a **file** | a **file** | — (no Operations card) |
 | Files section | — | "Utility Bills", Deal Review tab | "Fire Approval Documents", Inspection tab | — |
 
@@ -34,6 +35,32 @@ The utility bill question is the odd one out: its field is labelled **Utility
 Bill Uploaded**, so `no` — not `yes` — is the answer that owes a document.
 `NULL` (unanswered) chases nothing; the field is a required Deal Review field, so
 it cannot stay `NULL` past Deal Review.
+
+Because that field asks whether the document is already *in*, the **files are its
+answer**, and it follows them both ways:
+
+- **one or more bills on the project → `yes`.** Uploading writes the field as
+  well as closing the chase, so the project page never shows "Utility Bill
+  Uploaded: no" next to a filed bill.
+- **the last bill deleted → back to `no`**, which re-opens the chase, because the
+  bill is owed again. Deleting one of two changes nothing: the count is what is
+  read, not which upload.
+
+This is `answered_by_document` in the type's config, read by
+`DocumentFollowUpService::syncFieldToDocuments()`, which runs on every
+`syncType()` — whether or not a chase is open — and only writes when the field
+does not already say what the files say.
+
+Going back to `no` is deliberately narrower than going forward: it only happens
+when the `yes` is one the documents themselves wrote (`answeredByDocument()` —
+this chase's last row on the project is resolved `document_received`). A `yes`
+somebody typed, because the bill came in on paper or lives among the ordinary
+department files, is never contradicted by the empty section, and neither is a
+`yes` typed to retract the question.
+
+The other three fields ask whether paperwork is *required*, and that stays true
+after it arrives, so they have no `answered_by_document` entry and are never
+rewritten.
 
 Sub-department ids above are fixed records in `sub_departments`. If they are ever
 renumbered, `DocumentFollowUpService::TYPES` must be updated to match.
@@ -140,13 +167,23 @@ department field answered so a document is owed
   → project is stuck: the parked lane is closed to manual moves
   → assignee produces the document on the dashboard card
       → DocumentFollowUpController::update()
-      → syncType() → resolve() → releaseFromParkedLane()
+      → syncType() → syncFieldToDocuments() (utility bill only: field → yes)
+                   → resolve() → releaseFromParkedLane()
       → project moves to the release lane, assignee IS e-mailed
 ```
 
+And back again, when the document is deleted:
+
+```
+the last utility bill is deleted
+  → EnhancedFilesSection::deleteFile() / ProjectController::deleteFile()
+  → sync() → syncFieldToDocuments()   Utility Bill Uploaded → no
+           → the chase opens again, card and all
+```
+
 `sync()` is called after every project write that can change an answer:
-`EditFields::updateProjectFields()`, `ProjectController::projectMove()`, and the
-dashboard endpoint. `syncAll()` also runs on every `pendingList()` call, so a
+`EditFields::updateProjectFields()`, `ProjectController::projectMove()`, the
+dashboard endpoint, and the two file-delete paths. `syncAll()` also runs on every `pendingList()` call, so a
 chase opened through a path nobody hooked still shows up on the next dashboard
 load.
 
@@ -188,8 +225,10 @@ untouched; only new projects start NULL.
 
 **Utility Bill Uploaded is phrased as the answer, not the requirement.** The
 other two ask whether paperwork is *needed*; this one asks whether the bill is
-already *in*, so the chase opens on "no". `paperworkRequired()` carries the only
-place that difference lives — everything downstream is unchanged.
+already *in*, so the chase opens on "no", the upload writes "yes", and deleting
+the last bill writes "no" again rather than leaving the field contradicting an
+empty section. `paperworkRequired()` and `answered_by_document` carry the only
+two places that difference lives — everything downstream is unchanged.
 
 **Required department fields**: `utility_bill_required` (Deal Review) and
 `fire_review_required` (Permitting) are rows in `project_department_fields`, so a
@@ -232,6 +271,15 @@ both the department file list and the category sections. `$category` NULL means
 whole project". `allowUpload => false` hides the upload button on the category
 sections, because those documents are collected from the dashboard card.
 
+**The field flip is logged like every other step**, in both directions. It writes
+a `document_follow_up_field_answered` activity event and a
+`[Utility Bill Follow Up]` department note, so the project history shows *why* the
+answer changed — three lines land together on an upload: the upload, the field
+answer, the chase clearing. The one
+place the flip is silent is the backfill migration
+(`2026_09_11_000001_backfill_utility_bill_uploaded_answer`), which set straight
+the projects whose bill was already filed while the field still read "no".
+
 **Blade caching.** `php artisan view:cache` does not lint the compiled PHP. To
 really validate a Blade change: compile, then `php -l` the files in
 `storage/framework/views/*.php`.
@@ -250,6 +298,10 @@ really validate a Blade change: compile, then `php -l` the files in
    `value_options` (collects a value).
 4. Extend `paperworkRequired()` with the new column's test. Everything else —
    opening, closing, interception, release, e-mail, logging — is already generic.
+   If the new field asks whether the document is already *in* (rather than
+   whether it is needed), give it an `answered_by_document` entry so producing
+   the document writes the field too — and a `value_when_missing` if deleting
+   the document should take the answer back.
 5. If it collects a file: add a `CATEGORY_*` constant to `ProjectFile`, and
    render an `EnhancedFilesSection` instance for it under the relevant department
    tab in `show.blade.php`.

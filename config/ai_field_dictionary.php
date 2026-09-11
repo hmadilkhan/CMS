@@ -52,7 +52,7 @@ return [
                 'budget' => 'Budgeted amount for the project (financial — restricted).',
                 'description' => 'Free-text notes/description of the project.',
                 'utility_company' => 'The electric utility company serving the property.',
-                'utility_bill_required' => 'Whether the customer utility bill has already been uploaded ("Utility Bill Uploaded" in Deal Review). It reads the opposite way round to MPU Required: "no" means the bill is still owed and starts a Utility Bill Follow Up that parks the project in PTO Pending Document until the bill is actually uploaded (a project_files row with category "utility_bill"); "yes" means nothing is owed.',
+                'utility_bill_required' => 'Whether the customer utility bill has already been uploaded ("Utility Bill Uploaded" in Deal Review). It reads the opposite way round to MPU Required: "no" means the bill is still owed and starts a Utility Bill Follow Up that parks the project in PTO Pending Document until the bill is actually uploaded (a project_files row with category "utility_bill"); "yes" means nothing is owed. Uploading the bill sets this field to "yes" automatically, so a project with a filed utility bill never reads "no".',
                 'ntp_approval_date' => 'Date Notice To Proceed (NTP) was approved — authorization to begin installation work.',
                 'site_survey_link' => 'Link to the site survey document/report for the property.',
                 'hoa' => 'Homeowners Association name (if the property is in an HOA).',
