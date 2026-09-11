@@ -60,7 +60,17 @@ It is now the fourth chase, and the only one whose document arrives from
   chase is invisible there by design (`HomeController` names the three carded
   types explicitly, so a fourth type adds nothing).
 
-Two mechanics are particular to it, both deliberate:
+Three mechanics are particular to it, all deliberate:
+
+**Parking moves the project to the NTP zone** (`ZoneService::enterForFollowUp()`,
+driven by `config('zones.follow_up_zones')`), because a zone tab only collects
+its fields while the project is in that zone — a project parked here but sitting
+in Pre NTP showed the date as read-only with no Save button, which is exactly the
+deadlock this chase must not create. The promotion is one-directional: a project
+the Funding Manager already moved to M1/M2 stays there, and for that case the
+awaited field stays writable from its own tab anyway
+(`DocumentFollowUpService::isAwaitingColumn()`).
+
 
 **It opens at the move, not when the date goes missing** (`'opens_on_move' =>
 true`, read by `DocumentFollowUpService::openChasesForMove()`, called from

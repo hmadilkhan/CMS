@@ -915,7 +915,16 @@ class ProjectController extends Controller
             // The zone side only ever reacts to a department arrival; it never
             // writes back. A project already moved on by the Funding Manager is
             // left where it is.
-            app(ZoneService::class)->handleDepartmentArrival($project->refresh(), (int) $request->departmentId);
+            $zones = app(ZoneService::class);
+            $zones->handleDepartmentArrival($project->refresh(), (int) $request->departmentId);
+
+            // A chase the funding side has to answer moves the project onto that
+            // side's own lane, so the tab collecting the field is the project's
+            // current zone and the Funding Manager finds it where the work is.
+            // Never backwards: a project already further along stays put.
+            if ($forcedFollowUpType) {
+                $zones->enterForFollowUp($project->refresh(), $forcedFollowUpType);
+            }
 
             return response()->json(['status' => 200, 'message' => 'Project Moved Successfully']);
         } catch (\Throwable $th) {

@@ -142,6 +142,49 @@ class ZoneService
     }
 
     /**
+     * A paperwork chase parked this project, and the funding side owns the
+     * document. Move the project to that chase's zone so the tab collecting the
+     * field is its own - unless it is already there or further along, which is
+     * the Funding Manager's decision and outranks this.
+     */
+    public function enterForFollowUp(Project $project, string $followUpType): bool
+    {
+        $slug = config('zones.follow_up_zones.'.$followUpType);
+
+        return $slug ? $this->ensureAtLeast($project, $slug) : false;
+    }
+
+    /**
+     * Promote a project to a zone it has not reached yet. A project with no zone
+     * enters there; one already in that zone or beyond is left alone - this
+     * never pulls a zone backwards.
+     */
+    public function ensureAtLeast(Project $project, string $slug): bool
+    {
+        $target = $this->zoneBySlug($slug);
+
+        if (! $target) {
+            return false;
+        }
+
+        $current = $project->zone_id ? $this->zones()->firstWhere('id', $project->zone_id) : null;
+
+        if ($current && (int) $current->order >= (int) $target->order) {
+            return false;
+        }
+
+        $this->applyMove(
+            $project,
+            $target,
+            null,
+            'Moved automatically: the project is waiting on a '.$target->name.' field.',
+            true
+        );
+
+        return true;
+    }
+
+    /**
      * Where a project already down the pipeline belongs on the funding board,
      * from the department it is in. Only the one-off catch-up uses this - the
      * automatic rules above are unchanged and still decide everything that

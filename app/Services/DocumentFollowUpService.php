@@ -574,6 +574,27 @@ class DocumentFollowUpService
         return true;
     }
 
+    /**
+     * A chase is open on this project and it is waiting for exactly this
+     * project column - the NTP approval date being the one that matters.
+     *
+     * The zone tab that collects such a field has to stay writable even when
+     * the project has moved past that zone, or the project is stuck: the field
+     * is what releases it, and nobody else can file it.
+     */
+    public function isAwaitingColumn(Project $project, string $column): bool
+    {
+        foreach (self::types() as $type) {
+            $config = $this->config($type);
+
+            if (($config['value_column'] ?? null) === $column && $this->hasPending($project->id, $type)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     /** Another chase, still open, parks projects in this same lane. */
     protected function parkedByAnotherChase(Project $project, string $type, int $parkedId): bool
     {
