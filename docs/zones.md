@@ -312,9 +312,21 @@ while the project is in that zone**, read-only (`@disabled`) in every other tab,
 exactly like the notes and files beside it.
 
 Saving posts to `POST /zones/fields` (`ZoneController::fields`), which refuses
-anything but the project's **current** zone and writes only the columns that
-zone declares in config — so the endpoint can never be talked into writing an
-arbitrary project column. Each write gets its own activity-log line.
+anything but the project's **current** zone (plus the awaited-field exception
+below) and writes only the columns that zone declares in config — so the
+endpoint can never be talked into writing an arbitrary project column. Each
+write gets its own activity-log line.
+
+**The form is a real form, not a JavaScript-only one.** It carries
+`action="/zones/fields"`, `method="POST"`, `@csrf` and hidden `project_id` /
+`zone_id`, and the endpoint answers a non-JSON post with a redirect back and a
+flash message. The tab still saves with `fetch` when its script runs; the point
+is that when the script does *not* run — a blocked or broken script on the
+project page, an extension, a stale page — the button saves instead of appearing
+to do nothing. "The Save button is there and nothing happens" was the actual
+report. On success the page reloads, because saving the date can move the
+project out of its parked lane and the rest of the page would otherwise still
+show the old one.
 
 ### No zone move is gated
 

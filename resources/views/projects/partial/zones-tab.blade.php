@@ -97,8 +97,17 @@
                                     <i class="icofont-list me-2"></i>{{ $zone->name }} Fields
                                 </div>
                                 <div class="department-fields-frame">
-                                    <form class="row zone-fields-form" data-zone-fields
+                                    {{-- A real form with a real action: the script below
+                                         saves it with fetch, but if that script never
+                                         runs the browser posts it normally and the save
+                                         still happens, instead of the button doing
+                                         nothing at all. --}}
+                                    <form class="row zone-fields-form" data-zone-fields method="POST"
+                                        action="{{ route('zones.fields') }}"
                                         data-project-id="{{ $project->id }}" data-zone-id="{{ $zone->id }}">
+                                        @csrf
+                                        <input type="hidden" name="project_id" value="{{ $project->id }}">
+                                        <input type="hidden" name="zone_id" value="{{ $zone->id }}">
                                         @foreach ($zoneFields as $column => $field)
                                             @php
                                                 $fieldType = $field['type'] ?? 'text';
@@ -202,6 +211,10 @@
         };
 
         form.querySelectorAll('input[name]').forEach(function (input) {
+            if (input.type === 'hidden' || input.name === '_token') {
+                return;
+            }
+
             payload[input.name] = input.value;
         });
 
@@ -241,6 +254,15 @@
                     ? (result.data.message || 'Saved.')
                     : (result.data.message || 'The fields could not be saved.');
                 feedback.className = 'zone-fields-feedback small ' + (result.ok ? 'text-success' : 'text-danger');
+
+                {{-- Saving a zone field can move the project out of the lane it
+                     was parked in, and the rest of this page still shows the old
+                     one. Reload so what is on screen is what was just saved. --}}
+                if (result.ok) {
+                    window.setTimeout(function () {
+                        window.location.reload();
+                    }, 800);
+                }
             })
             .catch(function () {
                 if (button) {

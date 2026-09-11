@@ -482,6 +482,94 @@ class ZoneWorkflowTest extends TestCase
         $this->assertSame('2026-08-11', (string) $project->refresh()->ntp_approval_date);
     }
 
+    /**
+     * Reported from production: the Funding Manager moved a project's zone from
+     * M1 back to NTP, the tab offered the date and a Save button - and the date
+     * did not save.
+     */
+    public function test_a_project_moved_back_to_ntp_can_have_its_date_saved(): void
+    {
+        $project = $this->projectInNtpZone();
+        $zones = app(ZoneService::class);
+
+        $zones->move($project, Zone::where('slug', 'm1')->value('id'), 'Funded.');
+        $zones->move($project->refresh(), Zone::where('slug', 'ntp')->value('id'), 'Back for the date.');
+
+        $project = $project->refresh();
+        $ntpZoneId = Zone::where('slug', 'ntp')->value('id');
+        $this->assertSame($ntpZoneId, (int) $project->zone_id);
+
+        $input = 'id="zone-field-'.$ntpZoneId.'-ntp_approval_date"';
+        $html = $this->actingAs($this->fundingManager())
+            ->get(route('projects.show', $project->id))
+            ->assertOk()
+            ->getContent();
+
+        $this->assertStringNotContainsString(
+            'disabled',
+            substr($html, strpos($html, $input), 200),
+            'The project is back in NTP, so the date must be editable again.'
+        );
+
+        $this->actingAs($this->fundingManager())
+            ->postJson(route('zones.fields'), [
+                'project_id' => (string) $project->id,   // the form sends data attributes, i.e. strings
+                'zone_id' => (string) $project->zone_id,
+                'ntp_approval_date' => '2026-08-20',
+            ])
+            ->assertOk();
+
+        $this->assertSame('2026-08-20', substr((string) $project->refresh()->ntp_approval_date, 0, 10));
+    }
+
+    /**
+     * The tab saves with fetch, but the form is a real form: if that script never
+     * runs, the browser's own submit has to save too. A button that silently does
+     * nothing is what this whole area was reported for.
+     */
+    public function test_the_fields_form_saves_without_javascript(): void
+    {
+        $project = $this->projectInNtpZone();
+
+        $this->actingAs($this->fundingManager())
+            ->post(route('zones.fields'), [
+                'project_id' => $project->id,
+                'zone_id' => $project->zone_id,
+                'ntp_approval_date' => '2026-08-20',
+            ])
+            ->assertRedirect()
+            ->assertSessionHas('success');
+
+        $this->assertSame('2026-08-20', substr((string) $project->refresh()->ntp_approval_date, 0, 10));
+    }
+
+    public function test_a_refused_plain_form_post_says_why_instead_of_returning_json(): void
+    {
+        $project = $this->projectInNtpZone();
+
+        $this->actingAs($this->fundingManager())
+            ->post(route('zones.fields'), [
+                'project_id' => $project->id,
+                'zone_id' => Zone::where('slug', 'm2')->value('id'),
+                'ntp_approval_date' => '2026-09-09',
+            ])
+            ->assertRedirect()
+            ->assertSessionHas('error');
+
+        $this->assertNull($project->refresh()->ntp_approval_date);
+    }
+
+    public function test_the_form_carries_an_action_a_browser_can_post_on_its_own(): void
+    {
+        $project = $this->projectInNtpZone();
+
+        $this->actingAs($this->fundingManager())
+            ->get(route('projects.show', $project->id))
+            ->assertOk()
+            ->assertSee('action="'.route('zones.fields').'"', false)
+            ->assertSee('name="project_id"', false);
+    }
+
     public function test_a_zone_with_no_fields_of_its_own_saves_nothing(): void
     {
         $project = $this->projectFixture();
