@@ -297,6 +297,44 @@ class ZoneWorkflowTest extends TestCase
         $this->assertStringContainsString($columnHeader('Archived'), $archiveBoard);
     }
 
+    public function test_each_lane_is_ordered_by_sold_date_oldest_first(): void
+    {
+        $zones = app(ZoneService::class);
+
+        // Same lane, three different deals. Created newest-sold first, so the
+        // insertion order is the opposite of the order the lane must draw.
+        $newest = $this->projectFixture();
+        $newest->update(['code' => '9103']);
+        $newest->customer->update(['sold_date' => '2026-06-01']);
+
+        $oldest = $this->projectFixture();
+        $oldest->update(['code' => '9101']);
+        $oldest->customer->update(['sold_date' => '2023-02-14']);
+
+        $middle = $this->projectFixture();
+        $middle->update(['code' => '9102']);
+        $middle->customer->update(['sold_date' => '2025-01-09']);
+
+        foreach ([$newest, $oldest, $middle] as $project) {
+            $zones->handleDepartmentArrival($project, 1);
+        }
+
+        $board = $this->actingAs($this->fundingManager())
+            ->get(route('zones.board'))
+            ->assertOk()
+            ->getContent();
+
+        $positionOf = function (string $code) use ($board) {
+            $position = strpos($board, $code);
+            $this->assertNotFalse($position, "Project {$code} is missing from the board.");
+
+            return $position;
+        };
+
+        $this->assertTrue($positionOf('9101') < $positionOf('9102'));
+        $this->assertTrue($positionOf('9102') < $positionOf('9103'));
+    }
+
     public function test_the_move_endpoint_records_the_move_and_rejects_a_no_op(): void
     {
         $project = $this->projectFixture();

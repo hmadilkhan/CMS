@@ -232,6 +232,13 @@ class ZoneController extends Controller
      * Projects grouped by zone, carrying everything the card draws. The search
      * and the department filter are applied here so a lane's count always
      * matches the cards under it.
+     *
+     * Every lane is ordered by the customer's sold date, oldest first: the
+     * funding side works its backlog from the oldest deal down, so the card that
+     * has been waiting longest sits at the top of its lane. `customers` is
+     * joined for it - left joined, so a project whose customer row is gone still
+     * appears - and the select is pinned to `projects.*` so the join cannot
+     * overwrite the model's own columns.
      */
     private function projectsFor(array $zoneIds, Request $request)
     {
@@ -252,14 +259,16 @@ class ZoneController extends Controller
             ->withCount(['emails as viewed_emails_count' => function ($query) {
                 $query->where('is_view', 1);
             }])
-            ->whereIn('zone_id', $zoneIds)
+            ->leftJoin('customers', 'customers.id', '=', 'projects.customer_id')
+            ->select('projects.*')
+            ->whereIn('projects.zone_id', $zoneIds)
             ->when($department !== 'all' && $department !== null && $department !== '', function ($query) use ($department) {
-                $query->where('department_id', $department);
+                $query->where('projects.department_id', $department);
             })
             ->when($search !== '', function ($query) use ($search) {
                 $query->where(function ($inner) use ($search) {
-                    $inner->where('project_name', 'like', '%'.$search.'%')
-                        ->orWhere('code', 'like', '%'.$search.'%')
+                    $inner->where('projects.project_name', 'like', '%'.$search.'%')
+                        ->orWhere('projects.code', 'like', '%'.$search.'%')
                         ->orWhereHas('customer', function ($customer) use ($search) {
                             $customer->where('first_name', 'like', '%'.$search.'%')
                                 ->orWhere('last_name', 'like', '%'.$search.'%')
@@ -267,8 +276,12 @@ class ZoneController extends Controller
                         });
                 });
             })
-            ->orderByDesc('zone_entered_at')
-            ->orderByDesc('id')
+            // Oldest sold date first. A project with no sold date has no place
+            // in that queue, so it goes to the end of the lane instead of the
+            // front - both MySQL and SQLite sort NULL first on a plain ASC.
+            ->orderByRaw('customers.sold_date is null')
+            ->orderBy('customers.sold_date')
+            ->orderBy('projects.id')
             ->get()
             ->groupBy('zone_id');
     }
