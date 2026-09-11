@@ -115,10 +115,7 @@ class ZoneController extends Controller
         $fields = $this->zones->fieldsFor($zone);
 
         if (empty($fields)) {
-            return response()->json([
-                'status' => 422,
-                'message' => 'This zone has no fields to fill in.',
-            ], 422);
+            return $this->fieldsResponse($request, 422, 'This zone has no fields to fill in.');
         }
 
         $followUps = app(DocumentFollowUpService::class);
@@ -134,10 +131,7 @@ class ZoneController extends Controller
         );
 
         if ($writable === []) {
-            return response()->json([
-                'status' => 422,
-                'message' => 'Only the zone the project is in can be edited.',
-            ], 422);
+            return $this->fieldsResponse($request, 422, 'Only the zone the project is in can be edited.');
         }
 
         $updates = [];
@@ -150,21 +144,14 @@ class ZoneController extends Controller
             $value = $this->normalisedFieldValue($request->input($column), $field);
 
             if ($value === null && $request->filled($column)) {
-                return response()->json([
-                    'status' => 422,
-                    'message' => 'Please enter a valid '.$field['label'].'.',
-                    'field' => $column,
-                ], 422);
+                return $this->fieldsResponse($request, 422, 'Please enter a valid '.$field['label'].'.', $column);
             }
 
             $updates[$column] = $value;
         }
 
         if (empty($updates)) {
-            return response()->json([
-                'status' => 422,
-                'message' => 'Nothing to save.',
-            ], 422);
+            return $this->fieldsResponse($request, 422, 'Nothing to save.');
         }
 
         $project->forceFill($updates)->save();
@@ -179,10 +166,27 @@ class ZoneController extends Controller
         // docs/follow-ups.md.
         app(DocumentFollowUpService::class)->sync($project->refresh());
 
-        return response()->json([
-            'status' => 200,
-            'message' => $zone->name.' fields saved.',
-        ]);
+        return $this->fieldsResponse($request, 200, $zone->name.' fields saved.');
+    }
+
+    /**
+     * The same answer in both shapes. The tab saves with fetch and reads JSON,
+     * but the form is a real form with a real action, so a browser that posts it
+     * without JavaScript - a stale page, a blocked script, an extension - still
+     * saves and lands back on the project with a message, instead of appearing
+     * to do nothing at all. That silence is what this endpoint was reported for.
+     */
+    private function fieldsResponse(Request $request, int $status, string $message, ?string $field = null)
+    {
+        if ($request->expectsJson()) {
+            return response()->json(array_filter([
+                'status' => $status,
+                'message' => $message,
+                'field' => $field,
+            ]), $status);
+        }
+
+        return back()->with($status === 200 ? 'success' : 'error', $message);
     }
 
     /**
