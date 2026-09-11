@@ -384,7 +384,7 @@
                 </div>
             </div>
         </div>
-        <form>
+    </form>
 </div>
 {{-- @script --}}
 <script>

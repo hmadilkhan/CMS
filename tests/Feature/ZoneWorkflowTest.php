@@ -559,6 +559,32 @@ class ZoneWorkflowTest extends TestCase
         $this->assertNull($project->refresh()->ntp_approval_date);
     }
 
+    /**
+     * The reported bug, at its root: the department-fields component opened
+     * <form id="mainForm"> and closed it with another "<form>" instead of
+     * "</form>". An unclosed form swallows the markup that follows it, so the
+     * zone Save button became a submit button of THAT form - clicking it ran
+     * the department fields' Livewire update and the NTP date went nowhere.
+     *
+     * A page whose form tags do not balance can break any form rendered after
+     * the offender, so this guards the whole page rather than that one blade.
+     */
+    public function test_the_project_page_closes_every_form_it_opens(): void
+    {
+        $project = $this->projectInNtpZone();
+
+        $html = $this->actingAs($this->fundingManager())
+            ->get(route('projects.show', $project->id))
+            ->assertOk()
+            ->getContent();
+
+        $this->assertSame(
+            preg_match_all('/<form\b/i', $html),
+            preg_match_all('/<\/form>/i', $html),
+            'An unclosed <form> swallows every form rendered after it.'
+        );
+    }
+
     public function test_the_form_carries_an_action_a_browser_can_post_on_its_own(): void
     {
         $project = $this->projectInNtpZone();
