@@ -179,6 +179,14 @@ search-driven re-render so typing is not interrupted. Filters are applied in
 `ZoneController::projectsFor()`, so a column's count always matches its cards.
 `?archived=1` swaps the open columns for the single archive column.
 
+**Every lane is ordered by the customer's sold date, oldest first** — the funding
+side works its backlog from the oldest deal down, so the card that has waited
+longest sits at the top of its column (it was the most recent zone entry before).
+`projectsFor()` left joins `customers` for it and pins the select to `projects.*`
+so the join cannot overwrite the model's own columns; a project with no sold date
+lands at the end of its lane rather than the front, since NULL sorts first on a
+plain ASC in both MySQL and SQLite. Covered by `ZoneWorkflowTest`.
+
 Moving is the **only** write the board makes: `POST /zones/move` with
 `project_id`, `zone_id` and an optional `note`. Any zone is a valid destination,
 forwards or backwards, the archive included. A move to the zone the project is
