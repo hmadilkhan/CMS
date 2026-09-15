@@ -357,6 +357,21 @@ fetched as a fragment from `zones.board`. Gated by the `View Zones` permission; 
 Funding-Manager-only user gets only the Zones tab and loses the department
 fields/move bar.
 
+## Operations Console
+
+One window for the twenty-one Operations screens (`/operations`,
+`can:User Management`): the sections on the left, the chosen screen in the
+middle. **Read `docs/operations-console.md` before changing it.**
+
+Phase 1 shows each screen by loading its own page embedded — `layouts.master`
+drops the sidebar and header when a request carries `?embedded=1` — so every
+screen is in the console without any of them being rewritten, and each still
+works on its own URL. `config/operations_console.php` IS the console: groups,
+labels, icons and the **route name** each section opens (never a hardcoded URL;
+a section whose route is missing is dropped, and a test fails if the config
+names one). The console grants nothing of its own — every screen keeps its own
+middleware, and the embedded flag is a view flag, not an access flag.
+
 ## Projects board — search and the Pre-Inspection (ghost) lane
 
 The board (`projects.index` → `projects.project-list`, fed by
