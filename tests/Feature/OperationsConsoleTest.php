@@ -2,8 +2,10 @@
 
 namespace Tests\Feature;
 
+use App\Models\Department;
 use App\Models\User;
 use App\Models\UserType;
+use App\Services\Operations\OperationsPanel;
 use App\Services\OperationsConsoleService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Spatie\Permission\Models\Permission;
@@ -86,7 +88,7 @@ class OperationsConsoleTest extends TestCase
         $this->actingAs($this->user('User Management'))
             ->get(route('operations.console', ['section' => 'no-such-screen']))
             ->assertOk()
-            ->assertSee(route('departments.list').'?embedded=1', false);
+            ->assertSee('Maintain operational departments and their document length settings.');
     }
 
     public function test_an_embedded_page_leaves_out_the_sidebar_and_header(): void
@@ -107,6 +109,120 @@ class OperationsConsoleTest extends TestCase
             substr_count($embedded, 'ms-link'),
             'An embedded page should not render the sidebar menu.'
         );
+    }
+
+    public function test_a_section_with_a_panel_is_drawn_in_the_page(): void
+    {
+        Department::create(['name' => 'Permitting', 'document_length' => 3]);
+
+        $response = $this->actingAs($this->user('User Management'))
+            ->get(route('operations.console', ['section' => 'departments']))
+            ->assertOk();
+
+        // The screen itself, in the console's own page …
+        $response->assertSee('Add Department')
+            ->assertSee('Permitting')
+            ->assertSee('data-ops-panel', false);
+
+        // … not its page in a frame.
+        $response->assertDontSee('<iframe', false);
+    }
+
+    public function test_a_section_without_a_panel_is_still_opened_in_a_frame(): void
+    {
+        $this->actingAs($this->user('User Management'))
+            ->get(route('operations.console', ['section' => 'loan-terms']))
+            ->assertOk()
+            ->assertSee('data-ops-frame', false)
+            ->assertSee(route('loan.term').'?embedded=1', false);
+    }
+
+    public function test_a_panel_keeps_its_links_inside_the_console(): void
+    {
+        $department = Department::create(['name' => 'Permitting', 'document_length' => 3]);
+
+        $this->actingAs($this->user('User Management'))
+            ->get(route('operations.console', ['section' => 'departments']))
+            ->assertOk()
+            ->assertSee(route('operations.console', ['section' => 'departments', 'id' => $department->id]))
+            ->assertDontSee('href="'.route('departments.list', $department->id).'"', false);
+    }
+
+    public function test_a_panel_edits_the_record_the_url_names(): void
+    {
+        $department = Department::create(['name' => 'Permitting', 'document_length' => 3]);
+
+        $this->actingAs($this->user('User Management'))
+            ->get(route('operations.console', ['section' => 'departments', 'id' => $department->id]))
+            ->assertOk()
+            ->assertSee('Update Department')
+            ->assertSee(route('department.update', $department->id), false);
+    }
+
+    public function test_the_screens_panels_replaced_still_render_on_their_own_pages(): void
+    {
+        $user = $this->user('User Management');
+        Department::create(['name' => 'Permitting', 'document_length' => 3]);
+
+        foreach (['departments.list', 'sub.departments.list', 'assign-department.index'] as $route) {
+            $this->actingAs($user)->get(route($route))->assertOk();
+        }
+
+        // A screen's own page links to itself, not into the console.
+        $this->actingAs($user)
+            ->get(route('departments.list'))
+            ->assertOk()
+            ->assertDontSee(route('operations.console', ['section' => 'departments']), false);
+    }
+
+    public function test_a_save_made_in_the_console_comes_back_to_the_console(): void
+    {
+        $this->actingAs($this->user('User Management'))
+            ->post(route('department.store'), [
+                'name' => 'Deal Review',
+                'document_length' => 2,
+                'ops_section' => 'departments',
+            ])
+            ->assertRedirect(route('operations.console', ['section' => 'departments']));
+
+        $this->assertDatabaseHas('departments', ['name' => 'Deal Review']);
+    }
+
+    public function test_a_save_made_on_the_screens_own_page_stays_on_the_screen(): void
+    {
+        $this->actingAs($this->user('User Management'))
+            ->post(route('department.store'), ['name' => 'Deal Review', 'document_length' => 2])
+            ->assertRedirect(route('departments.list'));
+    }
+
+    public function test_a_forged_section_cannot_redirect_anywhere_else(): void
+    {
+        $this->actingAs($this->user('User Management'))
+            ->post(route('department.store'), [
+                'name' => 'Deal Review',
+                'document_length' => 2,
+                'ops_section' => 'https://example.com/steal',
+            ])
+            ->assertRedirect(route('departments.list'));
+    }
+
+    public function test_every_configured_panel_is_a_panel_the_console_can_draw(): void
+    {
+        $console = app(OperationsConsoleService::class);
+
+        foreach ($console->sectionsFor($this->user('User Management')) as $section) {
+            if (empty($section['panel'])) {
+                continue;
+            }
+
+            $panel = $console->panelFor($section);
+
+            $this->assertInstanceOf(OperationsPanel::class, $panel);
+            $this->assertTrue(
+                view()->exists($panel->view()),
+                $section['key'].' names a panel view that does not exist.'
+            );
+        }
     }
 
     public function test_the_screens_still_work_on_their_own_urls(): void

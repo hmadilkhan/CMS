@@ -1,5 +1,9 @@
 <?php
 
+use App\Services\Operations\AssignDepartmentPanel;
+use App\Services\Operations\DepartmentsPanel;
+use App\Services\Operations\SubDepartmentsPanel;
+
 /**
  * The Operations console - one window for the twenty-odd Operations screens.
  *
@@ -7,11 +11,17 @@
  * permission that may see it and the group it sits under. A screen that moves,
  * arrives or is renamed is a change here, not in the page.
  *
- * Phase 1 shows each section by loading its existing page embedded (the page
- * renders without the sidebar and header - see `layouts.master`), so the
- * console covers every screen from day one and no working page had to be
- * rewritten to get there. Later phases replace sections with native panels one
- * at a time; nothing else has to change when they do.
+ * A section is drawn one of two ways, and only this file decides which:
+ *
+ *  - with a `panel`, the console draws the screen itself, in the page, sharing
+ *    its scroll, its chrome and its history;
+ *  - without one, the console loads the screen's existing page embedded (it
+ *    renders without the sidebar and header - see `layouts.master`).
+ *
+ * That is why the console covered every screen from day one: a screen joins as
+ * a frame and is promoted to a panel later, and nothing outside this file
+ * changes when it is. Either way the screen keeps its own route, its own
+ * controller and its own permission.
  */
 return [
     /*
@@ -25,9 +35,9 @@ return [
         [
             'name' => 'Pipeline',
             'sections' => [
-                ['key' => 'departments', 'label' => 'Departments', 'route' => 'departments.list', 'icon' => 'icofont-network-tower'],
-                ['key' => 'sub-departments', 'label' => 'Sub Departments', 'route' => 'sub.departments.list', 'icon' => 'icofont-hierarchy-structure'],
-                ['key' => 'assign-department', 'label' => 'Assign Department', 'route' => 'assign-department.index', 'icon' => 'icofont-users-alt-4'],
+                ['key' => 'departments', 'label' => 'Departments', 'route' => 'departments.list', 'icon' => 'icofont-network-tower', 'panel' => DepartmentsPanel::class],
+                ['key' => 'sub-departments', 'label' => 'Sub Departments', 'route' => 'sub.departments.list', 'icon' => 'icofont-hierarchy-structure', 'panel' => SubDepartmentsPanel::class],
+                ['key' => 'assign-department', 'label' => 'Assign Department', 'route' => 'assign-department.index', 'icon' => 'icofont-users-alt-4', 'panel' => AssignDepartmentPanel::class],
             ],
         ],
         [

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Controllers\Concerns\ReturnsToOperationsConsole;
 use App\Models\Adder;
 use App\Models\AdderSubType;
 use App\Models\AdderType;
@@ -26,6 +27,8 @@ use App\Models\User;
 use App\Models\UtilityCompany;
 use App\Services\FinanceMilestoneService;
 use App\Services\NotificationTemplateService;
+use App\Services\Operations\DepartmentsPanel;
+use App\Services\Operations\SubDepartmentsPanel;
 use App\Traits\MediaTrait;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -34,6 +37,7 @@ use Illuminate\Validation\Rule;
 class OperationController extends Controller
 {
     use MediaTrait;
+    use ReturnsToOperationsConsole;
     public function changeRedlineCostView(Request $request)
     {
         return view("operations/redline/redlinecostchange", [
@@ -1066,14 +1070,7 @@ class OperationController extends Controller
 
     public function departmentList(Request $request)
     {
-        if ($request->id != "") {
-            $department = Department::where("id", $request->id)->first();
-        }
-
-        return view("operations/departments/index", [
-            "departments" => Department::all(),
-            "department" => ($request->id != "" ? $department : []),
-        ]);
+        return view("operations.departments.index", app(DepartmentsPanel::class)->data($request));
     }
 
     public function departmentStore(Request $request)
@@ -1091,9 +1088,9 @@ class OperationController extends Controller
                 "document_length" => $validated["document_length"],
             ]);
 
-            return redirect()->route("departments.list")->with("success", "Data Saved Successfully");
+            return $this->backToOperations($request, "departments.list")->with("success", "Data Saved Successfully");
         } catch (\Throwable $th) {
-            return redirect()->route("departments.list")->with("error", $th->getMessage());
+            return $this->backToOperations($request, "departments.list")->with("error", $th->getMessage());
         }
     }
 
@@ -1113,9 +1110,9 @@ class OperationController extends Controller
             $department->document_length = $validated["document_length"];
             $department->save();
 
-            return redirect()->route("departments.list")->with("success", "Data Updated Successfully");
+            return $this->backToOperations($request, "departments.list")->with("success", "Data Updated Successfully");
         } catch (\Throwable $th) {
-            return redirect()->route("departments.list")->with("error", $th->getMessage());
+            return $this->backToOperations($request, "departments.list")->with("error", $th->getMessage());
         }
     }
 
@@ -1140,15 +1137,7 @@ class OperationController extends Controller
 
     public function subDepartmentList(Request $request)
     {
-        if ($request->id != "") {
-            $subDepartment = SubDepartment::with("department")->where("id", $request->id)->first();
-        }
-
-        return view("operations/sub-departments/index", [
-            "departments" => Department::all(),
-            "subDepartments" => SubDepartment::with("department")->orderBy("department_id")->orderBy("order")->get(),
-            "subDepartment" => ($request->id != "" ? $subDepartment : []),
-        ]);
+        return view("operations.sub-departments.index", app(SubDepartmentsPanel::class)->data($request));
     }
 
     public function subDepartmentStore(Request $request)
@@ -1170,9 +1159,9 @@ class OperationController extends Controller
                 "show_in_move_list" => (bool) ($validated["show_in_move_list"] ?? false),
             ]);
 
-            return redirect()->route("sub.departments.list")->with("success", "Data Saved Successfully");
+            return $this->backToOperations($request, "sub.departments.list")->with("success", "Data Saved Successfully");
         } catch (\Throwable $th) {
-            return redirect()->route("sub.departments.list")->with("error", $th->getMessage());
+            return $this->backToOperations($request, "sub.departments.list")->with("error", $th->getMessage());
         }
     }
 
@@ -1196,9 +1185,9 @@ class OperationController extends Controller
             $subDepartment->show_in_move_list = (bool) ($validated["show_in_move_list"] ?? false);
             $subDepartment->save();
 
-            return redirect()->route("sub.departments.list")->with("success", "Data Updated Successfully");
+            return $this->backToOperations($request, "sub.departments.list")->with("success", "Data Updated Successfully");
         } catch (\Throwable $th) {
-            return redirect()->route("sub.departments.list")->with("error", $th->getMessage());
+            return $this->backToOperations($request, "sub.departments.list")->with("error", $th->getMessage());
         }
     }
 

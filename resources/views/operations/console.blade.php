@@ -7,11 +7,12 @@
         screens, laid out like the report builder - what there is on the left,
         what you are working on in the middle.
 
-        Phase 1 opens each section's existing page embedded (the same URL, the
-        same permissions, minus the chrome), so every screen is in the console
-        from day one and nothing working had to be rewritten to get there. A
-        section can be replaced with a native panel later without touching this
-        page - see config/operations_console.php.
+        A section is drawn here one of two ways, and config/operations_console.php
+        alone decides which: a section with a panel is drawn in this page, and
+        one without is its own page loaded embedded (the same URL, the same
+        permissions, minus the chrome). That is how the console covered every
+        screen from day one, and how a screen is promoted to a panel later
+        without this page changing.
     --}}
     <div class="ops-console container-fluid px-0" data-ops-console>
         <style>
@@ -120,6 +121,23 @@
                 background: #ffffff;
             }
 
+            .ops-console .ops-panel {
+                position: absolute;
+                inset: 0;
+                overflow-y: auto;
+                padding: 16px 18px 28px;
+                background: #ffffff;
+            }
+
+            .ops-console .ops-panel .operation-page-header {
+                margin-top: 0;
+            }
+
+            /* The console already says which screen this is, twice. */
+            .ops-console .ops-panel .operation-page-title {
+                display: none;
+            }
+
             .ops-console .ops-loading {
                 position: absolute;
                 inset: 0;
@@ -221,7 +239,8 @@
                                         href="{{ route('operations.console', ['section' => $item['key']]) }}"
                                         data-ops-link data-key="{{ $item['key'] }}"
                                         data-label="{{ $item['label'] }}"
-                                        data-url="{{ $item['url'] }}">
+                                        data-url="{{ $item['url'] }}"
+                                        @if (!empty($item['panel'])) data-ops-native="1" @endif>
                                         <i class="{{ $item['icon'] ?? 'icofont-circle' }}"></i>
                                         <span>{{ $item['label'] }}</span>
                                     </a>
@@ -248,9 +267,18 @@
                     </div>
 
                     <div class="ops-frame-wrap">
-                        <div class="ops-loading">Loading…</div>
-                        <iframe title="Operations screen" data-ops-frame
-                            src="{{ isset($section['url']) ? $section['url'] . (str_contains($section['url'], '?') ? '&' : '?') . 'embedded=1' : '' }}"></iframe>
+                        @if (!empty($panelView))
+                            {{-- Drawn in this page: one scroll, one history, one
+                                 set of scripts. The panel is the screen's own
+                                 body - see docs/operations-console.md. --}}
+                            <div class="ops-panel" data-ops-panel>
+                                @include($panelView, ($panelData ?? []) + ['console' => true])
+                            </div>
+                        @else
+                            <div class="ops-loading">Loading…</div>
+                            <iframe title="Operations screen" data-ops-frame
+                                src="{{ isset($section['url']) ? $section['url'] . (str_contains($section['url'], '?') ? '&' : '?') . 'embedded=1' : '' }}"></iframe>
+                        @endif
                     </div>
                 </section>
             </div>
@@ -302,12 +330,20 @@
                         return;     // let the browser open it in a tab
                     }
 
+                    if (!frame || link.dataset.opsNative) {
+                        return;     // a panel is drawn by the page: let it load
+                    }
+
                     event.preventDefault();
                     open(link, true);
                 });
             });
 
             window.addEventListener('popstate', function () {
+                if (!frame) {
+                    return;         // nothing was pushed: the browser has it
+                }
+
                 const key = new URLSearchParams(window.location.search).get('section');
                 const link = links.find(function (candidate) {
                     return candidate.dataset.key === key;
@@ -318,11 +354,18 @@
                 }
             });
 
-            frame.addEventListener('load', function () {
-                console_.classList.remove('is-loading');
-            });
+            if (frame) {
+                frame.addEventListener('load', function () {
+                    console_.classList.remove('is-loading');
+                });
+            }
 
             console_.querySelector('[data-ops-reload]').addEventListener('click', function () {
+                if (!frame) {
+                    window.location.reload();
+                    return;
+                }
+
                 console_.classList.add('is-loading');
                 frame.contentWindow.location.reload();
             });

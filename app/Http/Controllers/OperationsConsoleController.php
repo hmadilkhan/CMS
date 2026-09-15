@@ -20,10 +20,13 @@ class OperationsConsoleController extends Controller
     {
         $user = $request->user();
         $section = $this->console->section($user, $request->query('section'));
+        $panel = $this->console->panelFor($section);
 
         return view('operations.console', [
             'groups' => $this->console->groupsFor($user),
             'section' => $section,
+            'panelView' => $panel?->view(),
+            'panelData' => $panel ? $panel->data($request) : [],
         ]);
     }
 }

@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Services\Operations\OperationsPanel;
 use Illuminate\Support\Facades\Route;
 
 /**
@@ -65,6 +66,41 @@ class OperationsConsoleService
         }
 
         return $sections[0] ?? null;
+    }
+
+    /**
+     * The panel that draws a section natively, or null for a section the
+     * console still opens in a frame. A section names its panel in the config;
+     * nothing else in the console has to know which of the two it is.
+     */
+    public function panelFor(?array $section): ?OperationsPanel
+    {
+        if (empty($section['panel'])) {
+            return null;
+        }
+
+        return app($section['panel']);
+    }
+
+    /**
+     * Where a save made on an Operations screen comes back to: the console
+     * section it was made in, or the screen's own page.
+     *
+     * The key arrives in the form, so it is only honoured when it names a
+     * section this viewer actually has - the field can never be turned into a
+     * redirect somewhere else.
+     */
+    public function returnUrl($user, $sectionKey, string $fallbackRoute): string
+    {
+        if (is_string($sectionKey) && $sectionKey !== '') {
+            $section = $this->section($user, $sectionKey);
+
+            if ($section && $section['key'] === $sectionKey) {
+                return route('operations.console', ['section' => $sectionKey]);
+            }
+        }
+
+        return route($fallbackRoute);
     }
 
     private function isVisible(array $section, $user): bool
