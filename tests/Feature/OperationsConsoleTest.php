@@ -159,20 +159,55 @@ class OperationsConsoleTest extends TestCase
             ->assertSee(route('department.update', $department->id), false);
     }
 
-    public function test_the_screens_panels_replaced_still_render_on_their_own_pages(): void
+    public function test_every_panel_draws_in_the_console_and_on_its_own_page(): void
     {
         $user = $this->user('User Management');
         Department::create(['name' => 'Permitting', 'document_length' => 3]);
 
-        foreach (['departments.list', 'sub.departments.list', 'assign-department.index'] as $route) {
-            $this->actingAs($user)->get(route($route))->assertOk();
-        }
+        $panelled = collect(app(OperationsConsoleService::class)->sectionsFor($user))
+            ->filter(fn ($section) => ! empty($section['panel']));
 
-        // A screen's own page links to itself, not into the console.
+        $this->assertNotEmpty($panelled, 'No section names a panel.');
+
+        foreach ($panelled as $section) {
+            // In the console: drawn in the page, never in a frame.
+            $this->actingAs($user)
+                ->get(route('operations.console', ['section' => $section['key']]))
+                ->assertOk()
+                ->assertSee('data-ops-panel', false)
+                ->assertDontSee('<iframe', false);
+
+            // And still its own page, on its own URL.
+            $this->actingAs($user)->get($section['url'])->assertOk();
+        }
+    }
+
+    public function test_a_screens_own_page_links_to_itself_not_into_the_console(): void
+    {
+        $user = $this->user('User Management');
+        Department::create(['name' => 'Permitting', 'document_length' => 3]);
+
         $this->actingAs($user)
             ->get(route('departments.list'))
             ->assertOk()
             ->assertDontSee(route('operations.console', ['section' => 'departments']), false);
+    }
+
+    public function test_a_save_from_a_pricing_panel_comes_back_to_the_console(): void
+    {
+        $console = route('operations.console', ['section' => 'office-costs']);
+
+        $this->actingAs($this->user('User Management'))
+            ->from($console)
+            ->post(route('office-costs.store'), ['cost' => 125.5, 'ops_section' => 'office-costs'])
+            ->assertRedirect($console);
+
+        $this->assertDatabaseHas('office_costs', ['cost' => 125.5]);
+
+        // …and without the field it stays on the screen, as it always did.
+        $this->actingAs($this->user('User Management'))
+            ->post(route('office-costs.store'), ['cost' => 130])
+            ->assertRedirect(route('office-costs.index'));
     }
 
     public function test_a_save_made_in_the_console_comes_back_to_the_console(): void

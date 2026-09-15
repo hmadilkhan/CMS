@@ -271,16 +271,24 @@
         $(document).ready(function() {
             $('.select2').select2();
         });
-        $('.datatable')
-            .addClass('nowrap')
-            .dataTable({
+        // A target the table has no column for makes dataTable() throw, which
+        // took the rest of this script with it - the sidebar below included.
+        $('.datatable').each(function() {
+            var table = $(this);
+            var columns = table.find('thead th').length;
+            var targets = [-1, -3].filter(function(target) {
+                return columns >= Math.abs(target);
+            });
+
+            table.addClass('nowrap').dataTable({
                 responsive: true,
                 ordering: false,
-                columnDefs: [{
-                    targets: [-1, -3],
+                columnDefs: targets.length ? [{
+                    targets: targets,
                     className: 'dt-body-right'
-                }]
+                }] : []
             });
+        });
         $(".sidebar").hover(function() {
             $(".sidebar").removeClass("sidebar-mini")
         }, function() {

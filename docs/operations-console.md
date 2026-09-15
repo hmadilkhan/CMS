@@ -8,8 +8,9 @@ A section is drawn one of two ways, and `config/operations_console.php` alone
 decides which:
 
 - **a panel** — the console draws the screen itself, inside the console page:
-  one scroll, one set of scripts, one history. Today: **Departments, Sub
-  Departments, Assign Department**.
+  one scroll, one set of scripts, one history. Today the whole **Pipeline**
+  group (Departments, Sub Departments, Assign Department) and the whole
+  **Pricing** group (Adders, Adder Types, Dealer Fee, Office Cost, Labor Cost).
 - **a frame** — the console loads the screen's own page embedded
   (`?embedded=1`), without the sidebar and header. Everything else.
 
@@ -95,7 +96,15 @@ saves come back to** — never what is shown, and never who may see it:
 
 Everything else keeps working because the console is on `layouts.master` too:
 `.select2`, `.datatable` and the Bootstrap delete modal are initialised there,
-for the panel as for any page.
+for the panel as for any page. A screen's `@section('scripts')` moves into the
+partial as a plain `<script>`; it still runs after the markup it acts on, and
+the delete helpers only touch jQuery when they are called.
+
+One thing that init did **not** survive contact with a narrow table: it asked
+DataTables to right-align columns `-1` and `-3`, so a two-column table (Office
+Cost, Labor Cost) threw and took the rest of that script with it — including the
+`sidebar-mini` setup below it. The targets are now filtered against the table's
+own column count, which leaves every wider table exactly as it was.
 
 ### Promoting a section
 

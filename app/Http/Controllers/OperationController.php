@@ -6,7 +6,6 @@ use App\Http\Controllers\Concerns\ReturnsToOperationsConsole;
 use App\Models\Adder;
 use App\Models\AdderSubType;
 use App\Models\AdderType;
-use App\Models\AdderUnit;
 use App\Models\Call;
 use App\Models\CallScript;
 use App\Models\Department;
@@ -27,6 +26,9 @@ use App\Models\User;
 use App\Models\UtilityCompany;
 use App\Services\FinanceMilestoneService;
 use App\Services\NotificationTemplateService;
+use App\Services\Operations\AddersPanel;
+use App\Services\Operations\AdderTypesPanel;
+use App\Services\Operations\DealerFeePanel;
 use App\Services\Operations\DepartmentsPanel;
 use App\Services\Operations\SubDepartmentsPanel;
 use App\Traits\MediaTrait;
@@ -105,16 +107,7 @@ class OperationController extends Controller
 
     public function dealerFeeView(Request $request)
     {
-        if ($request->id != "") {
-            $loan = LoanApr::with("loan", "loan.finance")->where("id", $request->id)->first();
-        }
-        return view("operations/dealerfee/index", [
-            "dealerfeelist" => LoanApr::with("loan", "finance")->get(),
-            "terms" => LoanTerm::groupBy("year")->orderBy("id", "asc")->get(),
-            // "financing" => ($request->id != "" ? FinanceOption::whereIn("id", LoanTerm::where("year", $loan->loan->year)->pluck("finance_option_id"))->get() : [] ),
-            "financing" => FinanceOption::all(),
-            "loan" => ($request->id != "" ? $loan : []),
-        ]);
+        return view("operations.dealerfee.index", app(DealerFeePanel::class)->data($request));
     }
 
     public function dealerFeeUpdate(Request $request)
@@ -124,11 +117,11 @@ class OperationController extends Controller
         try {
             $loanTerm = $this->resolveDealerFeeLoanTerm($validated["loan_term_id"], $validated["finance_option_id"]);
             if (empty($loanTerm)) {
-                return redirect()->route("view-dealer-fee")->with("error", "Selected finance option does not have this loan term.");
+                return $this->backToOperations($request, "view-dealer-fee")->with("error", "Selected finance option does not have this loan term.");
             }
 
             if ($this->dealerFeeExists($loanTerm->id, $validated["finance_option_id"], $validated["id"])) {
-                return redirect()->route("view-dealer-fee")->with("error", "Loan term already exists. Please update");
+                return $this->backToOperations($request, "view-dealer-fee")->with("error", "Loan term already exists. Please update");
             }
 
             $loanApr = LoanApr::findOrFail($validated["id"]);
@@ -137,9 +130,9 @@ class OperationController extends Controller
             $loanApr->apr = $validated["apr"];
             $loanApr->dealer_fee = $validated["dealer_fee"];
             $loanApr->save();
-            return redirect()->route("view-dealer-fee");
+            return $this->backToOperations($request, "view-dealer-fee");
         } catch (\Throwable $th) {
-            return redirect()->route("view-dealer-fee")->with('error', $th->getMessage());
+            return $this->backToOperations($request, "view-dealer-fee")->with('error', $th->getMessage());
         }
     }
 
@@ -150,11 +143,11 @@ class OperationController extends Controller
         try {
             $loanTerm = $this->resolveDealerFeeLoanTerm($validated["loan_term_id"], $validated["finance_option_id"]);
             if (empty($loanTerm)) {
-                return redirect()->route("view-dealer-fee")->with("error", "Selected finance option does not have this loan term.");
+                return $this->backToOperations($request, "view-dealer-fee")->with("error", "Selected finance option does not have this loan term.");
             }
 
             if ($this->dealerFeeExists($loanTerm->id, $validated["finance_option_id"])) {
-                return redirect()->route("view-dealer-fee")->with("error", "Loan term already exists. Please update");
+                return $this->backToOperations($request, "view-dealer-fee")->with("error", "Loan term already exists. Please update");
             }
 
             LoanApr::create([
@@ -163,9 +156,9 @@ class OperationController extends Controller
                 "apr" => $validated["apr"],
                 "dealer_fee" => $validated["dealer_fee"],
             ]);
-            return redirect()->route("view-dealer-fee")->with("success", "Data Saved Successfully");
+            return $this->backToOperations($request, "view-dealer-fee")->with("success", "Data Saved Successfully");
         } catch (\Throwable $th) {
-            return redirect()->route("view-dealer-fee")->with("error", $th->getMessage());
+            return $this->backToOperations($request, "view-dealer-fee")->with("error", $th->getMessage());
         }
     }
 
@@ -196,15 +189,7 @@ class OperationController extends Controller
 
     public function addersView(Request $request)
     {
-        if ($request->id != "") {
-            $adder = Adder::with("type", "unit")->where("id", $request->id)->first();
-        }
-        return view("operations/adders/index", [
-            "adders" => Adder::with("type", "unit")->get(),
-            "types" => AdderType::all(),
-            "units" => AdderUnit::all(),
-            "adder" => ($request->id != "" ? $adder : []),
-        ]);
+        return view("operations.adders.index", app(AddersPanel::class)->data($request));
     }
 
     public function addersStore(Request $request)
@@ -222,12 +207,12 @@ class OperationController extends Controller
                     "adder_unit_id" => $validated["adder_unit_id"],
                     "price" => $validated["price"],
                 ]);
-                return redirect()->route("view-adders")->with("success", "Data Saved Successfully");
+                return $this->backToOperations($request, "view-adders")->with("success", "Data Saved Successfully");
             } else {
-                return redirect()->route("view-adders")->with("error", "Data already exists");
+                return $this->backToOperations($request, "view-adders")->with("error", "Data already exists");
             }
         } catch (\Throwable $th) {
-            return redirect()->route("view-adders")->with("error", $th->getMessage());
+            return $this->backToOperations($request, "view-adders")->with("error", $th->getMessage());
         }
     }
 
@@ -242,7 +227,7 @@ class OperationController extends Controller
                 ->where("id", "!=", $validated["id"])
                 ->count();
             if ($count > 0) {
-                return redirect()->route("view-adders")->with("error", "Data already exists");
+                return $this->backToOperations($request, "view-adders")->with("error", "Data already exists");
             }
 
             $adder = Adder::findOrFail($validated["id"]);
@@ -250,9 +235,9 @@ class OperationController extends Controller
             $adder->adder_unit_id = $validated["adder_unit_id"];
             $adder->price = $validated["price"];
             $adder->save();
-            return redirect()->route("view-adders");
+            return $this->backToOperations($request, "view-adders");
         } catch (\Throwable $th) {
-            return redirect()->route("view-adders")->with('error', $th->getMessage());
+            return $this->backToOperations($request, "view-adders")->with('error', $th->getMessage());
         }
     }
 
@@ -433,13 +418,7 @@ class OperationController extends Controller
 
     public function addersTypeView(Request $request)
     {
-        if ($request->id != "") {
-            $adder = AdderType::where("id", $request->id)->first();
-        }
-        return view("operations/adder-type/index", [
-            "adders" => AdderType::all(),
-            "adder" => ($request->id != "" ? $adder : []),
-        ]);
+        return view("operations.adder-type.index", app(AdderTypesPanel::class)->data($request));
     }
 
     public function addersTypeStore(Request $request)
@@ -454,9 +433,9 @@ class OperationController extends Controller
                 "name" => $validated["name"],
                 "tag" => $validated["tag"] ?? null,
             ]);
-            return redirect()->route("view.adder.types")->with("success", "Data Saved Successfully");
+            return $this->backToOperations($request, "view.adder.types")->with("success", "Data Saved Successfully");
         } catch (\Throwable $th) {
-            return redirect()->route("view.adder.types")->with("error", $th->getMessage());
+            return $this->backToOperations($request, "view.adder.types")->with("error", $th->getMessage());
         }
     }
 
@@ -473,9 +452,9 @@ class OperationController extends Controller
             $adder->name = $validated["name"];
             $adder->tag = $validated["tag"] ?? null;
             $adder->save();
-            return redirect()->route("view.adder.types");
+            return $this->backToOperations($request, "view.adder.types");
         } catch (\Throwable $th) {
-            return redirect()->route("view.adder.types")->with('error', $th->getMessage());
+            return $this->backToOperations($request, "view.adder.types")->with('error', $th->getMessage());
         }
     }
 

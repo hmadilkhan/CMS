@@ -1,7 +1,12 @@
 <?php
 
+use App\Services\Operations\AddersPanel;
+use App\Services\Operations\AdderTypesPanel;
 use App\Services\Operations\AssignDepartmentPanel;
+use App\Services\Operations\DealerFeePanel;
 use App\Services\Operations\DepartmentsPanel;
+use App\Services\Operations\LaborCostPanel;
+use App\Services\Operations\OfficeCostPanel;
 use App\Services\Operations\SubDepartmentsPanel;
 
 /**
@@ -52,11 +57,11 @@ return [
         [
             'name' => 'Pricing',
             'sections' => [
-                ['key' => 'adders', 'label' => 'Adders', 'route' => 'view-adders', 'icon' => 'icofont-plus-square'],
-                ['key' => 'adder-types', 'label' => 'Adder Types', 'route' => 'view.adder.types', 'icon' => 'icofont-list'],
-                ['key' => 'dealer-fee', 'label' => 'Dealer Fee', 'route' => 'view-dealer-fee', 'icon' => 'icofont-sale-discount'],
-                ['key' => 'office-costs', 'label' => 'Office Cost', 'route' => 'office-costs.index', 'icon' => 'icofont-building-alt'],
-                ['key' => 'labor-costs', 'label' => 'Labor Cost', 'route' => 'labor-costs.index', 'icon' => 'icofont-worker'],
+                ['key' => 'adders', 'label' => 'Adders', 'route' => 'view-adders', 'icon' => 'icofont-plus-square', 'panel' => AddersPanel::class],
+                ['key' => 'adder-types', 'label' => 'Adder Types', 'route' => 'view.adder.types', 'icon' => 'icofont-list', 'panel' => AdderTypesPanel::class],
+                ['key' => 'dealer-fee', 'label' => 'Dealer Fee', 'route' => 'view-dealer-fee', 'icon' => 'icofont-sale-discount', 'panel' => DealerFeePanel::class],
+                ['key' => 'office-costs', 'label' => 'Office Cost', 'route' => 'office-costs.index', 'icon' => 'icofont-building-alt', 'panel' => OfficeCostPanel::class],
+                ['key' => 'labor-costs', 'label' => 'Labor Cost', 'route' => 'labor-costs.index', 'icon' => 'icofont-worker', 'panel' => LaborCostPanel::class],
             ],
         ],
         [
