@@ -195,6 +195,31 @@ class OperationsConsoleTest extends TestCase
             ->assertRedirect(route('departments.list'));
     }
 
+    public function test_a_rejected_save_comes_back_to_the_console_with_its_error(): void
+    {
+        Department::create(['name' => 'Permitting', 'document_length' => 3]);
+
+        $user = $this->user('User Management');
+        $console = route('operations.console', ['section' => 'departments']);
+
+        // Back where it was typed, not out on the screen's own page …
+        $this->actingAs($user)
+            ->from($console)
+            ->post(route('department.store'), [
+                'name' => 'Permitting',
+                'document_length' => 2,
+                'ops_section' => 'departments',
+            ])
+            ->assertRedirect($console)
+            ->assertSessionHasErrors('name');
+
+        // … and the panel shows why.
+        $this->actingAs($user)
+            ->get($console)
+            ->assertOk()
+            ->assertSee('The record already exists.');
+    }
+
     public function test_a_forged_section_cannot_redirect_anywhere_else(): void
     {
         $this->actingAs($this->user('User Management'))
