@@ -2,25 +2,24 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\InverterType;
+use App\Http\Controllers\Concerns\ReturnsToOperationsConsole;
 use App\Models\ModuleType;
+use App\Services\Operations\ModuleTypesPanel;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 
 class ModuleTypeController extends Controller
 {
+    use ReturnsToOperationsConsole;
+
     private const MAX_DECIMAL_VALUE = 99999999.99;
 
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
-        return view("module-types.index",[
-            "types" => ModuleType::with("inverter")->latest()->get(),
-            "inverterTypes" => InverterType::orderBy("name")->get(),
-            "type" => [],
-        ]);
+        return view("module-types.index", app(ModuleTypesPanel::class)->data($request));
     }
 
     /**
@@ -40,9 +39,9 @@ class ModuleTypeController extends Controller
 
         try {
             ModuleType::create($this->moduleTypeData($validated));
-            return redirect()->route("module-types.index")->with("success", "Module type saved successfully");
+            return $this->backToOperations($request, "module-types.index")->with("success", "Module type saved successfully");
         } catch (\Throwable $th) {
-            return redirect()->route("module-types.index")->with("error", $th->getMessage());
+            return $this->backToOperations($request, "module-types.index")->with("error", $th->getMessage());
         }
     }
 
@@ -57,13 +56,11 @@ class ModuleTypeController extends Controller
     /**
      * Show the form for editing the specified resource.
      */
-    public function edit(ModuleType $moduleType)
+    public function edit(Request $request, ModuleType $moduleType)
     {
-        return view("module-types.index",[
-            "types" => ModuleType::with("inverter")->latest()->get(),
-            "inverterTypes" => InverterType::orderBy("name")->get(),
-            "type" => $moduleType,
-        ]);
+        // This screen edits by path, the console by `?id=`. Hand the panel the
+        // id so both ask it the same question.
+        return view("module-types.index", app(ModuleTypesPanel::class)->data($request->merge(["id" => $moduleType->id])));
     }
 
     /**
@@ -75,9 +72,9 @@ class ModuleTypeController extends Controller
 
         try {
             $moduleType->update($this->moduleTypeData($validated));
-            return redirect()->route("module-types.index")->with("success", "Module type updated successfully");
+            return $this->backToOperations($request, "module-types.index")->with("success", "Module type updated successfully");
         } catch (\Throwable $th) {
-            return redirect()->route("module-types.index")->with("error", $th->getMessage());
+            return $this->backToOperations($request, "module-types.index")->with("error", $th->getMessage());
         }
     }
 

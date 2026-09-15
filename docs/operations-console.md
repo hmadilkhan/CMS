@@ -8,9 +8,10 @@ A section is drawn one of two ways, and `config/operations_console.php` alone
 decides which:
 
 - **a panel** — the console draws the screen itself, inside the console page:
-  one scroll, one set of scripts, one history. Today the whole **Pipeline**
-  group (Departments, Sub Departments, Assign Department) and the whole
-  **Pricing** group (Adders, Adder Types, Dealer Fee, Office Cost, Labor Cost).
+  one scroll, one set of scripts, one history. Today the **Pipeline** group
+  (Departments, Sub Departments, Assign Department), the **Equipment** group
+  (Module Types, Inverter Types, Inverter Base Cost, Tools) and the **Pricing**
+  group (Adders, Adder Types, Dealer Fee, Office Cost, Labor Cost).
 - **a frame** — the console loads the screen's own page embedded
   (`?embedded=1`), without the sidebar and header. Everything else.
 
@@ -86,7 +87,10 @@ saves come back to** — never what is shown, and never who may see it:
 - inside the console, its edit and Cancel links point at
   `/operations?section=<key>&id=…`, so `?id=` selects a record for editing
   exactly as the screen's own `/{id?}` does; on its own page they point at the
-  screen.
+  screen. Module Types is the one screen whose own edit route carries the record
+  in the path (`/module-types/{id}/edit`): its `$screenUrl` returns that route
+  on its own page, and `ModuleTypeController::edit` hands the id to the panel, so
+  the panel still only knows about `?id=`.
 - inside the console the form carries a hidden `ops_section`, and the
   controller's redirect goes through `ReturnsToOperationsConsole`, so a save
   lands back in the console instead of throwing the user out to the screen. The
@@ -99,6 +103,9 @@ Everything else keeps working because the console is on `layouts.master` too:
 for the panel as for any page. A screen's `@section('scripts')` moves into the
 partial as a plain `<script>`; it still runs after the markup it acts on, and
 the delete helpers only touch jQuery when they are called.
+
+Two screens' tab titles said "Module Types" because they were copied from that
+page — Dealer Fee and Inverter Base Cost. Fixed while promoting them.
 
 One thing that init did **not** survive contact with a narrow table: it asked
 DataTables to right-align columns `-1` and `-3`, so a two-column table (Office

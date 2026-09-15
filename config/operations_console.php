@@ -5,9 +5,13 @@ use App\Services\Operations\AdderTypesPanel;
 use App\Services\Operations\AssignDepartmentPanel;
 use App\Services\Operations\DealerFeePanel;
 use App\Services\Operations\DepartmentsPanel;
+use App\Services\Operations\InverterBaseCostPanel;
+use App\Services\Operations\InverterTypesPanel;
 use App\Services\Operations\LaborCostPanel;
+use App\Services\Operations\ModuleTypesPanel;
 use App\Services\Operations\OfficeCostPanel;
 use App\Services\Operations\SubDepartmentsPanel;
+use App\Services\Operations\ToolsPanel;
 
 /**
  * The Operations console - one window for the twenty-odd Operations screens.
@@ -48,10 +52,10 @@ return [
         [
             'name' => 'Equipment',
             'sections' => [
-                ['key' => 'module-types', 'label' => 'Module Types', 'route' => 'module-types.index', 'icon' => 'icofont-solar-panel'],
-                ['key' => 'inverter-types', 'label' => 'Inverter Types', 'route' => 'view-inverter-type', 'icon' => 'icofont-power'],
-                ['key' => 'inverter-base-cost', 'label' => 'Inverter Base Cost', 'route' => 'view-redline-cost', 'icon' => 'icofont-price'],
-                ['key' => 'tools', 'label' => 'Tools', 'route' => 'tools.manage', 'icon' => 'icofont-tools'],
+                ['key' => 'module-types', 'label' => 'Module Types', 'route' => 'module-types.index', 'icon' => 'icofont-solar-panel', 'panel' => ModuleTypesPanel::class],
+                ['key' => 'inverter-types', 'label' => 'Inverter Types', 'route' => 'view-inverter-type', 'icon' => 'icofont-power', 'panel' => InverterTypesPanel::class],
+                ['key' => 'inverter-base-cost', 'label' => 'Inverter Base Cost', 'route' => 'view-redline-cost', 'icon' => 'icofont-price', 'panel' => InverterBaseCostPanel::class],
+                ['key' => 'tools', 'label' => 'Tools', 'route' => 'tools.manage', 'icon' => 'icofont-tools', 'panel' => ToolsPanel::class],
             ],
         ],
         [

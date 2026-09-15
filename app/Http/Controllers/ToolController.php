@@ -2,26 +2,25 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Department;
+use App\Http\Controllers\Concerns\ReturnsToOperationsConsole;
 use App\Models\Tool;
+use App\Services\Operations\ToolsPanel;
+use App\Traits\MediaTrait;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\Request;
-use App\Traits\MediaTrait;
 use Illuminate\Validation\Rule;
 
 class ToolController extends Controller
 {
     use MediaTrait;
+    use ReturnsToOperationsConsole;
+
     /**
      * Display a listing of the resource.
      */
-    public function index(Request $request) : View
+    public function index(Request $request): View
     {
-        return view("tools.index",[
-            "tools" => Tool::with("department")->get(),
-            "departments" => Department::all(),
-            "tool" => ($request->id != "" ? Tool::find($request->id) : []),
-        ]);
+        return view("tools.index", app(ToolsPanel::class)->data($request));
     }
 
     /**
@@ -54,9 +53,9 @@ class ToolController extends Controller
                 'description' => $validated['description'] ?? null,
                 'file' => (!empty($result) ? $result["fileName"] : ""),
             ]);
-            return redirect()->route("tools.manage")->with("success", "Tool saved successfully");
+            return $this->backToOperations($request, "tools.manage")->with("success", "Tool saved successfully");
         } catch (\Throwable $th) {
-            return redirect()->route("tools.manage")->with("error", $th->getMessage());
+            return $this->backToOperations($request, "tools.manage")->with("error", $th->getMessage());
         }
     }
 
@@ -100,9 +99,9 @@ class ToolController extends Controller
                 'description' => $validated['description'] ?? null,
                 "file" => (!empty($result) ? $result["fileName"] : ($validated["previous_logo"] ?? "")),
             ]);
-            return redirect()->route("tools.manage")->with("success", "Tool updated successfully");
+            return $this->backToOperations($request, "tools.manage")->with("success", "Tool updated successfully");
         } catch (\Throwable $th) {
-            return redirect()->route("tools.manage")->with("error", $th->getMessage());
+            return $this->backToOperations($request, "tools.manage")->with("error", $th->getMessage());
         }
     }
 

@@ -14,7 +14,6 @@ use App\Models\EmailType;
 use App\Models\FinanceMilestoneEmailRecipient;
 use App\Models\FinanceMilestoneSetting;
 use App\Models\FinanceOption;
-use App\Models\InverterType;
 use App\Models\InverterTypeRate;
 use App\Models\LoanApr;
 use App\Models\LoanTerm;
@@ -30,6 +29,7 @@ use App\Services\Operations\AddersPanel;
 use App\Services\Operations\AdderTypesPanel;
 use App\Services\Operations\DealerFeePanel;
 use App\Services\Operations\DepartmentsPanel;
+use App\Services\Operations\InverterBaseCostPanel;
 use App\Services\Operations\SubDepartmentsPanel;
 use App\Traits\MediaTrait;
 use Illuminate\Http\Request;
@@ -42,11 +42,7 @@ class OperationController extends Controller
     use ReturnsToOperationsConsole;
     public function changeRedlineCostView(Request $request)
     {
-        return view("operations/redline/redlinecostchange", [
-            "redlinelist" => InverterTypeRate::with("inverter")->get(),
-            "inverters" => InverterType::all(),
-            "redline" => ($request->id != "" ? InverterTypeRate::find($request->id) : []),
-        ]);
+        return view("operations.redline.redlinecostchange", app(InverterBaseCostPanel::class)->data($request));
     }
 
     public function getRedlineCostByInverter(Request $request)
@@ -68,9 +64,9 @@ class OperationController extends Controller
             $inverterTypeRate->internal_base_cost = $validated["internal_base_cost"];
             $inverterTypeRate->internal_labor_cost = $validated["internal_labor_cost"];
             $inverterTypeRate->save();
-            return redirect()->route("view-redline-cost");
+            return $this->backToOperations($request, "view-redline-cost");
         } catch (\Throwable $th) {
-            return redirect()->route("view-redline-cost")->with('error', $th->getMessage());
+            return $this->backToOperations($request, "view-redline-cost")->with('error', $th->getMessage());
         }
     }
 
@@ -85,9 +81,9 @@ class OperationController extends Controller
                 "internal_base_cost" => $validated["internal_base_cost"],
                 "internal_labor_cost" => $validated["internal_labor_cost"],
             ]);
-            return redirect()->route("view-redline-cost")->with("success", "Data Saved Successfully");
+            return $this->backToOperations($request, "view-redline-cost")->with("success", "Data Saved Successfully");
         } catch (\Throwable $th) {
-            return redirect()->route("view-redline-cost")->with("error", $th->getMessage());
+            return $this->backToOperations($request, "view-redline-cost")->with("error", $th->getMessage());
         }
     }
 

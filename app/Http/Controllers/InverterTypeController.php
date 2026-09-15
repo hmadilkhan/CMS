@@ -2,11 +2,15 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Controllers\Concerns\ReturnsToOperationsConsole;
 use App\Models\InverterType;
+use App\Services\Operations\InverterTypesPanel;
 use Illuminate\Http\Request;
 
 class InverterTypeController extends Controller
 {
+    use ReturnsToOperationsConsole;
+
     protected function normalizeTags(?string $tags): array
     {
         if (empty($tags)) {
@@ -24,10 +28,7 @@ class InverterTypeController extends Controller
 
     public function inverterTypeIndex(Request $request)
     {
-        return view("operations.invertertype.index",[
-            "inverterTypes" => InverterType::all(),
-            "inverterType" => ($request->id != "" ? InverterType::find($request->id) : []),
-        ]);
+        return view("operations.invertertype.index", app(InverterTypesPanel::class)->data($request));
     }
 
     public function inverterTypeStore(Request $request)
@@ -45,9 +46,9 @@ class InverterTypeController extends Controller
                     "tags" => $this->normalizeTags($request->tags),
                     "inverter_efficiency_rating" => $validated["inverter_efficiency_rating"] ?? null,
                 ]);
-                return redirect()->route("view-inverter-type")->with("success", "Data Saved Successfully");
+                return $this->backToOperations($request, "view-inverter-type")->with("success", "Data Saved Successfully");
             } else {
-                return redirect()->route("view-inverter-type")->with("error", "Data already exists");
+                return $this->backToOperations($request, "view-inverter-type")->with("error", "Data already exists");
             }
         } catch (\Throwable $th) {
             //throw $th;
@@ -67,9 +68,9 @@ class InverterTypeController extends Controller
             $inverterType->tags = $this->normalizeTags($request->tags);
             $inverterType->inverter_efficiency_rating = $validated["inverter_efficiency_rating"] ?? null;
             $inverterType->save();
-            return redirect()->route("view-inverter-type");
+            return $this->backToOperations($request, "view-inverter-type");
         } catch (\Throwable $th) {
-            return redirect()->route("view-inverter-type")->with('error', $th->getMessage());
+            return $this->backToOperations($request, "view-inverter-type")->with('error', $th->getMessage());
         }
     }
 

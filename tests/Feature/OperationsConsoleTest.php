@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\Department;
+use App\Models\ModuleType;
 use App\Models\User;
 use App\Models\UserType;
 use App\Services\Operations\OperationsPanel;
@@ -191,6 +192,25 @@ class OperationsConsoleTest extends TestCase
             ->get(route('departments.list'))
             ->assertOk()
             ->assertDontSee(route('operations.console', ['section' => 'departments']), false);
+    }
+
+    public function test_a_screen_that_edits_by_path_still_edits_by_id_in_the_console(): void
+    {
+        $user = $this->user('User Management');
+        $type = ModuleType::create(['name' => 'REC 400AA', 'internal_module_cost' => 120]);
+
+        // Module Types is the one screen whose own edit route carries the record
+        // in the path; in the console it arrives as `?id=` like every other.
+        $this->actingAs($user)
+            ->get(route('operations.console', ['section' => 'module-types', 'id' => $type->id]))
+            ->assertOk()
+            ->assertSee('REC 400AA')
+            ->assertSee(route('module-types.update', $type->id), false);
+
+        $this->actingAs($user)
+            ->get(route('module-types.edit', $type->id))
+            ->assertOk()
+            ->assertSee(route('module-types.update', $type->id), false);
     }
 
     public function test_a_save_from_a_pricing_panel_comes_back_to_the_console(): void
