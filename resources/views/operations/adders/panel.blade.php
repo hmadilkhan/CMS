@@ -160,6 +160,8 @@
         </div>
     </div>
 </div>
+{{-- The screen's own scripts, where the layout puts them: after jQuery. --}}
+@section('scripts')
 <script>
     function deleteDealerModal(id) {
         $("#deleteId").val(id);
@@ -207,3 +209,4 @@
     //     });
     // }
 </script>
+@endsection

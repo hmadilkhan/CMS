@@ -5,9 +5,11 @@ use App\Services\Operations\AdderTypesPanel;
 use App\Services\Operations\AssignDepartmentPanel;
 use App\Services\Operations\DealerFeePanel;
 use App\Services\Operations\DepartmentsPanel;
+use App\Services\Operations\FinanceOptionsPanel;
 use App\Services\Operations\InverterBaseCostPanel;
 use App\Services\Operations\InverterTypesPanel;
 use App\Services\Operations\LaborCostPanel;
+use App\Services\Operations\LoanTermsPanel;
 use App\Services\Operations\ModuleTypesPanel;
 use App\Services\Operations\OfficeCostPanel;
 use App\Services\Operations\SubDepartmentsPanel;
@@ -71,8 +73,8 @@ return [
         [
             'name' => 'Finance',
             'sections' => [
-                ['key' => 'finance-options', 'label' => 'Finance Options', 'route' => 'finance.option.types', 'icon' => 'icofont-bank-alt'],
-                ['key' => 'loan-terms', 'label' => 'Loan Terms', 'route' => 'loan.term', 'icon' => 'icofont-calendar'],
+                ['key' => 'finance-options', 'label' => 'Finance Options', 'route' => 'finance.option.types', 'icon' => 'icofont-bank-alt', 'panel' => FinanceOptionsPanel::class],
+                ['key' => 'loan-terms', 'label' => 'Loan Terms', 'route' => 'loan.term', 'icon' => 'icofont-calendar', 'panel' => LoanTermsPanel::class],
             ],
         ],
         [

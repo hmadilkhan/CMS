@@ -29,7 +29,9 @@ use App\Services\Operations\AddersPanel;
 use App\Services\Operations\AdderTypesPanel;
 use App\Services\Operations\DealerFeePanel;
 use App\Services\Operations\DepartmentsPanel;
+use App\Services\Operations\FinanceOptionsPanel;
 use App\Services\Operations\InverterBaseCostPanel;
+use App\Services\Operations\LoanTermsPanel;
 use App\Services\Operations\SubDepartmentsPanel;
 use App\Traits\MediaTrait;
 use Illuminate\Http\Request;
@@ -253,15 +255,7 @@ class OperationController extends Controller
 
     public function financeOptionView(Request $request)
     {
-        if ($request->id != "") {
-            $finance = FinanceOption::with("milestones")->where("id", $request->id)->first();
-        }
-        return view("operations/finance-options/index", [
-            "financeOptions" => FinanceOption::with("milestones")->get(),
-            "finance" => ($request->id != "" ? $finance : []),
-            "milestoneEmailRecipients" => FinanceMilestoneEmailRecipient::orderBy("mode")->orderBy("email")->get(),
-            "milestoneEmailMode" => FinanceMilestoneSetting::where("key", "email_mode")->value("value") ?: FinanceMilestoneService::MODE_TEST,
-        ]);
+        return view("operations.finance-options.index", app(FinanceOptionsPanel::class)->data($request));
     }
 
     public function financeOptionStore(Request $request)
@@ -298,9 +292,9 @@ class OperationController extends Controller
                 ]);
             });
 
-            return redirect()->route("finance.option.types")->with("success", "Data Saved Successfully");
+            return $this->backToOperations($request, "finance.option.types")->with("success", "Data Saved Successfully");
         } catch (\Throwable $th) {
-            return redirect()->route("finance.option.types")->with("error", $th->getMessage());
+            return $this->backToOperations($request, "finance.option.types")->with("error", $th->getMessage());
         }
     }
 
@@ -327,9 +321,9 @@ class OperationController extends Controller
             $adder->milestone_amount_source = $milestoneAmountSource;
             $adder->save();
             app(FinanceMilestoneService::class)->syncDefaultMilestones($adder);
-            return redirect()->route("finance.option.types");
+            return $this->backToOperations($request, "finance.option.types");
         } catch (\Throwable $th) {
-            return redirect()->route("finance.option.types")->with('error', $th->getMessage());
+            return $this->backToOperations($request, "finance.option.types")->with('error', $th->getMessage());
         }
     }
 
@@ -347,7 +341,7 @@ class OperationController extends Controller
             "is_active" => $request->boolean("is_active", true),
         ]);
 
-        return redirect()->route("finance.option.types")->with("success", "Milestone recipient added successfully");
+        return $this->backToOperations($request, "finance.option.types")->with("success", "Milestone recipient added successfully");
     }
 
     public function financeMilestoneRecipientUpdate(Request $request)
@@ -365,7 +359,7 @@ class OperationController extends Controller
             "is_active" => $request->boolean("is_active"),
         ]);
 
-        return redirect()->route("finance.option.types")->with("success", "Milestone recipient updated successfully");
+        return $this->backToOperations($request, "finance.option.types")->with("success", "Milestone recipient updated successfully");
     }
 
     public function financeMilestoneRecipientDelete(Request $request)
@@ -390,7 +384,7 @@ class OperationController extends Controller
             ["value" => $validated["email_mode"]]
         );
 
-        return redirect()->route("finance.option.types")->with("success", "Milestone email mode updated successfully");
+        return $this->backToOperations($request, "finance.option.types")->with("success", "Milestone email mode updated successfully");
     }
 
     public function financeOptionDelete(Request $request)
@@ -926,14 +920,7 @@ class OperationController extends Controller
 
     public function loanTermView(Request $request)
     {
-        if ($request->id != "") {
-            $loanTerm = LoanTerm::where("id", $request->id)->first();
-        }
-        return view("operations/loan-term/index", [
-            "financeOptions" => FinanceOption::all(),
-            "loanTerms" => LoanTerm::with('finance')->get(),
-            "loanTerm" => ($request->id != "" ? $loanTerm : []),
-        ]);
+        return view("operations.loan-term.index", app(LoanTermsPanel::class)->data($request));
     }
 
     public function loanTermStore(Request $request)
@@ -945,10 +932,10 @@ class OperationController extends Controller
                 "finance_option_id" => $validated["finance_option_id"],
                 "year" => $validated["year"],
             ]);
-            return redirect()->route("loan.term")->with("success", "Data Saved Successfully");
+            return $this->backToOperations($request, "loan.term")->with("success", "Data Saved Successfully");
         } catch (\Throwable $th) {
 
-            return redirect()->route("loan.term")->with("error", $th->getMessage());
+            return $this->backToOperations($request, "loan.term")->with("error", $th->getMessage());
         }
     }
 
@@ -961,9 +948,9 @@ class OperationController extends Controller
             $loanTerm->finance_option_id = $validated["finance_option_id"];
             $loanTerm->year = $validated["year"];
             $loanTerm->save();
-            return redirect()->route("loan.term");
+            return $this->backToOperations($request, "loan.term");
         } catch (\Throwable $th) {
-            return redirect()->route("loan.term")->with('error', $th->getMessage());
+            return $this->backToOperations($request, "loan.term")->with('error', $th->getMessage());
         }
     }
 

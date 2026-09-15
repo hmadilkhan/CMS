@@ -8,10 +8,9 @@ A section is drawn one of two ways, and `config/operations_console.php` alone
 decides which:
 
 - **a panel** — the console draws the screen itself, inside the console page:
-  one scroll, one set of scripts, one history. Today the **Pipeline** group
-  (Departments, Sub Departments, Assign Department), the **Equipment** group
-  (Module Types, Inverter Types, Inverter Base Cost, Tools) and the **Pricing**
-  group (Adders, Adder Types, Dealer Fee, Office Cost, Labor Cost).
+  one scroll, one set of scripts, one history. Today the **Pipeline**,
+  **Equipment**, **Pricing** and **Finance** groups — fourteen of the
+  twenty-one screens.
 - **a frame** — the console loads the screen's own page embedded
   (`?embedded=1`), without the sidebar and header. Everything else.
 
@@ -100,9 +99,17 @@ saves come back to** — never what is shown, and never who may see it:
 
 Everything else keeps working because the console is on `layouts.master` too:
 `.select2`, `.datatable` and the Bootstrap delete modal are initialised there,
-for the panel as for any page. A screen's `@section('scripts')` moves into the
-partial as a plain `<script>`; it still runs after the markup it acts on, and
-the delete helpers only touch jQuery when they are called.
+for the panel as for any page.
+
+**A panel's scripts stay in `@section('scripts')`.** The partial is included from
+inside `@section('content')`, which the layout yields *before* jQuery; the scripts
+section is yielded *after* it. Inlining a screen's scripts in the panel body
+therefore runs them too early, and anything touching `$` at load time — Finance
+Options binds a change handler there — throws and takes the rest of that block
+with it. Blade registers a section declared inside an included partial in time for
+the layout to yield it, so keeping them in the section works from the console and
+from the screen's own page alike. A test asserts the order, both in the source and
+in the rendered page.
 
 Two screens' tab titles said "Module Types" because they were copied from that
 page — Dealer Fee and Inverter Base Cost. Fixed while promoting them.
@@ -116,8 +123,8 @@ own column count, which leaves every wider table exactly as it was.
 ### Promoting a section
 
 1. Move the screen's body from `index.blade.php` into `panel.blade.php`
-   (the page becomes an `@extends` + `@include`), taking its `@section('scripts')`
-   with it as a plain `<script>`.
+   (the page becomes an `@extends` + `@include`), keeping its
+   `@section('scripts')` as a section — see above.
 2. Point its links and its Cancel at a `$screenUrl` helper, and add the hidden
    `ops_section` field under `@if ($console)`.
 3. Add an `OperationsPanel` with the view name and the data the controller used

@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\Department;
+use App\Models\FinanceMilestoneEmailRecipient;
 use App\Models\ModuleType;
 use App\Models\User;
 use App\Models\UserType;
@@ -79,9 +80,9 @@ class OperationsConsoleTest extends TestCase
     public function test_it_opens_the_section_the_url_asks_for(): void
     {
         $this->actingAs($this->user('User Management'))
-            ->get(route('operations.console', ['section' => 'finance-options']))
+            ->get(route('operations.console', ['section' => 'sub-contractors']))
             ->assertOk()
-            ->assertSee(route('finance.option.types').'?embedded=1', false);
+            ->assertSee(route('sub.contractor').'?embedded=1', false);
     }
 
     public function test_an_unknown_section_falls_back_to_the_first_one(): void
@@ -132,10 +133,10 @@ class OperationsConsoleTest extends TestCase
     public function test_a_section_without_a_panel_is_still_opened_in_a_frame(): void
     {
         $this->actingAs($this->user('User Management'))
-            ->get(route('operations.console', ['section' => 'loan-terms']))
+            ->get(route('operations.console', ['section' => 'sales-partners']))
             ->assertOk()
             ->assertSee('data-ops-frame', false)
-            ->assertSee(route('loan.term').'?embedded=1', false);
+            ->assertSee(route('sales.partner.types').'?embedded=1', false);
     }
 
     public function test_a_panel_keeps_its_links_inside_the_console(): void
@@ -211,6 +212,77 @@ class OperationsConsoleTest extends TestCase
             ->get(route('module-types.edit', $type->id))
             ->assertOk()
             ->assertSee(route('module-types.update', $type->id), false);
+    }
+
+    public function test_a_panels_scripts_still_run_after_jquery(): void
+    {
+        $user = $this->user('User Management');
+
+        // A screen's scripts used to sit in @section('scripts'), which the
+        // layout yields AFTER jQuery. Inlining them in the panel body put them
+        // BEFORE it, and any that touch `$` at load time died - taking the rest
+        // of that block with them. A panel keeps them in the section.
+        foreach (app(OperationsConsoleService::class)->sectionsFor($user) as $section) {
+            if (empty($section['panel'])) {
+                continue;
+            }
+
+            $view = app(OperationsConsoleService::class)->panelFor($section)->view();
+            $source = file_get_contents(app('view')->getFinder()->find($view));
+
+            if (! str_contains($source, '<script')) {
+                continue;
+            }
+
+            $this->assertStringContainsString(
+                "@section('scripts')",
+                $source,
+                $section['key'].": a panel's scripts belong in @section('scripts')."
+            );
+            $this->assertLessThan(
+                strpos($source, '<script'),
+                strpos($source, "@section('scripts')"),
+                $section['key'].": the scripts section must open before the first <script>."
+            );
+        }
+
+        // And prove the layout really does put them in that order.
+        $html = $this->actingAs($user)
+            ->get(route('operations.console', ['section' => 'finance-options']))
+            ->assertOk()
+            ->getContent();
+
+        $this->assertLessThan(
+            strpos($html, 'function deleteDealerFee'),
+            strpos($html, 'jquery.min.js'),
+            'A panel script ran before jQuery was loaded.'
+        );
+    }
+
+    public function test_every_form_on_a_panel_comes_back_to_the_console(): void
+    {
+        // Finance Options is the one panel with more than one form on it: the
+        // finance option itself plus the three milestone-email ones. A save from
+        // any of them has to come back to the console, not just the first.
+        $console = route('operations.console', ['section' => 'finance-options']);
+
+        // The per-recipient form only renders when there is a recipient.
+        FinanceMilestoneEmailRecipient::create(['email' => 'billing@example.com', 'mode' => 'test', 'is_active' => true]);
+
+        $this->actingAs($this->user('User Management'))
+            ->get($console)
+            ->assertOk()
+            ->assertSeeInOrder(array_fill(0, 4, 'name="ops_section" value="finance-options"'), false);
+
+        $this->actingAs($this->user('User Management'))
+            ->from($console)
+            ->post(route('finance.milestone.email.mode.update'), [
+                'email_mode' => 'production',
+                'ops_section' => 'finance-options',
+            ])
+            ->assertRedirect($console);
+
+        $this->assertDatabaseHas('finance_milestone_settings', ['key' => 'email_mode', 'value' => 'production']);
     }
 
     public function test_a_save_from_a_pricing_panel_comes_back_to_the_console(): void
