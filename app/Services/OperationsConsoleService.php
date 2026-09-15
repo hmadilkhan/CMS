@@ -84,23 +84,25 @@ class OperationsConsoleService
 
     /**
      * Where a save made on an Operations screen comes back to: the console
-     * section it was made in, or the screen's own page.
+     * section it was made in, or the screen's own page. `$params` are the
+     * screen's own (a tab to land on, a record to edit); they ride along
+     * either way.
      *
      * The key arrives in the form, so it is only honoured when it names a
      * section this viewer actually has - the field can never be turned into a
      * redirect somewhere else.
      */
-    public function returnUrl($user, $sectionKey, string $fallbackRoute): string
+    public function returnUrl($user, $sectionKey, string $fallbackRoute, array $params = []): string
     {
         if (is_string($sectionKey) && $sectionKey !== '') {
             $section = $this->section($user, $sectionKey);
 
             if ($section && $section['key'] === $sectionKey) {
-                return route('operations.console', ['section' => $sectionKey]);
+                return route('operations.console', ['section' => $sectionKey] + $params);
             }
         }
 
-        return route($fallbackRoute);
+        return route($fallbackRoute, $params);
     }
 
     private function isVisible(array $section, $user): bool

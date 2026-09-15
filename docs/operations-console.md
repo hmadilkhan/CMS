@@ -8,11 +8,12 @@ A section is drawn one of two ways, and `config/operations_console.php` alone
 decides which:
 
 - **a panel** — the console draws the screen itself, inside the console page:
-  one scroll, one set of scripts, one history. Today the **Pipeline**,
-  **Equipment**, **Pricing** and **Finance** groups — fourteen of the
-  twenty-one screens.
+  one scroll, one set of scripts, one history. **All twenty-one screens are
+  panels today.**
 - **a frame** — the console loads the screen's own page embedded
-  (`?embedded=1`), without the sidebar and header. Everything else.
+  (`?embedded=1`), without the sidebar and header. Nothing uses this now, but it
+  is still how a screen joins the console before it is promoted, and it is still
+  tested (on a section with no panel, not on a real screen).
 
 That split is why the console could ship covering all twenty-one screens at
 once: a screen joins as a frame, and is promoted to a panel later without
@@ -90,16 +91,21 @@ saves come back to** — never what is shown, and never who may see it:
   in the path (`/module-types/{id}/edit`): its `$screenUrl` returns that route
   on its own page, and `ModuleTypeController::edit` hands the id to the panel, so
   the panel still only knows about `?id=`.
-- inside the console the form carries a hidden `ops_section`, and the
+- inside the console **every** form carries a hidden `ops_section` — not just
+  the first: Finance Options has four and Email Scripts three — and the
   controller's redirect goes through `ReturnsToOperationsConsole`, so a save
   lands back in the console instead of throwing the user out to the screen. The
   key comes from the browser, so it is honoured **only when it names a section
   the console really has for that viewer** — it can never become a redirect
-  somewhere else.
+  somewhere else. A redirect's own parameters ride along: Email Scripts comes
+  back to `…&tab=templates`, in the console or on its page.
 
 Everything else keeps working because the console is on `layouts.master` too:
 `.select2`, `.datatable` and the Bootstrap delete modal are initialised there,
 for the panel as for any page.
+
+`$screenUrl` takes an id. Email Scripts links carry `template` and `tab` too, so
+its helper takes an array instead and a bare value still means the id.
 
 **A panel's scripts stay in `@section('scripts')`.** The partial is included from
 inside `@section('content')`, which the layout yields *before* jQuery; the scripts
@@ -110,6 +116,11 @@ with it. Blade registers a section declared inside an included partial in time f
 the layout to yield it, so keeping them in the section works from the console and
 from the screen's own page alike. A test asserts the order, both in the source and
 in the rendered page.
+
+A script that never touches jQuery may stay in the body, and one has to: the
+CKEditor importmap on Call Scripts and Email Scripts must precede the module that
+imports it. The test checks for `$(`/`jQuery` in body scripts rather than banning
+scripts there.
 
 Two screens' tab titles said "Module Types" because they were copied from that
 page — Dealer Fee and Inverter Base Cost. Fixed while promoting them.

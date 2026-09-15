@@ -16,12 +16,13 @@ use Illuminate\Http\Request;
  */
 trait ReturnsToOperationsConsole
 {
-    protected function backToOperations(Request $request, string $fallbackRoute): RedirectResponse
+    protected function backToOperations(Request $request, string $fallbackRoute, array $params = []): RedirectResponse
     {
         return redirect(app(OperationsConsoleService::class)->returnUrl(
             $request->user(),
             $request->input('ops_section'),
             $fallbackRoute,
+            $params,
         ));
     }
 }

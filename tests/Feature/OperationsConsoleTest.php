@@ -82,7 +82,8 @@ class OperationsConsoleTest extends TestCase
         $this->actingAs($this->user('User Management'))
             ->get(route('operations.console', ['section' => 'sub-contractors']))
             ->assertOk()
-            ->assertSee(route('sub.contractor').'?embedded=1', false);
+            ->assertSee('Add Sub-Contractor')
+            ->assertSee(route('sub.contractor.store'), false);
     }
 
     public function test_an_unknown_section_falls_back_to_the_first_one(): void
@@ -132,11 +133,22 @@ class OperationsConsoleTest extends TestCase
 
     public function test_a_section_without_a_panel_is_still_opened_in_a_frame(): void
     {
+        // Every screen is a panel today, but the frame is still how a screen
+        // joins the console before it is promoted - so it is tested on a
+        // section that has no panel rather than on whichever screen is last.
+        config(['operations_console.groups' => [[
+            'name' => 'Pipeline',
+            'sections' => [
+                ['key' => 'departments', 'label' => 'Departments', 'route' => 'departments.list'],
+            ],
+        ]]]);
+
         $this->actingAs($this->user('User Management'))
-            ->get(route('operations.console', ['section' => 'sales-partners']))
+            ->get(route('operations.console', ['section' => 'departments']))
             ->assertOk()
             ->assertSee('data-ops-frame', false)
-            ->assertSee(route('sales.partner.types').'?embedded=1', false);
+            ->assertSee(route('departments.list').'?embedded=1', false)
+            ->assertDontSee('data-ops-panel', false);
     }
 
     public function test_a_panel_keeps_its_links_inside_the_console(): void
@@ -234,16 +246,27 @@ class OperationsConsoleTest extends TestCase
                 continue;
             }
 
-            $this->assertStringContainsString(
-                "@section('scripts')",
-                $source,
-                $section['key'].": a panel's scripts belong in @section('scripts')."
-            );
-            $this->assertLessThan(
-                strpos($source, '<script'),
-                strpos($source, "@section('scripts')"),
-                $section['key'].": the scripts section must open before the first <script>."
-            );
+            // A script that never touches jQuery may stay in the body - the
+            // CKEditor importmap has to, since the module below it needs it.
+            $body = explode("@section('scripts')", $source, 2)[0];
+
+            preg_match_all('/<script\b.*?<\/script>/s', $body, $inTheBody);
+
+            foreach ($inTheBody[0] as $block) {
+                $this->assertDoesNotMatchRegularExpression(
+                    '/\$\(|jQuery/',
+                    $block,
+                    $section['key'].": a script using jQuery must sit in @section('scripts'), not in the panel body."
+                );
+            }
+
+            if (preg_match('/\$\(|jQuery/', $source)) {
+                $this->assertStringContainsString(
+                    "@section('scripts')",
+                    $source,
+                    $section['key'].": a panel's jQuery scripts belong in @section('scripts')."
+                );
+            }
         }
 
         // And prove the layout really does put them in that order.

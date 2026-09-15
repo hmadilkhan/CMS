@@ -3,8 +3,12 @@
 use App\Services\Operations\AddersPanel;
 use App\Services\Operations\AdderTypesPanel;
 use App\Services\Operations\AssignDepartmentPanel;
+use App\Services\Operations\CallScriptsPanel;
+use App\Services\Operations\CallTypesPanel;
 use App\Services\Operations\DealerFeePanel;
 use App\Services\Operations\DepartmentsPanel;
+use App\Services\Operations\EmailScriptsPanel;
+use App\Services\Operations\EmailTypesPanel;
 use App\Services\Operations\FinanceOptionsPanel;
 use App\Services\Operations\InverterBaseCostPanel;
 use App\Services\Operations\InverterTypesPanel;
@@ -12,8 +16,11 @@ use App\Services\Operations\LaborCostPanel;
 use App\Services\Operations\LoanTermsPanel;
 use App\Services\Operations\ModuleTypesPanel;
 use App\Services\Operations\OfficeCostPanel;
+use App\Services\Operations\SalesPartnersPanel;
+use App\Services\Operations\SubContractorsPanel;
 use App\Services\Operations\SubDepartmentsPanel;
 use App\Services\Operations\ToolsPanel;
+use App\Services\Operations\UtilityCompanyPanel;
 
 /**
  * The Operations console - one window for the twenty-odd Operations screens.
@@ -80,18 +87,18 @@ return [
         [
             'name' => 'Partners',
             'sections' => [
-                ['key' => 'sales-partners', 'label' => 'Sales Partners', 'route' => 'sales.partner.types', 'icon' => 'icofont-handshake-deal'],
-                ['key' => 'sub-contractors', 'label' => 'Sub-Contractors', 'route' => 'sub.contractor', 'icon' => 'icofont-users'],
-                ['key' => 'utility-company', 'label' => 'Utility Company', 'route' => 'view.utility.types', 'icon' => 'icofont-flash'],
+                ['key' => 'sales-partners', 'label' => 'Sales Partners', 'route' => 'sales.partner.types', 'icon' => 'icofont-handshake-deal', 'panel' => SalesPartnersPanel::class],
+                ['key' => 'sub-contractors', 'label' => 'Sub-Contractors', 'route' => 'sub.contractor', 'icon' => 'icofont-users', 'panel' => SubContractorsPanel::class],
+                ['key' => 'utility-company', 'label' => 'Utility Company', 'route' => 'view.utility.types', 'icon' => 'icofont-flash', 'panel' => UtilityCompanyPanel::class],
             ],
         ],
         [
             'name' => 'Scripts',
             'sections' => [
-                ['key' => 'call-types', 'label' => 'Call Types', 'route' => 'call.types.list', 'icon' => 'icofont-phone'],
-                ['key' => 'call-scripts', 'label' => 'Call Scripts', 'route' => 'call.scripts.list', 'icon' => 'icofont-ui-call'],
-                ['key' => 'email-types', 'label' => 'Email Types', 'route' => 'email.types.list', 'icon' => 'icofont-email'],
-                ['key' => 'email-scripts', 'label' => 'Email Scripts', 'route' => 'email.scripts.list', 'icon' => 'icofont-envelope-open'],
+                ['key' => 'call-types', 'label' => 'Call Types', 'route' => 'call.types.list', 'icon' => 'icofont-phone', 'panel' => CallTypesPanel::class],
+                ['key' => 'call-scripts', 'label' => 'Call Scripts', 'route' => 'call.scripts.list', 'icon' => 'icofont-ui-call', 'panel' => CallScriptsPanel::class],
+                ['key' => 'email-types', 'label' => 'Email Types', 'route' => 'email.types.list', 'icon' => 'icofont-email', 'panel' => EmailTypesPanel::class],
+                ['key' => 'email-scripts', 'label' => 'Email Scripts', 'route' => 'email.scripts.list', 'icon' => 'icofont-envelope-open', 'panel' => EmailScriptsPanel::class],
             ],
         ],
     ],
