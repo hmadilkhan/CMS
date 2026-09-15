@@ -2,20 +2,22 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Controllers\Concerns\ReturnsToOperationsConsole;
 use App\Models\OfficeCost;
+use App\Services\Operations\OfficeCostPanel;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
 class OfficeCostController extends Controller
 {
+    use ReturnsToOperationsConsole;
+
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
-        return view("office-costs.index",[
-            "costs" => OfficeCost::all(),
-        ]);
+        return view("office-costs.index", app(OfficeCostPanel::class)->data($request));
     }
 
     /**
@@ -43,9 +45,9 @@ class OfficeCostController extends Controller
                 ]);
             });
 
-            return redirect()->route("office-costs.index")->with("success", "Office cost saved successfully");
+            return $this->backToOperations($request, "office-costs.index")->with("success", "Office cost saved successfully");
         } catch (\Throwable $th) {
-            return redirect()->route("office-costs.index")->with("error", $th->getMessage());
+            return $this->backToOperations($request, "office-costs.index")->with("error", $th->getMessage());
         }
     }
 

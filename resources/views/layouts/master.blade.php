@@ -170,6 +170,18 @@
 
     @include('layouts.partials.solen-theme')
 
+    <style>
+        /* An embedded page has no sidebar, so nothing should be reserved for one. */
+        #mytask-layout.is-embedded .main {
+            margin-left: 0 !important;
+            width: 100% !important;
+        }
+
+        #mytask-layout.is-embedded .body {
+            min-height: auto;
+        }
+    </style>
+
     @livewireStyles
 </head>
 
@@ -183,18 +195,28 @@
         </div>
     </div>
 
-    <div id="mytask-layout" class="theme-indigo">
+    {{-- "embedded" is a page opened INSIDE another one - today the Operations
+         console, which shows these same screens in one window. The page keeps
+         its own routes, permissions and behaviour; it simply leaves out the
+         chrome it would otherwise draw a second time. --}}
+    @php $embedded = request()->boolean('embedded'); @endphp
+
+    <div id="mytask-layout" class="theme-indigo {{ $embedded ? 'is-embedded' : '' }}">
         <!-- sidebar -->
-        @include('layouts.sidebar')
+        @unless ($embedded)
+            @include('layouts.sidebar')
+        @endunless
 
         <!-- main body area -->
-        <div class="main px-lg-4 px-md-4">
+        <div class="main {{ $embedded ? 'px-0' : 'px-lg-4 px-md-4' }}">
 
             <!-- Body: Header -->
-            @include('layouts.header')
+            @unless ($embedded)
+                @include('layouts.header')
+            @endunless
 
             <!-- Body: Body -->
-            <div class="body d-flex py-3">
+            <div class="body d-flex {{ $embedded ? 'py-2' : 'py-3' }}">
                 @yield('content')
             </div>
             <style id="crm-white-background-override">
@@ -249,16 +271,24 @@
         $(document).ready(function() {
             $('.select2').select2();
         });
-        $('.datatable')
-            .addClass('nowrap')
-            .dataTable({
+        // A target the table has no column for makes dataTable() throw, which
+        // took the rest of this script with it - the sidebar below included.
+        $('.datatable').each(function() {
+            var table = $(this);
+            var columns = table.find('thead th').length;
+            var targets = [-1, -3].filter(function(target) {
+                return columns >= Math.abs(target);
+            });
+
+            table.addClass('nowrap').dataTable({
                 responsive: true,
                 ordering: false,
-                columnDefs: [{
-                    targets: [-1, -3],
+                columnDefs: targets.length ? [{
+                    targets: targets,
                     className: 'dt-body-right'
-                }]
+                }] : []
             });
+        });
         $(".sidebar").hover(function() {
             $(".sidebar").removeClass("sidebar-mini")
         }, function() {

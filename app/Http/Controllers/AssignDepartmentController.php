@@ -2,24 +2,18 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Controllers\Concerns\ReturnsToOperationsConsole;
 use App\Models\AssignDepartment;
-use App\Models\Department;
-use App\Models\Employee;
+use App\Services\Operations\AssignDepartmentPanel;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 
 class AssignDepartmentController extends Controller
 {
+    use ReturnsToOperationsConsole;
+
     public function index(Request $request)
     {
-        $assignDepartment = $request->id ? AssignDepartment::with('department', 'employee')->findOrFail($request->id) : null;
-        
-        return view('operations.assign-department.index', [
-            'assignDepartments' => AssignDepartment::with('department', 'employee')->get(),
-            'departments' => Department::all(),
-            'employees' => Employee::all(),
-            'assignDepartment' => $assignDepartment,
-        ]);
+        return view('operations.assign-department.index', app(AssignDepartmentPanel::class)->data($request));
     }
 
     public function store(Request $request)
@@ -39,12 +33,12 @@ class AssignDepartmentController extends Controller
                     'department_id' => $request->department_id,
                     'employee_id' => $request->employee_id,
                 ]);
-                return redirect()->route('assign-department.index')->with('success', 'Data Saved Successfully');
+                return $this->backToOperations($request, 'assign-department.index')->with('success', 'Data Saved Successfully');
             } else {
-                return redirect()->route('assign-department.index')->with('error', 'This assignment already exists');
+                return $this->backToOperations($request, 'assign-department.index')->with('error', 'This assignment already exists');
             }
         } catch (\Throwable $th) {
-            return redirect()->route('assign-department.index')->with('error', $th->getMessage());
+            return $this->backToOperations($request, 'assign-department.index')->with('error', $th->getMessage());
         }
     }
 
@@ -60,10 +54,10 @@ class AssignDepartmentController extends Controller
             $assignDepartment->department_id = $request->department_id;
             $assignDepartment->employee_id = $request->employee_id;
             $assignDepartment->save();
-            
-            return redirect()->route('assign-department.index')->with('success', 'Data Updated Successfully');
+
+            return $this->backToOperations($request, 'assign-department.index')->with('success', 'Data Updated Successfully');
         } catch (\Throwable $th) {
-            return redirect()->route('assign-department.index')->with('error', $th->getMessage());
+            return $this->backToOperations($request, 'assign-department.index')->with('error', $th->getMessage());
         }
     }
 

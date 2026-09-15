@@ -2,20 +2,22 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Controllers\Concerns\ReturnsToOperationsConsole;
 use App\Models\LaborCost;
+use App\Services\Operations\LaborCostPanel;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
 class LaborCostController extends Controller
 {
+    use ReturnsToOperationsConsole;
+
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
-        return view("labor-costs.index", [
-            "costs" => LaborCost::all(),
-        ]);
+        return view("labor-costs.index", app(LaborCostPanel::class)->data($request));
     }
 
     /**
@@ -43,9 +45,9 @@ class LaborCostController extends Controller
                 ]);
             });
 
-            return redirect()->route("labor-costs.index")->with("success", "Labor cost saved successfully");
+            return $this->backToOperations($request, "labor-costs.index")->with("success", "Labor cost saved successfully");
         } catch (\Throwable $th) {
-            return redirect()->route("labor-costs.index")->with("error", $th->getMessage());
+            return $this->backToOperations($request, "labor-costs.index")->with("error", $th->getMessage());
         }
     }
 

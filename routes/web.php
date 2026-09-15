@@ -263,6 +263,12 @@ Route::middleware('auth')->group(function () {
     // menu at all. Until now only the menu was hidden: any signed-in user could
     // still POST to these endpoints and create a department or read internal cost
     // rates. (Super Admin passes through the Gate::before in AuthServiceProvider.)
+    // One window for the Operations screens. It opens the same pages, behind the
+    // same permission; see config/operations_console.php.
+    Route::get('operations', [App\Http\Controllers\OperationsConsoleController::class, 'index'])
+        ->middleware('can:User Management')
+        ->name('operations.console');
+
     Route::controller(OperationController::class)->middleware('can:User Management')->group(function () {
         // REDLINE COST
         Route::get('/view-redline-cost/{id?}', 'changeRedlineCostView')->name("view-redline-cost");

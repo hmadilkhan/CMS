@@ -2,10 +2,10 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Controllers\Concerns\ReturnsToOperationsConsole;
 use App\Models\Adder;
 use App\Models\AdderSubType;
 use App\Models\AdderType;
-use App\Models\AdderUnit;
 use App\Models\Call;
 use App\Models\CallScript;
 use App\Models\Department;
@@ -14,7 +14,6 @@ use App\Models\EmailType;
 use App\Models\FinanceMilestoneEmailRecipient;
 use App\Models\FinanceMilestoneSetting;
 use App\Models\FinanceOption;
-use App\Models\InverterType;
 use App\Models\InverterTypeRate;
 use App\Models\LoanApr;
 use App\Models\LoanTerm;
@@ -26,6 +25,21 @@ use App\Models\User;
 use App\Models\UtilityCompany;
 use App\Services\FinanceMilestoneService;
 use App\Services\NotificationTemplateService;
+use App\Services\Operations\AddersPanel;
+use App\Services\Operations\AdderTypesPanel;
+use App\Services\Operations\CallScriptsPanel;
+use App\Services\Operations\CallTypesPanel;
+use App\Services\Operations\DealerFeePanel;
+use App\Services\Operations\DepartmentsPanel;
+use App\Services\Operations\EmailScriptsPanel;
+use App\Services\Operations\EmailTypesPanel;
+use App\Services\Operations\FinanceOptionsPanel;
+use App\Services\Operations\InverterBaseCostPanel;
+use App\Services\Operations\LoanTermsPanel;
+use App\Services\Operations\SalesPartnersPanel;
+use App\Services\Operations\SubContractorsPanel;
+use App\Services\Operations\SubDepartmentsPanel;
+use App\Services\Operations\UtilityCompanyPanel;
 use App\Traits\MediaTrait;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -34,13 +48,10 @@ use Illuminate\Validation\Rule;
 class OperationController extends Controller
 {
     use MediaTrait;
+    use ReturnsToOperationsConsole;
     public function changeRedlineCostView(Request $request)
     {
-        return view("operations/redline/redlinecostchange", [
-            "redlinelist" => InverterTypeRate::with("inverter")->get(),
-            "inverters" => InverterType::all(),
-            "redline" => ($request->id != "" ? InverterTypeRate::find($request->id) : []),
-        ]);
+        return view("operations.redline.redlinecostchange", app(InverterBaseCostPanel::class)->data($request));
     }
 
     public function getRedlineCostByInverter(Request $request)
@@ -62,9 +73,9 @@ class OperationController extends Controller
             $inverterTypeRate->internal_base_cost = $validated["internal_base_cost"];
             $inverterTypeRate->internal_labor_cost = $validated["internal_labor_cost"];
             $inverterTypeRate->save();
-            return redirect()->route("view-redline-cost");
+            return $this->backToOperations($request, "view-redline-cost");
         } catch (\Throwable $th) {
-            return redirect()->route("view-redline-cost")->with('error', $th->getMessage());
+            return $this->backToOperations($request, "view-redline-cost")->with('error', $th->getMessage());
         }
     }
 
@@ -79,9 +90,9 @@ class OperationController extends Controller
                 "internal_base_cost" => $validated["internal_base_cost"],
                 "internal_labor_cost" => $validated["internal_labor_cost"],
             ]);
-            return redirect()->route("view-redline-cost")->with("success", "Data Saved Successfully");
+            return $this->backToOperations($request, "view-redline-cost")->with("success", "Data Saved Successfully");
         } catch (\Throwable $th) {
-            return redirect()->route("view-redline-cost")->with("error", $th->getMessage());
+            return $this->backToOperations($request, "view-redline-cost")->with("error", $th->getMessage());
         }
     }
 
@@ -101,16 +112,7 @@ class OperationController extends Controller
 
     public function dealerFeeView(Request $request)
     {
-        if ($request->id != "") {
-            $loan = LoanApr::with("loan", "loan.finance")->where("id", $request->id)->first();
-        }
-        return view("operations/dealerfee/index", [
-            "dealerfeelist" => LoanApr::with("loan", "finance")->get(),
-            "terms" => LoanTerm::groupBy("year")->orderBy("id", "asc")->get(),
-            // "financing" => ($request->id != "" ? FinanceOption::whereIn("id", LoanTerm::where("year", $loan->loan->year)->pluck("finance_option_id"))->get() : [] ),
-            "financing" => FinanceOption::all(),
-            "loan" => ($request->id != "" ? $loan : []),
-        ]);
+        return view("operations.dealerfee.index", app(DealerFeePanel::class)->data($request));
     }
 
     public function dealerFeeUpdate(Request $request)
@@ -120,11 +122,11 @@ class OperationController extends Controller
         try {
             $loanTerm = $this->resolveDealerFeeLoanTerm($validated["loan_term_id"], $validated["finance_option_id"]);
             if (empty($loanTerm)) {
-                return redirect()->route("view-dealer-fee")->with("error", "Selected finance option does not have this loan term.");
+                return $this->backToOperations($request, "view-dealer-fee")->with("error", "Selected finance option does not have this loan term.");
             }
 
             if ($this->dealerFeeExists($loanTerm->id, $validated["finance_option_id"], $validated["id"])) {
-                return redirect()->route("view-dealer-fee")->with("error", "Loan term already exists. Please update");
+                return $this->backToOperations($request, "view-dealer-fee")->with("error", "Loan term already exists. Please update");
             }
 
             $loanApr = LoanApr::findOrFail($validated["id"]);
@@ -133,9 +135,9 @@ class OperationController extends Controller
             $loanApr->apr = $validated["apr"];
             $loanApr->dealer_fee = $validated["dealer_fee"];
             $loanApr->save();
-            return redirect()->route("view-dealer-fee");
+            return $this->backToOperations($request, "view-dealer-fee");
         } catch (\Throwable $th) {
-            return redirect()->route("view-dealer-fee")->with('error', $th->getMessage());
+            return $this->backToOperations($request, "view-dealer-fee")->with('error', $th->getMessage());
         }
     }
 
@@ -146,11 +148,11 @@ class OperationController extends Controller
         try {
             $loanTerm = $this->resolveDealerFeeLoanTerm($validated["loan_term_id"], $validated["finance_option_id"]);
             if (empty($loanTerm)) {
-                return redirect()->route("view-dealer-fee")->with("error", "Selected finance option does not have this loan term.");
+                return $this->backToOperations($request, "view-dealer-fee")->with("error", "Selected finance option does not have this loan term.");
             }
 
             if ($this->dealerFeeExists($loanTerm->id, $validated["finance_option_id"])) {
-                return redirect()->route("view-dealer-fee")->with("error", "Loan term already exists. Please update");
+                return $this->backToOperations($request, "view-dealer-fee")->with("error", "Loan term already exists. Please update");
             }
 
             LoanApr::create([
@@ -159,9 +161,9 @@ class OperationController extends Controller
                 "apr" => $validated["apr"],
                 "dealer_fee" => $validated["dealer_fee"],
             ]);
-            return redirect()->route("view-dealer-fee")->with("success", "Data Saved Successfully");
+            return $this->backToOperations($request, "view-dealer-fee")->with("success", "Data Saved Successfully");
         } catch (\Throwable $th) {
-            return redirect()->route("view-dealer-fee")->with("error", $th->getMessage());
+            return $this->backToOperations($request, "view-dealer-fee")->with("error", $th->getMessage());
         }
     }
 
@@ -192,15 +194,7 @@ class OperationController extends Controller
 
     public function addersView(Request $request)
     {
-        if ($request->id != "") {
-            $adder = Adder::with("type", "unit")->where("id", $request->id)->first();
-        }
-        return view("operations/adders/index", [
-            "adders" => Adder::with("type", "unit")->get(),
-            "types" => AdderType::all(),
-            "units" => AdderUnit::all(),
-            "adder" => ($request->id != "" ? $adder : []),
-        ]);
+        return view("operations.adders.index", app(AddersPanel::class)->data($request));
     }
 
     public function addersStore(Request $request)
@@ -218,12 +212,12 @@ class OperationController extends Controller
                     "adder_unit_id" => $validated["adder_unit_id"],
                     "price" => $validated["price"],
                 ]);
-                return redirect()->route("view-adders")->with("success", "Data Saved Successfully");
+                return $this->backToOperations($request, "view-adders")->with("success", "Data Saved Successfully");
             } else {
-                return redirect()->route("view-adders")->with("error", "Data already exists");
+                return $this->backToOperations($request, "view-adders")->with("error", "Data already exists");
             }
         } catch (\Throwable $th) {
-            return redirect()->route("view-adders")->with("error", $th->getMessage());
+            return $this->backToOperations($request, "view-adders")->with("error", $th->getMessage());
         }
     }
 
@@ -238,7 +232,7 @@ class OperationController extends Controller
                 ->where("id", "!=", $validated["id"])
                 ->count();
             if ($count > 0) {
-                return redirect()->route("view-adders")->with("error", "Data already exists");
+                return $this->backToOperations($request, "view-adders")->with("error", "Data already exists");
             }
 
             $adder = Adder::findOrFail($validated["id"]);
@@ -246,9 +240,9 @@ class OperationController extends Controller
             $adder->adder_unit_id = $validated["adder_unit_id"];
             $adder->price = $validated["price"];
             $adder->save();
-            return redirect()->route("view-adders");
+            return $this->backToOperations($request, "view-adders");
         } catch (\Throwable $th) {
-            return redirect()->route("view-adders")->with('error', $th->getMessage());
+            return $this->backToOperations($request, "view-adders")->with('error', $th->getMessage());
         }
     }
 
@@ -268,15 +262,7 @@ class OperationController extends Controller
 
     public function financeOptionView(Request $request)
     {
-        if ($request->id != "") {
-            $finance = FinanceOption::with("milestones")->where("id", $request->id)->first();
-        }
-        return view("operations/finance-options/index", [
-            "financeOptions" => FinanceOption::with("milestones")->get(),
-            "finance" => ($request->id != "" ? $finance : []),
-            "milestoneEmailRecipients" => FinanceMilestoneEmailRecipient::orderBy("mode")->orderBy("email")->get(),
-            "milestoneEmailMode" => FinanceMilestoneSetting::where("key", "email_mode")->value("value") ?: FinanceMilestoneService::MODE_TEST,
-        ]);
+        return view("operations.finance-options.index", app(FinanceOptionsPanel::class)->data($request));
     }
 
     public function financeOptionStore(Request $request)
@@ -313,9 +299,9 @@ class OperationController extends Controller
                 ]);
             });
 
-            return redirect()->route("finance.option.types")->with("success", "Data Saved Successfully");
+            return $this->backToOperations($request, "finance.option.types")->with("success", "Data Saved Successfully");
         } catch (\Throwable $th) {
-            return redirect()->route("finance.option.types")->with("error", $th->getMessage());
+            return $this->backToOperations($request, "finance.option.types")->with("error", $th->getMessage());
         }
     }
 
@@ -342,9 +328,9 @@ class OperationController extends Controller
             $adder->milestone_amount_source = $milestoneAmountSource;
             $adder->save();
             app(FinanceMilestoneService::class)->syncDefaultMilestones($adder);
-            return redirect()->route("finance.option.types");
+            return $this->backToOperations($request, "finance.option.types");
         } catch (\Throwable $th) {
-            return redirect()->route("finance.option.types")->with('error', $th->getMessage());
+            return $this->backToOperations($request, "finance.option.types")->with('error', $th->getMessage());
         }
     }
 
@@ -362,7 +348,7 @@ class OperationController extends Controller
             "is_active" => $request->boolean("is_active", true),
         ]);
 
-        return redirect()->route("finance.option.types")->with("success", "Milestone recipient added successfully");
+        return $this->backToOperations($request, "finance.option.types")->with("success", "Milestone recipient added successfully");
     }
 
     public function financeMilestoneRecipientUpdate(Request $request)
@@ -380,7 +366,7 @@ class OperationController extends Controller
             "is_active" => $request->boolean("is_active"),
         ]);
 
-        return redirect()->route("finance.option.types")->with("success", "Milestone recipient updated successfully");
+        return $this->backToOperations($request, "finance.option.types")->with("success", "Milestone recipient updated successfully");
     }
 
     public function financeMilestoneRecipientDelete(Request $request)
@@ -405,7 +391,7 @@ class OperationController extends Controller
             ["value" => $validated["email_mode"]]
         );
 
-        return redirect()->route("finance.option.types")->with("success", "Milestone email mode updated successfully");
+        return $this->backToOperations($request, "finance.option.types")->with("success", "Milestone email mode updated successfully");
     }
 
     public function financeOptionDelete(Request $request)
@@ -429,13 +415,7 @@ class OperationController extends Controller
 
     public function addersTypeView(Request $request)
     {
-        if ($request->id != "") {
-            $adder = AdderType::where("id", $request->id)->first();
-        }
-        return view("operations/adder-type/index", [
-            "adders" => AdderType::all(),
-            "adder" => ($request->id != "" ? $adder : []),
-        ]);
+        return view("operations.adder-type.index", app(AdderTypesPanel::class)->data($request));
     }
 
     public function addersTypeStore(Request $request)
@@ -450,9 +430,9 @@ class OperationController extends Controller
                 "name" => $validated["name"],
                 "tag" => $validated["tag"] ?? null,
             ]);
-            return redirect()->route("view.adder.types")->with("success", "Data Saved Successfully");
+            return $this->backToOperations($request, "view.adder.types")->with("success", "Data Saved Successfully");
         } catch (\Throwable $th) {
-            return redirect()->route("view.adder.types")->with("error", $th->getMessage());
+            return $this->backToOperations($request, "view.adder.types")->with("error", $th->getMessage());
         }
     }
 
@@ -469,9 +449,9 @@ class OperationController extends Controller
             $adder->name = $validated["name"];
             $adder->tag = $validated["tag"] ?? null;
             $adder->save();
-            return redirect()->route("view.adder.types");
+            return $this->backToOperations($request, "view.adder.types");
         } catch (\Throwable $th) {
-            return redirect()->route("view.adder.types")->with('error', $th->getMessage());
+            return $this->backToOperations($request, "view.adder.types")->with('error', $th->getMessage());
         }
     }
 
@@ -505,13 +485,7 @@ class OperationController extends Controller
 
     public function salesPartnerView(Request $request)
     {
-        if ($request->id != "") {
-            $partner = SalesPartner::where("id", $request->id)->first();
-        }
-        return view("operations/sales-partner/index", [
-            "partners" => SalesPartner::all(),
-            "partner" => ($request->id != "" ? $partner : []),
-        ]);
+        return view("operations.sales-partner.index", app(SalesPartnersPanel::class)->data($request));
     }
 
     public function salesPartnerStore(Request $request)
@@ -526,9 +500,9 @@ class OperationController extends Controller
                 "email" => $validated["email"] ?? null,
                 "phone" => $validated["phone"] ?? null,
             ]);
-            return redirect()->route("sales.partner.types")->with("success", "Data Saved Successfully");
+            return $this->backToOperations($request, "sales.partner.types")->with("success", "Data Saved Successfully");
         } catch (\Throwable $th) {
-            return redirect()->route("sales.partner.types")->with("error", $th->getMessage());
+            return $this->backToOperations($request, "sales.partner.types")->with("error", $th->getMessage());
         }
     }
 
@@ -544,9 +518,9 @@ class OperationController extends Controller
             $salesPartner->phone = $validated["phone"] ?? null;
             $salesPartner->image = (!empty($result) ? $result["fileName"] : ($validated["previous_logo"] ?? ""));
             $salesPartner->save();
-            return redirect()->route("sales.partner.types");
+            return $this->backToOperations($request, "sales.partner.types");
         } catch (\Throwable $th) {
-            return redirect()->route("sales.partner.types")->with('error', $th->getMessage());
+            return $this->backToOperations($request, "sales.partner.types")->with('error', $th->getMessage());
         }
     }
 
@@ -591,14 +565,7 @@ class OperationController extends Controller
 
     public function callTypeList(Request $request)
     {
-        if ($request->id != "") {
-            $callType = Call::where("id", $request->id)->first();
-        }
-
-        return view("operations/call-types/index", [
-            "callTypes" => Call::all(),
-            "callType" => ($request->id != "" ? $callType : []),
-        ]);
+        return view("operations.call-types.index", app(CallTypesPanel::class)->data($request));
     }
 
     public function callTypeStore(Request $request)
@@ -614,9 +581,9 @@ class OperationController extends Controller
                 "name" => $validated["name"],
             ]);
 
-            return redirect()->route("call.types.list")->with("success", "Data Saved Successfully");
+            return $this->backToOperations($request, "call.types.list")->with("success", "Data Saved Successfully");
         } catch (\Throwable $th) {
-            return redirect()->route("call.types.list")->with("error", $th->getMessage());
+            return $this->backToOperations($request, "call.types.list")->with("error", $th->getMessage());
         }
     }
 
@@ -634,9 +601,9 @@ class OperationController extends Controller
             $callType->name = $validated["name"];
             $callType->save();
 
-            return redirect()->route("call.types.list")->with("success", "Data Updated Successfully");
+            return $this->backToOperations($request, "call.types.list")->with("success", "Data Updated Successfully");
         } catch (\Throwable $th) {
-            return redirect()->route("call.types.list")->with("error", $th->getMessage());
+            return $this->backToOperations($request, "call.types.list")->with("error", $th->getMessage());
         }
     }
 
@@ -656,15 +623,7 @@ class OperationController extends Controller
 
     public function callScriptList(Request $request)
     {
-        if ($request->id != "") {
-            $script = CallScript::with("call", "department")->where("id", $request->id)->first();
-        }
-        return view("operations/call-scripts/index", [
-            "calls" => Call::all(),
-            "departments" => Department::all(),
-            "callScripts" => CallScript::with("call", "department")->get(),
-            "script" => ($request->id != "" ? $script : []),
-        ]);
+        return view("operations.call-scripts.index", app(CallScriptsPanel::class)->data($request));
     }
 
     public function callScriptStore(Request $request)
@@ -682,12 +641,12 @@ class OperationController extends Controller
                     "extra_filter" => $validated["extra"] ?? null,
                     "script" => $validated["script"],
                 ]);
-                return redirect()->route("call.scripts.list")->with("success", "Data Saved Successfully");
+                return $this->backToOperations($request, "call.scripts.list")->with("success", "Data Saved Successfully");
             } else {
-                return redirect()->route("call.scripts.list")->with("error", "Data already exists");
+                return $this->backToOperations($request, "call.scripts.list")->with("error", "Data already exists");
             }
         } catch (\Throwable $th) {
-            return redirect()->route("call.scripts.list")->with("error", $th->getMessage());
+            return $this->backToOperations($request, "call.scripts.list")->with("error", $th->getMessage());
         }
     }
 
@@ -701,7 +660,7 @@ class OperationController extends Controller
                 ->where("id", "!=", $validated["id"])
                 ->count();
             if ($count > 0) {
-                return redirect()->route("call.scripts.list")->with("error", "Data already exists");
+                return $this->backToOperations($request, "call.scripts.list")->with("error", "Data already exists");
             }
 
             $callScript = CallScript::findOrFail($validated["id"]);
@@ -710,9 +669,9 @@ class OperationController extends Controller
             $callScript->extra_filter = $validated["extra"] ?? null;
             $callScript->script = $validated["script"];
             $callScript->save();
-            return redirect()->route("call.scripts.list");
+            return $this->backToOperations($request, "call.scripts.list");
         } catch (\Throwable $th) {
-            return redirect()->route("call.scripts.list")->with('error', $th->getMessage());
+            return $this->backToOperations($request, "call.scripts.list")->with('error', $th->getMessage());
         }
     }
 
@@ -736,14 +695,7 @@ class OperationController extends Controller
 
     public function emailTypeList(Request $request)
     {
-        if ($request->id != "") {
-            $emailType = EmailType::where("id", $request->id)->first();
-        }
-
-        return view("operations/email-types/index", [
-            "emailTypes" => EmailType::all(),
-            "emailType" => ($request->id != "" ? $emailType : []),
-        ]);
+        return view("operations.email-types.index", app(EmailTypesPanel::class)->data($request));
     }
 
     public function emailTypeStore(Request $request)
@@ -759,9 +711,9 @@ class OperationController extends Controller
                 "name" => $validated["name"],
             ]);
 
-            return redirect()->route("email.types.list")->with("success", "Data Saved Successfully");
+            return $this->backToOperations($request, "email.types.list")->with("success", "Data Saved Successfully");
         } catch (\Throwable $th) {
-            return redirect()->route("email.types.list")->with("error", $th->getMessage());
+            return $this->backToOperations($request, "email.types.list")->with("error", $th->getMessage());
         }
     }
 
@@ -779,9 +731,9 @@ class OperationController extends Controller
             $emailType->name = $validated["name"];
             $emailType->save();
 
-            return redirect()->route("email.types.list")->with("success", "Data Updated Successfully");
+            return $this->backToOperations($request, "email.types.list")->with("success", "Data Updated Successfully");
         } catch (\Throwable $th) {
-            return redirect()->route("email.types.list")->with("error", $th->getMessage());
+            return $this->backToOperations($request, "email.types.list")->with("error", $th->getMessage());
         }
     }
 
@@ -801,24 +753,7 @@ class OperationController extends Controller
 
     public function emailScriptList(Request $request)
     {
-        if ($request->id != "") {
-            $script = EmailScript::with("email", "department")->where("id", $request->id)->first();
-        }
-
-        $templates = app(NotificationTemplateService::class)->all();
-        $editingTemplate = $templates[$request->template] ?? null;
-
-        return view("operations/email-scripts/index", [
-            "emailTypes" => EmailType::all(),
-            "departments" => Department::all(),
-            "emailScripts" => EmailScript::with("email", "department")->get(),
-            "script" => ($request->id != "" ? $script : []),
-            "notificationTemplates" => $templates,
-            "editingTemplate" => $editingTemplate,
-            // Land on the tab the request is about: editing a template, or
-            // coming back from saving one.
-            "activeTab" => ($editingTemplate || $request->tab === "templates") ? "templates" : "scripts",
-        ]);
+        return view("operations.email-scripts.index", app(EmailScriptsPanel::class)->data($request));
     }
 
     /**
@@ -837,14 +772,13 @@ class OperationController extends Controller
         ]);
 
         if (!$service->find($validated["key"])) {
-            return redirect()->route("email.scripts.list", ["tab" => "templates"])->with("error", "Unknown email template.");
+            return $this->backToOperations($request, "email.scripts.list", ["tab" => "templates"])->with("error", "Unknown email template.");
         }
 
         $unknown = $service->unknownPlaceholders($validated["key"], $validated["subject"], $validated["body"]);
 
         if (!empty($unknown)) {
-            return redirect()
-                ->route("email.scripts.list", ["template" => $validated["key"]])
+            return $this->backToOperations($request, "email.scripts.list", ["template" => $validated["key"]])
                 ->withInput()
                 ->with("error", "Unknown placeholder: {" . implode("}, {", $unknown) . "}. Use only the tags listed under the editor.");
         }
@@ -860,9 +794,9 @@ class OperationController extends Controller
                 ]
             );
 
-            return redirect()->route("email.scripts.list", ["tab" => "templates"])->with("success", "Email template saved successfully");
+            return $this->backToOperations($request, "email.scripts.list", ["tab" => "templates"])->with("success", "Email template saved successfully");
         } catch (\Throwable $th) {
-            return redirect()->route("email.scripts.list")->with("error", $th->getMessage());
+            return $this->backToOperations($request, "email.scripts.list")->with("error", $th->getMessage());
         }
     }
 
@@ -874,9 +808,9 @@ class OperationController extends Controller
         try {
             NotificationTemplate::where("key", $request->key)->forceDelete();
 
-            return redirect()->route("email.scripts.list", ["tab" => "templates"])->with("success", "Template reset to the default content");
+            return $this->backToOperations($request, "email.scripts.list", ["tab" => "templates"])->with("success", "Template reset to the default content");
         } catch (\Throwable $th) {
-            return redirect()->route("email.scripts.list")->with("error", $th->getMessage());
+            return $this->backToOperations($request, "email.scripts.list")->with("error", $th->getMessage());
         }
     }
 
@@ -895,12 +829,12 @@ class OperationController extends Controller
                     "extra_filter" => $validated["extra"] ?? null,
                     "script" => $validated["script"],
                 ]);
-                return redirect()->route("email.scripts.list")->with("success", "Data Saved Successfully");
+                return $this->backToOperations($request, "email.scripts.list")->with("success", "Data Saved Successfully");
             } else {
-                return redirect()->route("email.scripts.list")->with("error", "Data already exists");
+                return $this->backToOperations($request, "email.scripts.list")->with("error", "Data already exists");
             }
         } catch (\Throwable $th) {
-            return redirect()->route("email.scripts.list")->with("error", $th->getMessage());
+            return $this->backToOperations($request, "email.scripts.list")->with("error", $th->getMessage());
         }
     }
 
@@ -914,7 +848,7 @@ class OperationController extends Controller
                 ->where("id", "!=", $validated["id"])
                 ->count();
             if ($count > 0) {
-                return redirect()->route("email.scripts.list")->with("error", "Data already exists");
+                return $this->backToOperations($request, "email.scripts.list")->with("error", "Data already exists");
             }
 
             $emailScript = EmailScript::findOrFail($validated["id"]);
@@ -923,9 +857,9 @@ class OperationController extends Controller
             $emailScript->extra_filter = $validated["extra"] ?? null;
             $emailScript->script = $validated["script"];
             $emailScript->save();
-            return redirect()->route("email.scripts.list");
+            return $this->backToOperations($request, "email.scripts.list");
         } catch (\Throwable $th) {
-            return redirect()->route("email.scripts.list")->with('error', $th->getMessage());
+            return $this->backToOperations($request, "email.scripts.list")->with('error', $th->getMessage());
         }
     }
 
@@ -947,14 +881,7 @@ class OperationController extends Controller
 
     public function loanTermView(Request $request)
     {
-        if ($request->id != "") {
-            $loanTerm = LoanTerm::where("id", $request->id)->first();
-        }
-        return view("operations/loan-term/index", [
-            "financeOptions" => FinanceOption::all(),
-            "loanTerms" => LoanTerm::with('finance')->get(),
-            "loanTerm" => ($request->id != "" ? $loanTerm : []),
-        ]);
+        return view("operations.loan-term.index", app(LoanTermsPanel::class)->data($request));
     }
 
     public function loanTermStore(Request $request)
@@ -966,10 +893,10 @@ class OperationController extends Controller
                 "finance_option_id" => $validated["finance_option_id"],
                 "year" => $validated["year"],
             ]);
-            return redirect()->route("loan.term")->with("success", "Data Saved Successfully");
+            return $this->backToOperations($request, "loan.term")->with("success", "Data Saved Successfully");
         } catch (\Throwable $th) {
 
-            return redirect()->route("loan.term")->with("error", $th->getMessage());
+            return $this->backToOperations($request, "loan.term")->with("error", $th->getMessage());
         }
     }
 
@@ -982,9 +909,9 @@ class OperationController extends Controller
             $loanTerm->finance_option_id = $validated["finance_option_id"];
             $loanTerm->year = $validated["year"];
             $loanTerm->save();
-            return redirect()->route("loan.term");
+            return $this->backToOperations($request, "loan.term");
         } catch (\Throwable $th) {
-            return redirect()->route("loan.term")->with('error', $th->getMessage());
+            return $this->backToOperations($request, "loan.term")->with('error', $th->getMessage());
         }
     }
 
@@ -1008,13 +935,7 @@ class OperationController extends Controller
 
     public function utilityCompanyView(Request $request)
     {
-        if ($request->id != "") {
-            $utility = UtilityCompany::where("id", $request->id)->first();
-        }
-        return view("operations/utility-company/index", [
-            "utilityCompanies" => UtilityCompany::all(),
-            "utility" => ($request->id != "" ? $utility : []),
-        ]);
+        return view("operations.utility-company.index", app(UtilityCompanyPanel::class)->data($request));
     }
 
     public function utilityCompanyStore(Request $request)
@@ -1027,9 +948,9 @@ class OperationController extends Controller
             UtilityCompany::create([
                 "name" => $validated["name"],
             ]);
-            return redirect()->route("view.utility.types")->with("success", "Data Saved Successfully");
+            return $this->backToOperations($request, "view.utility.types")->with("success", "Data Saved Successfully");
         } catch (\Throwable $th) {
-            return redirect()->route("view.utility.types")->with("error", $th->getMessage());
+            return $this->backToOperations($request, "view.utility.types")->with("error", $th->getMessage());
         }
     }
 
@@ -1044,9 +965,9 @@ class OperationController extends Controller
             $adder = UtilityCompany::findOrFail($validated["id"]);
             $adder->name = $validated["name"];
             $adder->save();
-            return redirect()->route("view.utility.types");
+            return $this->backToOperations($request, "view.utility.types");
         } catch (\Throwable $th) {
-            return redirect()->route("view.utility.types")->with('error', $th->getMessage());
+            return $this->backToOperations($request, "view.utility.types")->with('error', $th->getMessage());
         }
     }
 
@@ -1066,14 +987,7 @@ class OperationController extends Controller
 
     public function departmentList(Request $request)
     {
-        if ($request->id != "") {
-            $department = Department::where("id", $request->id)->first();
-        }
-
-        return view("operations/departments/index", [
-            "departments" => Department::all(),
-            "department" => ($request->id != "" ? $department : []),
-        ]);
+        return view("operations.departments.index", app(DepartmentsPanel::class)->data($request));
     }
 
     public function departmentStore(Request $request)
@@ -1091,9 +1005,9 @@ class OperationController extends Controller
                 "document_length" => $validated["document_length"],
             ]);
 
-            return redirect()->route("departments.list")->with("success", "Data Saved Successfully");
+            return $this->backToOperations($request, "departments.list")->with("success", "Data Saved Successfully");
         } catch (\Throwable $th) {
-            return redirect()->route("departments.list")->with("error", $th->getMessage());
+            return $this->backToOperations($request, "departments.list")->with("error", $th->getMessage());
         }
     }
 
@@ -1113,9 +1027,9 @@ class OperationController extends Controller
             $department->document_length = $validated["document_length"];
             $department->save();
 
-            return redirect()->route("departments.list")->with("success", "Data Updated Successfully");
+            return $this->backToOperations($request, "departments.list")->with("success", "Data Updated Successfully");
         } catch (\Throwable $th) {
-            return redirect()->route("departments.list")->with("error", $th->getMessage());
+            return $this->backToOperations($request, "departments.list")->with("error", $th->getMessage());
         }
     }
 
@@ -1140,15 +1054,7 @@ class OperationController extends Controller
 
     public function subDepartmentList(Request $request)
     {
-        if ($request->id != "") {
-            $subDepartment = SubDepartment::with("department")->where("id", $request->id)->first();
-        }
-
-        return view("operations/sub-departments/index", [
-            "departments" => Department::all(),
-            "subDepartments" => SubDepartment::with("department")->orderBy("department_id")->orderBy("order")->get(),
-            "subDepartment" => ($request->id != "" ? $subDepartment : []),
-        ]);
+        return view("operations.sub-departments.index", app(SubDepartmentsPanel::class)->data($request));
     }
 
     public function subDepartmentStore(Request $request)
@@ -1170,9 +1076,9 @@ class OperationController extends Controller
                 "show_in_move_list" => (bool) ($validated["show_in_move_list"] ?? false),
             ]);
 
-            return redirect()->route("sub.departments.list")->with("success", "Data Saved Successfully");
+            return $this->backToOperations($request, "sub.departments.list")->with("success", "Data Saved Successfully");
         } catch (\Throwable $th) {
-            return redirect()->route("sub.departments.list")->with("error", $th->getMessage());
+            return $this->backToOperations($request, "sub.departments.list")->with("error", $th->getMessage());
         }
     }
 
@@ -1196,9 +1102,9 @@ class OperationController extends Controller
             $subDepartment->show_in_move_list = (bool) ($validated["show_in_move_list"] ?? false);
             $subDepartment->save();
 
-            return redirect()->route("sub.departments.list")->with("success", "Data Updated Successfully");
+            return $this->backToOperations($request, "sub.departments.list")->with("success", "Data Updated Successfully");
         } catch (\Throwable $th) {
-            return redirect()->route("sub.departments.list")->with("error", $th->getMessage());
+            return $this->backToOperations($request, "sub.departments.list")->with("error", $th->getMessage());
         }
     }
 
@@ -1218,13 +1124,7 @@ class OperationController extends Controller
 
     public function subContractorView(Request $request)
     {
-        if ($request->id != "") {
-            $contractor = SubContractor::where("id", $request->id)->first();
-        }
-        return view("operations/sub-contractor/index", [
-            "contractors" => SubContractor::all(),
-            "contractor" => ($request->id != "" ? $contractor : []),
-        ]);
+        return view("operations.sub-contractor.index", app(SubContractorsPanel::class)->data($request));
     }
 
     public function subContractorStore(Request $request)
@@ -1239,9 +1139,9 @@ class OperationController extends Controller
                 "email" => $validated["email"] ?? null,
                 "phone" => $validated["phone"] ?? null,
             ]);
-            return redirect()->route("sub.contractor")->with("success", "Data Saved Successfully");
+            return $this->backToOperations($request, "sub.contractor")->with("success", "Data Saved Successfully");
         } catch (\Throwable $th) {
-            return redirect()->route("sub.contractor")->with("error", $th->getMessage());
+            return $this->backToOperations($request, "sub.contractor")->with("error", $th->getMessage());
         }
     }
 
@@ -1257,9 +1157,9 @@ class OperationController extends Controller
             $subContractor->phone = $validated["phone"] ?? null;
             $subContractor->image = (!empty($result) ? $result["fileName"] : ($validated["previous_logo"] ?? ""));
             $subContractor->save();
-            return redirect()->route("sub.contractor");
+            return $this->backToOperations($request, "sub.contractor");
         } catch (\Throwable $th) {
-            return redirect()->route("sub.contractor")->with('error', $th->getMessage());
+            return $this->backToOperations($request, "sub.contractor")->with('error', $th->getMessage());
         }
     }
 
