@@ -54,14 +54,14 @@ return [
             'name' => 'Pipeline',
             'sections' => [
                 ['key' => 'departments', 'label' => 'Departments', 'route' => 'departments.list', 'icon' => 'icofont-network-tower', 'panel' => DepartmentsPanel::class],
-                ['key' => 'sub-departments', 'label' => 'Sub Departments', 'route' => 'sub.departments.list', 'icon' => 'icofont-hierarchy-structure', 'panel' => SubDepartmentsPanel::class],
+                ['key' => 'sub-departments', 'label' => 'Sub Departments', 'route' => 'sub.departments.list', 'icon' => 'icofont-chart-flow', 'panel' => SubDepartmentsPanel::class],
                 ['key' => 'assign-department', 'label' => 'Assign Department', 'route' => 'assign-department.index', 'icon' => 'icofont-users-alt-4', 'panel' => AssignDepartmentPanel::class],
             ],
         ],
         [
             'name' => 'Equipment',
             'sections' => [
-                ['key' => 'module-types', 'label' => 'Module Types', 'route' => 'module-types.index', 'icon' => 'icofont-solar-panel', 'panel' => ModuleTypesPanel::class],
+                ['key' => 'module-types', 'label' => 'Module Types', 'route' => 'module-types.index', 'icon' => 'icofont-energy-solar', 'panel' => ModuleTypesPanel::class],
                 ['key' => 'inverter-types', 'label' => 'Inverter Types', 'route' => 'view-inverter-type', 'icon' => 'icofont-power', 'panel' => InverterTypesPanel::class],
                 ['key' => 'inverter-base-cost', 'label' => 'Inverter Base Cost', 'route' => 'view-redline-cost', 'icon' => 'icofont-price', 'panel' => InverterBaseCostPanel::class],
                 ['key' => 'tools', 'label' => 'Tools', 'route' => 'tools.manage', 'icon' => 'icofont-tools', 'panel' => ToolsPanel::class],

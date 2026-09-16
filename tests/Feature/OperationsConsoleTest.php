@@ -77,6 +77,28 @@ class OperationsConsoleTest extends TestCase
         }
     }
 
+    public function test_every_section_names_an_icon_the_font_actually_has(): void
+    {
+        // A misspelt icon class is invisible: nothing errors, the section just
+        // renders with no glyph. Two shipped that way (icofont-solar-panel and
+        // icofont-hierarchy-structure are not in this build).
+        $icofont = file_get_contents(public_path('assets/fonts/icofont/css/icofont.css'));
+
+        foreach (app(OperationsConsoleService::class)->sectionsFor($this->user('User Management')) as $section) {
+            $icon = $section['icon'] ?? null;
+
+            if ($icon === null) {
+                continue;
+            }
+
+            $this->assertStringContainsString(
+                '.'.$icon.':',
+                $icofont,
+                $section['key']." names '".$icon."', which this icofont build does not have."
+            );
+        }
+    }
+
     public function test_it_opens_the_section_the_url_asks_for(): void
     {
         $this->actingAs($this->user('User Management'))
