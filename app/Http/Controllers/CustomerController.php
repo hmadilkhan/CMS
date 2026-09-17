@@ -55,12 +55,10 @@ class CustomerController extends Controller
 
         $financeOption = FinanceOption::find($financeOptionId);
 
-        // Prepaid PPA (id 9) and Wheelhouse Credit Union (id 10) both expose the
-        // Third Party Credit + Customer Portion fields (customer_portion = contract_amount - third_party_credit).
-        return ! empty($financeOption)
-            && (in_array((int) $financeOption->id, [9, 10], true)
-                || strcasecmp(trim($financeOption->name), 'Prepaid PPA') === 0
-                || strcasecmp(trim($financeOption->name), 'Wheelhouse Credit Union') === 0);
+        // Which options expose the Third Party Credit + Customer Portion pair
+        // (customer_portion = contract_amount - third_party_credit) is the model's
+        // to answer - the project's Financial Ledger asks it the same question.
+        return ! empty($financeOption) && $financeOption->usesCustomerPortion();
     }
 
     protected function customerValidationRules(Request $request): array

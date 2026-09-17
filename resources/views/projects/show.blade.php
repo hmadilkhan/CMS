@@ -2960,7 +2960,9 @@
                             <input type="text" class="form-control"
                                 value="$ {{ number_format($totalCommission, 2) }}" id="commission" name="commission">
                         </div>
-                        @if ((int) $customerFinance->finance_option_id === 9)
+                        {{-- Prepaid PPA and Wheelhouse Credit Union both split the contract
+                             this way - the customer form asks FinanceOption the same thing. --}}
+                        @if ($financeOption->usesCustomerPortion())
                             <div class="col-sm-3 ">
                                 <label for="third_party_credit" class="form-label">Third Party Credit</label>
                                 <input type="text" class="form-control"
