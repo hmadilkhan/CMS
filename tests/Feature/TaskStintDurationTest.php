@@ -129,6 +129,68 @@ class TaskStintDurationTest extends TestCase
         ];
     }
 
+    public function test_both_department_logs_totals_are_the_same_number(): void
+    {
+        $project = $this->project();
+
+        // The reported project's two Site Survey stints plus its second Deal
+        // Review one, with the exits the backfill recovered for them.
+        $this->closedTask($project, 2, '2026-08-06 13:12:25', '2026-08-10 09:00:53');
+        $this->closedTask($project, 2, '2026-08-11 15:19:17', '2026-08-19 09:32:54');
+        $dealReview = $this->closedTask($project, 1, '2026-08-10 13:26:18', '2026-08-10 13:26:33');
+
+        $tasks = Task::where('project_id', $project->id)->get();
+
+        $secondsOf = fn (Task $task) => Task::stintSeconds(
+            $task->created_at,
+            Task::exitDate($task->status, $task->completed_at, $task->updated_at)
+        );
+
+        // The left table foots with the sum of every stint, the right table with
+        // the sum of the departments those same stints were grouped into. They
+        // are the same figure and must stay that way.
+        $perStint = (int) $tasks->sum($secondsOf);
+        $perDepartment = (int) $tasks->groupBy('department_id')
+            ->map(fn ($group) => (int) $group->sum($secondsOf))
+            ->sum();
+
+        $this->assertSame($perStint, $perDepartment);
+
+        // And the two Site Survey stints read the same way a single span does.
+        $siteSurvey = (int) $tasks->where('department_id', 2)->sum($secondsOf);
+        $this->assertSame('11 days 14 hours', Task::labelFromSeconds($siteSurvey));
+        $this->assertSame(11.6, Task::daysFromSeconds($siteSurvey));
+
+        // The 15-second Deal Review stint is still in the grand total, it just
+        // does not move it.
+        $this->assertSame(15, $secondsOf($dealReview->refresh()));
+        $this->assertSame($siteSurvey + 15, $perStint);
+    }
+
+    /**
+     * A stint with its exit already recorded, as every closed row has since
+     * `completed_at` landed.
+     */
+    private function closedTask(Project $project, int $departmentId, string $entry, string $exit): Task
+    {
+        $task = $this->task($project, $departmentId, $entry, $exit);
+
+        DB::table('tasks')->where('id', $task->id)->update(['completed_at' => $exit]);
+
+        return $task->refresh();
+    }
+
+    public function test_a_summed_span_is_worded_like_a_single_one(): void
+    {
+        $this->assertSame('< 1 hour', Task::labelFromSeconds(0));
+        $this->assertSame('< 1 hour', Task::labelFromSeconds(59));
+        $this->assertSame('1 hour', Task::labelFromSeconds(3600));
+        $this->assertSame('23 hours', Task::labelFromSeconds(86399));
+        $this->assertSame('1 day', Task::labelFromSeconds(86400));
+        $this->assertSame('3 days 12 hours', Task::labelFromSeconds(302400));
+        $this->assertSame('4 days', Task::labelFromSeconds(345600));
+    }
+
     public function test_an_open_stint_reads_up_to_now(): void
     {
         $this->assertSame('2 days 3 hours', Task::stintLabel(now()->subDays(2)->subHours(3)->subMinute(), null));

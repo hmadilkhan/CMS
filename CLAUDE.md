@@ -421,7 +421,15 @@ for two stints that really lasted 44 seconds and 15 seconds.
   rounding each stint first and adding those up drifts by up to half a day over
   a long history. The page shows the label per row and the decimal per
   department; the assistant returns the decimal, because a grouped answer needs
-  a numeric column for its inline chart.
+  a numeric column for its inline chart. `labelFromSeconds()` words a SUM the
+  same way it words one stint, so a per-department or whole-project total reads
+  like any other span.
+- **Both Department Logs tables foot with the same figure**, and must keep
+  agreeing: the left one sums every stint, the right one sums the departments
+  those same stints were grouped into. `ProjectController::show()` carries the
+  per-department SECONDS to the view (`totalDaysOfDepartments[]['seconds']`)
+  plus `$projectTotalSeconds`, and the view converts - never sum the rounded
+  decimals.
   - The hour part of a label is the remainder AFTER whole days, so it is always
     0-23: "3 days 24 hours" cannot happen, that span is four days. And it is
     computed from seconds, never from the decimal - 3.5 days is three days and

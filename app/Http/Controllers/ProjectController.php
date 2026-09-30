@@ -171,28 +171,34 @@ class ProjectController extends Controller
             $project = Project::findOrFail($projectId);
         }
         $projectLogs = Task::with('employee', 'user', 'department', 'subdepartment')->where('project_id', $project->id)->get();
-        // Sum the SECONDS and convert once: rounding each stint to a tenth of a
-        // day first and adding those up drifts by up to half a day over a long
-        // history.
-        $totalDaysByDepartment = $projectLogs->groupBy('department_id')->map(function ($group) {
-            return Task::daysFromSeconds((int) $group->sum(function ($item) {
+        // Carry the SECONDS all the way to the view and convert once there:
+        // rounding each stint to a tenth of a day first and adding those up
+        // drifts by up to half a day over a long history.
+        $totalSecondsByDepartment = $projectLogs->groupBy('department_id')->map(function ($group) {
+            return (int) $group->sum(function ($item) {
                 return Task::stintSeconds(
                     $item->created_at,
                     Task::exitDate($item->status, $item->completed_at, $item->updated_at)
                 );
-            }));
+            });
         });
         // Get department names
         $departments = DB::table('departments')->pluck('name', 'id');
 
         // Merge department names with total days
-        $results = collect($totalDaysByDepartment)->map(function ($days, $id) use ($departments) {
+        $results = collect($totalSecondsByDepartment)->map(function ($seconds, $id) use ($departments) {
             return [
                 'department_id' => (int) $id,  // Ensure ID is an integer
                 'department' => $departments[$id] ?? 'Unknown',
-                'days' => $days,
+                'seconds' => $seconds,
+                'days' => Task::daysFromSeconds($seconds),
             ];
         })->sortBy('department_id')->values();
+
+        // Every stint the project has had. Both Department Logs tables foot with
+        // this, and they must agree: one sums the stints, the other sums the
+        // departments those same stints were grouped into.
+        $projectTotalSeconds = (int) $totalSecondsByDepartment->sum();
 
         $project = Project::with('task', 'customer', 'customer.finances', 'customer.finances.finance', 'department', 'logs', 'logs.call', 'logs.user', 'subdepartment', 'assignedPerson', 'assignedPerson.employee', 'departmentnotes', 'departmentnotes.user', 'salesPartnerUser', 'projectAcceptance', 'emails', 'emails.attachments', 'emails.user')
             ->withCount(['emails as viewed_emails_count' => function ($query) {
@@ -254,6 +260,7 @@ class ProjectController extends Controller
             'emailTypes' => EmailType::all(),
             'projectLogs' => $projectLogs,
             'totalDaysOfDepartments' => $results,
+            'projectTotalSeconds' => $projectTotalSeconds,
             'interactions' => Activity::where('log_name', 'project')->where('subject_id', $project->id)->orderBy('id', 'desc')->get(),
             'ghost' => $request->ghost,
             'message' => $message,

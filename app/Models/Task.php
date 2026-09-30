@@ -97,7 +97,16 @@ class Task extends Model
      */
     public static function stintLabel($entryDate, ?Carbon $exitDate): string
     {
-        $seconds = self::stintSeconds($entryDate, $exitDate);
+        return self::labelFromSeconds(self::stintSeconds($entryDate, $exitDate));
+    }
+
+    /**
+     * Seconds as that same text. A per-department or whole-project total reads
+     * back through here, so a summed span is worded exactly like a single one.
+     */
+    public static function labelFromSeconds(int $seconds): string
+    {
+        $seconds = max(0, $seconds);
 
         $days = intdiv($seconds, 86400);
         $hours = intdiv($seconds % 86400, 3600);

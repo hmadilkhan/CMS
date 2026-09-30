@@ -3570,6 +3570,11 @@
                                                                             </td>
                                                                         </tr>
                                                                     @endforeach
+                                                                    <tr class="fw-bold border-top">
+                                                                        <td colspan="4">Total</td>
+                                                                        <td>{{ \App\Models\Task::labelFromSeconds($projectTotalSeconds) }}
+                                                                        </td>
+                                                                    </tr>
                                                                 </tbody>
                                                             </table>
                                                         </div>
@@ -3583,17 +3588,22 @@
                                                             <table class="table">
                                                                 <thead class="bg-light">
                                                                     <th>Department Name</th>
-                                                                    <th>Total Days</th>
+                                                                    <th>Total Duration</th>
                                                                 </thead>
                                                                 <tbody>
                                                                     @foreach ($totalDaysOfDepartments as $departmentDays)
                                                                         <tr>
                                                                             <td>{{ $departmentDays['department'] ?? 'N/A' }}
                                                                             </td>
-                                                                            <td>{{ isset($departmentDays['days']) ? number_format($departmentDays['days'], 1) : 'N/A' }}
+                                                                            <td>{{ isset($departmentDays['seconds']) ? \App\Models\Task::labelFromSeconds($departmentDays['seconds']) : 'N/A' }}
                                                                             </td>
                                                                         </tr>
                                                                     @endforeach
+                                                                    <tr class="fw-bold border-top">
+                                                                        <td>Total</td>
+                                                                        <td>{{ \App\Models\Task::labelFromSeconds($projectTotalSeconds) }}
+                                                                        </td>
+                                                                    </tr>
                                                                 </tbody>
                                                             </table>
                                                         </div>
