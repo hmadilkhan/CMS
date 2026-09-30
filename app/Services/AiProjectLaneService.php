@@ -72,7 +72,8 @@ class AiProjectLaneService
             foreach ($list as $task) {
                 $exitDate  = Task::exitDate($task->status, $task->completed_at, $task->exit_date);
                 $entryDate = Carbon::parse($task->entry_date);
-                $days      = Task::stintDays($entryDate, $exitDate);
+                $seconds   = Task::stintSeconds($entryDate, $exitDate);
+                $days      = Task::daysFromSeconds($seconds);
 
                 $rows[] = [
                     'Project'     => $task->project_name,
@@ -85,21 +86,22 @@ class AiProjectLaneService
                     'Days'        => $days,
                 ];
 
-                // Accumulate totals per department for this project
+                // Accumulate totals per department for this project. Sum the
+                // SECONDS and convert once, so rounding never accumulates.
                 $dept = $task->department;
-                $totals[$task->project_id][$dept] = ($totals[$task->project_id][$dept] ?? 0) + $days;
+                $totals[$task->project_id][$dept] = ($totals[$task->project_id][$dept] ?? 0) + $seconds;
             }
         }
 
         // Flatten totals into readable rows appended after the detail rows
         $totalRows = [];
-        foreach ($totals as $projectId => $deptDays) {
+        foreach ($totals as $projectId => $deptSeconds) {
             $projectName = $tasks->firstWhere('project_id', $projectId)->project_name ?? '-';
-            foreach ($deptDays as $dept => $days) {
+            foreach ($deptSeconds as $dept => $seconds) {
                 $totalRows[] = [
                     'Project'    => $projectName,
                     'Department' => $dept,
-                    'Total Days' => $days,
+                    'Total Days' => Task::daysFromSeconds($seconds),
                 ];
             }
         }
@@ -160,21 +162,20 @@ class AiProjectLaneService
             $pid      = $task->project_id;
             $dept     = $task->department;
             $exitDate = Task::exitDate($task->status, $task->completed_at, $task->exit_date);
-            $days     = Task::stintDays($task->entry_date, $exitDate);
 
-            $totals[$pid][$dept]  = ($totals[$pid][$dept] ?? 0) + $days;
+            $totals[$pid][$dept]  = ($totals[$pid][$dept] ?? 0) + Task::stintSeconds($task->entry_date, $exitDate);
             $projectNames[$pid]   = $task->project_name;
             $projectCodes[$pid]   = $task->code;
         }
 
         $rows = [];
-        foreach ($totals as $pid => $deptDays) {
-            foreach ($deptDays as $dept => $days) {
+        foreach ($totals as $pid => $deptSeconds) {
+            foreach ($deptSeconds as $dept => $seconds) {
                 $rows[] = [
                     'Project'     => $projectNames[$pid],
                     'Code'        => $projectCodes[$pid] ?: '-',
                     'Department'  => $dept,
-                    'Total Days'  => $days,
+                    'Total Days'  => Task::daysFromSeconds($seconds),
                 ];
             }
         }
@@ -215,16 +216,16 @@ class AiProjectLaneService
 
         foreach ($tasks as $task) {
             $exitDate = Task::exitDate($task->status, $task->completed_at, $task->exit_date);
-            $days     = Task::stintDays($task->entry_date, $exitDate);
+            $seconds  = Task::stintSeconds($task->entry_date, $exitDate);
             $dept     = $task->department;
 
             if (! isset($stats[$dept])) {
                 $stats[$dept] = ['total' => 0, 'count' => 0, 'min' => PHP_INT_MAX, 'max' => 0];
             }
-            $stats[$dept]['total'] += $days;
+            $stats[$dept]['total'] += $seconds;
             $stats[$dept]['count']++;
-            $stats[$dept]['min'] = min($stats[$dept]['min'], $days);
-            $stats[$dept]['max'] = max($stats[$dept]['max'], $days);
+            $stats[$dept]['min'] = min($stats[$dept]['min'], $seconds);
+            $stats[$dept]['max'] = max($stats[$dept]['max'], $seconds);
         }
 
         $rows = [];
@@ -232,9 +233,9 @@ class AiProjectLaneService
             $rows[] = [
                 'Department Lane'         => $dept,
                 'Projects Passed Through' => $s['count'],
-                'Avg Days'                => round($s['total'] / $s['count'], 1),
-                'Min Days'                => $s['min'] === PHP_INT_MAX ? 1 : $s['min'],
-                'Max Days'                => $s['max'],
+                'Avg Days'                => Task::daysFromSeconds((int) ($s['total'] / $s['count'])),
+                'Min Days'                => Task::daysFromSeconds($s['min'] === PHP_INT_MAX ? 0 : (int) $s['min']),
+                'Max Days'                => Task::daysFromSeconds((int) $s['max']),
             ];
         }
 
@@ -308,14 +309,15 @@ class AiProjectLaneService
             $last  = $list->last(); // latest task = current lane (ordered by t.id)
 
             $departments = [];
-            $deptDays    = [];
+            $deptSeconds = [];
 
             foreach ($list as $task) {
                 $entryDate = Carbon::parse($task->entry_date);
                 $exitDate  = Task::exitDate($task->status, $task->completed_at, $task->exit_date);
-                $days      = Task::stintDays($entryDate, $exitDate);
+                $seconds   = Task::stintSeconds($entryDate, $exitDate);
+                $days      = Task::daysFromSeconds($seconds);
 
-                $deptDays[$task->department] = ($deptDays[$task->department] ?? 0) + $days;
+                $deptSeconds[$task->department] = ($deptSeconds[$task->department] ?? 0) + $seconds;
 
                 $departments[] = [
                     'Department' => $task->department,
@@ -328,10 +330,10 @@ class AiProjectLaneService
                 ];
             }
 
-            $totalDays = array_sum($deptDays);
-            arsort($deptDays);
-            $bottleneckDept = (string) array_key_first($deptDays);
-            $bottleneckDays = (int) ($deptDays[$bottleneckDept] ?? 0);
+            $totalDays = Task::daysFromSeconds((int) array_sum($deptSeconds));
+            arsort($deptSeconds);
+            $bottleneckDept = (string) array_key_first($deptSeconds);
+            $bottleneckDays = Task::daysFromSeconds((int) ($deptSeconds[$bottleneckDept] ?? 0));
 
             $createdAt = $first->project_created_at
                 ? Carbon::parse($first->project_created_at)

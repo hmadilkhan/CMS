@@ -3566,8 +3566,8 @@
                                                                             <td>{{ $exitDate ? $exitDate->format('d M Y H:i:s') : 'N/A' }}
                                                                             </td>
                                                                             <td>{{ $log->user->name ?? 'N/A' }}</td>
-                                                                            <td>{{ \App\Models\Task::stintDays($log->created_at, $exitDate) }}
-                                                                                Days</td>
+                                                                            <td>{{ \App\Models\Task::stintLabel($log->created_at, $exitDate) }}
+                                                                            </td>
                                                                         </tr>
                                                                     @endforeach
                                                                 </tbody>
@@ -3590,7 +3590,7 @@
                                                                         <tr>
                                                                             <td>{{ $departmentDays['department'] ?? 'N/A' }}
                                                                             </td>
-                                                                            <td>{{ $departmentDays['days'] ?? 'N/A' }}
+                                                                            <td>{{ isset($departmentDays['days']) ? number_format($departmentDays['days'], 1) : 'N/A' }}
                                                                             </td>
                                                                         </tr>
                                                                     @endforeach

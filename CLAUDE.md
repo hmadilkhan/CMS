@@ -411,12 +411,29 @@ task of a project, so a single customer edit re-stamped a whole Deal Review
 history to the edit time. One reported project showed **36 days in Deal Review**
 for two stints that really lasted 44 seconds and 15 seconds.
 
-- Read it through `Task::exitDate($status, $completedAt, $updatedAt)` and
-  `Task::stintDays($entry, $exit)` — never re-derive it. `exitDate()` returns
-  null while the stint is open, and falls back to `updated_at` only for rows the
-  backfill could not reconstruct. Both `ProjectController::show()`, the
-  Department Logs blade and all four `AiProjectLaneService` queries go through
-  them, so the assistant and the page always agree.
+- Read it through `Task::exitDate($status, $completedAt, $updatedAt)` — never
+  re-derive it. It returns null while the stint is open, and falls back to
+  `updated_at` only for rows the backfill could not reconstruct.
+- **Measure in SECONDS, convert once.** `Task::stintSeconds()` is the primitive;
+  `Task::daysFromSeconds()` turns a total into days to one decimal, and
+  `Task::stintLabel()` into text ("< 1 hour", "6 hours", "3 days 19 hours",
+  "4 days"). A per-department total sums the seconds and converts at the end -
+  rounding each stint first and adding those up drifts by up to half a day over
+  a long history. The page shows the label per row and the decimal per
+  department; the assistant returns the decimal, because a grouped answer needs
+  a numeric column for its inline chart.
+  - The hour part of a label is the remainder AFTER whole days, so it is always
+    0-23: "3 days 24 hours" cannot happen, that span is four days. And it is
+    computed from seconds, never from the decimal - 3.5 days is three days and
+    TWELVE hours, not five. Both parts truncate, which is how a duration reads
+    and also removes the 23h59m case that rounding would have to carry.
+  - This replaced `max(1, diffInDays(...))`, which was wrong twice over: a
+    44-second stint read as a whole day, and `diffInDays` truncates, so three
+    days and 23 hours read as three. The two errors pull opposite ways, so
+    neither is visible in the total.
+- `ProjectController::show()`, the Department Logs blade and all four
+  `AiProjectLaneService` queries go through these, so the assistant and the page
+  always agree.
 - Every place that closes a task must stamp `'completed_at' => now()` next to
   `'status' => 'Completed'` (six sites in `ProjectController`).
 - **`projectStatus()` writes ONE task — the one the project is sitting in.** It

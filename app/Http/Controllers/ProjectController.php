@@ -171,13 +171,16 @@ class ProjectController extends Controller
             $project = Project::findOrFail($projectId);
         }
         $projectLogs = Task::with('employee', 'user', 'department', 'subdepartment')->where('project_id', $project->id)->get();
+        // Sum the SECONDS and convert once: rounding each stint to a tenth of a
+        // day first and adding those up drifts by up to half a day over a long
+        // history.
         $totalDaysByDepartment = $projectLogs->groupBy('department_id')->map(function ($group) {
-            return $group->sum(function ($item) {
-                return Task::stintDays(
+            return Task::daysFromSeconds((int) $group->sum(function ($item) {
+                return Task::stintSeconds(
                     $item->created_at,
                     Task::exitDate($item->status, $item->completed_at, $item->updated_at)
                 );
-            });
+            }));
         });
         // Get department names
         $departments = DB::table('departments')->pluck('name', 'id');

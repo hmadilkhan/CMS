@@ -9,6 +9,7 @@ use App\Models\Project;
 use App\Models\Task;
 use App\Models\User;
 use App\Models\UserType;
+use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Livewire\Livewire;
@@ -76,7 +77,7 @@ class TaskStintDurationTest extends TestCase
         $exit = Task::exitDate('Completed', '2026-08-06 13:12:25', '2026-08-27 08:09:18');
 
         $this->assertSame('2026-08-06 13:12:25', $exit->toDateTimeString());
-        $this->assertSame(1, Task::stintDays('2026-08-06 13:11:41', $exit));
+        $this->assertSame(0.0, Task::stintDays('2026-08-06 13:11:41', $exit));
     }
 
     public function test_exit_date_falls_back_to_updated_at_only_when_completed_at_is_missing(): void
@@ -90,9 +91,53 @@ class TaskStintDurationTest extends TestCase
     {
         $this->assertNull(Task::exitDate('In-Progress', null, '2026-08-27 08:09:18'));
         $this->assertSame(
-            5,
+            5.0,
             Task::stintDays(now()->subDays(5)->toDateTimeString(), Task::exitDate('In-Progress', null, null))
         );
+    }
+
+    /**
+     * @dataProvider stintLabels
+     */
+    public function test_a_stint_reads_as_days_and_the_hours_left_over(string $entry, string $exit, string $expected): void
+    {
+        $this->assertSame($expected, Task::stintLabel($entry, Carbon::parse($exit)));
+    }
+
+    public static function stintLabels(): array
+    {
+        return [
+            // The hour part is what is LEFT OVER after whole days, so it never
+            // reaches 24: that span is simply one more day.
+            '23h59m short of four days' => ['2026-08-06 00:00:00', '2026-08-09 23:59:59', '3 days 23 hours'],
+            'exactly four days' => ['2026-08-06 00:00:00', '2026-08-10 00:00:00', '4 days'],
+            'a minute past four days' => ['2026-08-06 00:00:00', '2026-08-10 00:01:00', '4 days'],
+
+            // Half a day is TWELVE hours. Reading the ".5" of 3.5 days as an
+            // hour count would print "3 days 5 hours" for this.
+            'three and a half days' => ['2026-08-06 00:00:00', '2026-08-09 12:00:00', '3 days 12 hours'],
+            'three and a quarter days' => ['2026-08-06 00:00:00', '2026-08-09 06:00:00', '3 days 6 hours'],
+
+            'under an hour' => ['2026-08-06 13:11:41', '2026-08-06 13:12:25', '< 1 hour'],
+            'instant' => ['2026-08-06 13:11:41', '2026-08-06 13:11:41', '< 1 hour'],
+            'one hour' => ['2026-08-06 09:00:00', '2026-08-06 10:00:53', '1 hour'],
+            'some hours' => ['2026-08-06 09:00:00', '2026-08-06 15:20:00', '6 hours'],
+            'nearly a day' => ['2026-08-06 09:00:00', '2026-08-07 08:59:00', '23 hours'],
+            'one day' => ['2026-08-06 09:00:00', '2026-08-07 09:00:00', '1 day'],
+            'one day one hour' => ['2026-08-06 09:00:00', '2026-08-07 10:30:00', '1 day 1 hour'],
+            'the reported site survey stint' => ['2026-08-06 13:12:25', '2026-08-10 09:00:53', '3 days 19 hours'],
+        ];
+    }
+
+    public function test_an_open_stint_reads_up_to_now(): void
+    {
+        $this->assertSame('2 days 3 hours', Task::stintLabel(now()->subDays(2)->subHours(3)->subMinute(), null));
+    }
+
+    public function test_a_backwards_stint_reads_as_instant_rather_than_negative(): void
+    {
+        $this->assertSame('< 1 hour', Task::stintLabel('2026-08-10 10:00:00', Carbon::parse('2026-08-01 09:00:00')));
+        $this->assertSame(0.0, Task::stintDays('2026-08-10 10:00:00', Carbon::parse('2026-08-01 09:00:00')));
     }
 
     public function test_backfill_reconstructs_the_exit_date_from_the_next_stint(): void
@@ -127,13 +172,13 @@ class TaskStintDurationTest extends TestCase
         $this->task($project, 2, '2026-08-10 13:26:33', '2026-08-11 08:59:33', 'Completed');
 
         $inflated = $this->dealReviewDays($project);
-        $this->assertSame(36, $inflated, 'the pre-fix reading of the reported project');
+        $this->assertSame(37.6, $inflated, 'the pre-fix reading of the reported project');
 
         $this->runBackfill();
 
-        // Both Deal Review stints really lasted well under a minute, and the
-        // 1-day floor is all that is left of them.
-        $this->assertSame(2, $this->dealReviewDays($project));
+        // Both Deal Review stints really lasted well under a minute - 44 and 15
+        // seconds - so the department rounds to nothing at all.
+        $this->assertSame(0.0, $this->dealReviewDays($project));
     }
 
     public function test_backfill_never_overwrites_a_stamped_exit_date(): void
@@ -162,7 +207,7 @@ class TaskStintDurationTest extends TestCase
         $this->runBackfill();
 
         $this->assertSame('2026-08-10 10:00:00', $first->refresh()->completed_at->toDateTimeString());
-        $this->assertSame(1, Task::stintDays($first->created_at, $first->completed_at));
+        $this->assertSame(0.0, Task::stintDays($first->created_at, $first->completed_at));
     }
 
     public function test_cancelling_a_project_closes_only_the_open_stint(): void
@@ -287,14 +332,14 @@ class TaskStintDurationTest extends TestCase
         return $index === false ? null : (float) $chart['data'][$index];
     }
 
-    private function dealReviewDays(Project $project): int
+    private function dealReviewDays(Project $project): float
     {
-        return Task::where('project_id', $project->id)
+        return Task::daysFromSeconds((int) Task::where('project_id', $project->id)
             ->where('department_id', 1)
             ->get()
-            ->sum(fn (Task $task) => Task::stintDays(
+            ->sum(fn (Task $task) => Task::stintSeconds(
                 $task->created_at,
                 Task::exitDate($task->status, $task->completed_at, $task->updated_at)
-            ));
+            )));
     }
 }
