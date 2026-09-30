@@ -2280,12 +2280,6 @@
                                 : Carbon\Carbon::parse($project->pto_approval_date)->diffInDays(
                                     Carbon\Carbon::parse($project->customer->sold_date),
                                 );
-                            $projectAgeLabel = empty($project->pto_approval_date)
-                                ? 'Days since sold'
-                                : 'Days sold to PTO';
-                            $projectAgeHint = empty($project->pto_approval_date)
-                                ? 'Calendar days from the sold date to today. This is the project\'s age, not the sum of the time it spent in each department - see Department Logs for that.'
-                                : 'Calendar days from the sold date to PTO approval. This is the project\'s age, not the sum of the time it spent in each department - see Department Logs for that.';
                             $customerAddressParts = array_filter([
                                 $project->customer->street,
                                 $project->customer->city,
@@ -2366,8 +2360,7 @@
                                 </div>
                             </div>
                             <div class="project-stage-meta">
-                                <span class="project-days-badge"
-                                    title="{{ $projectAgeHint }}">{{ $projectAgeDays }} {{ $projectAgeLabel }}</span>
+                                <span class="project-days-badge">{{ $projectAgeDays }} Days in progress</span>
                                 @if (auth()->user()->hasAnyRole(['Super Admin', 'Admin', 'Manager']))
                                     <div class="dropdown project-assignee-control">
                                         <button class="project-assignee-toggle dropdown-toggle" type="button"

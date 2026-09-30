@@ -439,14 +439,15 @@ for two stints that really lasted 44 seconds and 15 seconds.
   and its "skip instant steps (< 60s)" filter also read `updated_at`, so a stint
   that really lasted 44 seconds passed the filter and was averaged in as 20 days.
   Both now use `COALESCE(tasks.completed_at, tasks.updated_at)`.
-- **The badge and the table are not comparable.** The badge is
-  `sold_date → now()`, or `sold_date → pto_approval_date` once PTO lands: a
-  single calendar span. The table SUMs per-department stints, which can overlap
-  (a project can hold two open stints at once) and floors each stint at 1 day,
-  so the sum is normally *larger* than the badge. That is by design, not a bug —
-  which is why the badge reads **"Days since sold"** / **"Days sold to PTO"**
-  rather than the old "Days in progress", and carries a `title` saying it is the
-  project's age and not the sum of its department time. Do not rename it back.
+- **The badge and the table are not comparable.** `{{ $projectAgeDays }} Days in
+  progress` is `sold_date → now()` (or → `pto_approval_date`), a single calendar
+  span. The table SUMs per-department stints, which can overlap (a project can
+  hold two open stints at once) and floors each stint at 1 day, so the sum is
+  normally *larger* than the badge. That is by design, not a bug. This pairing is
+  what the reported discrepancy turned out to be (93 under a badge reading 54),
+  so it will be asked about again — answer it, do not "fix" it by rewording the
+  badge: **its wording is a customer requirement.** Renaming it to say what it
+  measures was tried and reverted.
 
 Covered by `tests/Feature/TaskStintDurationTest.php`.
 
