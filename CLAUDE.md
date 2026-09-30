@@ -418,9 +418,16 @@ for two stints that really lasted 44 seconds and 15 seconds.
   Department Logs blade and all four `AiProjectLaneService` queries go through
   them, so the assistant and the page always agree.
 - Every place that closes a task must stamp `'completed_at' => now()` next to
-  `'status' => 'Completed'` (six sites in `ProjectController`). `projectStatus()`
-  mass-updates history, so it stamps `COALESCE(completed_at, NOW())` on Cancel —
-  never a bare `now()`, which would rewrite every past stint.
+  `'status' => 'Completed'` (six sites in `ProjectController`).
+- **`projectStatus()` writes ONE task — the one the project is sitting in.** It
+  used to write every task row the project ever had, which flipped the status of
+  lanes it left months ago (leaving them with no exit at all in the tab) and
+  overwrote each of their `notes` with the one reason given, destroying the note
+  recorded at every past move. Status is read as the LATEST task's anyway
+  (`ProjectService::projectQuery`, the ghost lane, the assistant's status
+  counts), so the older rows were never the ones answering. Cancel still stamps
+  `COALESCE(completed_at, NOW())`, which guards the fallback used when no active
+  task is left.
 - Backfill: `2026_09_30_000002_backfill_tasks_completed_at`. Closing a row and
   creating its successor happen in one transaction, so the successor's
   `created_at` IS the closed row's exit. It only fills rows where `completed_at`
@@ -432,11 +439,14 @@ for two stints that really lasted 44 seconds and 15 seconds.
   and its "skip instant steps (< 60s)" filter also read `updated_at`, so a stint
   that really lasted 44 seconds passed the filter and was averaged in as 20 days.
   Both now use `COALESCE(tasks.completed_at, tasks.updated_at)`.
-- **The badge and the table are not comparable.** `{{ $projectAgeDays }} Days in
-  progress` is `sold_date → now()` (or → `pto_approval_date`), a single calendar
-  span. The table SUMs per-department stints, which can overlap (a project can
-  hold two open stints at once) and floors each stint at 1 day, so the sum is
-  normally *larger* than the badge. That is by design, not a bug.
+- **The badge and the table are not comparable.** The badge is
+  `sold_date → now()`, or `sold_date → pto_approval_date` once PTO lands: a
+  single calendar span. The table SUMs per-department stints, which can overlap
+  (a project can hold two open stints at once) and floors each stint at 1 day,
+  so the sum is normally *larger* than the badge. That is by design, not a bug —
+  which is why the badge reads **"Days since sold"** / **"Days sold to PTO"**
+  rather than the old "Days in progress", and carries a `title` saying it is the
+  project's age and not the sum of its department time. Do not rename it back.
 
 Covered by `tests/Feature/TaskStintDurationTest.php`.
 

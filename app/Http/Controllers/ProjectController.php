@@ -1270,18 +1270,36 @@ class ProjectController extends Controller
         ]);
         DB::beginTransaction();
         try {
-            // This writes every task row the project ever had, history
-            // included. Cancelling ends the stint, so close whatever is still
-            // open - but COALESCE keeps the exit already recorded on the rows
-            // the project left long ago, instead of dragging the whole history
-            // forward to now.
+            // Only the stint the project is sitting in right now. This used to
+            // write EVERY task row the project ever had, which rewrote the
+            // status of lanes it left months ago and - worse - overwrote each
+            // of their `notes` with this reason, destroying the note recorded
+            // at every past move. Status is read as the LATEST task's anyway
+            // (ProjectService::projectQuery, the ghost lane, the assistant's
+            // status counts), so the older rows were never the ones answering.
+            $activeStatuses = ['In-Progress', 'Hold', 'Cancelled'];
+            $currentTask = Task::where('project_id', $request->project_id)
+                ->whereIn('status', $activeStatuses)
+                ->latest('id')
+                ->first()
+                ?? Task::where('project_id', $request->project_id)->latest('id')->first();
+
+            if (! $currentTask) {
+                DB::rollBack();
+
+                return response()->json(['status' => 422, 'message' => 'This project has no task to set a status on.'], 422);
+            }
+
             $statusUpdate = ['status' => $request->status, 'notes' => $request->reason];
 
+            // Cancelling ends the stint. COALESCE still guards the fallback
+            // above: if the only row left is one the project already left, its
+            // recorded exit is kept rather than dragged forward to now.
             if ($request->status === 'Cancelled') {
                 $statusUpdate['completed_at'] = DB::raw('COALESCE(completed_at, '.DB::getPdo()->quote(now()->toDateTimeString()).')');
             }
 
-            Task::where('project_id', $request->project_id)->update($statusUpdate);
+            Task::where('id', $currentTask->id)->update($statusUpdate);
             if ($request->status == 'Cancelled') {
                 $project = Project::findOrFail($request->project_id);
                 $username = auth()->user()->name;

@@ -174,21 +174,73 @@ class TaskStintDurationTest extends TestCase
 
         $open = $this->task($project, 2, '2026-08-06 13:12:25', '2026-08-06 13:12:25', 'In-Progress');
 
-        UserType::firstOrCreate(['name' => 'Admin']);
-        $admin = User::factory()->create(['user_type_id' => 1]);
-        $admin->assignRole(Role::firstOrCreate(['name' => 'Super Admin']));
-
-        $this->actingAs($admin)->post(route('projects.status'), [
+        $this->actingAs($this->superAdmin())->post(route('projects.status'), [
             'project_id' => $project->id,
             'status' => 'Cancelled',
             'reason' => 'Customer backed out.',
         ])->assertOk();
 
-        // The mass update touches history too, so the stint the project left in
-        // August must keep its own exit rather than being dragged to now.
+        // The stint the project left in August keeps its own exit rather than
+        // being dragged to now.
         $this->assertSame('2026-08-06 13:12:25', $closed->refresh()->completed_at->toDateTimeString());
         $this->assertNotNull($open->refresh()->completed_at);
         $this->assertTrue($open->completed_at->isToday());
+    }
+
+    public function test_a_status_change_leaves_the_notes_of_past_stints_alone(): void
+    {
+        $project = $this->project();
+
+        // Each move records its own note on the task it closes. A later status
+        // change used to write every row of the project, overwriting all of
+        // them with its one reason and losing the history for good.
+        $first = $this->task($project, 1, '2026-08-06 13:11:41', '2026-08-06 13:12:25');
+        $first->update(['notes' => 'Deal approved, sending to site survey.']);
+
+        $second = $this->task($project, 2, '2026-08-06 13:12:25', '2026-08-10 09:00:53');
+        $second->update(['notes' => 'Survey booked for the 10th.']);
+
+        $open = $this->task($project, 1, '2026-08-10 09:00:53', '2026-08-10 09:00:53', 'In-Progress');
+
+        $this->actingAs($this->superAdmin())->post(route('projects.status'), [
+            'project_id' => $project->id,
+            'status' => 'Hold',
+            'reason' => 'Waiting on the utility.',
+        ])->assertOk();
+
+        $this->assertSame('Deal approved, sending to site survey.', $first->refresh()->notes);
+        $this->assertSame('Survey booked for the 10th.', $second->refresh()->notes);
+        $this->assertSame('Waiting on the utility.', $open->refresh()->notes);
+    }
+
+    public function test_a_status_change_leaves_the_status_of_past_stints_alone(): void
+    {
+        $project = $this->project();
+
+        $completed = $this->task($project, 1, '2026-08-06 13:11:41', '2026-08-06 13:12:25');
+        $open = $this->task($project, 2, '2026-08-06 13:12:25', '2026-08-06 13:12:25', 'In-Progress');
+
+        $this->actingAs($this->superAdmin())->post(route('projects.status'), [
+            'project_id' => $project->id,
+            'status' => 'Hold',
+            'reason' => 'Waiting on the utility.',
+        ])->assertOk();
+
+        // A lane the project left months ago is not on hold - only the one it
+        // is sitting in is. Putting a project on hold used to flip every
+        // historical row to Hold, which also left them with no exit at all in
+        // the Department Logs tab.
+        $this->assertSame('Completed', $completed->refresh()->status);
+        $this->assertSame('Hold', $open->refresh()->status);
+    }
+
+    private function superAdmin(): User
+    {
+        UserType::firstOrCreate(['name' => 'Admin']);
+        $admin = User::factory()->create(['user_type_id' => 1]);
+        $admin->assignRole(Role::firstOrCreate(['name' => 'Super Admin']));
+
+        return $admin;
     }
 
     public function test_the_department_time_chart_measures_a_stint_to_its_exit_not_its_last_write(): void
