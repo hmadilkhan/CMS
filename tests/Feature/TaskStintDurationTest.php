@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Livewire\DepartmentTimeChart;
 use App\Models\Customer;
 use App\Models\Department;
 use App\Models\Project;
@@ -10,6 +11,7 @@ use App\Models\User;
 use App\Models\UserType;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
+use Livewire\Livewire;
 use Spatie\Permission\Models\Role;
 use Tests\TestCase;
 
@@ -187,6 +189,50 @@ class TaskStintDurationTest extends TestCase
         $this->assertSame('2026-08-06 13:12:25', $closed->refresh()->completed_at->toDateTimeString());
         $this->assertNotNull($open->refresh()->completed_at);
         $this->assertTrue($open->completed_at->isToday());
+    }
+
+    public function test_the_department_time_chart_measures_a_stint_to_its_exit_not_its_last_write(): void
+    {
+        $project = $this->project();
+
+        // One real Deal Review stint of three days, whose row was later
+        // re-stamped by an unrelated write three weeks on.
+        $stint = $this->task($project, 1, '2026-08-06 09:00:00', '2026-08-27 08:09:18');
+        DB::table('tasks')->where('id', $stint->id)->update(['completed_at' => '2026-08-09 09:00:00']);
+
+        $average = $this->chartAverageFor('Deal Review');
+
+        $this->assertNotNull($average, 'the stint should appear in the chart');
+        $this->assertSame(3.0, $average);
+    }
+
+    public function test_the_department_time_chart_still_discards_an_instant_stint(): void
+    {
+        $project = $this->project();
+
+        // The stint that produced the reported bug: it lasted 44 seconds, but
+        // its `updated_at` was dragged three weeks forward. Reading `updated_at`
+        // let it through the "instant step" filter and counted it as 20 days.
+        $stint = $this->task($project, 1, '2026-08-06 13:11:41', '2026-08-27 08:09:18');
+        DB::table('tasks')->where('id', $stint->id)->update(['completed_at' => '2026-08-06 13:12:25']);
+
+        $this->assertNull($this->chartAverageFor('Deal Review'));
+    }
+
+    /**
+     * The average stage length the dashboard chart reports for a department,
+     * or null when the department is not in the chart at all.
+     */
+    private function chartAverageFor(string $department): ?float
+    {
+        $chart = Livewire::test(DepartmentTimeChart::class, [
+            'startDate' => '2026-08-01',
+            'endDate' => '2026-08-31',
+        ])->get('departmentChartData');
+
+        $index = array_search($department, $chart['labels'], true);
+
+        return $index === false ? null : (float) $chart['data'][$index];
     }
 
     private function dealReviewDays(Project $project): int

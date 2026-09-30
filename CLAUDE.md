@@ -427,6 +427,11 @@ for two stints that really lasted 44 seconds and 15 seconds.
   is null, and the **last row of each project's chain has no successor** — that
   one keeps the old `updated_at` approximation and is the only row the backfill
   cannot repair.
+- The **`DepartmentTimeChart`** dashboard widget measures the same stints in SQL
+  and had the same defect twice over: it averaged up to `MAX(tasks.updated_at)`,
+  and its "skip instant steps (< 60s)" filter also read `updated_at`, so a stint
+  that really lasted 44 seconds passed the filter and was averaged in as 20 days.
+  Both now use `COALESCE(tasks.completed_at, tasks.updated_at)`.
 - **The badge and the table are not comparable.** `{{ $projectAgeDays }} Days in
   progress` is `sold_date → now()` (or → `pto_approval_date`), a single calendar
   span. The table SUMs per-department stints, which can overlap (a project can

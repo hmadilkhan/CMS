@@ -32,6 +32,14 @@ class DepartmentTimeChart extends Component
     {
         $isSqlite = DB::connection()->getDriverName() === 'sqlite';
 
+        // A task row's exit is `completed_at`, falling back to `updated_at` only
+        // for rows written before that column existed that the backfill could not
+        // reconstruct. `updated_at` on its own is the row's LAST write, so a later
+        // mass update - a customer edit re-stamping every Deal Review task -
+        // stretches a stint that lasted seconds into weeks. See the Department
+        // Logs section of CLAUDE.md.
+        $exitDate = 'COALESCE(tasks.completed_at, tasks.updated_at)';
+
         // Time a PROJECT spent in a department, in fractional days: from the moment
         // its first task in that department was created until its last one was
         // completed. A project passes through several sub-department steps and each
@@ -40,20 +48,20 @@ class DepartmentTimeChart extends Component
         // TIMESTAMPDIFF(DAY, ...) truncates (a 23-hour stage counts as 0 days), so
         // measure in hours and divide by 24 to keep the fraction.
         $spanExpression = $isSqlite
-            ? 'julianday(MAX(tasks.updated_at)) - julianday(MIN(tasks.created_at))'
-            : 'TIMESTAMPDIFF(HOUR, MIN(tasks.created_at), MAX(tasks.updated_at)) / 24';
+            ? "julianday(MAX({$exitDate})) - julianday(MIN(tasks.created_at))"
+            : "TIMESTAMPDIFF(HOUR, MIN(tasks.created_at), MAX({$exitDate})) / 24";
 
-        // Skip instant tasks (under a minute between created_at and updated_at):
-        // auto-advanced or bulk-updated steps, not real work. None of them share an
-        // identical timestamp -- they are seconds apart -- so a plain
-        // updated_at > created_at check would not catch them.
+        // Skip instant tasks (under a minute between entry and exit): auto-advanced
+        // or bulk-updated steps, not real work. None of them share an identical
+        // timestamp -- they are seconds apart -- so a plain exit > created_at check
+        // would not catch them.
         $minimumDuration = $isSqlite
-            ? '(julianday(tasks.updated_at) - julianday(tasks.created_at)) >= (1.0 / 1440)'
-            : 'TIMESTAMPDIFF(SECOND, tasks.created_at, tasks.updated_at) >= 60';
+            ? "(julianday({$exitDate}) - julianday(tasks.created_at)) >= (1.0 / 1440)"
+            : "TIMESTAMPDIFF(SECOND, tasks.created_at, {$exitDate}) >= 60";
 
-        // Only completed tasks have a meaningful duration: their updated_at is the
-        // moment the status was set to Completed. Open tasks (In-Progress/Hold) are
-        // still running, so including them would report a half-finished duration.
+        // Only completed tasks have a meaningful duration. Open tasks
+        // (In-Progress/Hold) are still running, so including them would report a
+        // half-finished duration.
         $projectSpans = DB::table('tasks')
             ->join('departments', 'tasks.department_id', '=', 'departments.id')
             ->selectRaw("departments.id as department_id, departments.name as department_name, tasks.project_id, {$spanExpression} as span_days")

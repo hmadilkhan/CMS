@@ -44,7 +44,7 @@ class AiSqlBuilderService
     public function build(array $plan, User $user): array
     {
         $intent = $plan['intent'] ?? 'unknown';
-        
+
         // Known complex intents with hardcoded logic
         $hardcodedIntents = [
             'employee_department_list',
@@ -83,12 +83,12 @@ class AiSqlBuilderService
             'project_status_count',
             'project_status_filter_count',
         ];
-        
+
         // Use hardcoded logic for known complex intents
         if (in_array($intent, $hardcodedIntents, true)) {
             return $this->buildWithHardcodedLogic($plan, $user);
         }
-        
+
         // For ALL other intents, use GENERIC BUILDER (handles ANY question!)
         try {
             return $this->aiGenericQueryBuilderService->buildFromPlan($plan, $user);
@@ -97,11 +97,11 @@ class AiSqlBuilderService
                 'error' => $e->getMessage(),
                 'intent' => $intent,
             ]);
-            
+
             return $this->buildWithHardcodedLogic($plan, $user);
         }
     }
-    
+
     private function buildWithHardcodedLogic(array $plan, User $user): array
     {
         // Security: never execute OpenAI SQL directly. Build SELECT queries with Laravel's query builder.
@@ -492,6 +492,7 @@ class AiSqlBuilderService
                 'sub_departments.name as sub_department_name',
                 'tasks.status',
                 'tasks.created_at',
+                'tasks.completed_at',
                 'tasks.updated_at'
             )->orderBy('tasks.id', 'desc');
         }
