@@ -559,6 +559,7 @@ return [
                 'notes',
                 'assign_to_notes',
                 'status',
+                'completed_at',
                 'created_at',
                 'updated_at',
                 'deleted_at',

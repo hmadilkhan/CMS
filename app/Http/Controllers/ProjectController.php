@@ -173,13 +173,10 @@ class ProjectController extends Controller
         $projectLogs = Task::with('employee', 'user', 'department', 'subdepartment')->where('project_id', $project->id)->get();
         $totalDaysByDepartment = $projectLogs->groupBy('department_id')->map(function ($group) {
             return $group->sum(function ($item) {
-                if ($item['status'] == 'In-Progress') {
-                    $exitDate = date('Y-m-d H:i:s');
-                } else {
-                    $exitDate = $item['updated_at'];
-                }
-
-                return max(1, Carbon::parse($item['created_at'])->diffInDays(Carbon::parse($exitDate)));
+                return Task::stintDays(
+                    $item->created_at,
+                    Task::exitDate($item->status, $item->completed_at, $item->updated_at)
+                );
             });
         });
         // Get department names
@@ -477,7 +474,7 @@ class ProjectController extends Controller
                 $project->sub_department_id = $resolvedSubDepartmentId;
                 $project->save();
                 $task = Task::findOrFail($request->taskid);
-                Task::where('id', $request->taskid)->update(['status' => 'Completed', 'notes' => $request->notes]);
+                Task::where('id', $request->taskid)->update(['status' => 'Completed', 'completed_at' => now(), 'notes' => $request->notes]);
                 $newTask = Task::create([
                     'project_id' => $request->id,
                     'employee_id' => $task->employee_id,
@@ -581,7 +578,7 @@ class ProjectController extends Controller
                 throw new \RuntimeException('No employee assignment found for this department.');
             }
 
-            Task::where('id', $request->taskid)->update(['status' => 'Completed', 'notes' => $request->notes]);
+            Task::where('id', $request->taskid)->update(['status' => 'Completed', 'completed_at' => now(), 'notes' => $request->notes]);
             $newTask = Task::create([
                 'project_id' => $request->id,
                 'employee_id' => $emp->id,
@@ -883,7 +880,7 @@ class ProjectController extends Controller
                     ->firstOrFail();
             }
 
-            Task::where('id', $currentTask->id)->update(['status' => 'Completed', 'notes' => $request->notes]);
+            Task::where('id', $currentTask->id)->update(['status' => 'Completed', 'completed_at' => now(), 'notes' => $request->notes]);
             $newTask = Task::create([
                 'project_id' => $request->projectId,
                 'employee_id' => $emp->id,
@@ -1010,7 +1007,7 @@ class ProjectController extends Controller
             }
 
             if ($request->employee != '') {
-                Task::where('id', $currentTask->id)->update(['status' => 'Completed', 'notes' => 'Task Assigned to Employee']);
+                Task::where('id', $currentTask->id)->update(['status' => 'Completed', 'completed_at' => now(), 'notes' => 'Task Assigned to Employee']);
                 $newTask = Task::create([
                     'project_id' => $request->project_id,
                     'employee_id' => $request->employee,
@@ -1028,7 +1025,7 @@ class ProjectController extends Controller
                     app(ProjectAssignmentService::class)->notifyAssignedEmployee($assignedEmployee, $project, $newTask, $shouldNotifyAssignedEmployee);
                 }
             } else {
-                Task::where('id', $currentTask->id)->update(['status' => 'Completed', 'notes' => 'New assign to notes added']);
+                Task::where('id', $currentTask->id)->update(['status' => 'Completed', 'completed_at' => now(), 'notes' => 'New assign to notes added']);
                 $newTask = Task::create([
                     'project_id' => $currentTask->project_id,
                     'employee_id' => $currentTask->employee_id,
@@ -1202,6 +1199,7 @@ class ProjectController extends Controller
 
             Task::where('id', $currentTask->id)->update([
                 'status' => 'Completed',
+                'completed_at' => now(),
                 'notes' => 'Design details generated',
             ]);
 
@@ -1272,7 +1270,18 @@ class ProjectController extends Controller
         ]);
         DB::beginTransaction();
         try {
-            Task::where('project_id', $request->project_id)->update(['status' => $request->status, 'notes' => $request->reason]);
+            // This writes every task row the project ever had, history
+            // included. Cancelling ends the stint, so close whatever is still
+            // open - but COALESCE keeps the exit already recorded on the rows
+            // the project left long ago, instead of dragging the whole history
+            // forward to now.
+            $statusUpdate = ['status' => $request->status, 'notes' => $request->reason];
+
+            if ($request->status === 'Cancelled') {
+                $statusUpdate['completed_at'] = DB::raw('COALESCE(completed_at, '.DB::getPdo()->quote(now()->toDateTimeString()).')');
+            }
+
+            Task::where('project_id', $request->project_id)->update($statusUpdate);
             if ($request->status == 'Cancelled') {
                 $project = Project::findOrFail($request->project_id);
                 $username = auth()->user()->name;

@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\LaborCost;
 use App\Models\Project;
+use App\Models\Task;
 use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Database\Query\Builder;
@@ -35,6 +36,7 @@ class AiProjectLaneService
                 DB::raw("TRIM(CONCAT(COALESCE(c.first_name,''),' ',COALESCE(c.last_name,''))) as customer_name"),
                 'd.name as department',
                 't.created_at as entry_date',
+                't.completed_at',
                 't.updated_at as exit_date',
                 't.status',
                 'u.name as action_by',
@@ -68,12 +70,9 @@ class AiProjectLaneService
             $customer = trim($first->customer_name) ?: 'N/A';
 
             foreach ($list as $task) {
-                $exitDate = $task->status === 'In-Progress'
-                    ? now()
-                    : Carbon::parse($task->exit_date);
-
+                $exitDate  = Task::exitDate($task->status, $task->completed_at, $task->exit_date);
                 $entryDate = Carbon::parse($task->entry_date);
-                $days      = max(1, (int) $entryDate->diffInDays($exitDate));
+                $days      = Task::stintDays($entryDate, $exitDate);
 
                 $rows[] = [
                     'Project'     => $task->project_name,
@@ -81,7 +80,7 @@ class AiProjectLaneService
                     'Customer'    => $customer,
                     'Department'  => $task->department,
                     'Entry Date'  => $entryDate->format('d M Y H:i'),
-                    'Exit Date'   => $task->status === 'In-Progress' ? 'N/A (Active)' : Carbon::parse($task->exit_date)->format('d M Y H:i'),
+                    'Exit Date'   => $exitDate ? $exitDate->format('d M Y H:i') : 'N/A (Active)',
                     'Action By'   => $task->action_by ?? 'N/A',
                     'Days'        => $days,
                 ];
@@ -130,6 +129,7 @@ class AiProjectLaneService
                 DB::raw("TRIM(CONCAT(COALESCE(c.first_name,''),' ',COALESCE(c.last_name,''))) as customer_name"),
                 'd.name as department',
                 't.created_at as entry_date',
+                't.completed_at',
                 't.updated_at as exit_date',
                 't.status',
             ])
@@ -159,8 +159,8 @@ class AiProjectLaneService
         foreach ($tasks as $task) {
             $pid      = $task->project_id;
             $dept     = $task->department;
-            $exitDate = $task->status === 'In-Progress' ? now() : Carbon::parse($task->exit_date);
-            $days     = max(1, (int) Carbon::parse($task->entry_date)->diffInDays($exitDate));
+            $exitDate = Task::exitDate($task->status, $task->completed_at, $task->exit_date);
+            $days     = Task::stintDays($task->entry_date, $exitDate);
 
             $totals[$pid][$dept]  = ($totals[$pid][$dept] ?? 0) + $days;
             $projectNames[$pid]   = $task->project_name;
@@ -197,6 +197,7 @@ class AiProjectLaneService
             ->select([
                 'd.name as department',
                 't.created_at as entry_date',
+                't.completed_at',
                 't.updated_at as exit_date',
                 't.status',
             ])
@@ -213,8 +214,8 @@ class AiProjectLaneService
         $stats = [];
 
         foreach ($tasks as $task) {
-            $exitDate = $task->status === 'In-Progress' ? now() : Carbon::parse($task->exit_date);
-            $days     = max(1, (int) Carbon::parse($task->entry_date)->diffInDays($exitDate));
+            $exitDate = Task::exitDate($task->status, $task->completed_at, $task->exit_date);
+            $days     = Task::stintDays($task->entry_date, $exitDate);
             $dept     = $task->department;
 
             if (! isset($stats[$dept])) {
@@ -271,6 +272,7 @@ class AiProjectLaneService
                 DB::raw("TRIM(CONCAT(COALESCE(c.first_name,''),' ',COALESCE(c.last_name,''))) as customer_name"),
                 'd.name as department',
                 't.created_at as entry_date',
+                't.completed_at',
                 't.updated_at as exit_date',
                 't.status',
                 't.notes',
@@ -310,8 +312,8 @@ class AiProjectLaneService
 
             foreach ($list as $task) {
                 $entryDate = Carbon::parse($task->entry_date);
-                $exitDate  = $task->status === 'In-Progress' ? now() : Carbon::parse($task->exit_date);
-                $days      = max(1, (int) $entryDate->diffInDays($exitDate));
+                $exitDate  = Task::exitDate($task->status, $task->completed_at, $task->exit_date);
+                $days      = Task::stintDays($entryDate, $exitDate);
 
                 $deptDays[$task->department] = ($deptDays[$task->department] ?? 0) + $days;
 
@@ -320,7 +322,7 @@ class AiProjectLaneService
                     'Days'       => $days,
                     'Status'     => $task->status,
                     'Entry'      => $entryDate->format('d M Y'),
-                    'Exit'       => $task->status === 'In-Progress' ? 'Active' : Carbon::parse($task->exit_date)->format('d M Y'),
+                    'Exit'       => $exitDate ? $exitDate->format('d M Y') : 'Active',
                     'Notes'      => trim((string) ($task->notes ?: $task->assign_to_notes ?: '')) ?: '-',
                     'Action By'  => $task->action_by ?: 'N/A',
                 ];

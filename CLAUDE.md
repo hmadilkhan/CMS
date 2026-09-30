@@ -398,6 +398,43 @@ Two consequences, both of which were bugs and are now fixed — keep them that w
 
 Covered by `tests/Feature/ProjectListSearchTest.php`.
 
+## Department Logs — how long a project spent in a lane
+
+A `tasks` row is one **stint**: the project entered that department at
+`tasks.created_at` and left it at `tasks.completed_at`. `completed_at` is
+stamped once, where the row is closed out, and is never written again.
+
+It exists because the tab used to read **`updated_at`**, which is the row's last
+write, not its exit. Anything that touches a closed row drags its exit date
+forward — and `CustomerController::update()` mass-updates *every* department-1
+task of a project, so a single customer edit re-stamped a whole Deal Review
+history to the edit time. One reported project showed **36 days in Deal Review**
+for two stints that really lasted 44 seconds and 15 seconds.
+
+- Read it through `Task::exitDate($status, $completedAt, $updatedAt)` and
+  `Task::stintDays($entry, $exit)` — never re-derive it. `exitDate()` returns
+  null while the stint is open, and falls back to `updated_at` only for rows the
+  backfill could not reconstruct. Both `ProjectController::show()`, the
+  Department Logs blade and all four `AiProjectLaneService` queries go through
+  them, so the assistant and the page always agree.
+- Every place that closes a task must stamp `'completed_at' => now()` next to
+  `'status' => 'Completed'` (six sites in `ProjectController`). `projectStatus()`
+  mass-updates history, so it stamps `COALESCE(completed_at, NOW())` on Cancel —
+  never a bare `now()`, which would rewrite every past stint.
+- Backfill: `2026_09_30_000002_backfill_tasks_completed_at`. Closing a row and
+  creating its successor happen in one transaction, so the successor's
+  `created_at` IS the closed row's exit. It only fills rows where `completed_at`
+  is null, and the **last row of each project's chain has no successor** — that
+  one keeps the old `updated_at` approximation and is the only row the backfill
+  cannot repair.
+- **The badge and the table are not comparable.** `{{ $projectAgeDays }} Days in
+  progress` is `sold_date → now()` (or → `pto_approval_date`), a single calendar
+  span. The table SUMs per-department stints, which can overlap (a project can
+  hold two open stints at once) and floors each stint at 1 day, so the sum is
+  normally *larger* than the badge. That is by design, not a bug.
+
+Covered by `tests/Feature/TaskStintDurationTest.php`.
+
 ## General development notes
 
 - Email/IMAP: `EmailFetchService`, `app/Console/Commands/FetchEmails.php` / `FetchAllEmails.php`, jobs in `app/Jobs`.

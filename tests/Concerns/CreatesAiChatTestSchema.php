@@ -166,6 +166,7 @@ trait CreatesAiChatTestSchema
             $table->unsignedBigInteger('employee_id')->nullable();
             $table->unsignedBigInteger('user_id')->nullable();
             $table->string('status')->nullable();
+            $table->timestamp('completed_at')->nullable();
             $table->text('notes')->nullable();
             $table->text('assign_to_notes')->nullable();
             $table->timestamps();

@@ -268,8 +268,9 @@ return [
                 'notes' => 'Task notes.',
                 'assign_to_notes' => 'Notes left for the assignee.',
                 'status' => 'Task status.',
-                'created_at' => 'When the task was created.',
-                'updated_at' => 'When last updated.',
+                'completed_at' => 'When the project left this department lane (the task was closed out). NULL means the stint is still open. This - not updated_at - is the exit date: use created_at to completed_at to measure how long a project spent in a department.',
+                'created_at' => 'When the task was created, i.e. when the project entered this department lane.',
+                'updated_at' => 'When last updated. NOT an exit date: later edits elsewhere move it forward.',
                 'deleted_at' => 'When soft-deleted (NULL means active).',
             ],
             'value_maps' => [

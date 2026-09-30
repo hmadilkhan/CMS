@@ -3557,22 +3557,17 @@
                                                                 <tbody>
                                                                     @foreach ($projectLogs as $log)
                                                                         @php
-                                                                            if ($log->status == 'In-Progress') {
-                                                                                $exitDate = date('Y-m-d H:i:s');
-                                                                            } else {
-                                                                                $exitDate = $log->updated_at;
-                                                                            }
+                                                                            $exitDate = \App\Models\Task::exitDate($log->status, $log->completed_at, $log->updated_at);
                                                                         @endphp
                                                                         <tr>
                                                                             <td>{{ $log->department->name }}</td>
                                                                             <td>{{ date('d M Y H:i:s', strtotime($log->created_at)) }}
                                                                             </td>
-                                                                            <td>{{ $log->status != 'In-Progress' ? date('d M Y H:i:s', strtotime($log->updated_at)) : 'N/A' }}
+                                                                            <td>{{ $exitDate ? $exitDate->format('d M Y H:i:s') : 'N/A' }}
                                                                             </td>
                                                                             <td>{{ $log->user->name ?? 'N/A' }}</td>
-                                                                            <td>{{ max(1, \Carbon\Carbon::parse($log->created_at)->diffInDays(\Carbon\Carbon::parse($exitDate))) }}
+                                                                            <td>{{ \App\Models\Task::stintDays($log->created_at, $exitDate) }}
                                                                                 Days</td>
-                                                                            {{-- max(1,\Carbon\Carbon::parse($log->created_at)->diffInDays(\Carbon\Carbon::parse($exitDate))) --}}
                                                                         </tr>
                                                                     @endforeach
                                                                 </tbody>

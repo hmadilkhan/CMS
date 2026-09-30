@@ -169,6 +169,31 @@ class ProjectMovementWorkflowTest extends TestCase
         ]);
     }
 
+    public function test_project_move_stamps_the_exit_date_on_the_task_it_closes(): void
+    {
+        $admin = $this->superAdmin();
+        $fixture = $this->movementFixture();
+
+        $this->actingAs($admin)->post(route('move.project'), [
+            'projectId' => $fixture['project']->id,
+            'departmentId' => $fixture['targetDepartment']->id,
+            'subDepartmentId' => $fixture['targetSubDepartment']->id,
+            'taskId' => $fixture['task']->id,
+            'notes' => 'Ready for engineering.',
+        ])->assertOk();
+
+        // The closed stint gets a real exit date, and the one the project moved
+        // into is still open. Without this, the Department Logs tab has to read
+        // `updated_at`, which any later write to the row drags forward.
+        $closed = Task::findOrFail($fixture['task']->id);
+        $this->assertNotNull($closed->completed_at);
+
+        $opened = Task::where('project_id', $fixture['project']->id)
+            ->where('department_id', $fixture['targetDepartment']->id)
+            ->firstOrFail();
+        $this->assertNull($opened->completed_at);
+    }
+
     public function test_project_move_blocks_forward_move_when_required_department_fields_are_missing(): void
     {
         $admin = $this->superAdmin();

@@ -331,7 +331,7 @@ PROMPT;
      */
     private function domainGrounding(): string
     {
-        return Cache::remember('ai_tts_domain_grounding_v5', 1800, function () {
+        return Cache::remember('ai_tts_domain_grounding_v6', 1800, function () {
             $departments = $this->distinctColumn('departments', 'name');
             $subDepartments = $this->distinctColumn('sub_departments', 'name');
             $statuses = $this->distinctColumn('tasks', 'status');
@@ -384,6 +384,13 @@ PROMPT;
                 $lines[] = '- Select readable names + amount: `adder_types.name`, `adder_sub_types.name`, `adder_units.name`, `customer_adders.amount`. adder_types.name values: '.$adderTypes->implode(', ').'.';
                 $lines[] = "- Example \"adders of project X\": `SELECT adder_types.name AS adder_type, adder_sub_types.name AS sub_type, adder_units.name AS unit, customer_adders.amount FROM projects JOIN customers ON customers.id = projects.customer_id AND customers.deleted_at IS NULL JOIN customer_adders ON customer_adders.customer_id = customers.id AND customer_adders.deleted_at IS NULL LEFT JOIN adder_types ON adder_types.id = customer_adders.adder_type_id LEFT JOIN adder_sub_types ON adder_sub_types.id = customer_adders.adder_sub_type_id LEFT JOIN adder_units ON adder_units.id = customer_adders.adder_unit_id WHERE projects.project_name LIKE '%X%' AND projects.deleted_at IS NULL LIMIT 50`.";
             }
+
+            $lines[] = '';
+            $lines[] = '## How long a project spent in a department (task stints)';
+            $lines[] = '- A `tasks` row is ONE stint of a project in ONE department. It starts at `tasks.created_at` (the project entered that lane) and ends at `tasks.completed_at` (the project left it). `completed_at IS NULL` means the stint is still open — measure it up to NOW().';
+            $lines[] = '- NEVER use `tasks.updated_at` as the exit date. It is the row\'s last write, and unrelated edits move it forward, which massively inflates the duration.';
+            $lines[] = "- Days in a stint: `DATEDIFF(COALESCE(tasks.completed_at, NOW()), tasks.created_at)`. Example \"how many days did project X spend in each department\": `SELECT departments.name AS department, SUM(DATEDIFF(COALESCE(tasks.completed_at, NOW()), tasks.created_at)) AS total_days FROM tasks JOIN projects ON projects.id = tasks.project_id JOIN departments ON departments.id = tasks.department_id WHERE projects.project_name LIKE '%X%' AND tasks.deleted_at IS NULL AND projects.deleted_at IS NULL GROUP BY departments.name LIMIT 100`.";
+            $lines[] = '- A project can have SEVERAL stints in the same department (it was moved back). Summing them is correct for "total days in that department", but that sum is NOT comparable to the project\'s overall age — stints from different departments can overlap.';
 
             return $lines === [] ? '' : implode("\n", $lines);
         });
