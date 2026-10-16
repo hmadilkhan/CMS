@@ -995,6 +995,7 @@ class OperationController extends Controller
         $validated = $request->validate([
             "name" => ["required", "string", "max:255", Rule::unique("departments", "name")->whereNull("deleted_at")],
             "document_length" => ["required", "integer", "min:0"],
+            "sort_order" => ["nullable", "integer", "min:1"],
         ], [
             "name.unique" => "The record already exists.",
         ]);
@@ -1003,6 +1004,8 @@ class OperationController extends Controller
             Department::create([
                 "name" => $validated["name"],
                 "document_length" => $validated["document_length"],
+                // Left blank, a new department goes to the end of the sequence.
+                "sort_order" => $validated["sort_order"] ?? Department::nextSortOrder(),
             ]);
 
             return $this->backToOperations($request, "departments.list")->with("success", "Data Saved Successfully");
@@ -1017,6 +1020,7 @@ class OperationController extends Controller
             "id" => ["required", "exists:departments,id"],
             "name" => ["required", "string", "max:255", Rule::unique("departments", "name")->ignore($request->id)->whereNull("deleted_at")],
             "document_length" => ["required", "integer", "min:0"],
+            "sort_order" => ["nullable", "integer", "min:1"],
         ], [
             "name.unique" => "The record already exists.",
         ]);
@@ -1025,6 +1029,9 @@ class OperationController extends Controller
             $department = Department::findOrFail($validated["id"]);
             $department->name = $validated["name"];
             $department->document_length = $validated["document_length"];
+            if (isset($validated["sort_order"])) {
+                $department->sort_order = $validated["sort_order"];
+            }
             $department->save();
 
             return $this->backToOperations($request, "departments.list")->with("success", "Data Updated Successfully");

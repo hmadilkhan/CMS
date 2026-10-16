@@ -64,18 +64,19 @@ class DepartmentTimeChart extends Component
         // half-finished duration.
         $projectSpans = DB::table('tasks')
             ->join('departments', 'tasks.department_id', '=', 'departments.id')
-            ->selectRaw("departments.id as department_id, departments.name as department_name, tasks.project_id, {$spanExpression} as span_days")
+            ->selectRaw("departments.id as department_id, departments.name as department_name, departments.sort_order as sort_order, tasks.project_id, {$spanExpression} as span_days")
             ->whereNull('tasks.deleted_at')
             ->where('tasks.status', 'Completed')
             ->whereRaw($minimumDuration)
             ->whereDate('tasks.created_at', '>=', $this->startDate)
             ->whereDate('tasks.created_at', '<=', $this->endDate)
-            ->groupBy('departments.id', 'departments.name', 'tasks.project_id');
+            ->groupBy('departments.id', 'departments.name', 'departments.sort_order', 'tasks.project_id');
 
         $departmentStats = DB::query()
             ->fromSub($projectSpans, 'project_spans')
             ->selectRaw('department_name, COALESCE(AVG(span_days), 0) as average_duration, COUNT(*) as project_count')
-            ->groupBy('department_id', 'department_name')
+            ->groupBy('department_id', 'department_name', 'sort_order')
+            ->orderBy('sort_order')
             ->orderBy('department_id')
             ->get();
 

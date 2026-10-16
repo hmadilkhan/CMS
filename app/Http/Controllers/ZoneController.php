@@ -47,7 +47,7 @@ class ZoneController extends Controller
         return view('zones.partials.board', [
             'lanes' => $lanes,
             'projectsByZone' => $this->projectsFor($lanes->pluck('id')->all(), $request),
-            'departments' => Department::orderBy('id')->get(),
+            'departments' => Department::all(),
             'departmentFilter' => $request->input('department', 'all'),
             'search' => (string) $request->input('search', ''),
             'archivedCount' => $this->archivedCount(),

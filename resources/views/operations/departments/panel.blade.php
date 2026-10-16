@@ -26,7 +26,7 @@
 <div class="operation-page-header">
     <div>
         <h1 class="operation-page-title">Departments</h1>
-        <p class="operation-page-subtitle">Maintain operational departments and their document length settings.</p>
+        <p class="operation-page-subtitle">Maintain operational departments, their sequence and document length settings.</p>
     </div>
     <div class="operation-summary">
         <span>Total Records</span>
@@ -63,6 +63,16 @@
                     </span>
                     @enderror
                 </div>
+                <div class="col-xl-4 col-lg-6 col-md-6 col-12">
+                    <label>Sort Order</label>
+                    <input type="number" step="1" min="1" class="form-control @error('sort_order') is-invalid @enderror" id="sort_order" name="sort_order" placeholder="Leave blank to add at the end" value="{{ old('sort_order', !empty($department) ? $department->sort_order : '') }}">
+                    <small class="text-muted">Departments are listed in ascending order of this number everywhere in the CRM.</small>
+                    @error('sort_order')
+                    <span class="invalid-feedback" role="alert">
+                        <strong>{{ $message }}</strong>
+                    </span>
+                    @enderror
+                </div>
                 <div class="col-12">
                     <div class="operation-actions">
                         <button type="submit" class="btn btn-primary" value="save"><i class="icofont-save"></i> Save</button>
@@ -82,6 +92,7 @@
             <thead>
                 <tr>
                     <th>No.</th>
+                    <th>Sort Order</th>
                     <th>Name</th>
                     <th>Document Length</th>
                     <th>Actions</th>
@@ -91,6 +102,7 @@
                 @foreach ($departments as $key => $list)
                 <tr>
                     <td>{{ ++$key }}</td>
+                    <td>{{ $list->sort_order }}</td>
                     <td>{{ $list->name }}</td>
                     <td class="cost-value">{{ $list->document_length }}</td>
                     <td class="text-center">

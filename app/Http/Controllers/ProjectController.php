@@ -182,18 +182,19 @@ class ProjectController extends Controller
                 );
             });
         });
-        // Get department names
-        $departments = DB::table('departments')->pluck('name', 'id');
+        // Get department names and their place in the sequence
+        $departments = Department::withTrashed()->get(['id', 'name', 'sort_order'])->keyBy('id');
 
         // Merge department names with total days
         $results = collect($totalSecondsByDepartment)->map(function ($seconds, $id) use ($departments) {
             return [
                 'department_id' => (int) $id,  // Ensure ID is an integer
-                'department' => $departments[$id] ?? 'Unknown',
+                'department' => $departments[$id]->name ?? 'Unknown',
+                'sort_order' => $departments[$id]->sort_order ?? PHP_INT_MAX,
                 'seconds' => $seconds,
                 'days' => Task::daysFromSeconds($seconds),
             ];
-        })->sortBy('department_id')->values();
+        })->sortBy([['sort_order', 'asc'], ['department_id', 'asc']])->values();
 
         // Every stint the project has had. Both Department Logs tables foot with
         // this, and they must agree: one sums the stints, the other sums the
@@ -226,8 +227,8 @@ class ProjectController extends Controller
             ->where('project_id', $project->id)
             ->latest('id')
             ->first();
-        $departments = Department::whereIn('id', Task::where('project_id', $project->id)->whereNotIn('department_id', Department::where('id', '>', $task->department_id)->take(1)->pluck('id'))->where('id', '!=', 9)->groupBy('department_id')->orderBy('department_id')->pluck('department_id'))->get();
-        $fwdDepartments = array_merge($departments->toArray(), Department::where('id', '>', $task->department_id)->take(1)->get()->toArray());
+        $departments = Department::whereIn('id', Task::where('project_id', $project->id)->whereNotIn('department_id', Department::after($task->department_id)->take(1)->pluck('id'))->where('id', '!=', 9)->groupBy('department_id')->orderBy('department_id')->pluck('department_id'))->get();
+        $fwdDepartments = array_merge($departments->toArray(), Department::after($task->department_id)->take(1)->get()->toArray());
         $fwdIds = collect($fwdDepartments)->pluck('id');
         $nextSubDepartments = SubDepartment::whereIn('department_id', $fwdIds)->selectableForMove()->orderby('order', 'asc')->get();
         $addersLock = ProjectAddersLock::where('project_id', $project->id)->latest()->first();
@@ -247,7 +248,7 @@ class ProjectController extends Controller
         return view($view, [
             'project' => $project,
             'task' => $task,
-            'backdepartments' => Department::where('id', '<', $task->department_id)->get(),
+            'backdepartments' => Department::before($task->department_id)->get(),
             'forwarddepartments' => (object) $fwdDepartments, // Department::whereIn("id", Task::where("project_id", $project->id)->pluck("department_id"))->get(),
             'nextSubDepartments' => $nextSubDepartments,
             'filesCount' => ProjectFile::where('project_id', $project->id)->where('department_id', $project->department_id)->ungrouped()->get(),
@@ -1442,8 +1443,8 @@ class ProjectController extends Controller
                 $query->select(DB::raw(1))
                     ->from('tasks as t')
                     ->whereColumn('t.project_id', 'tasks.project_id')
-                    ->where('t.department_id', '>=', 7)
-                    ->where('t.department_id', '!=', 9); // Exclude if moved to department 7 or beyond, but ignore archived department 9
+                    ->whereIn('t.department_id', Department::withTrashed()->after(7, true)->pluck('id'))
+                    ->where('t.department_id', '!=', 9); // Exclude if moved to department 7 or beyond (in the department sequence), but ignore archived department 9
             })
             ->groupBy('project_id')
             ->pluck('project_id'); // Get the relevant project IDs
@@ -1586,9 +1587,9 @@ class ProjectController extends Controller
         $request->project_id = Crypt::decrypt($request->project_id);
         $project = Project::where('code', $request->project_id)->first();
         $task = Task::whereIn('status', ['In-Progress', 'Hold'])->where('project_id', $project->id)->latest('id')->first();
-        $departments = Department::whereIn('id', Task::where('project_id', $project->id)->whereNotIn('department_id', Department::where('id', '>', $task->department_id)->take(1)->pluck('id'))->groupBy('department_id')->orderBy('department_id')->pluck('department_id'))->get();
-        $fwdDepartments = array_merge($departments->toArray(), Department::where('id', '>', $task->department_id)->take(1)->get()->toArray());
-        $departments = Department::whereIn('id', Task::where('project_id', $project->id)->whereNotIn('department_id', Department::where('id', '>', $task->department_id)->take(1)->pluck('id'))->where('id', '!=', 9)->groupBy('department_id')->orderBy('department_id')->pluck('department_id'))->get();
+        $departments = Department::whereIn('id', Task::where('project_id', $project->id)->whereNotIn('department_id', Department::after($task->department_id)->take(1)->pluck('id'))->groupBy('department_id')->orderBy('department_id')->pluck('department_id'))->get();
+        $fwdDepartments = array_merge($departments->toArray(), Department::after($task->department_id)->take(1)->get()->toArray());
+        $departments = Department::whereIn('id', Task::where('project_id', $project->id)->whereNotIn('department_id', Department::after($task->department_id)->take(1)->pluck('id'))->where('id', '!=', 9)->groupBy('department_id')->orderBy('department_id')->pluck('department_id'))->get();
         $fwdIds = collect($fwdDepartments)->pluck('id');
         $nextSubDepartments = SubDepartment::whereIn('department_id', $fwdIds)->selectableForMove()->orderby('order', 'asc')->get();
         try {
@@ -1596,7 +1597,7 @@ class ProjectController extends Controller
                 return view('projects.partial.website-project-details', [
                     'project' => Project::with('task', 'customer', 'department', 'logs', 'subdepartment', 'assignedPerson', 'assignedPerson.employee')->where('code', $request->project_id)->first(),
                     'task' => $task,
-                    'backdepartments' => Department::where('id', '<', $task->department_id)->get(),
+                    'backdepartments' => Department::before($task->department_id)->get(),
                     'forwarddepartments' => (object) $fwdDepartments,
                     'filesCount' => ProjectFile::where('project_id', $project->id)->where('department_id', $project->department_id)->get(),
                     'departments' => Department::all(),

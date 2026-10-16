@@ -17,7 +17,11 @@ class SubDepartmentsPanel implements OperationsPanel
     {
         return [
             'departments' => Department::all(),
-            'subDepartments' => SubDepartment::with('department')->orderBy('department_id')->orderBy('order')->get(),
+            'subDepartments' => SubDepartment::with('department')
+                ->orderBy(Department::withTrashed()->withoutGlobalScope('ordered')->select('sort_order')->whereColumn('departments.id', 'sub_departments.department_id'))
+                ->orderBy('department_id')
+                ->orderBy('order')
+                ->get(),
             'subDepartment' => $request->id != '' ? SubDepartment::with('department')->where('id', $request->id)->first() : [],
         ];
     }

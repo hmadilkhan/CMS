@@ -470,6 +470,7 @@ return [
             'allowed_columns' => [
                 'id',
                 'name',
+                'sort_order',
                 'document_length',
                 'created_at',
                 'updated_at',
@@ -486,7 +487,7 @@ return [
                 ],
             ],
             'sensitive_columns' => [],
-            'default_sort_column' => 'name',
+            'default_sort_column' => 'sort_order',
             'access_rule' => 'department_access',
         ],
 

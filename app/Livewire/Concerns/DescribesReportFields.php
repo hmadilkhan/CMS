@@ -105,8 +105,8 @@ trait DescribesReportFields
     public function getDropdownOptions($field)
     {
         return match ($field) {
-            'projects.department_id' => Department::orderBy('name')->pluck('name', 'id')->toArray(),
-            'departments.name' => Department::orderBy('name')->pluck('name', 'name')->toArray(),
+            'projects.department_id' => Department::pluck('name', 'id')->toArray(),
+            'departments.name' => Department::pluck('name', 'name')->toArray(),
             'projects.sub_department_id' => SubDepartment::orderBy('name')->pluck('name', 'id')->toArray(),
             'sub_departments.name' => SubDepartment::orderBy('name')->pluck('name', 'name')->toArray(),
             'sales_partners.name' => SalesPartner::orderBy('name')->pluck('name', 'name')->toArray(),
