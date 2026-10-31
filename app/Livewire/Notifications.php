@@ -13,6 +13,10 @@ class Notifications extends Component
      */
     public int $limit = 10;
 
+    // The full notifications page marks items read over fetch(); it fires this
+    // so the dropdown list and count re-render without a page reload.
+    protected $listeners = ['notifications-refresh' => '$refresh'];
+
     public function unread($notificationId, $url)
     {
         $notification = auth()->user()->notifications()->find($notificationId);
