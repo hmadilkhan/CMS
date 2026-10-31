@@ -2,17 +2,18 @@
 
 namespace App\Notifications;
 
+use App\Jobs\Concerns\ThrottlesMail;
+use App\Models\ServiceTicket;
+use App\Models\ServiceTicketComment;
 use App\Services\NotificationTemplateService;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
-use App\Models\ServiceTicket;
-use App\Models\ServiceTicketComment;
 
 class ServiceTicketCommentAdded extends Notification implements ShouldQueue
 {
-    use Queueable;
+    use Queueable, ThrottlesMail;
 
     public $ticket;
     public $comment;

@@ -2,15 +2,16 @@
 
 namespace App\Notifications;
 
+use App\Jobs\Concerns\ThrottlesMail;
+use App\Models\ServiceTicket;
 use App\Services\NotificationTemplateService;
 use Illuminate\Bus\Queueable;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
-use App\Models\ServiceTicket;
 
 class ServiceTicketCreated extends Notification implements \Illuminate\Contracts\Queue\ShouldQueue
 {
-    use Queueable;
+    use Queueable, ThrottlesMail;
 
     public $ticket;
 

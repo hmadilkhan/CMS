@@ -2,6 +2,7 @@
 
 namespace App\Jobs;
 
+use App\Jobs\Concerns\ThrottlesMail;
 use App\Models\Project;
 use App\Models\User;
 use App\Notifications\ProjectDateUpdatedNotification;
@@ -13,9 +14,7 @@ use Illuminate\Queue\SerializesModels;
 
 class SendProjectDateUpdatedEmailJob implements ShouldQueue
 {
-    use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
-
-    public int $tries = 3;
+    use Dispatchable, InteractsWithQueue, Queueable, SerializesModels, ThrottlesMail;
 
     public array $backoff = [60, 300, 900];
 

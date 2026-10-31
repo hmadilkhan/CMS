@@ -2,6 +2,7 @@
 
 namespace App\Jobs;
 
+use App\Jobs\Concerns\ThrottlesMail;
 use App\Models\Project;
 use App\Models\Task;
 use App\Models\User;
@@ -14,9 +15,7 @@ use Illuminate\Queue\SerializesModels;
 
 class SendProjectAssignedEmailNotificationJob implements ShouldQueue
 {
-    use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
-
-    public int $tries = 3;
+    use Dispatchable, InteractsWithQueue, Queueable, SerializesModels, ThrottlesMail;
 
     public array $backoff = [60, 300, 900];
 

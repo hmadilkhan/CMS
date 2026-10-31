@@ -2,6 +2,7 @@
 
 namespace App\Notifications;
 
+use App\Jobs\Concerns\ThrottlesMail;
 use App\Services\NotificationTemplateService;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -11,7 +12,7 @@ use Illuminate\Support\Facades\Log;
 
 class NoteMentionedNotification extends Notification implements ShouldQueue
 {
-    use Queueable;
+    use Queueable, ThrottlesMail;
 
     public $project;
     public $note;
@@ -34,7 +35,12 @@ class NoteMentionedNotification extends Notification implements ShouldQueue
      */
     public function via(object $notifiable): array
     {
-        return ['database', 'mail'];
+        // The bell entry always goes; the email only to users who opted in.
+        if ($notifiable->email_preference == 1 && !empty($notifiable->email)) {
+            return ['database', 'mail'];
+        }
+
+        return ['database'];
     }
 
     /**

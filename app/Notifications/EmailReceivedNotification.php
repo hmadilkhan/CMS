@@ -2,6 +2,7 @@
 
 namespace App\Notifications;
 
+use App\Jobs\Concerns\ThrottlesMail;
 use App\Services\NotificationTemplateService;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -10,7 +11,7 @@ use Illuminate\Notifications\Notification;
 
 class EmailReceivedNotification extends Notification implements ShouldQueue
 {
-    use Queueable;
+    use Queueable, ThrottlesMail;
 
     public $project;
     public $email;
@@ -66,4 +67,4 @@ class EmailReceivedNotification extends Notification implements ShouldQueue
             'url' => url('/projects/' . $this->project->id),
         ];
     }
-} 
+}

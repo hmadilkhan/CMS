@@ -274,7 +274,6 @@ return [
         // add more configurations if needed
     ],
 
-
     /*
     |--------------------------------------------------------------------------
     | Markdown Mail Settings
@@ -292,6 +291,25 @@ return [
         'paths' => [
             resource_path('views/vendor/mail'),
         ],
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Mail Throttle
+    |--------------------------------------------------------------------------
+    |
+    | Queued CRM emails all go out through one SMTP account, which rejects
+    | mail with a 451 once its sending limit is hit. App\Jobs\Middleware\ThrottleMail
+    | paces those jobs and, on a rate-limit rejection, pauses every mail job
+    | for the cooldown and puts it back on the queue instead of failing it.
+    | A job keeps waiting for at most give_up_after_hours.
+    |
+    */
+
+    'throttle' => [
+        'per_minute' => (int) env('MAIL_THROTTLE_PER_MINUTE', 5),
+        'cooldown_seconds' => (int) env('MAIL_THROTTLE_COOLDOWN', 600),
+        'give_up_after_hours' => (int) env('MAIL_THROTTLE_GIVE_UP_HOURS', 24),
     ],
 
 ];

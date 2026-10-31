@@ -2,7 +2,6 @@
 
 namespace App\Livewire\Project;
 
-use App\Jobs\SendRawEmailJob;
 use App\Livewire\Concerns\AuthorizesProjectAccess;
 use App\Models\DepartmentNote;
 use App\Models\Employee;
@@ -10,7 +9,6 @@ use App\Models\NotesMention;
 use App\Models\Project;
 use App\Models\ProjectZoneNote;
 use App\Models\User;
-use App\Models\Zone;
 use App\Notifications\NoteMentionedNotification;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -155,7 +153,7 @@ class NotesSection extends Component
      * Notify one mentioned user and log the mention. Sales partner users have
      * no employee record, so employee_id stays null for them.
      */
-    protected function recordMention(User $user, Project $project, string $cleanNote, string $subjectPrefix): void
+    protected function recordMention(User $user, Project $project, string $cleanNote): void
     {
         // A zone note still records the project's department, so every existing
         // mention query keeps working; zone_id says it came from a zone tab.
@@ -167,25 +165,13 @@ class NotesSection extends Component
             "user_id" => $user->id,
         ]);
 
+        // The notification is the only email a mention sends: it carries the
+        // note and a link. A second plain email used to go out as well, which
+        // doubled the mail and ran the SMTP account into its rate limit.
         try {
             Notification::send($user, new NoteMentionedNotification($project, $cleanNote, auth()->user()));
         } catch (\Exception $e) {
             Log::error('Notification send failed: ' . $e->getMessage());
-        }
-
-        if ($user->email_preference == 1 && !empty($user->email)) {
-            $context = $this->inZoneMode()
-                ? 'zone (' . optional(Zone::find($this->zoneId))->name . ')'
-                : 'department (' . $project->department->name . ')';
-            $label = $this->inZoneMode()
-                ? optional(Zone::find($this->zoneId))->name
-                : $project->department->name;
-            $message = "You have been mentioned in an updated note in the " . $context . " added by (" . auth()->user()->name . ")";
-            SendRawEmailJob::dispatch(
-                $user->email,
-                $subjectPrefix . ' - (' . $project->project_name . ') - (' . $label . ')',
-                $message
-            )->afterCommit();
         }
     }
 
@@ -246,7 +232,7 @@ class NotesSection extends Component
             }
 
             foreach ($this->mentionedUsers($mentionedIds) as $user) {
-                $this->recordMention($user, $project, $cleanNote, 'New Project Notes Mention');
+                $this->recordMention($user, $project, $cleanNote);
             }
 
             ($this->noteModel())::create($this->noteAttributes($cleanNote));
@@ -313,7 +299,7 @@ class NotesSection extends Component
 
             // Send emails to mentioned users
             foreach ($this->mentionedUsers($mentionedIds) as $user) {
-                $this->recordMention($user, $project, $cleanNote, 'Updated Project Notes Mention');
+                $this->recordMention($user, $project, $cleanNote);
             }
 
             // Update the note with clean text (only names)
