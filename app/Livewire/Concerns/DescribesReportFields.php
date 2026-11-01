@@ -137,6 +137,21 @@ trait DescribesReportFields
      */
     private const FIELD_ALIASES = [
         'customer_finances.adders' => 'adders_amount',
+        // Same-named columns on several tables. The customer's (and the sales
+        // partner's name) keeps the bare name - calculated fields and saved
+        // reports already read it that way - the others get a prefixed alias, so
+        // picking two of them no longer lets the second overwrite the first.
+        'projects.id' => 'project_id',
+        'customer_finances.id' => 'customer_finance_id',
+        'customer_finances.customer_id' => 'customer_finance_customer_id',
+        'projects.created_at' => 'project_created_at',
+        'customer_finances.created_at' => 'customer_finance_created_at',
+        'projects.updated_at' => 'project_updated_at',
+        'customer_finances.updated_at' => 'customer_finance_updated_at',
+        'departments.name' => 'department_name',
+        'sub_departments.name' => 'sub_department_name',
+        'module_types.name' => 'module_type_name',
+        'inverter_types.name' => 'inverter_type_name',
         'sales_partner_users.name' => 'sales_partner_user_name',
         'sales_partners.email' => 'sales_partner_email',
         'sales_partners.phone' => 'sales_partner_phone',

@@ -1198,6 +1198,19 @@ class DynamicReportBuilder extends Component
 
     private function getNestedProperty($object, $property)
     {
+        // A field is read back under its select alias ({projects.id} is
+        // project_id); the last-segment fallback below would pick another
+        // table's column of the same name.
+        $alias = $this->fieldAlias($property);
+        if ($alias !== $property) {
+            if (is_array($object) && isset($object[$alias])) {
+                return $this->formatValue($object[$alias]);
+            }
+            if (is_object($object) && isset($object->{$alias})) {
+                return $this->formatValue($object->{$alias});
+            }
+        }
+
         // Try direct match (array or object)
         if (is_array($object) && isset($object[$property])) {
             return $this->formatValue($object[$property]);

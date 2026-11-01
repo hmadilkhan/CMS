@@ -528,6 +528,16 @@ class ReportRunner extends Component
     private function getNestedProperty($object, $property)
     {
         // Same logic as DynamicReportBuilder
+        $alias = $this->fieldAlias($property);
+        if ($alias !== $property) {
+            if (is_array($object) && isset($object[$alias])) {
+                return $this->formatValue($object[$alias]);
+            }
+            if (is_object($object) && isset($object->{$alias})) {
+                return $this->formatValue($object->{$alias});
+            }
+        }
+
         if (is_array($object) && isset($object[$property])) {
             return $this->formatValue($object[$property]);
         }
