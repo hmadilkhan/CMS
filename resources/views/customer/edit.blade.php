@@ -98,7 +98,7 @@
                         </div>
                         <div class="col-sm-4 mb-3">
                             <label for="exampleFormControlInput877" class="form-label">Phone</label>
-                            <input type="text" class="form-control" id="phone" name="phone" placeholder="phone"
+                            <input type="text" class="form-control" id="phone" name="phone" data-phone-mask
                                 value="{{ old('phone', $customer->phone) }}">
                             @error('phone')
                                 <div class="text-danger message mt-2">{{ $message }}</div>
@@ -552,6 +552,7 @@
     </div>
 @endsection
 @section('scripts')
+    @include('partials.phone-mask')
     <script>
         var moduleCost = 0;
         var systemSize = 0;

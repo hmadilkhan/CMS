@@ -175,6 +175,67 @@ class CustomerProjectWorkflowTest extends TestCase
         ]);
     }
 
+    public function test_customer_phone_is_stored_in_us_format(): void
+    {
+        $admin = $this->superAdmin();
+        $basics = $this->seedProjectBasics();
+
+        $this->actingAs($admin)->post(route('customers.store'), [
+            ...$this->validCustomerPayload($basics),
+            'phone' => '+1 909-630-2052',
+        ])->assertRedirect(route('customers.index'));
+
+        $this->assertDatabaseHas('customers', [
+            'email' => 'workflow.customer@example.com',
+            'phone' => '(909) 630-2052',
+        ]);
+    }
+
+    public function test_customer_phone_must_be_ten_digits(): void
+    {
+        $admin = $this->superAdmin();
+        $basics = $this->seedProjectBasics();
+
+        $this->actingAs($admin)->post(route('customers.store'), [
+            ...$this->validCustomerPayload($basics),
+            'phone' => '62-320-4940',
+        ])->assertSessionHasErrors('phone');
+
+        $this->assertDatabaseMissing('customers', ['email' => 'workflow.customer@example.com']);
+    }
+
+    public function test_editing_a_customer_with_an_old_phone_still_works_until_the_phone_is_changed(): void
+    {
+        $admin = $this->superAdmin();
+        $basics = $this->seedProjectBasics();
+        $payload = $this->validCustomerPayload($basics);
+
+        $this->actingAs($admin)->post(route('customers.store'), $payload)->assertRedirect(route('customers.index'));
+
+        $customer = Customer::where('email', 'workflow.customer@example.com')->firstOrFail();
+        Customer::where('id', $customer->id)->update(['phone' => '62-320-4940']);
+
+        // Phone left alone: the edit goes through and the old value is kept as it was.
+        $this->actingAs($admin)
+            ->put(route('customers.update', $customer), [...$payload, 'phone' => '62-320-4940', 'city' => 'Tempe'])
+            ->assertSessionHasNoErrors();
+
+        $customer->refresh();
+        $this->assertSame('Tempe', $customer->city);
+        $this->assertSame('62-320-4940', $customer->phone);
+
+        // Phone changed: it has to be a real number now.
+        $this->actingAs($admin)
+            ->put(route('customers.update', $customer), [...$payload, 'phone' => '62-320-4941'])
+            ->assertSessionHasErrors('phone');
+
+        $this->actingAs($admin)
+            ->put(route('customers.update', $customer), [...$payload, 'phone' => '6232049400'])
+            ->assertSessionHasNoErrors();
+
+        $this->assertSame('(623) 204-9400', $customer->fresh()->phone);
+    }
+
     public function test_customer_creation_requires_core_fields(): void
     {
         $admin = $this->superAdmin();

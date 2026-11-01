@@ -1413,7 +1413,13 @@ class ProjectController extends Controller
         $search = '%'.$term.'%';
         $customerColumns = ['first_name', 'last_name', 'email', 'phone', 'street', 'city', 'state', 'zipcode'];
 
-        return $query->where(function ($projectQuery) use ($search, $customersJoined, $customerColumns) {
+        // Phones are stored as "(123) 123-9090", so "1231239090" or "123-123-9090"
+        // would never match by LIKE alone: compare the digits as well.
+        $phoneDigits = preg_match('/^[\d\s().+-]+$/', $term) ? preg_replace('/\D/', '', $term) : '';
+        $phoneDigits = strlen($phoneDigits) >= 3 ? '%'.$phoneDigits.'%' : null;
+        $digitsOnly = fn ($column) => "REPLACE(REPLACE(REPLACE(REPLACE(REPLACE({$column}, '(', ''), ')', ''), '-', ''), ' ', ''), '+', '')";
+
+        return $query->where(function ($projectQuery) use ($search, $customersJoined, $customerColumns, $phoneDigits, $digitsOnly) {
             $projectQuery->where('projects.project_name', 'like', $search)
                 ->orWhere('projects.code', 'like', $search);
 
@@ -1422,13 +1428,21 @@ class ProjectController extends Controller
                     $projectQuery->orWhere('customers.'.$column, 'like', $search);
                 }
 
+                if ($phoneDigits !== null) {
+                    $projectQuery->orWhereRaw($digitsOnly('customers.phone').' like ?', [$phoneDigits]);
+                }
+
                 return;
             }
 
-            $projectQuery->orWhereHas('customer', function ($q) use ($search, $customerColumns) {
-                $q->where(function ($customerQuery) use ($search, $customerColumns) {
+            $projectQuery->orWhereHas('customer', function ($q) use ($search, $customerColumns, $phoneDigits, $digitsOnly) {
+                $q->where(function ($customerQuery) use ($search, $customerColumns, $phoneDigits, $digitsOnly) {
                     foreach ($customerColumns as $column) {
                         $customerQuery->orWhere($column, 'like', $search);
+                    }
+
+                    if ($phoneDigits !== null) {
+                        $customerQuery->orWhereRaw($digitsOnly('phone').' like ?', [$phoneDigits]);
                     }
                 });
             });

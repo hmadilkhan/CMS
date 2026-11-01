@@ -508,3 +508,21 @@ automatically** — `php artisan migrate --force` is still a deliberate manual s
 
 Root cause of all this: shared Hostinger hosting — no CI/CD pipeline, no
 post-receive hook, so the deploy script is the only place this can live.
+
+## Customer phone format
+
+`customers.phone` is stored as `(123) 123-9090`. `App\Support\PhoneNumber` is the
+one place that reads/writes that shape (`format` → null when not a 10-digit US
+number, a leading `1` is dropped; `formatOrKeep` leaves unreadable values alone).
+
+- Forms (`customer/create|edit`, `intake-form/create|edit`) mask the input with
+  `partials/phone-mask` (`data-phone-mask`). A stored value that is not a full
+  number is shown as saved, never reformatted on load.
+- `CustomerController` requires 10 digits, **except** when the phone is the
+  customer's current stored value - so an old odd number never blocks editing
+  other fields. The intake form formats but does not require a phone.
+- The board search (`applyProjectSearch`) also matches phones by digits, since
+  `9096302052` is not a substring of `(909) 630-2052`.
+- Existing rows: `php artisan customers:format-phones [--dry-run]` (soft-deleted
+  included, idempotent, lists what it could not convert). **`deploy.sh` does not
+  run it** - run it by hand once after deploying.

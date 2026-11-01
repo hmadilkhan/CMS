@@ -165,7 +165,7 @@
                         <div class="col-sm-4">
                             <label class="form-label premium-label">Phone</label>
                             <input type="text" class="form-control premium-input" id="phone" name="phone"
-                                placeholder="Enter phone" value="{{ $customer->phone }}">
+                                data-phone-mask value="{{ old('phone', $customer->phone) }}">
                             @error('phone')
                                 <div class="text-danger mt-2">{{ $message }}</div>
                             @enderror
@@ -622,6 +622,7 @@
 @endsection
 
 @section('scripts')
+    @include('partials.phone-mask')
     <script>
         var moduleCost = 0;
         var systemSize = 0;

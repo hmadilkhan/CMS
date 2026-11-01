@@ -25,6 +25,7 @@ use App\Models\SubDepartment;
 use App\Models\Task;
 use App\Models\User;
 use App\Models\UtilityCompany;
+use App\Support\PhoneNumber;
 use App\Traits\MediaTrait;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -103,7 +104,7 @@ class IntakeFormController extends Controller
                 "city" => $request->city,
                 "state" => $request->state,
                 "zipcode" => $request->zipcode,
-                "phone" => $request->phone,
+                "phone" => PhoneNumber::formatOrKeep($request->phone),
                 "email" => $request->email,
                 "preferred_language" => $request->preferred_language,
                 "sales_partner_id" => $request->sales_partner_id,
@@ -292,7 +293,7 @@ class IntakeFormController extends Controller
                 "city" => $request->city,
                 "state" => $request->state,
                 "zipcode" => $request->zipcode,
-                "phone" => $request->phone,
+                "phone" => PhoneNumber::formatOrKeep($request->phone),
                 "email" => $request->email,
                 "preferred_language" => $request->preferred_language,
                 "sales_partner_id" => $request->sales_partner_id,

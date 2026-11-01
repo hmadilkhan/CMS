@@ -45,7 +45,7 @@ class ProjectListSearchTest extends TestCase
      * A ghost project: it reached Permitting (department 4) and never went past
      * department 7, which is what ghostProjects() looks for.
      */
-    private function ghostProject(string $projectName, string $lastName): Project
+    private function ghostProject(string $projectName, string $lastName, string $phone = '555-000-0000'): Project
     {
         Department::firstOrCreate(['id' => 4], ['name' => 'Permitting']);
         SubDepartment::firstOrCreate(['id' => 9], ['name' => 'Permit Submitted', 'department_id' => 4]);
@@ -59,7 +59,7 @@ class ProjectListSearchTest extends TestCase
             'city' => 'Mesa',
             'state' => 'AZ',
             'zipcode' => '85201',
-            'phone' => '555-000-0000',
+            'phone' => $phone,
             'email' => strtolower($lastName).'@example.com',
             'sales_partner_id' => $salesPartner->id,
             'sold_date' => now()->subYear()->toDateString(),
@@ -125,6 +125,27 @@ class ProjectListSearchTest extends TestCase
         $this->ghostProject('Beta Canyon', 'Bennett');
 
         $this->assertSame(['Beta Canyon'], $this->ghostProjectsFor(['search' => 'Bennett']));
+    }
+
+    /** Phones are stored as "(123) 123-9090"; typing the digits must still find them. */
+    public function test_search_finds_a_formatted_phone_by_its_digits(): void
+    {
+        $admin = $this->superAdmin();
+        $this->ghostProject('Alpha Ridge', 'Alvarez', '(909) 630-2052');
+        $this->ghostProject('Beta Canyon', 'Bennett', '(626) 872-7757');
+
+        foreach (['9096302052', '909-630-2052', '909 630', '(909) 630-2052', '630-20'] as $term) {
+            $this->assertSame(['Alpha Ridge'], $this->ghostProjectsFor(['search' => $term]), $term);
+        }
+
+        $this->actingAs($admin);
+
+        foreach (['9096302052', '909-630-2052'] as $term) {
+            $result = app(ProjectController::class)
+                ->projectQuery(new Request(['id' => 'all', 'search' => $term]));
+
+            $this->assertSame(['Alpha Ridge'], $result['projects']->pluck('project_name')->all(), $term);
+        }
     }
 
     public function test_ghost_lane_keeps_every_project_when_nothing_is_searched(): void

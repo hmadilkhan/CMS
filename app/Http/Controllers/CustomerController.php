@@ -27,6 +27,7 @@ use App\Models\User;
 use App\Services\AhjRegistryService;
 use App\Services\FinanceMilestoneService;
 use App\Services\ProjectAssignmentService;
+use App\Support\PhoneNumber;
 use App\Traits\MediaTrait;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -70,7 +71,19 @@ class CustomerController extends Controller
             'city' => 'required',
             'state' => 'required',
             'zipcode' => 'required',
-            'phone' => 'required',
+            'phone' => ['required', function ($attribute, $value, $fail) use ($request) {
+                // A customer saved before the format rule keeps editing as long as
+                // the phone itself is left alone; changing it must meet the rule.
+                $current = $request->route('customer');
+
+                if ($current instanceof Customer && $current->phone === $value) {
+                    return;
+                }
+
+                if (PhoneNumber::format($value) === null) {
+                    $fail('Enter a 10-digit US phone number, e.g. (123) 123-9090.');
+                }
+            }],
             'email' => 'required|email',
             'panel_qty' => 'required|numeric',
             'sold_date' => 'required|date',
@@ -187,7 +200,7 @@ class CustomerController extends Controller
             'city' => $request->city,
             'state' => $request->state,
             'zipcode' => $request->zipcode,
-            'phone' => $request->phone,
+            'phone' => PhoneNumber::formatOrKeep($request->phone),
             'email' => $request->email,
             'sales_partner_id' => $request->sales_partner_id,
             'sub_contractor_id' => $request->sub_contractor_id,
