@@ -329,6 +329,42 @@ and the **Funding Manager files the date from the Zones NTP tab**, which release
 it. It is the only chase whose document comes from outside Operations, so it has
 no dashboard card and opens at the move rather than when the date goes missing.
 
+## Installation → Inspection needs both invoices
+
+`ProjectController::moveProject()` refuses (422, English message naming what is
+missing) a move from Installation to Inspection unless the project has at least
+one Labor **and** one Material invoice (`project_invoice_details`, soft-deleted
+rows don't count). The rule lives in `Project::missingInvoiceTypeLabels()` /
+`ProjectInvoiceDetail::REQUIRED_TYPES` and runs BEFORE the Fire Review chase can
+park the move. Departments are matched by name, like the follow-up service. It
+applies to every project, including ones already in Installation. The old
+`projectMove()` is unrouted. Covered by `ProjectMoveMissingFieldsTest`.
+
+## Account Transactions — status, and the Labor Payable
+
+- `account_transactions.status` is `Open` / `Closed` (`AccountTransaction::STATUS_*`).
+  New rows start Open; the migration closed every row that existed. Editable
+  from the Account Transactions form.
+- **Entering a project's Inspection Approval Date raises the sub-contractor's
+  Labor Payable** (`SubContractorPayableService`, called from
+  `EditFields::save()` only when the date goes from empty to filled - the form
+  re-sends the date on every save, so a later save must not fire it). One
+  transaction per Labor invoice: payee Sub-Contractor, milestone
+  `Full Payment - Invoice #<n>`, amount = **-(invoice amount)**, date = the
+  inspection approval date, details `Labor Payable - <sub-contractor name>`,
+  status Open. The invoice number is read from the uploaded file's name
+  (`INVOICE_2207_from_...pdf`) because invoices have no number field.
+- `account_transactions.project_invoice_detail_id` links it to its invoice and
+  is what stops a second one (deleted ones included). No sub-contractor on the
+  customer, or no Labor invoice → nothing is created (logged). No backfill of
+  projects that already have the date. Material invoices create nothing.
+- Separate from `FinanceMilestoneService`, which still raises the customer's
+  "Inspection Approval Date" milestone payment for finance options with
+  milestones on.
+- Finance used to key the Labor Payable in by hand (often before inspection,
+  dated the Friday pay run); they stop doing that once this is live, or there
+  will be duplicates.
+
 ## Zones (Funding Manager module)
 
 A second, **funding-side pipeline** that runs beside the department pipeline and

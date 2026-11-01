@@ -117,6 +117,17 @@
                             <span class="text-danger">{{ $message }}</span>
                         @enderror
                     </div>
+                    <div class="col-xl-3 col-lg-4 col-md-6">
+                        <label class="form-label">Status</label>
+                        <select class="form-select form-control" aria-label="Default select Status"
+                            wire:model.defer="status">
+                            <option value="Open">Open</option>
+                            <option value="Closed">Closed</option>
+                        </select>
+                        @error('status')
+                            <span class="text-danger">{{ $message }}</span>
+                        @enderror
+                    </div>
                     <div class="col-xl-2 col-lg-4 col-md-6 account-transaction-action-col">
                         <button type="submit" class="btn btn-primary w-100">
                             {{ $isEditMode ? 'Update' : 'Add' }}
@@ -146,6 +157,7 @@
                         <th>Remitted Amount</th>
                         <th>Date</th>
                         <th>Details</th>
+                        <th>Status</th>
                         @can('Account Transactions Edit')
                             <th class="transaction-actions text-center">Actions</th>
                         @endcan
@@ -162,6 +174,10 @@
                             <td>${{ number_format($transaction->remitted_amount , 2) }}</td>
                             <td>{{ date('d M Y',strtotime($transaction->transaction_date)) }}</td>
                             <td>{{ $transaction->transaction_details }}</td>
+                            <td>
+                                <span
+                                    class="badge {{ $transaction->status === 'Open' ? 'bg-success' : 'bg-secondary' }}">{{ $transaction->status }}</span>
+                            </td>
                             @can('Account Transactions Edit')
                                 <td class="transaction-actions text-center">
                                     <div class="transaction-action-group">
@@ -188,7 +204,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="@can('Account Transactions Edit') 9 @else 8 @endcan" class="text-center">No transactions found.</td>
+                            <td colspan="@can('Account Transactions Edit') 10 @else 9 @endcan" class="text-center">No transactions found.</td>
                         </tr>
                     @endforelse
                 </tbody>
@@ -198,7 +214,7 @@
                         <th>${{ number_format($totalAmount, 2) }}</th>
                         <th>${{ number_format($totalDeductionAmount, 2) }}</th>
                         <th>${{ number_format($totalRemittedAmount, 2) }}</th>
-                        <th colspan="@can('Account Transactions Edit') 3 @else 2 @endcan"></th>
+                        <th colspan="@can('Account Transactions Edit') 4 @else 3 @endcan"></th>
                     </tr>
                 </tfoot>
             </table>

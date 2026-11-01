@@ -10,24 +10,34 @@ class AccountTransaction extends Model
 {
     use HasFactory, SoftDeletes;
 
+    public const STATUS_OPEN = 'Open';
+
+    public const STATUS_CLOSED = 'Closed';
+
     protected $fillable = [
         'project_id',
+        'project_invoice_detail_id',
         'payee',
         'milestone',
         'amount',
         'deduction_amount',
         'transaction_date',
         'transaction_details',
+        'status',
+    ];
+
+    protected $attributes = [
+        'status' => self::STATUS_OPEN,
     ];
 
     public function getPayeeLabelAttribute()
     {
         return [
-            'sales_partner'  => 'Sales Partner',
+            'sales_partner' => 'Sales Partner',
             'sub_contractor' => 'Sub-Contractor',
-            'supplier'       => 'Supplier',
-            'customer'       => 'Customer',
-            'others'         => 'Others',
+            'supplier' => 'Supplier',
+            'customer' => 'Customer',
+            'others' => 'Others',
         ][$this->payee] ?? $this->payee;
     }
 
@@ -50,7 +60,7 @@ class AccountTransaction extends Model
     {
         return '$ ' . number_format($this->remitted_amount, 2);
     }
-    
+
     public function getFormattedTransactionDateAttribute()
     {
         return date("d M Y",strtotime($this->attributes['transaction_date']));

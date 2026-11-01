@@ -8,6 +8,7 @@ use App\Models\UtilityCompany;
 use App\Services\DocumentFollowUpService;
 use App\Services\FinanceMilestoneService;
 use App\Services\ProjectDateChangeNotifier;
+use App\Services\SubContractorPayableService;
 use Illuminate\Validation\Rule;
 use Livewire\Component;
 
@@ -439,6 +440,12 @@ class EditFields extends Component
                 'solar_install_date',
                 'inspection_approval_date',
             ]));
+            // The sub-contractor's Labor Payable is raised the first time the
+            // Inspection Approval Date is entered - not on every later save of
+            // this form, which sends the date again.
+            if (empty($previousDates['inspection_approval_date']) && ! empty($updateItems['inspection_approval_date'] ?? null)) {
+                app(SubContractorPayableService::class)->createForInspectionApproval($this->project);
+            }
             app(ProjectDateChangeNotifier::class)->notify($this->project, $previousDates, $updateItems);
             // MPU Required (Engineering) / meter spot result (Installation) both
             // live on this form, so keep the Document Follow Up in step.

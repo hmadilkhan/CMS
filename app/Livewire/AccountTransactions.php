@@ -2,9 +2,8 @@
 
 namespace App\Livewire;
 
-use Livewire\Component;
 use App\Models\AccountTransaction;
-use App\Models\Project;
+use Livewire\Component;
 
 class AccountTransactions extends Component
 {
@@ -16,6 +15,7 @@ class AccountTransactions extends Component
     public $deduction_amount;
     public $transaction_date;
     public $transaction_details;
+    public $status = AccountTransaction::STATUS_OPEN;
     public $transactionIdBeingEdited = null;
     public $isEditMode = false;
     public $confirmingDeleteId = null;
@@ -27,6 +27,7 @@ class AccountTransactions extends Component
         'deduction_amount' => 'required|numeric',
         'transaction_date' => 'required|date',
         'transaction_details' => 'required|string',
+        'status' => 'required|in:Open,Closed',
     ];
 
     public function mount($project_id = null)
@@ -48,6 +49,7 @@ class AccountTransactions extends Component
         $this->deduction_amount = '';
         $this->transaction_date = '';
         $this->transaction_details = '';
+        $this->status = AccountTransaction::STATUS_OPEN;
         $this->transactionIdBeingEdited = null;
         $this->isEditMode = false;
     }
@@ -63,6 +65,7 @@ class AccountTransactions extends Component
             'deduction_amount' => $this->deduction_amount,
             'transaction_date' => $this->transaction_date,
             'transaction_details' => $this->transaction_details,
+            'status' => $this->status,
         ];
 
         $account = AccountTransaction::create($items);
@@ -92,6 +95,7 @@ class AccountTransactions extends Component
         $this->deduction_amount = $transaction->deduction_amount;
         $this->transaction_date = $transaction->transaction_date;
         $this->transaction_details = $transaction->transaction_details;
+        $this->status = $transaction->status ?: AccountTransaction::STATUS_OPEN;
         $this->isEditMode = true;
     }
 
@@ -106,6 +110,7 @@ class AccountTransactions extends Component
             'deduction_amount' => $this->deduction_amount,
             'transaction_date' => $this->transaction_date,
             'transaction_details' => $this->transaction_details,
+            'status' => $this->status,
         ];
         $transaction->update($items);
         // ADDING TO LOGS

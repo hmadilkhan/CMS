@@ -198,6 +198,7 @@ return [
                 'deduction_amount' => 'Amount deducted from the payment.',
                 'transaction_date' => 'Date of the transaction.',
                 'transaction_details' => 'Free-text details/notes about the transaction.',
+                'status' => 'Open (still to be settled) or Closed (settled). New transactions start Open.',
                 'created_at' => 'When the record was created.',
                 'updated_at' => 'When last updated.',
                 'deleted_at' => 'When soft-deleted (NULL means active).',
