@@ -112,6 +112,22 @@ class Project extends Model
         return $this->hasMany(ProjectInvoiceDetail::class, 'project_id', 'id');
     }
 
+    /**
+     * Labels of the required invoice types ("Labor", "Material") this project has
+     * no invoice for. Deleted invoices do not count (the model soft-deletes).
+     *
+     * @return array<int, string>
+     */
+    public function missingInvoiceTypeLabels(): array
+    {
+        $present = $this->invoiceDetails()->pluck('invoice_type')->all();
+
+        return array_values(array_diff_key(
+            ProjectInvoiceDetail::REQUIRED_TYPES,
+            array_flip($present)
+        ));
+    }
+
     public function serviceTickets()
     {
         return $this->hasMany(ServiceTicket::class, 'project_id', 'id');

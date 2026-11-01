@@ -10,6 +10,12 @@ class ProjectInvoiceDetail extends Model
 {
     use HasFactory, SoftDeletes;
 
+    /** The invoice types a project must have on file before it can go to Inspection. */
+    public const REQUIRED_TYPES = [
+        'labor' => 'Labor',
+        'material' => 'Material',
+    ];
+
     protected $fillable = [
         'project_id',
         'invoice_type',

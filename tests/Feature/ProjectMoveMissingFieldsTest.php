@@ -6,6 +6,7 @@ use App\Models\Customer;
 use App\Models\Department;
 use App\Models\Employee;
 use App\Models\Project;
+use App\Models\ProjectInvoiceDetail;
 use App\Models\SalesPartner;
 use App\Models\SubDepartment;
 use App\Models\Task;
@@ -238,6 +239,83 @@ class ProjectMoveMissingFieldsTest extends TestCase
         $this->moveToInspection($fixture)
             ->assertStatus(422)
             ->assertJson(['missing_field_labels' => ['HOA Approval Date']]);
+    }
+
+    private function addInvoice(Project $project, string $type): ProjectInvoiceDetail
+    {
+        return ProjectInvoiceDetail::create([
+            'project_id' => $project->id,
+            'invoice_type' => $type,
+            'invoice_date' => now()->toDateString(),
+            'amount' => 1500,
+            'file_name' => $type.'.pdf',
+            'original_file_name' => $type.'.pdf',
+            'file_path' => 'invoices/'.$type.'.pdf',
+        ]);
+    }
+
+    public function test_inspection_is_refused_when_both_invoices_are_missing(): void
+    {
+        $fixture = $this->fixtureInInstallation();
+
+        $response = $this->moveToInspection($fixture)
+            ->assertStatus(422)
+            ->assertJson(['status' => 422, 'requires' => 'invoices']);
+
+        $this->assertEqualsCanonicalizing(['Labor', 'Material'], $response->json('missing_invoices'));
+        $this->assertStringContainsString('Labor invoice and Material invoice', $response->json('error'));
+        $this->assertSame($fixture['installation']->id, (int) $fixture['project']->refresh()->department_id);
+    }
+
+    public function test_the_refusal_names_only_the_invoice_that_is_missing(): void
+    {
+        $fixture = $this->fixtureInInstallation();
+        $this->addInvoice($fixture['project'], 'labor');
+
+        $this->moveToInspection($fixture)
+            ->assertStatus(422)
+            ->assertJson(['missing_invoices' => ['Material']]);
+
+        $this->addInvoice($fixture['project'], 'material');
+        $fixture['project']->invoiceDetails()->where('invoice_type', 'labor')->delete();
+
+        $this->moveToInspection($fixture)
+            ->assertStatus(422)
+            ->assertJson(['missing_invoices' => ['Labor']]);
+    }
+
+    public function test_a_project_with_both_invoices_moves_to_inspection(): void
+    {
+        $fixture = $this->fixtureInInstallation();
+        $this->addInvoice($fixture['project'], 'labor');
+        $this->addInvoice($fixture['project'], 'material');
+
+        // Inspection has to be staffed or the move stops at the assignment.
+        $inspectionUser = User::factory()->create(['user_type_id' => 2]);
+        $inspectionUser->assignRole(Role::firstOrCreate(['name' => 'Manager']));
+        Employee::create([
+            'name' => 'Inspection Manager',
+            'code' => 'EMP-INSPECT',
+            'email' => 'inspection.manager@example.com',
+            'phone' => '555-444-4444',
+            'user_id' => $inspectionUser->id,
+        ])->department()->attach($fixture['inspection']->id);
+
+        $this->moveToInspection($fixture)->assertOk()->assertJson(['status' => 200]);
+
+        $this->assertSame($fixture['inspection']->id, (int) $fixture['project']->refresh()->department_id);
+    }
+
+    public function test_the_invoice_rule_only_applies_to_the_installation_to_inspection_move(): void
+    {
+        // Permitting -> Installation is not gated on invoices.
+        $this->requirePermittingFields(['permitting_approval_date']);
+        $fixture = $this->fixture([
+            'fire_review_required' => 0,
+            'permitting_approval_date' => '2026-07-15',
+        ]);
+
+        $this->moveToInstallation($fixture)->assertOk();
     }
 
     public function test_permitting_no_longer_waits_for_the_hoa_approval_dates(): void

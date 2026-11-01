@@ -827,7 +827,29 @@ class ProjectController extends Controller
             }
         }
 
-        // Installation may not start without the NTP approval date on file.
+        // A project leaves Installation for Inspection only once both its Labor
+        // and Material invoices exist. Checked before the Fire Review chase can
+        // park the move, so that lane is never a way around it.
+        $installationId = Department::where('name', 'Installation')->value('id');
+        $inspectionId = Department::where('name', 'Inspection')->value('id');
+
+        if ($installationId && $inspectionId
+            && (int) $currentDepartmentId === (int) $installationId
+            && (int) $request->departmentId === (int) $inspectionId) {
+            $missingInvoices = $project->missingInvoiceTypeLabels();
+
+            if (! empty($missingInvoices)) {
+                return response()->json([
+                    'status' => 422,
+                    'error' => 'This project cannot be moved to Inspection until both the Labor and Material invoices are created. Missing: '
+                        .implode(' and ', array_map(fn ($label) => $label.' invoice', $missingInvoices))
+                        .'. Add it in the Invoice Details section of the project, then move it again.',
+                    'requires' => 'invoices',
+                    'missing_invoices' => $missingInvoices,
+                ], 422);
+            }
+        }
+
         // Ensure the sub-department actually belongs to the target department.
         // Prevents a mismatched pair (e.g. department 3 + sub_department 1) from
         // being saved, which would hide the project from its department tab.
