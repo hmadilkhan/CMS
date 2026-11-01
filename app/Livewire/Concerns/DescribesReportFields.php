@@ -9,6 +9,7 @@ use App\Models\LoanApr;
 use App\Models\LoanTerm;
 use App\Models\ModuleType;
 use App\Models\SalesPartner;
+use App\Models\SubContractor;
 use App\Models\SubDepartment;
 
 /**
@@ -76,6 +77,7 @@ trait DescribesReportFields
             'projects.actual_labor_cost' => 'number',
             'projects.actual_permit_fee' => 'number',
             'projects.actual_office_cost' => 'number',
+            'projects.office_cost' => 'number',
             'loan_terms.year' => 'number',
             'loan_aprs.apr' => 'number',
 
@@ -85,6 +87,7 @@ trait DescribesReportFields
             'projects.sub_department_id' => 'dropdown',
             'sub_departments.name' => 'dropdown',
             'sales_partners.name' => 'dropdown',
+            'sub_contractors.name' => 'dropdown',
             'module_types.name' => 'dropdown',
             'inverter_types.name' => 'dropdown',
             'finance_options.name' => 'dropdown',
@@ -110,6 +113,7 @@ trait DescribesReportFields
             'projects.sub_department_id' => SubDepartment::orderBy('name')->pluck('name', 'id')->toArray(),
             'sub_departments.name' => SubDepartment::orderBy('name')->pluck('name', 'name')->toArray(),
             'sales_partners.name' => SalesPartner::orderBy('name')->pluck('name', 'name')->toArray(),
+            'sub_contractors.name' => SubContractor::orderBy('name')->pluck('name', 'name')->toArray(),
             'module_types.name' => ModuleType::orderBy('name')->pluck('name', 'name')->toArray(),
             'inverter_types.name' => InverterType::orderBy('name')->pluck('name', 'name')->toArray(),
             'finance_options.name' => FinanceOption::orderBy('name')->pluck('name', 'name')->toArray(),
@@ -129,6 +133,9 @@ trait DescribesReportFields
      */
     private const FIELD_ALIASES = [
         'customer_finances.adders' => 'adders_amount',
+        'sales_partner_users.name' => 'sales_partner_user_name',
+        'sub_contractors.name' => 'sub_contractor_name',
+        'sub_contractor_users.name' => 'sub_contractor_user_name',
         'finance_options.name' => 'finance_option_name',
         'loan_terms.year' => 'loan_term_years',
         'loan_aprs.apr' => 'loan_apr',

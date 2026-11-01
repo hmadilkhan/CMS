@@ -630,10 +630,16 @@ class ReportRunner extends Component
             'projects.actual_labor_cost' => 'Actual Labor Cost',
             'projects.actual_permit_fee' => 'Actual Permit Fee',
             'projects.actual_office_cost' => 'Actual Office Cost',
+            'projects.office_cost' => 'Office Cost',
 
             // Sales Partner fields
             'sales_partners.name' => 'Sales Partner Name',
             'sales_partners.commission_rate' => 'Commission Rate',
+            'sales_partner_users.name' => 'Sales Partner User Name',
+
+            // Sub Contractor fields
+            'sub_contractors.name' => 'Sub Contractor Name',
+            'sub_contractor_users.name' => 'Sub Contractor User Name',
 
             // Department fields
             'departments.name' => 'Department Name',

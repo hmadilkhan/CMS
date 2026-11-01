@@ -221,10 +221,16 @@ class DynamicReportBuilder extends Component
             'projects.actual_labor_cost' => 'Actual Labor Cost',
             'projects.actual_permit_fee' => 'Actual Permit Fee',
             'projects.actual_office_cost' => 'Actual Office Cost',
+            'projects.office_cost' => 'Office Cost',
 
             // Sales Partner fields
             'sales_partners.name' => 'Sales Partner Name',
             'sales_partners.commission_rate' => 'Commission Rate',
+            'sales_partner_users.name' => 'Sales Partner User Name',
+
+            // Sub Contractor fields
+            'sub_contractors.name' => 'Sub Contractor Name',
+            'sub_contractor_users.name' => 'Sub Contractor User Name',
 
             // Department fields
             'departments.name' => 'Department Name',
@@ -363,7 +369,8 @@ class DynamicReportBuilder extends Component
         $groups = [
             'Customer' => ['customers.'],
             'Project' => ['projects.'],
-            'Sales Partner' => ['sales_partners.'],
+            'Sales Partner' => ['sales_partners.', 'sales_partner_users.'],
+            'Sub Contractor' => ['sub_contractors.', 'sub_contractor_users.'],
             'Department & Lane' => ['departments.', 'sub_departments.'],
             'Equipment' => ['module_types.', 'inverter_types.'],
             'Finance' => ['customer_finances.', 'finance_options.', 'loan_terms.', 'loan_aprs.'],

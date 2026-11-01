@@ -51,8 +51,21 @@ trait JoinsReportTables
 
         // Departments and sub-departments hang off the project, so the project
         // join comes first and is shared with them.
-        if ($needs('projects') || $needs('departments') || $needs('sub_departments')) {
+        if ($needs('projects') || $needs('departments') || $needs('sub_departments')
+            || $needs('sales_partner_users') || $needs('sub_contractor_users')) {
             $join('projects', 'customers.id', 'projects.customer_id');
+        }
+
+        // The project's sales partner / sub contractor USER (projects.*_user_id)
+        // is a login, not the sales_partners / sub_contractors company the
+        // customer belongs to, so it is the users table under its own alias. A
+        // deleted user is still named, as everywhere else in the CRM
+        // (Project::salesPartnerUser / subContractorUser are withTrashed).
+        foreach (['sales_partner_users' => 'sales_partner_user_id', 'sub_contractor_users' => 'sub_contractor_user_id'] as $alias => $column) {
+            if ($needs($alias) && ! isset($joined[$alias])) {
+                $joined[$alias] = true;
+                $query->leftJoin('users as '.$alias, 'projects.'.$column, '=', $alias.'.id');
+            }
         }
 
         if ($needs('departments')) {
@@ -65,6 +78,12 @@ trait JoinsReportTables
 
         if ($needs('sales_partners')) {
             $join('sales_partners', 'customers.sales_partner_id', 'sales_partners.id');
+        }
+
+        // Like Customer::subcontractor(), a deleted sub contractor is still named.
+        if ($needs('sub_contractors') && ! isset($joined['sub_contractors'])) {
+            $joined['sub_contractors'] = true;
+            $query->leftJoin('sub_contractors', 'customers.sub_contractor_id', '=', 'sub_contractors.id');
         }
 
         if ($needs('module_types')) {
