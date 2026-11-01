@@ -1826,6 +1826,11 @@
             overflow-wrap: anywhere;
         }
 
+        /* Notes are typed in a textarea; keep the line breaks the user entered. */
+        #project-show-page.project-workspace-redesign .design-detail-value.keep-line-breaks {
+            white-space: pre-line;
+        }
+
         @media (max-width: 991.98px) {
             #project-show-page.project-workspace-redesign .design-details-grid {
                 grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -2795,7 +2800,7 @@
                                                                         @foreach ($designDetailFields as $fieldName => $fieldLabel)
                                                                             <div class="design-detail-item">
                                                                                 <span class="design-detail-label">{{ $fieldLabel }}</span>
-                                                                                <span class="design-detail-value">{{ filled($designDetail->{$fieldName}) ? $designDetail->{$fieldName} : '-' }}</span>
+                                                                                <span class="design-detail-value keep-line-breaks">{{ filled($designDetail->{$fieldName}) ? $designDetail->{$fieldName} : '-' }}</span>
                                                                             </div>
                                                                         @endforeach
                                                                         <div class="design-detail-item">

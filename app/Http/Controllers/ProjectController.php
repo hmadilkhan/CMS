@@ -1207,7 +1207,75 @@ class ProjectController extends Controller
                 $designPayload['task_id'] = $designDetail->task_id;
                 $designPayload['department_id'] = $designDetail->department_id;
                 $designPayload['sub_department_id'] = $designDetail->sub_department_id;
+
+                $previousAssignNotes = trim((string) $designDetail->assign_notes);
+                $previousFollowUp = (bool) $designDetail->follow_up;
+                $previousFollowUpDate = $designDetail->follow_up_date?->toDateString();
+
                 $designDetail->update($designPayload);
+
+                // The assignee and the "assign to" note shown on the project
+                // card live on the project's current task, not on the design
+                // detail row - so changing them here has to move the task the
+                // same way the Assign Employee box does, or the card, the
+                // assignee and the notification never change. Only while the
+                // project is still in the lane the design detail belongs to,
+                // and only when one of them actually changed, so a plain edit
+                // does not start a new stint in the Department Logs.
+                $assignTask = $currentTask;
+                $stillInDesignLane = (int) $assignTask->department_id === (int) $designDetail->department_id
+                    && (int) $project->department_id === (int) $designDetail->department_id
+                    && in_array($assignTask->status, $activeStatuses);
+                $employeeChanged = (int) $assignTask->employee_id !== (int) $validated['employee_id'];
+                $notesChanged = $previousAssignNotes !== trim((string) ($validated['assign_notes'] ?? ''));
+
+                if ($stillInDesignLane && ($employeeChanged || $notesChanged)) {
+                    Task::where('id', $assignTask->id)->update([
+                        'status' => 'Completed',
+                        'completed_at' => now(),
+                        'notes' => $employeeChanged ? 'Task Assigned to Employee' : 'New assign to notes added',
+                    ]);
+
+                    $currentTask = Task::create([
+                        'project_id' => $project->id,
+                        'employee_id' => $validated['employee_id'],
+                        'department_id' => $assignTask->department_id,
+                        'sub_department_id' => $assignTask->sub_department_id,
+                        'assign_to_notes' => $validated['assign_notes'] ?? null,
+                        'status' => 'In-Progress',
+                        'user_id' => auth()->id(),
+                    ]);
+
+                    if ($employeeChanged) {
+                        $assignedEmployee = Employee::with('user')->find($validated['employee_id']);
+                        app(ProjectAssignmentService::class)->notifyAssignedEmployee($assignedEmployee, $project, $currentTask, true);
+                    }
+                }
+
+                $followUpChanged = ! empty($validated['follow_up']) && ! empty($validated['follow_up_date'])
+                    && (! $previousFollowUp || $previousFollowUpDate !== $designDetail->follow_up_date?->toDateString());
+
+                if ($followUpChanged) {
+                    ProjectFollowUp::where('project_id', $project->id)
+                        ->where('department_id', $designDetail->department_id)
+                        ->where('sub_department_id', $designDetail->sub_department_id)
+                        ->where('status', 'Pending')
+                        ->update([
+                            'status' => 'Resolved',
+                            'resolved_date' => now(),
+                        ]);
+
+                    ProjectFollowUp::create([
+                        'project_id' => $project->id,
+                        'employee_id' => $validated['employee_id'],
+                        'created_by' => auth()->id(),
+                        'department_id' => $designDetail->department_id,
+                        'sub_department_id' => $designDetail->sub_department_id,
+                        'follow_up_date' => $validated['follow_up_date'],
+                        'notes' => $validated['assign_notes'] ?? 'Design details follow-up scheduled',
+                        'status' => 'Pending',
+                    ]);
+                }
 
                 activity('project')
                     ->performedOn($project)
