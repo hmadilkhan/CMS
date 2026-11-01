@@ -24,7 +24,7 @@ class ProjectDateUpdatedNotification extends Notification
 
     public function via(object $notifiable): array
     {
-        return ['mail'];
+        return $notifiable->wantsEmail('project_date_updated') ? ['mail'] : [];
     }
 
     public function toMail(object $notifiable): MailMessage

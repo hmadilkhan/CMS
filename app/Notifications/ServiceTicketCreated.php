@@ -22,7 +22,7 @@ class ServiceTicketCreated extends Notification implements \Illuminate\Contracts
 
     public function via($notifiable)
     {
-        return ['mail', 'database'];
+        return $notifiable->wantsEmail('service_ticket_created') ? ['mail', 'database'] : ['database'];
     }
 
     public function toMail($notifiable)

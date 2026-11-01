@@ -19,11 +19,16 @@
 | Bodies are HTML (the editor produces HTML) and are wrapped in the branded
 | mail layout, so no header, footer or signature is needed here.
 |
+| A template flagged 'per_user' => true goes to one specific user, so it shows
+| on that user's profile as an on/off switch (see User::wantsEmail). Leave the
+| flag off for an email sent to a fixed address or a recipient list.
+|
 */
 
 return [
 
     'project_assigned' => [
+        'per_user' => true,
         'name' => 'Project Assigned',
         'group' => 'Projects',
         'description' => 'Sent to an employee when a project is assigned to them in a department.',
@@ -50,6 +55,7 @@ return [
     ],
 
     'project_date_updated' => [
+        'per_user' => true,
         'name' => 'Project Milestone Date Updated',
         'group' => 'Projects',
         'description' => 'Sent to the sales person when the Permit, Installation, Inspection or PTO date is entered or changed. {milestone_details} expands to one headline and sentence per changed date.',
@@ -75,6 +81,7 @@ return [
     ],
 
     'note_mentioned' => [
+        'per_user' => true,
         'name' => 'Mentioned in a Project Note',
         'group' => 'Projects',
         'description' => 'Sent to an employee tagged with @ in a project note.',
@@ -94,6 +101,7 @@ return [
     ],
 
     'email_received' => [
+        'per_user' => true,
         'name' => 'New Email Received for a Project',
         'group' => 'Projects',
         'description' => 'Sent to the assigned employee when a customer replies to a project email.',
@@ -114,6 +122,7 @@ return [
     ],
 
     'service_ticket_created' => [
+        'per_user' => true,
         'name' => 'Service Ticket Assigned',
         'group' => 'Service Tickets',
         'description' => 'Sent to the assigned user when a new service ticket is created.',
@@ -138,6 +147,7 @@ return [
     ],
 
     'service_ticket_resolved' => [
+        'per_user' => true,
         'name' => 'Service Ticket Resolved',
         'group' => 'Service Tickets',
         'description' => 'Sent to the person who raised the ticket once it is resolved.',
@@ -162,6 +172,7 @@ return [
     ],
 
     'service_ticket_comment' => [
+        'per_user' => true,
         'name' => 'New Comment on a Service Ticket',
         'group' => 'Service Tickets',
         'description' => 'Sent to the person who raised the ticket when someone comments on it.',
@@ -184,6 +195,7 @@ return [
     ],
 
     'site_survey_scheduled' => [
+        'per_user' => true,
         'name' => 'Site Survey Scheduled',
         'group' => 'Site Surveys',
         'description' => 'Sent to the technician when a site survey is booked for them.',
@@ -205,6 +217,7 @@ return [
     ],
 
     'acceptance_review_sent' => [
+        'per_user' => true,
         'name' => 'Acceptance Review Sent',
         'group' => 'Acceptance',
         'description' => 'Sent to the sales person when a Project Acceptance Review is submitted for their approval.',

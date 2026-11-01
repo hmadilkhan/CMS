@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\ProfileUpdateRequest;
+use App\Services\NotificationTemplateService;
 use App\Traits\MediaTrait;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -39,6 +40,13 @@ class ProfileController extends Controller
 
         // Explicitly set email_preference from the request
         $user->email_preference = $request->boolean('email_preference', true);
+
+        // Per-email switches. With the master off the inputs are disabled and not sent,
+        // so the stored choices are kept; a form that never carried them changes nothing.
+        if ($user->email_preference && $request->has('email_templates_submitted')) {
+            $switchedOn = array_keys(array_filter((array) $request->input('email_templates', [])));
+            $user->email_opt_outs = array_values(array_diff(NotificationTemplateService::userSwitchableKeys(), $switchedOn));
+        }
 
         if ($user->isDirty('email')) {
             $user->email_verified_at = null;

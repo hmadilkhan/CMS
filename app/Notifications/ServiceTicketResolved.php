@@ -23,7 +23,7 @@ class ServiceTicketResolved extends Notification implements ShouldQueue
 
     public function via($notifiable)
     {
-        return ['mail', 'database'];
+        return $notifiable->wantsEmail('service_ticket_resolved') ? ['mail', 'database'] : ['database'];
     }
 
     public function toMail($notifiable)

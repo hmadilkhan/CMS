@@ -32,7 +32,7 @@ class EmailReceivedNotification extends Notification implements ShouldQueue
      */
     public function via($notifiable)
     {
-        return ['database', 'mail'];
+        return $notifiable->wantsEmail('email_received') ? ['database', 'mail'] : ['database'];
     }
 
     /**

@@ -43,6 +43,45 @@ class NotificationTemplateService
     }
 
     /**
+     * Templates a user can switch on or off from their profile - the ones that
+     * go to one specific user (`per_user` in config), grouped for display.
+     * Read from the config alone: names and groups are not editable.
+     *
+     * @return array<string, array<string, array{name: string, description: string}>>
+     */
+    public function userSwitchable(): array
+    {
+        return collect(config('notification_templates', []))
+            ->filter(fn (array $template) => $template['per_user'] ?? false)
+            ->map(fn (array $template) => [
+                'group' => $template['group'] ?? 'Other',
+                'name' => $template['name'],
+                'description' => $this->firstSentence($template['description'] ?? ''),
+            ])
+            ->groupBy('group', true)
+            ->map(fn ($group) => $group->map(fn ($template) => [
+                'name' => $template['name'],
+                'description' => $template['description'],
+            ])->all())
+            ->all();
+    }
+
+    /** The editor descriptions run on into placeholder notes; a profile needs only the first sentence. */
+    private function firstSentence(string $text): string
+    {
+        return preg_split('/(?<=\.)\s/', trim($text), 2)[0];
+    }
+
+    /** Keys of the templates a user can switch. */
+    public static function userSwitchableKeys(): array
+    {
+        return array_keys(array_filter(
+            config('notification_templates', []),
+            fn (array $template) => $template['per_user'] ?? false
+        ));
+    }
+
+    /**
      * One registered template, or null when the key is not registered.
      *
      * @return array<string, mixed>|null

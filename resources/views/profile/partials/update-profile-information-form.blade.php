@@ -135,6 +135,37 @@
         </div>
     </div>
 
+    @php
+        $emailGroups = app(\App\Services\NotificationTemplateService::class)->userSwitchable();
+        $optedOut = $user->email_opt_outs ?? [];
+    @endphp
+    @if (! empty($emailGroups))
+        <div class="col-12 mb-3" id="email_templates_panel">
+            <input type="hidden" name="email_templates_submitted" value="1">
+            <div class="card border-0 shadow-sm p-3">
+                <div class="fw-semibold mb-1">{{ __('Choose the emails you receive') }}</div>
+                <div class="text-muted small mb-3">{{ __('Only the emails switched on here are sent to you. Switch the master Email Preference off to stop all of them.') }}</div>
+                @foreach ($emailGroups as $group => $templates)
+                    <div class="text-uppercase text-muted small fw-semibold mb-2 {{ $loop->first ? '' : 'mt-3' }}">{{ $group }}</div>
+                    @foreach ($templates as $key => $template)
+                        <div class="d-flex align-items-center justify-content-between py-2 border-top">
+                            <label class="me-3 mb-0" for="email_template_{{ $key }}">
+                                <span class="fw-semibold">{{ $template['name'] }}</span>
+                                <span class="d-block text-muted small">{{ $template['description'] }}</span>
+                            </label>
+                            <div class="form-check form-switch m-0">
+                                <input class="form-check-input email-template-switch" type="checkbox" id="email_template_{{ $key }}"
+                                    name="email_templates[{{ $key }}]" value="1"
+                                    {{ in_array($key, $optedOut, true) ? '' : 'checked' }}
+                                    {{ $user->email_preference ? '' : 'disabled' }}>
+                            </div>
+                        </div>
+                    @endforeach
+                @endforeach
+            </div>
+        </div>
+    @endif
+
     <div class="col-12 d-flex align-items-center gap-2">
         <button type="submit" class="btn btn-primary">{{ __('Save') }}</button>
         @if (session('status') === 'profile-updated')
@@ -143,6 +174,24 @@
     </div>
 </form>
 <script>
+    // Master switch off: the per-email switches are disabled (and so not submitted).
+    (function() {
+        const master = document.getElementById('email_preference');
+        const panel = document.getElementById('email_templates_panel');
+
+        if (!master || !panel) return;
+
+        function sync() {
+            panel.querySelectorAll('.email-template-switch').forEach(function(input) {
+                input.disabled = !master.checked;
+            });
+            panel.style.opacity = master.checked ? '' : '.55';
+        }
+
+        master.addEventListener('change', sync);
+        sync();
+    })();
+
     document.getElementById('profile_file')?.addEventListener('change', function(event) {
         const [file] = event.target.files;
         const preview = document.getElementById('profileImagePreview');

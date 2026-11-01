@@ -526,3 +526,29 @@ number, a leading `1` is dropped; `formatOrKeep` leaves unreadable values alone)
 - Existing rows: `php artisan customers:format-phones [--dry-run]` (soft-deleted
   included, idempotent, lists what it could not convert). **`deploy.sh` does not
   run it** - run it by hand once after deploying.
+
+## Per-email switches on the profile
+
+Each user chooses which system emails they get (Profile → Email Preference).
+`users.email_preference` is the **master** switch; `users.email_opt_outs` (json
+array of template keys, null = none) lists the emails switched off. A template
+the user has never seen is on.
+
+- **One check everywhere:** `User::wantsEmail('<template_key>')` (master on + key
+  not opted out + has an address). Every notification gates its `mail` channel
+  on it in `via()` (the bell/`database` entry always goes). `acceptance_review_sent`
+  is a direct send in `ProjectController`, gated the same way.
+- **Which templates appear:** those flagged `'per_user' => true` in
+  `config/notification_templates.php` (9 today). `acceptance_review_status`
+  (fixed engineering@ address) and `finance_milestone_triggered` (recipient list)
+  go to no user, so they have no switch and always send. **A new template that
+  goes to one user must be flagged `per_user` AND its notification must call
+  `wantsEmail()`** - otherwise it ignores the profile.
+- Master off → the per-email inputs are disabled and not submitted;
+  `ProfileController` then keeps the stored choices. A form without
+  `email_templates_submitted` changes nothing.
+- Migration `2026_11_02_000001`: users whose old switch was OFF start with all 9
+  templates opted out (so turning the master on does not suddenly send them
+  everything); users who had it ON start with none opted out.
+- Before this, only the @mention email honoured the old toggle; the other
+  user-facing emails ignored it.

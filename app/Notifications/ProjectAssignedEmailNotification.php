@@ -22,7 +22,7 @@ class ProjectAssignedEmailNotification extends Notification
 
     public function via(object $notifiable): array
     {
-        return ['mail'];
+        return $notifiable->wantsEmail('project_assigned') ? ['mail'] : [];
     }
 
     public function toMail(object $notifiable): MailMessage

@@ -4,8 +4,8 @@ namespace App\Notifications;
 
 use App\Services\NotificationTemplateService;
 use Illuminate\Bus\Queueable;
-use Illuminate\Notifications\Notification;
 use Illuminate\Notifications\Messages\MailMessage;
+use Illuminate\Notifications\Notification;
 
 class SiteSurveyScheduled extends Notification
 {
@@ -20,7 +20,7 @@ class SiteSurveyScheduled extends Notification
 
     public function via($notifiable)
     {
-        return ['database', 'mail'];
+        return $notifiable->wantsEmail('site_survey_scheduled') ? ['database', 'mail'] : ['database'];
     }
 
     public function toMail($notifiable)

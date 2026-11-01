@@ -26,7 +26,7 @@ class ServiceTicketCommentAdded extends Notification implements ShouldQueue
 
     public function via($notifiable)
     {
-        return ['mail', 'database'];
+        return $notifiable->wantsEmail('service_ticket_comment') ? ['mail', 'database'] : ['database'];
     }
 
     public function toMail($notifiable)

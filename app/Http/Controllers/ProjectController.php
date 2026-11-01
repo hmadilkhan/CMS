@@ -1763,14 +1763,17 @@ class ProjectController extends Controller
                     'inverter_name' => $project->customer->inverter->name,
                     'adders_list' => $addersList,
                 ]);
-                $mail = app(NotificationTemplateService::class)->render('acceptance_review_sent', [
-                    'recipient_name' => $project->salesPartnerUser->name,
-                    'customer_name' => trim($project->customer->first_name.' '.$project->customer->last_name),
-                    'project_name' => $project->project_name,
-                    'project_url' => url('/projects/'.$project->id),
-                    'support_email' => 'engineering@solenenergyco.com',
-                ]);
-                $this->sendEmailForProjectAcceptance($project, $mail['subject'], $mail['body'], $project->salesPartnerUser->email);
+                // The review itself is recorded above; only the email follows the sales person's switch.
+                if ($project->salesPartnerUser->wantsEmail('acceptance_review_sent')) {
+                    $mail = app(NotificationTemplateService::class)->render('acceptance_review_sent', [
+                        'recipient_name' => $project->salesPartnerUser->name,
+                        'customer_name' => trim($project->customer->first_name.' '.$project->customer->last_name),
+                        'project_name' => $project->project_name,
+                        'project_url' => url('/projects/'.$project->id),
+                        'support_email' => 'engineering@solenenergyco.com',
+                    ]);
+                    $this->sendEmailForProjectAcceptance($project, $mail['subject'], $mail['body'], $project->salesPartnerUser->email);
+                }
                 // Log the custom message
                 $username = auth()->user()->name;
                 activity('project')

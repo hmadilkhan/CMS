@@ -36,7 +36,7 @@ class NoteMentionedNotification extends Notification implements ShouldQueue
     public function via(object $notifiable): array
     {
         // The bell entry always goes; the email only to users who opted in.
-        if ($notifiable->email_preference == 1 && !empty($notifiable->email)) {
+        if ($notifiable->wantsEmail('note_mentioned')) {
             return ['database', 'mail'];
         }
 

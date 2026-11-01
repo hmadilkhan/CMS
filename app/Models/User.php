@@ -32,6 +32,7 @@ class User extends Authenticatable
         'overwrite_base_price',
         'overwrite_panel_price',
         'email_preference',
+        'email_opt_outs',
         'address',
         'latitude',
         'longitude',
@@ -57,6 +58,7 @@ class User extends Authenticatable
     protected $casts = [
         'email_verified_at' => 'datetime',
         'password' => 'hashed',
+        'email_opt_outs' => 'array',
     ];
 
     /**
@@ -67,6 +69,18 @@ class User extends Authenticatable
     public function username()
     {
         return 'username';
+    }
+
+    /**
+     * Whether this user wants the given system email. `email_preference` is the
+     * master switch; `email_opt_outs` lists the template keys switched off on
+     * their profile (null = none). A template they have never seen is on.
+     */
+    public function wantsEmail(string $templateKey): bool
+    {
+        return ! empty($this->email)
+            && (bool) $this->email_preference
+            && ! in_array($templateKey, $this->email_opt_outs ?? [], true);
     }
 
     public function type()
