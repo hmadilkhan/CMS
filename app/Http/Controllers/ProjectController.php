@@ -723,6 +723,11 @@ class ProjectController extends Controller
 
         $currentDepartmentId = $project->department_id;
 
+        // A move to another lane of the department the project is already in is
+        // not a hand-over: the employee and the note on the card stay, nobody is
+        // told they were assigned, and the department-arrival rules do not run.
+        $sameDepartment = (int) $request->departmentId === (int) $currentDepartmentId;
+
         // IF COUNT IS 0 THEN IT THE CASE IS FORWARD
         if ($checkProject == 0) {
             // CHECK FIELDS ARE FILLED OR NOT
@@ -859,23 +864,33 @@ class ProjectController extends Controller
         try {
             DB::beginTransaction();
 
-            // Auto-resolve pending follow-ups for the old department
-            ProjectFollowUp::where('project_id', $request->projectId)
+            $pendingFollowUps = ProjectFollowUp::where('project_id', $request->projectId)
                 ->where('department_id', $currentDepartmentId)
-                ->where('status', 'Pending')
-                ->update([
+                ->where('status', 'Pending');
+
+            if ($sameDepartment) {
+                // The reminder is still wanted - same department, same employee. It
+                // follows the project to the new lane so a follow-up scheduled there
+                // later still replaces it instead of sitting beside it.
+                $pendingFollowUps->update(['sub_department_id' => $subDepartmentId]);
+            } else {
+                // Auto-resolve pending follow-ups for the old department
+                $pendingFollowUps->update([
                     'status' => 'Resolved',
                     'resolved_date' => now(),
                 ]);
+            }
 
             $project->update([
                 'department_id' => $request->departmentId,
                 'sub_department_id' => $subDepartmentId,
             ]);
 
-            $emp = app(ProjectAssignmentService::class)->employeeForDepartment((int) $request->departmentId);
+            $emp = $sameDepartment
+                ? null
+                : app(ProjectAssignmentService::class)->employeeForDepartment((int) $request->departmentId);
 
-            if (! $emp) {
+            if (! $sameDepartment && ! $emp) {
                 throw new \RuntimeException('No employee assignment found for this department.');
             }
 
@@ -894,12 +909,18 @@ class ProjectController extends Controller
             Task::where('id', $currentTask->id)->update(['status' => 'Completed', 'completed_at' => now(), 'notes' => $request->notes]);
             $newTask = Task::create([
                 'project_id' => $request->projectId,
-                'employee_id' => $emp->id,
+                'employee_id' => $sameDepartment ? $currentTask->employee_id : $emp->id,
                 'department_id' => $request->departmentId,
                 'sub_department_id' => $subDepartmentId,
+                // The card shows the latest task's note: a lane change inside the
+                // department carries it over, a department change starts clean.
+                'assign_to_notes' => $sameDepartment ? $currentTask->assign_to_notes : null,
                 'user_id' => auth()->user()->id,
             ]);
-            app(ProjectAssignmentService::class)->notifyAssignedEmployee($emp, $project, $newTask, true, ! $forcedFollowUpType);
+
+            if (! $sameDepartment) {
+                app(ProjectAssignmentService::class)->notifyAssignedEmployee($emp, $project, $newTask, true, ! $forcedFollowUpType);
+            }
             // Log the custom message
             $oldLane = Department::findOrFail($currentDepartmentId);
             $newLane = Department::findOrFail($request->departmentId);
@@ -924,7 +945,10 @@ class ProjectController extends Controller
             // writes back. A project already moved on by the Funding Manager is
             // left where it is.
             $zones = app(ZoneService::class);
-            $zones->handleDepartmentArrival($project->refresh(), (int) $request->departmentId);
+
+            if (! $sameDepartment) {
+                $zones->handleDepartmentArrival($project->refresh(), (int) $request->departmentId);
+            }
 
             // A chase the funding side has to answer moves the project onto that
             // side's own lane, so the tab collecting the field is the project's

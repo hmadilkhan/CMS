@@ -2,17 +2,22 @@
 
 namespace Tests\Feature;
 
+use App\Jobs\SendProjectAssignedEmailNotificationJob;
 use App\Models\Customer;
 use App\Models\Department;
 use App\Models\Employee;
 use App\Models\Project;
+use App\Models\ProjectFollowUp;
 use App\Models\SalesPartner;
 use App\Models\SubDepartment;
 use App\Models\Task;
 use App\Models\User;
 use App\Models\UserType;
+use App\Notifications\ProjectAssignedNotification;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Notification;
+use Illuminate\Support\Facades\Queue;
 use Spatie\Permission\Models\Role;
 use Tests\TestCase;
 
@@ -167,6 +172,102 @@ class ProjectMovementWorkflowTest extends TestCase
             'status' => 'In-Progress',
             'user_id' => $admin->id,
         ]);
+    }
+
+    private function pendingFollowUp(array $fixture): ProjectFollowUp
+    {
+        return ProjectFollowUp::create([
+            'project_id' => $fixture['project']->id,
+            'employee_id' => $fixture['sourceEmployee']->id,
+            'created_by' => $fixture['sourceEmployee']->user_id,
+            'department_id' => $fixture['sourceDepartment']->id,
+            'sub_department_id' => $fixture['sourceSubDepartment']->id,
+            'follow_up_date' => now()->addDays(5)->toDateString(),
+            'notes' => 'Call the customer',
+            'status' => 'Pending',
+        ]);
+    }
+
+    public function test_moving_to_another_lane_of_the_same_department_keeps_the_employee_and_note_and_tells_nobody(): void
+    {
+        Notification::fake();
+        Queue::fake();
+
+        $admin = $this->superAdmin();
+        $fixture = $this->movementFixture();
+        $otherLane = SubDepartment::create([
+            'id' => 3,
+            'department_id' => $fixture['sourceDepartment']->id,
+            'name' => 'Site Survey Scheduled',
+        ]);
+        $fixture['task']->update(['assign_to_notes' => 'Homeowner wants to wait until November']);
+        $followUp = $this->pendingFollowUp($fixture);
+
+        $this->actingAs($admin)->post(route('move.project'), [
+            'projectId' => $fixture['project']->id,
+            'departmentId' => $fixture['sourceDepartment']->id,
+            'subDepartmentId' => $otherLane->id,
+            'taskId' => $fixture['task']->id,
+        ])->assertOk()->assertJson(['status' => 200]);
+
+        // The reminder stays Pending and moves to the new lane with the project.
+        $followUp->refresh();
+        $this->assertSame('Pending', $followUp->status);
+        $this->assertNull($followUp->resolved_date);
+        $this->assertSame($otherLane->id, (int) $followUp->sub_department_id);
+
+        $this->assertDatabaseHas('projects', [
+            'id' => $fixture['project']->id,
+            'department_id' => $fixture['sourceDepartment']->id,
+            'sub_department_id' => $otherLane->id,
+        ]);
+
+        // The lane change is still a new stint, but it is the same employee and the same note.
+        $this->assertSame('Completed', $fixture['task']->fresh()->status);
+        $this->assertDatabaseHas('tasks', [
+            'project_id' => $fixture['project']->id,
+            'employee_id' => $fixture['sourceEmployee']->id,
+            'department_id' => $fixture['sourceDepartment']->id,
+            'sub_department_id' => $otherLane->id,
+            'assign_to_notes' => 'Homeowner wants to wait until November',
+            'status' => 'In-Progress',
+        ]);
+
+        // Neither the bell nor the email: nobody was assigned anything.
+        Notification::assertNothingSent();
+        Queue::assertNotPushed(SendProjectAssignedEmailNotificationJob::class);
+    }
+
+    public function test_moving_to_another_department_still_assigns_notifies_and_starts_with_no_note(): void
+    {
+        Notification::fake();
+        Queue::fake();
+
+        $admin = $this->superAdmin();
+        $fixture = $this->movementFixture();
+        $fixture['task']->update(['assign_to_notes' => 'Homeowner wants to wait until November']);
+        $followUp = $this->pendingFollowUp($fixture);
+
+        $this->actingAs($admin)->post(route('move.project'), [
+            'projectId' => $fixture['project']->id,
+            'departmentId' => $fixture['targetDepartment']->id,
+            'subDepartmentId' => $fixture['targetSubDepartment']->id,
+            'taskId' => $fixture['task']->id,
+        ])->assertOk()->assertJson(['status' => 200]);
+
+        // Leaving the department closes the reminder, as before.
+        $this->assertSame('Resolved', $followUp->fresh()->status);
+
+        $this->assertDatabaseHas('tasks', [
+            'project_id' => $fixture['project']->id,
+            'employee_id' => $fixture['targetEmployee']->id,
+            'department_id' => $fixture['targetDepartment']->id,
+            'assign_to_notes' => null,
+            'status' => 'In-Progress',
+        ]);
+
+        Notification::assertSentTo($fixture['targetEmployee']->user, ProjectAssignedNotification::class);
+        Queue::assertPushed(SendProjectAssignedEmailNotificationJob::class);
     }
 
     public function test_project_move_stamps_the_exit_date_on_the_task_it_closes(): void
