@@ -52,8 +52,14 @@ trait JoinsReportTables
         // Departments and sub-departments hang off the project, so the project
         // join comes first and is shared with them.
         if ($needs('projects') || $needs('departments') || $needs('sub_departments')
-            || $needs('sales_partner_users') || $needs('sub_contractor_users')) {
+            || $needs('sales_partner_users') || $needs('sub_contractor_users') || $needs('zones')) {
             $join('projects', 'customers.id', 'projects.customer_id');
+        }
+
+        // zones has no soft delete, so it cannot go through $join().
+        if ($needs('zones') && ! isset($joined['zones'])) {
+            $joined['zones'] = true;
+            $query->leftJoin('zones', 'projects.zone_id', '=', 'zones.id');
         }
 
         // The project's sales partner / sub contractor USER (projects.*_user_id)

@@ -165,12 +165,16 @@ class DynamicReportBuilder extends Component
             'customers.last_name' => 'Customer Last Name',
             'customers.email' => 'Customer Email',
             'customers.phone' => 'Customer Phone',
+            'customers.street' => 'Customer Street',
             'customers.city' => 'Customer City',
             'customers.state' => 'Customer State',
             'customers.zipcode' => 'Customer Zip Code',
             'customers.sold_date' => 'Sold Date',
             'customers.panel_qty' => 'Panel Quantity',
             'customers.inverter_qty' => 'Inverter Quantity',
+            'customers.is_adu' => 'ADU',
+            'customers.preferred_language' => 'Preferred Language',
+            'customers.sold_production_value' => 'Sold Production Value',
             'customers.created_at' => 'Customer Created Date',
 
             // Project fields (all fields from all migrations)
@@ -195,8 +199,8 @@ class DynamicReportBuilder extends Component
             'projects.ahj_website_url' => 'AHJ Website URL',
             'projects.adders_approve_checkbox' => 'Adders Approve Checkbox',
             'projects.mpu_required' => 'MPU Required',
-            'projects.meter_spot_requestd_date' => 'Meter Spot Request Date',
-            'projects.meter_spot_requestd_number' => 'Meter Spot Request Number',
+            'projects.meter_spot_request_date' => 'Meter Spot Request Date',
+            'projects.meter_spot_request_number' => 'Meter Spot Request Number',
             'projects.meter_spot_result' => 'Meter Spot Result',
             'projects.permitting_submittion_date' => 'Permitting Submission Date',
             'projects.permitting_approval_date' => 'Permitting Approval Date',
@@ -220,16 +224,27 @@ class DynamicReportBuilder extends Component
             'projects.actual_material_cost' => 'Actual Material Cost',
             'projects.actual_labor_cost' => 'Actual Labor Cost',
             'projects.actual_permit_fee' => 'Actual Permit Fee',
-            'projects.actual_office_cost' => 'Actual Office Cost',
             'projects.office_cost' => 'Office Cost',
+            'projects.code' => 'Project Code',
+            'projects.inspection_approval_date' => 'Inspection Approval Date',
+            'projects.utility_bill_required' => 'Utility Bill Required',
+            'projects.monitoring_link' => 'Monitoring Link',
+            'projects.production_value_achieved' => 'Production Value Achieved',
+            'projects.zone_entered_at' => 'Zone Entered Date',
+
+            // Zone fields (the funding pipeline lane)
+            'zones.name' => 'Zone',
 
             // Sales Partner fields
             'sales_partners.name' => 'Sales Partner Name',
-            'sales_partners.commission_rate' => 'Commission Rate',
+            'sales_partners.email' => 'Sales Partner Email',
+            'sales_partners.phone' => 'Sales Partner Phone',
             'sales_partner_users.name' => 'Sales Partner User Name',
 
             // Sub Contractor fields
             'sub_contractors.name' => 'Sub Contractor Name',
+            'sub_contractors.email' => 'Sub Contractor Email',
+            'sub_contractors.phone' => 'Sub Contractor Phone',
             'sub_contractor_users.name' => 'Sub Contractor User Name',
 
             // Department fields
@@ -238,9 +253,8 @@ class DynamicReportBuilder extends Component
 
             // Module & Inverter Types
             'module_types.name' => 'Module Type',
-            'module_types.wattage' => 'Module Wattage',
+            'module_types.value' => 'Module Wattage',
             'inverter_types.name' => 'Inverter Type',
-            'inverter_types.wattage' => 'Inverter Wattage',
             'inverter_types.inverter_efficiency_rating' => 'Inverter Efficiency Rating (%)',
 
             // CustomerFinance fields (all fields from migration)
@@ -371,6 +385,7 @@ class DynamicReportBuilder extends Component
             'Project' => ['projects.'],
             'Sales Partner' => ['sales_partners.', 'sales_partner_users.'],
             'Sub Contractor' => ['sub_contractors.', 'sub_contractor_users.'],
+            'Zone' => ['zones.'],
             'Department & Lane' => ['departments.', 'sub_departments.'],
             'Equipment' => ['module_types.', 'inverter_types.'],
             'Finance' => ['customer_finances.', 'finance_options.', 'loan_terms.', 'loan_aprs.'],

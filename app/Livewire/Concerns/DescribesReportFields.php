@@ -11,6 +11,7 @@ use App\Models\ModuleType;
 use App\Models\SalesPartner;
 use App\Models\SubContractor;
 use App\Models\SubDepartment;
+use App\Models\Zone;
 
 /**
  * What a report field is: the input its filter needs, the options that input
@@ -36,7 +37,9 @@ trait DescribesReportFields
             'projects.created_at' => 'date',
             'projects.updated_at' => 'date',
             'projects.ntp_approval_date' => 'date',
-            'projects.meter_spot_requestd_date' => 'date',
+            'projects.meter_spot_request_date' => 'date',
+            'projects.inspection_approval_date' => 'date',
+            'projects.zone_entered_at' => 'date',
             'projects.permitting_submittion_date' => 'date',
             'projects.permitting_approval_date' => 'date',
             'projects.hoa_approval_request_date' => 'date',
@@ -57,9 +60,9 @@ trait DescribesReportFields
             'customers.panel_qty' => 'number',
             'customers.inverter_qty' => 'number',
             'projects.budget' => 'number',
-            'sales_partners.commission_rate' => 'number',
-            'module_types.wattage' => 'number',
-            'inverter_types.wattage' => 'number',
+            'customers.sold_production_value' => 'number',
+            'projects.production_value_achieved' => 'number',
+            'module_types.value' => 'number',
             'inverter_types.inverter_efficiency_rating' => 'number',
             'customer_finances.contract_amount' => 'number',
             'customer_finances.redline_costs' => 'number',
@@ -76,7 +79,6 @@ trait DescribesReportFields
             'projects.actual_material_cost' => 'number',
             'projects.actual_labor_cost' => 'number',
             'projects.actual_permit_fee' => 'number',
-            'projects.actual_office_cost' => 'number',
             'projects.office_cost' => 'number',
             'loan_terms.year' => 'number',
             'loan_aprs.apr' => 'number',
@@ -88,6 +90,7 @@ trait DescribesReportFields
             'sub_departments.name' => 'dropdown',
             'sales_partners.name' => 'dropdown',
             'sub_contractors.name' => 'dropdown',
+            'zones.name' => 'dropdown',
             'module_types.name' => 'dropdown',
             'inverter_types.name' => 'dropdown',
             'finance_options.name' => 'dropdown',
@@ -114,6 +117,7 @@ trait DescribesReportFields
             'sub_departments.name' => SubDepartment::orderBy('name')->pluck('name', 'name')->toArray(),
             'sales_partners.name' => SalesPartner::orderBy('name')->pluck('name', 'name')->toArray(),
             'sub_contractors.name' => SubContractor::orderBy('name')->pluck('name', 'name')->toArray(),
+            'zones.name' => Zone::orderBy('order')->pluck('name', 'name')->toArray(),
             'module_types.name' => ModuleType::orderBy('name')->pluck('name', 'name')->toArray(),
             'inverter_types.name' => InverterType::orderBy('name')->pluck('name', 'name')->toArray(),
             'finance_options.name' => FinanceOption::orderBy('name')->pluck('name', 'name')->toArray(),
@@ -134,7 +138,13 @@ trait DescribesReportFields
     private const FIELD_ALIASES = [
         'customer_finances.adders' => 'adders_amount',
         'sales_partner_users.name' => 'sales_partner_user_name',
+        'sales_partners.email' => 'sales_partner_email',
+        'sales_partners.phone' => 'sales_partner_phone',
         'sub_contractors.name' => 'sub_contractor_name',
+        'sub_contractors.email' => 'sub_contractor_email',
+        'sub_contractors.phone' => 'sub_contractor_phone',
+        'zones.name' => 'zone_name',
+        'module_types.value' => 'module_wattage',
         'sub_contractor_users.name' => 'sub_contractor_user_name',
         'finance_options.name' => 'finance_option_name',
         'loan_terms.year' => 'loan_term_years',
