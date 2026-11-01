@@ -204,27 +204,6 @@
                         <div class="text-danger message mt-2">{{ $message }}</div>
                     @enderror
                 </div>
-                <input type="hidden" name="projecthoa" value="{{ $project->hoa }}" />
-                @if ($project->hoa == 'yes')
-                    <div class="col-sm-4 mb-3 ">
-                        <label for="hoa_approval_request_date" class="form-label">HOA Approval Request Date</label>
-                        <input class="form-control" type="date" id="hoa_approval_request_date"
-                            name="hoa_approval_request_date" wire:model="hoa_approval_request_date">
-                        @error('hoa_approval_request_date')
-                            <div id="hoa_approval_request_date_message" class="text-danger message mt-2">
-                                {{ $message }}</div>
-                        @enderror
-                    </div>
-                    <div class="col-sm-4 mb-3 ">
-                        <label for="hoa_approval_date" class="form-label">HOA Approval Date</label>
-                        <input class="form-control" type="date" id="hoa_approval_date" name="hoa_approval_date"
-                            wire:model="hoa_approval_date">
-                        @error('hoa_approval_date')
-                            <div id="hoa_approval_date_message" class="text-danger message mt-2">{{ $message }}
-                            </div>
-                        @enderror
-                    </div>
-                @endif
             @endif
             @if ($departmentId == 5)
                 <div class="col-sm-4 mb-3 ">
@@ -295,6 +274,27 @@
                         </select>
                         @error('meter_spot_result')
                             <div class="text-danger message mt-2">{{ $message }}</div>
+                        @enderror
+                    </div>
+                @endif
+                <input type="hidden" name="projecthoa" value="{{ $project->hoa }}" />
+                @if ($project->hoa == 'yes')
+                    <div class="col-sm-4 mb-3 ">
+                        <label for="hoa_approval_request_date" class="form-label">HOA Approval Request Date</label>
+                        <input class="form-control" type="date" id="hoa_approval_request_date"
+                            name="hoa_approval_request_date" wire:model="hoa_approval_request_date">
+                        @error('hoa_approval_request_date')
+                            <div id="hoa_approval_request_date_message" class="text-danger message mt-2">
+                                {{ $message }}</div>
+                        @enderror
+                    </div>
+                    <div class="col-sm-4 mb-3 ">
+                        <label for="hoa_approval_date" class="form-label">HOA Approval Date</label>
+                        <input class="form-control" type="date" id="hoa_approval_date" name="hoa_approval_date"
+                            wire:model="hoa_approval_date">
+                        @error('hoa_approval_date')
+                            <div id="hoa_approval_date_message" class="text-danger message mt-2">{{ $message }}
+                            </div>
                         @enderror
                     </div>
                 @endif

@@ -771,9 +771,9 @@ class ProjectController extends Controller
                     $missingFields = array_merge($missingFields, $this->emptyFieldsOf($project, ['meter_spot_request_date', 'meter_spot_request_number']));
                 }
 
-                // Department 4: Check if HOA approval fields are required
+                // Department 5: Check if HOA approval fields are required
                 elseif (
-                    $currentDepartmentId == 4 && $project->hoa === 'yes'
+                    $currentDepartmentId == 5 && $project->hoa === 'yes'
                     && in_array($field, ['hoa_approval_request_date', 'hoa_approval_date'])
                     && (empty($project->hoa_approval_request_date) || empty($project->hoa_approval_date))
                 ) {

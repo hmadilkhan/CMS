@@ -125,9 +125,14 @@ class ProjectMoveMissingFieldsTest extends TestCase
 
     private function requirePermittingFields(array $fields): void
     {
+        $this->requireFields(4, $fields);
+    }
+
+    private function requireFields(int $departmentId, array $fields): void
+    {
         foreach ($fields as $field) {
             DB::table('project_department_fields')->insert([
-                'department_id' => 4,
+                'department_id' => $departmentId,
                 'field_name' => $field,
                 'created_at' => now(),
                 'updated_at' => now(),
@@ -178,18 +183,75 @@ class ProjectMoveMissingFieldsTest extends TestCase
         );
     }
 
+    /**
+     * The same project, sitting in Installation with Inspection to go to - the
+     * department the HOA approval dates are now required to leave.
+     */
+    private function fixtureInInstallation(array $projectAttributes = []): array
+    {
+        $fixture = $this->fixture($projectAttributes);
+
+        $inspection = Department::create(['id' => 6, 'name' => 'Inspection']);
+        $inspectionLane = SubDepartment::create([
+            'id' => 20,
+            'department_id' => $inspection->id,
+            'name' => 'Inspection New',
+            'show_in_move_list' => 1,
+        ]);
+
+        $fixture['project']->update([
+            'department_id' => $fixture['installation']->id,
+            'sub_department_id' => $fixture['installLane']->id,
+        ]);
+        $fixture['task']->update(['status' => 'Completed']);
+
+        $task = Task::create([
+            'project_id' => $fixture['project']->id,
+            'employee_id' => $fixture['task']->employee_id,
+            'department_id' => $fixture['installation']->id,
+            'sub_department_id' => $fixture['installLane']->id,
+            'status' => 'In-Progress',
+            'user_id' => $fixture['task']->user_id,
+        ]);
+
+        return array_merge($fixture, compact('inspection', 'inspectionLane') + ['task' => $task]);
+    }
+
+    private function moveToInspection(array $fixture)
+    {
+        return $this->actingAs($this->superAdmin())->postJson(route('move.project'), [
+            'projectId' => $fixture['project']->id,
+            'taskId' => $fixture['task']->id,
+            'departmentId' => $fixture['inspection']->id,
+            'subDepartmentId' => $fixture['inspectionLane']->id,
+        ]);
+    }
+
     public function test_only_the_empty_half_of_a_paired_requirement_is_listed(): void
     {
-        $this->requirePermittingFields(['hoa_approval_request_date', 'hoa_approval_date']);
-        $fixture = $this->fixture([
-            'fire_review_required' => 0,
+        $this->requireFields(5, ['hoa_approval_request_date', 'hoa_approval_date']);
+        $fixture = $this->fixtureInInstallation([
             'hoa' => 'yes',
             'hoa_approval_request_date' => '2026-07-10',
         ]);
 
-        $this->moveToInstallation($fixture)
+        $this->moveToInspection($fixture)
             ->assertStatus(422)
             ->assertJson(['missing_field_labels' => ['HOA Approval Date']]);
+    }
+
+    public function test_permitting_no_longer_waits_for_the_hoa_approval_dates(): void
+    {
+        // The dates are an Installation requirement now, so a Permitting row for
+        // them must not exist - and one project with HOA but no dates still leaves.
+        $this->requirePermittingFields(['permitting_approval_date']);
+        $fixture = $this->fixture([
+            'fire_review_required' => 0,
+            'permitting_approval_date' => '2026-07-15',
+            'hoa' => 'yes',
+        ]);
+
+        $this->moveToInstallation($fixture)->assertOk();
     }
 
     public function test_a_project_with_every_required_field_filled_moves(): void

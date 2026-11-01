@@ -74,16 +74,6 @@
             <label for="fire_review_required" class="form-label">Fire Review Required</label>
             <input disabled class="form-control" type="text" value="{{ $project->fire_review_required === null ? '' : ($project->fire_review_required == 1 ? 'Yes' : 'No') }}">
         </div>
-        @if ($project->hoa == 'yes')
-            <div class="col-sm-6 mt-3 ">
-                <label for="hoa_approval_request_date" class="form-label">HOA Approval Request Date</label>
-                <input disabled class="form-control" type="date" value="{{ $project->hoa_approval_request_date }}">
-            </div>
-            <div class="col-sm-6 mt-3 ">
-                <label for="hoa_approval_date" class="form-label">HOA Approval Date</label>
-                <input disabled class="form-control" type="date" value="{{ $project->hoa_approval_date }}">
-            </div>
-        @endif
     @endif
 
     @if ($departmentId == 5)
@@ -134,6 +124,16 @@
             <label for="sub_contractor_user" class="form-label">Sub-Contractor User</label>
             <input disabled class="form-control" type="text" value="{{ $project->subContractorUser->name ?? 'N/A' }}">
         </div>
+        @if ($project->hoa == 'yes')
+            <div class="col-sm-6 mb-3 ">
+                <label for="hoa_approval_request_date" class="form-label">HOA Approval Request Date</label>
+                <input disabled class="form-control" type="date" value="{{ $project->hoa_approval_request_date }}">
+            </div>
+            <div class="col-sm-6 mb-3 ">
+                <label for="hoa_approval_date" class="form-label">HOA Approval Date</label>
+                <input disabled class="form-control" type="date" value="{{ $project->hoa_approval_date }}">
+            </div>
+        @endif
         <div class="col-sm-6 mb-3">
             <label for="monitoring_link" class="form-label">Monitoring Link</label>
             <input disabled class="form-control" type="text" value="{{ $project->monitoring_link }}">

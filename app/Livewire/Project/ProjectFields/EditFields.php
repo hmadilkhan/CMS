@@ -372,8 +372,6 @@ class EditFields extends Component
                 'permitting_submittion_date' => $this->permitting_submittion_date,
                 'actual_permit_fee' => $this->actual_permit_fee,
                 'permitting_approval_date' => $this->permitting_approval_date,
-                'hoa_approval_request_date' => $this->hoa_approval_request_date,
-                'hoa_approval_date' => $this->hoa_approval_date,
                 // Blank means the question has not been answered yet, which is
                 // NULL - not 0, which is the real answer "no fire review".
                 'fire_review_required' => $this->fire_review_required === '' || $this->fire_review_required === null
@@ -392,6 +390,8 @@ class EditFields extends Component
                 // "placards_note" => $this->placards_note,
                 'battery_install_date' => $this->battery_install_date,
                 'monitoring_link' => $this->monitoring_link,
+                'hoa_approval_request_date' => $this->hoa_approval_request_date,
+                'hoa_approval_date' => $this->hoa_approval_date,
                 'mpu_install_date' => $this->mpu_install_date,
                 'meter_spot_result' => $this->meter_spot_result,
                 'sub_contractor_user_id' => $this->sub_contractor_user_id,
