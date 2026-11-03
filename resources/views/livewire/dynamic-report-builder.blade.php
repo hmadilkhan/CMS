@@ -607,7 +607,7 @@
                                     <i class="icofont-close-line"></i>
                                 </button>
                             </div>
-                            <div class="text-muted" style="font-size: 11.5px;">{{ $filter['operator'] }}</div>
+                            <div class="text-muted" style="font-size: 11.5px;">{{ $this->filterOperatorLabel($filter['field'], $filter['operator']) }}</div>
                             @if (!in_array($filter['operator'], ['IS NULL', 'IS NOT NULL']))
                                 <div class="d-flex flex-wrap gap-1 mt-1">
                                     @foreach (explode(',', (string) ($filter['value_label'] ?? $filter['value'])) as $piece)
@@ -622,14 +622,14 @@
                         <div class="rb-section-label">Field</div>
                         <select wire:model.live="filterField" class="form-select mb-2">
                             <option value="">Select field</option>
-                            @foreach ($this->availableFields as $field => $name)
+                            @foreach ($this->filterFields as $field => $name)
                                 <option value="{{ $field }}">{{ $name }}</option>
                             @endforeach
                         </select>
 
                         <div class="rb-section-label">Operator</div>
                         <select wire:model.live="filterOperator" class="form-select mb-2">
-                            @foreach ($operators as $op => $name)
+                            @foreach ($this->filterOperators as $op => $name)
                                 <option value="{{ $op }}">{{ $name }}</option>
                             @endforeach
                         </select>

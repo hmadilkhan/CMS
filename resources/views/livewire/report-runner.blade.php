@@ -218,7 +218,7 @@
                             <div class="col-md-6 col-xl-4">
                                 <label class="form-label" style="font-size: 12.5px;">
                                     {{ $filter['field_name'] ?? $filter['field'] }}
-                                    <span class="badge bg-secondary ms-1">{{ $filter['operator'] }}</span>
+                                    <span class="badge bg-secondary ms-1">{{ $this->filterOperatorLabel($filter['field'], $filter['operator']) }}</span>
                                 </label>
 
                                 @if (in_array($filter['operator'], ['IS NULL', 'IS NOT NULL']))

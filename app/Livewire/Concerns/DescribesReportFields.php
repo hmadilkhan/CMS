@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Concerns;
 
+use App\Models\AdderType;
 use App\Models\Department;
 use App\Models\FinanceOption;
 use App\Models\InverterType;
@@ -12,6 +13,7 @@ use App\Models\SalesPartner;
 use App\Models\SubContractor;
 use App\Models\SubDepartment;
 use App\Models\Zone;
+use Illuminate\Support\Facades\DB;
 
 /**
  * What a report field is: the input its filter needs, the options that input
@@ -25,6 +27,115 @@ use App\Models\Zone;
  */
 trait DescribesReportFields
 {
+    /**
+     * A customer has any number of adders, so the adder type can filter a
+     * report but cannot be one of its columns: joining customer_adders would
+     * repeat the customer once per adder and every total would count them
+     * again. It is matched with an EXISTS instead - see applyAdderTypeFilter().
+     */
+    public const ADDER_TYPE_FIELD = 'customer_adders.adder_type_id';
+
+    /** What the adder type filter can ask, as it reads for that field. */
+    private const ADDER_TYPE_OPERATORS = [
+        '=' => 'Has',
+        '!=' => 'Does Not Have',
+        'IS NOT NULL' => 'Has Any Adder',
+        'IS NULL' => 'Has No Adders',
+    ];
+
+    /**
+     * Fields a report can filter on but not show, as field => label.
+     *
+     * @return array<string, string>
+     */
+    public function filterOnlyFields(): array
+    {
+        return [self::ADDER_TYPE_FIELD => 'Adder Type'];
+    }
+
+    /**
+     * The operators offered for a field. The adder type is a yes/no question
+     * about the customer's adders, so comparisons and text search mean nothing.
+     *
+     * @param  array<string, string>  $operators
+     * @return array<string, string>
+     */
+    public function operatorsForField(string $field, array $operators): array
+    {
+        return $field === self::ADDER_TYPE_FIELD ? self::ADDER_TYPE_OPERATORS : $operators;
+    }
+
+    /**
+     * How a saved filter's operator is shown on its chip. Other fields keep the
+     * operator itself; "IS NULL" on the adder type would read as nonsense.
+     */
+    public function filterOperatorLabel(string $field, string $operator): string
+    {
+        if ($field !== self::ADDER_TYPE_FIELD) {
+            return $operator;
+        }
+
+        return self::ADDER_TYPE_OPERATORS[match ($operator) {
+            'IN' => '=',
+            'NOT IN' => '!=',
+            default => $operator,
+        }] ?? $operator;
+    }
+
+    /**
+     * True when the operator may be saved for the field. Picking several adder
+     * types turns "=" into IN, so IN / NOT IN are allowed though not offered.
+     */
+    protected function operatorAllowedForField(string $field, string $operator, array $operators): bool
+    {
+        if ($field === self::ADDER_TYPE_FIELD) {
+            return array_key_exists($operator, self::ADDER_TYPE_OPERATORS)
+                || in_array($operator, ['IN', 'NOT IN'], true);
+        }
+
+        return array_key_exists($operator, $operators);
+    }
+
+    /**
+     * Apply the adder type filter, if that is the filter given. Returns false
+     * for any other field, so the caller applies it as a plain WHERE.
+     *
+     * "Has" keeps customers with at least one live adder of a picked type;
+     * "Does Not Have" keeps the rest, customers with no adders included.
+     */
+    protected function applyAdderTypeFilter($query, array $filter, $value): bool
+    {
+        if (($filter['field'] ?? null) !== self::ADDER_TYPE_FIELD) {
+            return false;
+        }
+
+        $operator = $filter['operator'] ?? '';
+        $anyType = in_array($operator, ['IS NULL', 'IS NOT NULL'], true);
+        $typeIds = array_values(array_filter(
+            array_map('trim', explode(',', (string) $value)),
+            fn ($id) => $id !== ''
+        ));
+
+        $adders = function ($sub) use ($anyType, $typeIds) {
+            $sub->select(DB::raw(1))
+                ->from('customer_adders')
+                ->whereColumn('customer_adders.customer_id', 'customers.id')
+                ->whereNull('customer_adders.deleted_at');
+
+            if (! $anyType) {
+                $sub->whereIn('customer_adders.adder_type_id', $typeIds);
+            }
+        };
+
+        match ($operator) {
+            '=', 'IN', 'IS NOT NULL' => $query->whereExists($adders),
+            '!=', 'NOT IN', 'IS NULL' => $query->whereNotExists($adders),
+            default => null,
+        };
+
+        return true;
+    }
+
     public function getFieldType($field)
     {
         $fieldTypes = [
@@ -99,6 +210,7 @@ trait DescribesReportFields
             'customer_finances.finance_option_id' => 'dropdown',
             'customer_finances.loan_term_id' => 'dropdown',
             'customer_finances.loan_apr_id' => 'dropdown',
+            self::ADDER_TYPE_FIELD => 'dropdown',
         ];
 
         return $fieldTypes[$field] ?? 'text';
@@ -128,6 +240,7 @@ trait DescribesReportFields
                 ->mapWithKeys(fn ($term) => [$term->id => $term->year.' years'])->toArray(),
             'customer_finances.loan_apr_id' => LoanApr::orderBy('apr')->get()
                 ->mapWithKeys(fn ($apr) => [$apr->id => $apr->apr.'%'])->toArray(),
+            self::ADDER_TYPE_FIELD => AdderType::orderBy('name')->pluck('name', 'id')->toArray(),
             default => [],
         };
     }

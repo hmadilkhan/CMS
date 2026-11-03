@@ -624,6 +624,23 @@ class DynamicReportBuilder extends Component
         $this->refreshPreview();
     }
 
+    /**
+     * What a filter can be on: every column the report can show, plus the
+     * fields it can only filter by.
+     *
+     * @return array<string, string>
+     */
+    public function getFilterFieldsProperty(): array
+    {
+        return $this->availableFields + $this->filterOnlyFields();
+    }
+
+    /** The operators offered for the field the new filter is on. */
+    public function getFilterOperatorsProperty(): array
+    {
+        return $this->operatorsForField((string) $this->filterField, $this->operators);
+    }
+
     /** True while the value input for the filter being added is the picker. */
     public function filterFieldUsesPicker(): bool
     {
@@ -645,6 +662,12 @@ class DynamicReportBuilder extends Component
             'filterValueList.required_unless' => 'Please pick at least one value.',
         ]);
 
+        if (! $this->operatorAllowedForField($this->filterField, $this->filterOperator, $this->operators)) {
+            $this->addError('filterOperator', 'That operator does not apply to this field.');
+
+            return;
+        }
+
         [$operator, $value, $label] = $usesPicker
             ? $this->pickedFilterValue()
             : [$this->filterOperator, $this->filterValue, $this->dropdownLabel($this->filterField, $this->filterValue)];
@@ -653,7 +676,7 @@ class DynamicReportBuilder extends Component
             'field' => $this->filterField,
             'operator' => $operator,
             'value' => $value,
-            'field_name' => $this->availableFields[$this->filterField] ?? $this->filterField,
+            'field_name' => $this->filterFields[$this->filterField] ?? $this->filterField,
             // A lookup filter files ids; the chip and the runner show the names
             // they were picked by.
             'value_label' => $label,
@@ -690,10 +713,17 @@ class DynamicReportBuilder extends Component
         return [$operator, implode(',', $values), implode(', ', $labels)];
     }
 
-    /** A new field means the old pick no longer applies. */
+    /**
+     * A new field means the old pick no longer applies - nor the operator, if
+     * the new field does not offer it.
+     */
     public function updatedFilterField(): void
     {
         $this->reset(['filterValue', 'filterValueList']);
+
+        if (! array_key_exists($this->filterOperator, $this->filterOperators)) {
+            $this->filterOperator = '=';
+        }
     }
 
     public function removeFilter($index)
@@ -969,14 +999,14 @@ class DynamicReportBuilder extends Component
 
     private function permittedFilters(): array
     {
-        $allowed = array_keys($this->availableFields);
-        $operators = array_keys($this->operators);
+        $allowed = array_keys($this->filterFields);
 
         return array_values(array_filter(
             $this->filters,
             fn ($filter) => is_array($filter)
                 && in_array($filter['field'] ?? null, $allowed, true)
-                && in_array($filter['operator'] ?? null, $operators, true)
+                && is_string($filter['operator'] ?? null)
+                && $this->operatorAllowedForField($filter['field'], $filter['operator'], $this->operators)
         ));
     }
 
@@ -1092,6 +1122,10 @@ class DynamicReportBuilder extends Component
 
     private function applyFilter($query, $filter)
     {
+        if ($this->applyAdderTypeFilter($query, $filter, $filter['value'] ?? '')) {
+            return;
+        }
+
         switch ($filter['operator']) {
             case 'LIKE':
                 $query->where($filter['field'], 'LIKE', '%'.$filter['value'].'%');

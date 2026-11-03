@@ -312,8 +312,7 @@ class ReportRunner extends Component
 
     private function permittedFilters(): array
     {
-        $allowed = array_keys($this->getAvailableFields());
-        $operators = array_keys($this->operators);
+        $allowed = array_keys($this->getAvailableFields() + $this->filterOnlyFields());
 
         // Filters keep their saved position: the runner's inputs are indexed by
         // it, so a dropped filter must not renumber the ones after it.
@@ -321,7 +320,8 @@ class ReportRunner extends Component
             (array) ($this->selectedReport->filters ?? []),
             fn ($filter) => is_array($filter)
                 && in_array($filter['field'] ?? null, $allowed, true)
-                && in_array($filter['operator'] ?? null, $operators, true)
+                && is_string($filter['operator'] ?? null)
+                && $this->operatorAllowedForField($filter['field'], $filter['operator'], $this->operators)
         );
     }
 
@@ -415,6 +415,10 @@ class ReportRunner extends Component
 
     private function applyFilter($query, $filter, $value)
     {
+        if ($this->applyAdderTypeFilter($query, $filter, $value)) {
+            return;
+        }
+
         switch ($filter['operator']) {
             case 'LIKE':
                 $query->where($filter['field'], 'LIKE', '%'.$value.'%');
