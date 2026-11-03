@@ -413,13 +413,18 @@
             Paragraph,
             Bold,
             Italic,
-            Font
+            Font,
+            Link,
+            AutoLink
         } from 'ckeditor5';
 
+        // Link is required, not a nicety: without it CKEditor drops every <a> from
+        // the body it loads, so saving a template silently turned "View Project"
+        // into plain text. Use {project_url} as the link address.
         const editorConfig = {
-                plugins: [Essentials, Paragraph, Bold, Italic, Font],
+                plugins: [Essentials, Paragraph, Bold, Italic, Font, Link, AutoLink],
                 toolbar: [
-                    'undo', 'redo', '|', 'bold', 'italic', '|',
+                    'undo', 'redo', '|', 'bold', 'italic', '|', 'link', '|',
                     'fontSize', 'fontFamily', 'fontColor', 'fontBackgroundColor'
                 ]
             };
