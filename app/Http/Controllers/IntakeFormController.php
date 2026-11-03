@@ -44,6 +44,28 @@ class IntakeFormController extends Controller
         $this->middleware(['role:Sales Person|Sales Manager']);
     }
 
+    /**
+     * The intake form has no credit fields, yet it sets the contract amount and
+     * the finance option - so Customer Portion (contract_amount minus
+     * third_party_credit, which holds the Solar + Battery total) is worked out
+     * here from the credit already on file, as CustomerController does.
+     */
+    private function customerPortionFields(Customer $customer, FinanceOption $financeOption, Request $request): array
+    {
+        if (! $financeOption->usesCustomerPortion()) {
+            return [
+                "third_party_credit" => 0,
+                "solar_tpo_credit" => 0,
+                "battery_tpo_credit" => 0,
+                "customer_portion" => 0,
+            ];
+        }
+
+        return [
+            "customer_portion" => (float) $request->contract_amount - (float) $customer->finances?->third_party_credit,
+        ];
+    }
+
     public function index()
     {
         return view("intake-form.index", [
@@ -140,7 +162,7 @@ class IntakeFormController extends Controller
                 "module_type_cost" => $moduleCost->amount,
                 "inverter_base_cost" => $inverterBaseCost->base_cost,
                 "holdback_amount" => $holdBackAmount,
-            ]);
+            ] + $this->customerPortionFields($customer, $financeOption, $request));
             if (!empty($request->uom)) {
                 $count = count($request->uom);
                 if ($count > 0) {
@@ -346,7 +368,7 @@ class IntakeFormController extends Controller
                 "module_type_cost" => $moduleCost->amount,
                 "inverter_base_cost" => $inverterBaseCost->base_cost,
                 "holdback_amount" => $holdBackAmount,
-            ]);
+            ] + $this->customerPortionFields($customer, $financeOption, $request));
             if ($request->sales_partner_user_id != "") {
                 $customer->project()->update([
                     "sales_partner_user_id" => $request->sales_partner_user_id,

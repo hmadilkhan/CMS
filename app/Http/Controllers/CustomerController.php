@@ -62,8 +62,24 @@ class CustomerController extends Controller
         return ! empty($financeOption) && $financeOption->usesCustomerPortion();
     }
 
+    /**
+     * Is this an edit of a customer saved before Third Party Credit was split
+     * into Solar + Battery TPO credits? Decided from the stored row, never from
+     * which fields the form happened to send.
+     */
+    protected function keepsSingleThirdPartyCredit(Request $request): bool
+    {
+        $customer = $request->route('customer');
+
+        return $customer instanceof Customer
+            && (bool) $customer->finances?->keepsSingleThirdPartyCredit();
+    }
+
     protected function customerValidationRules(Request $request): array
     {
+        $usesCustomerPortion = $this->financeOptionUsesCustomerPortion((int) $request->finance_option_id);
+        $keepsSingleCredit = $usesCustomerPortion && $this->keepsSingleThirdPartyCredit($request);
+
         return [
             'first_name' => 'required',
             'last_name' => 'required',
@@ -104,20 +120,11 @@ class CustomerController extends Controller
             'dealer_fee_amount' => 'nullable|numeric',
             'overwrite_base_price' => 'nullable|numeric',
             'overwrite_panel_price' => 'nullable|numeric',
-            'third_party_credit' => [
-                'nullable',
-                'numeric',
-                Rule::requiredIf(function () use ($request) {
-                    return $this->financeOptionUsesCustomerPortion((int) $request->finance_option_id);
-                }),
-            ],
-            'customer_portion' => [
-                'nullable',
-                'numeric',
-                Rule::requiredIf(function () use ($request) {
-                    return $this->financeOptionUsesCustomerPortion((int) $request->finance_option_id);
-                }),
-            ],
+            'third_party_credit' => ['nullable', 'numeric', Rule::requiredIf($keepsSingleCredit)],
+            'solar_tpo_credit' => ['nullable', 'numeric', Rule::requiredIf($usesCustomerPortion && ! $keepsSingleCredit)],
+            'battery_tpo_credit' => ['nullable', 'numeric', Rule::requiredIf($usesCustomerPortion && ! $keepsSingleCredit)],
+            // Worked out on the server from the contract and the credit (financeData).
+            'customer_portion' => 'nullable|numeric',
             'loanId' => [
                 Rule::requiredIf(function () use ($request) {
                     return $this->financeOptionRequiresLoanId((int) $request->finance_option_id);
@@ -220,7 +227,20 @@ class CustomerController extends Controller
 
     protected function financeData(Request $request, ModuleType $moduleCost, InverterTypeRate $inverterBaseCost, float $holdBackAmount): array
     {
-        $isPrepaidPpa = $this->financeOptionUsesCustomerPortion((int) $request->finance_option_id);
+        $usesCustomerPortion = $this->financeOptionUsesCustomerPortion((int) $request->finance_option_id);
+        $keepsSingleCredit = $usesCustomerPortion && $this->keepsSingleThirdPartyCredit($request);
+
+        $solarCredit = 0;
+        $batteryCredit = 0;
+        $credit = 0;
+
+        if ($keepsSingleCredit) {
+            $credit = (float) $request->third_party_credit;
+        } elseif ($usesCustomerPortion) {
+            $solarCredit = (float) $request->solar_tpo_credit;
+            $batteryCredit = (float) $request->battery_tpo_credit;
+            $credit = $solarCredit + $batteryCredit;
+        }
 
         return [
             'finance_option_id' => $request->finance_option_id,
@@ -232,8 +252,12 @@ class CustomerController extends Controller
             'commission' => $request->commission,
             'dealer_fee' => $request->dealer_fee,
             'dealer_fee_amount' => $request->dealer_fee_amount ?? 0,
-            'third_party_credit' => ($isPrepaidPpa ? $request->third_party_credit : 0),
-            'customer_portion' => ($isPrepaidPpa ? $request->customer_portion : 0),
+            // The total, so reports and the ledger keep reading one credit figure.
+            'third_party_credit' => $credit,
+            'solar_tpo_credit' => $solarCredit,
+            'battery_tpo_credit' => $batteryCredit,
+            'tpo_split' => ! $keepsSingleCredit,
+            'customer_portion' => $usesCustomerPortion ? (float) $request->contract_amount - $credit : 0,
             'total_overwrite_base_price' => $request->overwrite_base_price ?? 0,
             'total_overwrite_panel_price' => (($request->overwrite_panel_price ?? 0) * $request->panel_qty),
             'module_type_cost' => $moduleCost->amount,

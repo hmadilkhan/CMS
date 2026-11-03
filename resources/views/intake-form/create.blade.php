@@ -568,5 +568,5 @@
 
 @section('scripts')
     @include('partials.phone-mask')
-    <script src="{{ asset('customer/create.js') }}"></script>
+    <script src="{{ asset('customer/create.js') }}?v={{ filemtime(public_path('customer/create.js')) }}"></script>
 @endsection

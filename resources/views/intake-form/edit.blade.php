@@ -469,6 +469,7 @@
                             <label class="form-label premium-label">Contract Amount</label>
                             <input type="text" class="form-control premium-input" id="contract_amount"
                                 name="contract_amount" placeholder="0" onblur="dealerFee()"
+                                data-tpo-credit="{{ $customer->finances->third_party_credit }}"
                                 value="{{ $customer->finances->contract_amount }}">
                             @error('contract_amount')
                                 <div class="text-danger mt-2">{{ $message }}</div>
@@ -634,5 +635,5 @@
             getFinanceOptionById({{ $customer->finances->finance_option_id }});
         });
     </script>
-    <script src="{{ asset('customer/create.js') }}"></script>
+    <script src="{{ asset('customer/create.js') }}?v={{ filemtime(public_path('customer/create.js')) }}"></script>
 @endsection

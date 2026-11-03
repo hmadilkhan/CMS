@@ -129,6 +129,26 @@ class ProjectFinancialLedgerTest extends TestCase
             ->assertSee('$ 11,499.75');
     }
 
+    public function test_a_deal_entered_after_the_split_shows_solar_and_battery_credits(): void
+    {
+        $project = $this->projectOn($this->financeOption('Prepaid PPA'));
+        $project->customer->finances->update([
+            'solar_tpo_credit' => 12000.25,
+            'battery_tpo_credit' => 6500,
+            'tpo_split' => true,
+        ]);
+
+        $this->actingAs($this->viewer('Finance', 'View Project', 'View Financial Details'))
+            ->get(route('projects.show', $project->id))
+            ->assertOk()
+            ->assertSee('Solar TPO Credit')
+            ->assertSee('$ 12,000.25')
+            ->assertSee('Battery TPO Credit')
+            ->assertSee('$ 6,500.00')
+            ->assertSee('$ 11,499.75')
+            ->assertDontSee('Third Party Credit');
+    }
+
     public static function splittingOptions(): array
     {
         return [

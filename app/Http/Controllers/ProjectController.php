@@ -1642,15 +1642,20 @@ class ProjectController extends Controller
                         $customer->adders()->create([
                             'customer_id' => $customer->id,
                             'adder_type_id' => $request->adders[$i],
-                            'adder_sub_type_id' => $request->subadders[$i],
+                            // Rows rendered on page load carry no subadders[].
+                            'adder_sub_type_id' => $request->subadders[$i] ?? null,
                             'adder_unit_id' => $request->uom[$i],
                             'amount' => $request->amount[$i],
                         ]);
                     }
                 }
             }
-            $customer->finances()->update([
-                'customer_id' => $customer->id,
+            // The project page's adders form carries only the adders - the finance
+            // boxes above it are display-only and sit outside the form - yet Enter
+            // in its Amount box submits it. Writing every finance column regardless
+            // stored 0 (strict mode is off) over the contract, redline, commission
+            // and dealer fee, so only the fields actually sent are written.
+            $finance = array_filter([
                 'finance_option_id' => $request->finance_option_id,
                 'loan_term_id' => $request->loan_term_id,
                 'loan_apr_id' => $request->loan_apr_id,
@@ -1660,7 +1665,13 @@ class ProjectController extends Controller
                 'commission' => $request->commission,
                 'dealer_fee' => $request->dealer_fee,
                 'dealer_fee_amount' => $request->dealer_fee_amount,
-            ]);
+            ], fn ($value) => $value !== null);
+
+            if (isset($finance['contract_amount']) && $customer->finances?->finance?->usesCustomerPortion()) {
+                $finance['customer_portion'] = (float) $finance['contract_amount'] - (float) $customer->finances->third_party_credit;
+            }
+
+            $customer->finances()->update($finance);
             DB::commit();
 
             return redirect()->route('projects.show', $request->project_id);

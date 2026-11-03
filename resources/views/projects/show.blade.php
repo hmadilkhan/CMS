@@ -2968,12 +2968,28 @@
                         {{-- Prepaid PPA and Wheelhouse Credit Union both split the contract
                              this way - the customer form asks FinanceOption the same thing. --}}
                         @if ($financeOption->usesCustomerPortion())
-                            <div class="col-sm-3 ">
-                                <label for="third_party_credit" class="form-label">Third Party Credit</label>
-                                <input type="text" class="form-control"
-                                    value="$ {{ number_format($customerFinance->third_party_credit, 2) }}"
-                                    id="third_party_credit" name="third_party_credit">
-                            </div>
+                            {{-- Saved before the Solar / Battery split: one credit figure. --}}
+                            @if ($customerFinance->keepsSingleThirdPartyCredit())
+                                <div class="col-sm-3 ">
+                                    <label for="third_party_credit" class="form-label">Third Party Credit</label>
+                                    <input type="text" class="form-control"
+                                        value="$ {{ number_format($customerFinance->third_party_credit, 2) }}"
+                                        id="third_party_credit" name="third_party_credit">
+                                </div>
+                            @else
+                                <div class="col-sm-3 ">
+                                    <label for="solar_tpo_credit" class="form-label">Solar TPO Credit</label>
+                                    <input type="text" class="form-control"
+                                        value="$ {{ number_format($customerFinance->solar_tpo_credit, 2) }}"
+                                        id="solar_tpo_credit" name="solar_tpo_credit">
+                                </div>
+                                <div class="col-sm-3 ">
+                                    <label for="battery_tpo_credit" class="form-label">Battery TPO Credit</label>
+                                    <input type="text" class="form-control"
+                                        value="$ {{ number_format($customerFinance->battery_tpo_credit, 2) }}"
+                                        id="battery_tpo_credit" name="battery_tpo_credit">
+                                </div>
+                            @endif
                             <div class="col-sm-3 ">
                                 <label for="customer_portion" class="form-label">Customer Portion</label>
                                 <input type="text" class="form-control"

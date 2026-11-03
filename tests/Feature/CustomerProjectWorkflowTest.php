@@ -14,7 +14,6 @@ use App\Models\ModuleType;
 use App\Models\Project;
 use App\Models\SalesPartner;
 use App\Models\SubDepartment;
-use App\Models\Task;
 use App\Models\User;
 use App\Models\UserType;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -234,6 +233,210 @@ class CustomerProjectWorkflowTest extends TestCase
             ->assertSessionHasNoErrors();
 
         $this->assertSame('(623) 204-9400', $customer->fresh()->phone);
+    }
+
+    private function prepaidPpa(): FinanceOption
+    {
+        return FinanceOption::create([
+            'name' => 'Prepaid PPA',
+            'loan_id' => 0,
+            'holdback' => 0,
+            'dollar_watt_value' => 0,
+            'pto_restriction' => 0,
+            'no_of_days' => 0,
+        ]);
+    }
+
+    public function test_a_new_customer_enters_solar_and_battery_tpo_credits(): void
+    {
+        $admin = $this->superAdmin();
+        $basics = $this->seedProjectBasics();
+
+        $this->actingAs($admin)->post(route('customers.store'), [
+            ...$this->validCustomerPayload($basics),
+            'finance_option_id' => $this->prepaidPpa()->id,
+            'solar_tpo_credit' => 6000,
+            'battery_tpo_credit' => 4000.50,
+            // The form's read-only figure is not trusted - the server works it out.
+            'customer_portion' => 1,
+        ])->assertRedirect(route('customers.index'));
+
+        $finance = Customer::where('email', 'workflow.customer@example.com')->firstOrFail()->finances;
+
+        $this->assertEquals(6000, $finance->solar_tpo_credit);
+        $this->assertEquals(4000.50, $finance->battery_tpo_credit);
+        $this->assertEquals(10000.50, $finance->third_party_credit);
+        $this->assertEquals(14999.50, $finance->customer_portion);
+        $this->assertTrue($finance->tpo_split);
+    }
+
+    public function test_both_tpo_credits_are_required_for_an_option_that_splits_the_contract(): void
+    {
+        $admin = $this->superAdmin();
+        $basics = $this->seedProjectBasics();
+
+        $this->actingAs($admin)->post(route('customers.store'), [
+            ...$this->validCustomerPayload($basics),
+            'finance_option_id' => $this->prepaidPpa()->id,
+            'third_party_credit' => 5000,
+        ])->assertSessionHasErrors(['solar_tpo_credit', 'battery_tpo_credit']);
+    }
+
+    public function test_a_customer_saved_before_the_split_keeps_its_single_third_party_credit(): void
+    {
+        $admin = $this->superAdmin();
+        $basics = $this->seedProjectBasics();
+        $payload = [...$this->validCustomerPayload($basics), 'finance_option_id' => $this->prepaidPpa()->id];
+
+        $this->actingAs($admin)->post(route('customers.store'), [...$payload, 'solar_tpo_credit' => 0, 'battery_tpo_credit' => 0])
+            ->assertRedirect(route('customers.index'));
+        $customer = Customer::where('email', 'workflow.customer@example.com')->firstOrFail();
+
+        // What a row saved before this change looks like.
+        CustomerFinance::where('customer_id', $customer->id)->update([
+            'third_party_credit' => 7000,
+            'customer_portion' => 18000,
+            'tpo_split' => false,
+        ]);
+
+        $this->actingAs($admin)->get(route('customers.edit', $customer))
+            ->assertOk()
+            ->assertSee('name="third_party_credit"', false)
+            ->assertDontSee('name="solar_tpo_credit"', false);
+
+        // Sending the split fields anyway does not turn it into a split row.
+        $this->actingAs($admin)->put(route('customers.update', $customer), [
+            ...$payload,
+            'third_party_credit' => 8000,
+            'solar_tpo_credit' => 500,
+            'battery_tpo_credit' => 500,
+        ])->assertSessionHasNoErrors();
+
+        $finance = CustomerFinance::where('customer_id', $customer->id)->firstOrFail();
+        $this->assertEquals(8000, $finance->third_party_credit);
+        $this->assertEquals(0, $finance->solar_tpo_credit);
+        $this->assertEquals(0, $finance->battery_tpo_credit);
+        $this->assertEquals(17000, $finance->customer_portion);
+        $this->assertFalse($finance->tpo_split);
+    }
+
+    public function test_an_old_customer_without_a_credit_gets_the_split_fields(): void
+    {
+        $admin = $this->superAdmin();
+        $basics = $this->seedProjectBasics();
+
+        $this->actingAs($admin)->post(route('customers.store'), $this->validCustomerPayload($basics))
+            ->assertRedirect(route('customers.index'));
+        $customer = Customer::where('email', 'workflow.customer@example.com')->firstOrFail();
+        CustomerFinance::where('customer_id', $customer->id)->update(['tpo_split' => false]);
+
+        $this->actingAs($admin)->get(route('customers.edit', $customer))
+            ->assertOk()
+            ->assertSee('name="solar_tpo_credit"', false)
+            ->assertSee('name="battery_tpo_credit"', false)
+            ->assertDontSee('name="third_party_credit"', false);
+    }
+
+    public function test_an_option_that_does_not_split_the_contract_clears_the_credits(): void
+    {
+        $admin = $this->superAdmin();
+        $basics = $this->seedProjectBasics();
+        $ppa = $this->prepaidPpa();
+
+        $this->actingAs($admin)->post(route('customers.store'), [
+            ...$this->validCustomerPayload($basics),
+            'finance_option_id' => $ppa->id,
+            'solar_tpo_credit' => 6000,
+            'battery_tpo_credit' => 4000,
+        ])->assertRedirect(route('customers.index'));
+        $customer = Customer::where('email', 'workflow.customer@example.com')->firstOrFail();
+
+        $this->actingAs($admin)
+            ->put(route('customers.update', $customer), $this->validCustomerPayload($basics))
+            ->assertSessionHasNoErrors();
+
+        $this->assertDatabaseHas('customer_finances', [
+            'customer_id' => $customer->id,
+            'third_party_credit' => 0,
+            'solar_tpo_credit' => 0,
+            'battery_tpo_credit' => 0,
+            'customer_portion' => 0,
+        ]);
+    }
+
+    public function test_the_intake_form_keeps_customer_portion_in_step_with_the_contract(): void
+    {
+        $admin = $this->superAdmin();
+        $basics = $this->seedProjectBasics();
+        $payload = [...$this->validCustomerPayload($basics), 'finance_option_id' => $this->prepaidPpa()->id];
+
+        $this->actingAs($admin)->post(route('customers.store'), [
+            ...$payload,
+            'solar_tpo_credit' => 6000,
+            'battery_tpo_credit' => 4000,
+        ])->assertRedirect(route('customers.index'));
+        $customer = Customer::where('email', 'workflow.customer@example.com')->firstOrFail();
+
+        // Its script charges Wheelhouse's dealer fee on contract minus this credit.
+        $this->actingAs($basics['salesUser'])
+            ->get(route('intake-form.edit', $customer->id))
+            ->assertOk()
+            ->assertSee('data-tpo-credit="10000.00"', false);
+
+        // The intake form has no credit fields: the credit on file is kept and
+        // Customer Portion follows the new contract amount.
+        $this->actingAs($basics['salesUser'])
+            ->put(route('intake-form.update', $customer->id), [...$payload, 'contract_amount' => 30000])
+            ->assertRedirect(route('intake-form.index'));
+
+        $finance = CustomerFinance::where('customer_id', $customer->id)->firstOrFail();
+        $this->assertEquals(10000, $finance->third_party_credit);
+        $this->assertEquals(6000, $finance->solar_tpo_credit);
+        $this->assertEquals(20000, $finance->customer_portion);
+
+        $this->actingAs($basics['salesUser'])
+            ->put(route('intake-form.update', $customer->id), $this->validCustomerPayload($basics))
+            ->assertRedirect(route('intake-form.index'));
+
+        $this->assertDatabaseHas('customer_finances', [
+            'customer_id' => $customer->id,
+            'third_party_credit' => 0,
+            'solar_tpo_credit' => 0,
+            'battery_tpo_credit' => 0,
+            'customer_portion' => 0,
+        ]);
+    }
+
+    /**
+     * The project page's adders form holds only the adders - the finance boxes
+     * sit outside it - but Enter in its Amount box submits it. That used to
+     * write the absent finance fields as 0 over the deal.
+     */
+    public function test_submitting_the_project_adders_form_leaves_the_deal_alone(): void
+    {
+        $admin = $this->superAdmin();
+        $basics = $this->seedProjectBasics();
+
+        $this->actingAs($admin)->post(route('customers.store'), $this->validCustomerPayload($basics))
+            ->assertRedirect(route('customers.index'));
+        $customer = Customer::where('email', 'workflow.customer@example.com')->firstOrFail();
+        $project = Project::where('customer_id', $customer->id)->firstOrFail();
+
+        // Exactly what the form posts for a project with no adders yet.
+        $this->actingAs($admin)->post(route('projects.adders'), [
+            'project_id' => $project->id,
+            'customer_id' => $customer->id,
+            'finance_option_id' => $basics['financeOption']->id,
+            'amount' => '500',
+        ])->assertRedirect(route('projects.show', $project->id));
+
+        $this->assertDatabaseHas('customer_finances', [
+            'customer_id' => $customer->id,
+            'finance_option_id' => $basics['financeOption']->id,
+            'contract_amount' => 25000,
+            'redline_costs' => 18000,
+            'commission' => 1500,
+        ]);
     }
 
     public function test_customer_creation_requires_core_fields(): void

@@ -229,14 +229,19 @@ function dealerFee(value) {
     let dealerFee = (value != undefined ? value : parseFloat($("#dealer_fee").val()));
     let dealerPercentage = (dealerFee * 100).toFixed(2);
     let contractAmount = parseFloat($('#contract_amount').val());
+    // Wheelhouse Credit Union (id 10): the dealer fee is charged on the Customer Portion
+    // (contract minus the third-party credit on file), as on the customer form.
+    let dealerFeeBase = (parseInt($('#finance_option_id').val()) === 10)
+        ? contractAmount - (parseFloat($('#contract_amount').data('tpo-credit')) || 0)
+        : contractAmount;
     if (value != undefined) {
         $('#dealer_fee').val('');
         $('#dealer_fee').val(dealerPercentage);
     }
-    if (contractAmount != "" && value != undefined) {
-        $('#dealer_fee_amount').val(value * contractAmount);
+    if (dealerFeeBase != "" && value != undefined) {
+        $('#dealer_fee_amount').val(value * dealerFeeBase);
     } else {
-        $('#dealer_fee_amount').val((dealerFee / 100) * contractAmount);
+        $('#dealer_fee_amount').val((dealerFee / 100) * dealerFeeBase);
     }
     calculateCommission()
 }

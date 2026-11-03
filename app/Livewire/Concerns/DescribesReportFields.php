@@ -70,6 +70,8 @@ trait DescribesReportFields
             'customer_finances.commission' => 'number',
             'customer_finances.dealer_fee_amount' => 'number',
             'customer_finances.third_party_credit' => 'number',
+            'customer_finances.solar_tpo_credit' => 'number',
+            'customer_finances.battery_tpo_credit' => 'number',
             'customer_finances.customer_portion' => 'number',
             'customer_finances.holdback_amount' => 'number',
             'customer_finances.module_type_cost' => 'number',

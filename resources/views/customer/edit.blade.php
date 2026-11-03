@@ -479,15 +479,38 @@
                                 <div class="text-danger message mt-2">{{ $message }}</div>
                             @enderror
                         </div>
-                        <div class="col-sm-3 mb-3 prepaidPPADiv" style="display: none;">
-                            <label for="third_party_credit" class="form-label">Third Party Credit</label>
-                            <input type="text" class="form-control" id="third_party_credit" name="third_party_credit"
-                                placeholder="Third Party Credit"
-                                value="{{ old('third_party_credit', $customer->finances?->third_party_credit ?? 0) }}">
-                            @error('third_party_credit')
-                                <div class="text-danger message mt-2">{{ $message }}</div>
-                            @enderror
-                        </div>
+                        {{-- A customer saved before the Solar / Battery split keeps its single
+                             Third Party Credit (CustomerFinance::keepsSingleThirdPartyCredit). --}}
+                        @if ($customer->finances?->keepsSingleThirdPartyCredit())
+                            <div class="col-sm-3 mb-3 prepaidPPADiv" style="display: none;">
+                                <label for="third_party_credit" class="form-label">Third Party Credit</label>
+                                <input type="text" class="form-control" id="third_party_credit" name="third_party_credit"
+                                    placeholder="Third Party Credit"
+                                    value="{{ old('third_party_credit', $customer->finances->third_party_credit) }}">
+                                @error('third_party_credit')
+                                    <div class="text-danger message mt-2">{{ $message }}</div>
+                                @enderror
+                            </div>
+                        @else
+                            <div class="col-sm-3 mb-3 prepaidPPADiv" style="display: none;">
+                                <label for="solar_tpo_credit" class="form-label">Solar TPO Credit</label>
+                                <input type="text" class="form-control" id="solar_tpo_credit" name="solar_tpo_credit"
+                                    placeholder="Solar TPO Credit"
+                                    value="{{ old('solar_tpo_credit', $customer->finances?->solar_tpo_credit ?? 0) }}">
+                                @error('solar_tpo_credit')
+                                    <div class="text-danger message mt-2">{{ $message }}</div>
+                                @enderror
+                            </div>
+                            <div class="col-sm-3 mb-3 prepaidPPADiv" style="display: none;">
+                                <label for="battery_tpo_credit" class="form-label">Battery TPO Credit</label>
+                                <input type="text" class="form-control" id="battery_tpo_credit" name="battery_tpo_credit"
+                                    placeholder="Battery TPO Credit"
+                                    value="{{ old('battery_tpo_credit', $customer->finances?->battery_tpo_credit ?? 0) }}">
+                                @error('battery_tpo_credit')
+                                    <div class="text-danger message mt-2">{{ $message }}</div>
+                                @enderror
+                            </div>
+                        @endif
                         <div class="col-sm-3 mb-3 prepaidPPADiv" style="display: none;">
                             <label for="customer_portion" class="form-label">Customer Portion</label>
                             <input readonly type="text" class="form-control" id="customer_portion"
@@ -789,25 +812,29 @@
 
         function togglePrepaidPPAFields(financeOptionId) {
             let id = parseInt(financeOptionId);
-            // Prepaid PPA (9) and Wheelhouse Credit Union (10) both use the Third Party Credit + Customer Portion fields.
+            // Prepaid PPA (9) and Wheelhouse Credit Union (10) both use the TPO Credit + Customer Portion fields.
             if (id === 9 || id === 10) {
                 $(".prepaidPPADiv").show();
                 calculateCustomerPortion();
             } else {
                 $(".prepaidPPADiv").hide();
-                $("#third_party_credit").val(0);
+                $("#third_party_credit, #solar_tpo_credit, #battery_tpo_credit").val(0);
                 $("#customer_portion").val(0);
             }
         }
 
+        // Only one set is on the page: the single Third Party Credit (customer saved
+        // before the split) or Solar + Battery TPO Credit. A missing input reads as 0.
         function calculateCustomerPortion() {
             let contractAmount = parseFloat($("#contract_amount").val()) || 0;
-            let thirdPartyCredit = parseFloat($("#third_party_credit").val()) || 0;
-            let customerPortion = contractAmount - thirdPartyCredit;
+            let credit = (parseFloat($("#third_party_credit").val()) || 0) +
+                (parseFloat($("#solar_tpo_credit").val()) || 0) +
+                (parseFloat($("#battery_tpo_credit").val()) || 0);
+            let customerPortion = contractAmount - credit;
             $("#customer_portion").val(customerPortion.toFixed(2));
         }
 
-        $("#contract_amount, #third_party_credit").on('input blur', function() {
+        $("#contract_amount, #third_party_credit, #solar_tpo_credit, #battery_tpo_credit").on('input blur', function() {
             let id = parseInt($("#finance_option_id").val());
             if (id === 9 || id === 10) {
                 calculateCustomerPortion();

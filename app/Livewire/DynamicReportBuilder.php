@@ -273,6 +273,8 @@ class DynamicReportBuilder extends Component
             'customer_finances.dealer_fee' => 'Dealer Fee',
             'customer_finances.dealer_fee_amount' => 'Dealer Fee Amount',
             'customer_finances.third_party_credit' => 'Third Party Credit',
+            'customer_finances.solar_tpo_credit' => 'Solar TPO Credit',
+            'customer_finances.battery_tpo_credit' => 'Battery TPO Credit',
             'customer_finances.customer_portion' => 'Customer Portion',
             'customer_finances.module_type_cost' => 'Module Type Cost',
             'customer_finances.inverter_base_cost' => 'Inverter Base Cost',

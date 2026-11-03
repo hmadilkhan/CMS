@@ -563,6 +563,32 @@ number, a leading `1` is dropped; `formatOrKeep` leaves unreadable values alone)
   included, idempotent, lists what it could not convert). **`deploy.sh` does not
   run it** - run it by hand once after deploying.
 
+## Third Party Credit → Solar + Battery TPO Credit
+
+For the finance options that split the contract (`FinanceOption::usesCustomerPortion()`
+— Prepaid PPA, Wheelhouse Credit Union) the customer form collects a **Solar TPO
+Credit** and a **Battery TPO Credit** instead of one Third Party Credit.
+
+- `customer_finances.third_party_credit` still holds the **total** (Solar + Battery),
+  so `customer_portion = contract_amount - third_party_credit` holds for every row,
+  and Wheelhouse's dealer fee, finance milestones, reports and the assistant keep
+  reading one figure. `customer_portion` is computed on the server, never taken
+  from the form's read-only box.
+- Rows saved before the split are untouched. `tpo_split` (0 on them) plus a credit
+  above 0 = `CustomerFinance::keepsSingleThirdPartyCredit()`: the edit form and the
+  project ledger keep showing the single Third Party Credit for those. Decided from
+  the stored row, not from which fields the request sent.
+- The intake form has no credit fields but sets the contract and finance option,
+  so `IntakeFormController::customerPortionFields()` recomputes the portion from the
+  credit on file (it used to leave it stale, and 0 on create). Its script
+  (`public/customer/create.js`, intake forms only) charges Wheelhouse's dealer fee
+  on contract minus that credit, read from `#contract_amount[data-tpo-credit]`.
+- `ProjectController::projectAdders` writes only the finance fields the request
+  sent. The project page's adders form carries none of them (the finance boxes are
+  display-only, outside the form), but Enter in its Amount box submits it - and
+  with strict mode off the absent fields were stored as 0 over the deal.
+- Covered by `CustomerProjectWorkflowTest` and `ProjectFinancialLedgerTest`.
+
 ## Per-email switches on the profile
 
 Each user chooses which system emails they get (Profile → Email Preference).
