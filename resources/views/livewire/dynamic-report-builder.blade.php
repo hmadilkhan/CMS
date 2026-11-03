@@ -335,23 +335,32 @@
 
                 <div class="rb-scroll">
                     <div class="rb-section-label">Group rows</div>
-                    <select wire:model.live="groupBy" class="form-select mb-2">
-                        <option value="">No grouping</option>
-                        @foreach ($this->availableFields as $field => $name)
-                            <option value="{{ $field }}">{{ $name }}</option>
-                        @endforeach
-                    </select>
+                    {{-- Searchable pickers. Each key carries the current value, because the
+                         server also changes it (Clear all, dropping the first level, loading
+                         a report) and the ignored widget must be rebuilt to show that. --}}
+                    <div class="mb-2">
+                        @include('livewire.partials.filter-picker', [
+                            'options' => $this->groupByFieldGroups(),
+                            'selected' => $groupBy,
+                            'model' => 'groupBy',
+                            'multiple' => false,
+                            'placeholder' => 'No grouping',
+                            'pickerKey' => 'group-by-picker-' . $reportType . '-' . $groupBy,
+                        ])
+                    </div>
 
                     @if ($groupBy)
                         <div class="rb-section-label">…then by</div>
-                        <select wire:model.live="groupBy2" class="form-select mb-3">
-                            <option value="">Nothing</option>
-                            @foreach ($this->availableFields as $field => $name)
-                                @if ($field !== $groupBy)
-                                    <option value="{{ $field }}">{{ $name }}</option>
-                                @endif
-                            @endforeach
-                        </select>
+                        <div class="mb-3">
+                            @include('livewire.partials.filter-picker', [
+                                'options' => $this->groupByFieldGroups($groupBy),
+                                'selected' => $groupBy2,
+                                'model' => 'groupBy2',
+                                'multiple' => false,
+                                'placeholder' => 'Nothing',
+                                'pickerKey' => 'group-by-2-picker-' . $reportType . '-' . $groupBy . '-' . $groupBy2,
+                            ])
+                        </div>
                     @endif
 
                     <div class="rb-section-label">Columns ({{ count($selectedFields) }})</div>
@@ -620,19 +629,30 @@
 
                     <div class="rb-filter-card is-new">
                         <div class="rb-section-label">Field</div>
-                        <select wire:model.live="filterField" class="form-select mb-2">
-                            <option value="">Select field</option>
-                            @foreach ($this->filterFields as $field => $name)
-                                <option value="{{ $field }}">{{ $name }}</option>
-                            @endforeach
-                        </select>
+                        {{-- Searchable: the list is long. Adding a filter clears the field, so the
+                             key carries the filter count to rebuild the picker empty. --}}
+                        <div class="mb-2">
+                            @include('livewire.partials.filter-picker', [
+                                'options' => $this->filterFieldGroups,
+                                'selected' => $filterField,
+                                'model' => 'filterField',
+                                'multiple' => false,
+                                'placeholder' => 'Search a field…',
+                                'pickerKey' => 'filter-field-picker-' . $reportType . '-' . count($filters),
+                            ])
+                        </div>
 
                         <div class="rb-section-label">Operator</div>
-                        <select wire:model.live="filterOperator" class="form-select mb-2">
-                            @foreach ($this->filterOperators as $op => $name)
-                                <option value="{{ $op }}">{{ $name }}</option>
-                            @endforeach
-                        </select>
+                        <div class="mb-2">
+                            @include('livewire.partials.filter-picker', [
+                                'options' => $this->filterOperators,
+                                'selected' => $filterOperator,
+                                'model' => 'filterOperator',
+                                'multiple' => false,
+                                'clearable' => false,
+                                'pickerKey' => 'filter-operator-picker-' . $filterField . '-' . $filterOperator,
+                            ])
+                        </div>
 
                         <div class="rb-section-label">Value</div>
                         @php

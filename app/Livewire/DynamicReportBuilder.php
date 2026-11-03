@@ -382,6 +382,37 @@ class DynamicReportBuilder extends Component
      */
     public function getFieldGroupsProperty(): array
     {
+        return $this->groupedByTable($this->availableFields, (string) $this->fieldSearch);
+    }
+
+    /**
+     * The filter's field dropdown, in the same groups as the field list. It is
+     * searchable, so it is never narrowed here.
+     *
+     * @return array<string, array<string, string>>
+     */
+    public function getFilterFieldGroupsProperty(): array
+    {
+        return $this->groupedByTable($this->filterFields);
+    }
+
+    /**
+     * The group-by dropdowns, in the same groups. The second level leaves out
+     * the field the first already groups by.
+     *
+     * @return array<string, array<string, string>>
+     */
+    public function groupByFieldGroups(string $except = ''): array
+    {
+        return $this->groupedByTable(array_diff_key($this->availableFields, [$except => true]));
+    }
+
+    /**
+     * @param  array<string, string>  $fields
+     * @return array<string, array<string, string>>
+     */
+    private function groupedByTable(array $fields, string $search = ''): array
+    {
         $groups = [
             'Customer' => ['customers.'],
             'Project' => ['projects.'],
@@ -391,13 +422,14 @@ class DynamicReportBuilder extends Component
             'Department & Lane' => ['departments.', 'sub_departments.'],
             'Equipment' => ['module_types.', 'inverter_types.'],
             'Finance' => ['customer_finances.', 'finance_options.', 'loan_terms.', 'loan_aprs.'],
+            'Adders' => ['customer_adders.'],
         ];
 
-        $search = trim(mb_strtolower((string) $this->fieldSearch));
+        $search = trim(mb_strtolower($search));
         $grouped = [];
 
         foreach ($groups as $label => $prefixes) {
-            foreach ($this->availableFields as $field => $name) {
+            foreach ($fields as $field => $name) {
                 foreach ($prefixes as $prefix) {
                     if (! str_starts_with($field, $prefix)) {
                         continue;

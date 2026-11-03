@@ -114,6 +114,29 @@ class ReportBuilderAdderTypeFilterTest extends TestCase
         );
     }
 
+    public function test_the_filter_field_dropdown_is_grouped_and_unnarrowed_by_the_field_search(): void
+    {
+        $component = Livewire::actingAs($this->user())
+            ->test(DynamicReportBuilder::class)
+            ->set('fieldSearch', 'zip');
+
+        $groups = $component->instance()->filterFieldGroups;
+
+        $this->assertSame([self::FIELD => 'Adder Type'], $groups['Adders']);
+        $this->assertArrayHasKey('customer_finances.contract_amount', $groups['Finance']);
+        $this->assertArrayNotHasKey('Adders', $component->instance()->fieldGroups);
+    }
+
+    public function test_the_second_group_level_leaves_out_the_first(): void
+    {
+        $builder = Livewire::actingAs($this->user())->test(DynamicReportBuilder::class)->instance();
+
+        $this->assertArrayHasKey('customers.city', $builder->groupByFieldGroups()['Customer']);
+        $this->assertArrayNotHasKey('customers.city', $builder->groupByFieldGroups('customers.city')['Customer']);
+        // A filter-only field cannot group a report.
+        $this->assertArrayNotHasKey('Adders', $builder->groupByFieldGroups());
+    }
+
     public function test_has_a_type_lists_each_customer_once(): void
     {
         $this->assertSame(['Ann'], $this->builderNames('=', [$this->battery]));
