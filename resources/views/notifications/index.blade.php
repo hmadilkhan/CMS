@@ -80,6 +80,23 @@
     .notif-actions .btn { font-size: 0.8rem; }
     .notif-actions .btn:disabled { opacity: 0.6; }
 
+    .notif-search {
+        position: relative;
+        display: flex;
+        gap: 0.5rem;
+        margin-bottom: 1rem;
+    }
+    .notif-search .form-control { padding-left: 2.25rem; }
+    .notif-search-icon {
+        position: absolute;
+        top: 50%;
+        left: 0.85rem;
+        transform: translateY(-50%);
+        color: #6c757d;
+        pointer-events: none;
+    }
+    .notif-search-summary { color: #6c757d; font-size: 0.9rem; margin: -0.25rem 0 1rem; }
+
     .empty-state { text-align: center; padding: 4rem 2rem; color: #6c757d; }
     .empty-state i { font-size: 4rem; color: #dee2e6; display: block; margin-bottom: 1rem; }
 </style>
@@ -112,6 +129,22 @@
         </div>
     </div>
 
+    <form method="GET" action="{{ route('notifications.index') }}" class="notif-search" role="search">
+        <i class="icofont-search-1 notif-search-icon"></i>
+        <input type="search" name="q" value="{{ $search }}" class="form-control"
+            placeholder="Search notifications by keyword or phrase..." aria-label="Search notifications" autocomplete="off">
+        <button type="submit" class="btn btn-dark">Search</button>
+        @if($search)
+        <a href="{{ route('notifications.index') }}" class="btn btn-outline-secondary">Clear</a>
+        @endif
+    </form>
+
+    @if($search)
+    <p class="notif-search-summary">
+        {{ $notifications->total() }} {{ Str::plural('notification', $notifications->total()) }} matching "{{ $search }}"
+    </p>
+    @endif
+
     @if($notifications->count() > 0)
         <div class="notif-list">
             @foreach($notifications as $notification)
@@ -124,7 +157,7 @@
                         <span class="notif-title">{{ $notification->data['mentioned_by'] ?? 'System' }}</span>
                         <span class="notif-time"><i class="icofont-clock-time me-1"></i>{{ $notification->created_at->diffForHumans() }}</span>
                     </div>
-                    <p class="notif-text">{{ $notification->data['note'] ?? 'You have a new notification' }}</p>
+                    <p class="notif-text">{{ $notification->data['note'] ?? $notification->data['subject'] ?? 'You have a new notification' }}</p>
 
                     @if(!$notification->read_at || isset($notification->data['project_name']))
                     <div class="notif-tags">
@@ -159,6 +192,12 @@
 
         <div class="d-flex justify-content-center mt-4">
             {{ $notifications->links() }}
+        </div>
+    @elseif($search)
+        <div class="empty-state">
+            <i class="icofont-search-1"></i>
+            <h5 class="fw-bold mb-2">No Matches</h5>
+            <p>No notifications contain "{{ $search }}". Try a different keyword or phrase.</p>
         </div>
     @else
         <div class="empty-state">

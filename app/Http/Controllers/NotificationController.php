@@ -2,15 +2,21 @@
 
 namespace App\Http\Controllers;
 
+use App\Support\NotificationSearch;
 use Illuminate\Http\Request;
 
 class NotificationController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $notifications = auth()->user()->notifications()->orderBy('created_at', 'desc')->paginate(20);
+        $search = NotificationSearch::term($request->query('q'));
+
+        $notifications = NotificationSearch::apply(auth()->user()->notifications(), $search)
+            ->orderBy('created_at', 'desc')
+            ->paginate(20)
+            ->withQueryString();
         $unreadCount = auth()->user()->unreadNotifications()->count();
-        return view('notifications.index', compact('notifications', 'unreadCount'));
+        return view('notifications.index', compact('notifications', 'unreadCount', 'search'));
     }
 
     /**

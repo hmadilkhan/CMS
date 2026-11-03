@@ -2,6 +2,7 @@
 
 namespace App\Livewire;
 
+use App\Support\NotificationSearch;
 use Illuminate\Support\Facades\Log;
 use Livewire\Component;
 
@@ -12,6 +13,9 @@ class Notifications extends Component
      * The full list lives on the notifications index page.
      */
     public int $limit = 10;
+
+    /** Keyword or phrase typed into the dropdown's search box. */
+    public string $search = '';
 
     // The full notifications page marks items read over fetch(); it fires this
     // so the dropdown list and count re-render without a page reload.
@@ -79,11 +83,13 @@ class Notifications extends Component
         return view('livewire.notifications', [
             // Read notifications stay listed - marking as read only clears the
             // "new" highlight, it does not hide the notification.
-            'notifications' => $user->notifications()
+            'notifications' => NotificationSearch::apply($user->notifications(), $this->search)
                 ->orderBy('created_at', 'desc')
                 ->limit($this->limit)
                 ->get(),
+            // The count is the user's whole unread total, not the search's.
             'unreadCount' => $user->notifications()->whereNull('read_at')->count(),
+            'searchTerm' => NotificationSearch::term($this->search),
         ]);
     }
 }

@@ -12,6 +12,14 @@
             @endif
         </h5>
     </div>
+    <div class="notification-search px-3 pt-3">
+        <div class="position-relative">
+            <i class="icofont-search-1 notification-search-icon"></i>
+            <input type="search" class="form-control form-control-sm" placeholder="Search notifications..."
+                aria-label="Search notifications" autocomplete="off"
+                wire:model.live.debounce.300ms="search" wire:keydown.escape="$set('search', '')">
+        </div>
+    </div>
     <div class="tab-content card-body">
         <div class="tab-pane fade show active">
             <ul class="list-unstyled list mb-0">
@@ -36,14 +44,20 @@
                 </li>
                @empty
                 <li class="py-3 text-center text-muted">
-                    <small>No notifications yet</small>
+                    @if ($searchTerm)
+                        <small>No notifications match "{{ $searchTerm }}"</small>
+                    @else
+                        <small>No notifications yet</small>
+                    @endif
                 </li>
                @endforelse
             </ul>
         </div>
     </div>
-    <a class="card-footer text-center border-top-0" href="{{ route('notifications.index') }}">
-        @if ($unreadCount)
+    <a class="card-footer text-center border-top-0" href="{{ route('notifications.index', $searchTerm ? ['q' => $searchTerm] : []) }}">
+        @if ($searchTerm)
+            View all results for "{{ $searchTerm }}"
+        @elseif ($unreadCount)
             View all notifications ({{ $unreadCount }} unread)
         @else
             View all notifications

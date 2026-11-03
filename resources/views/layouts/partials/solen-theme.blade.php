@@ -298,6 +298,21 @@
         cursor: default;
     }
 
+    .notifications .notification-search .form-control {
+        padding-left: 2rem;
+        border-radius: 999px;
+    }
+
+    .notifications .notification-search-icon {
+        position: absolute;
+        top: 50%;
+        left: 0.75rem;
+        transform: translateY(-50%);
+        color: #6c757d;
+        font-size: 0.85rem;
+        pointer-events: none;
+    }
+
     /* Read notifications stay in the dropdown list, just visually muted. */
     .notifications .notification-item.is-read {
         opacity: 0.6;
