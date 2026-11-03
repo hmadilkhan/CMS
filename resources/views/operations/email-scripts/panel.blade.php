@@ -290,7 +290,7 @@
                             <textarea id="templateEditor" name="body" class="form-control" rows="10">{!! old('body', $editingTemplate['body']) !!}</textarea>
                         </div>
                         <div class="col-12">
-                            <label class="form-label d-block">Available tags &mdash; click to copy</label>
+                            <label class="form-label d-block">Available tags &mdash; click to insert</label>
                             <div class="template-tag-list">
                                 @foreach ($editingTemplate['placeholders'] as $tag => $tagDescription)
                                     <button type="button" class="template-tag" data-tag="{{ '{' . $tag . '}' }}"
@@ -298,8 +298,10 @@
                                 @endforeach
                             </div>
                             <small class="text-muted d-block mt-2">
-                                Paste a tag anywhere in the subject or body. Only the tags above work in this
-                                template &mdash; anything else is rejected when you save.
+                                A tag goes into the subject or body, wherever you last clicked. For a link
+                                tag such as <code>{project_url}</code>, select the text first (e.g. "View
+                                Project") and click the tag to make it a link. Only the tags above work in
+                                this template &mdash; anything else is rejected when you save.
                             </small>
                         </div>
                         <div class="col-12">
@@ -473,8 +475,56 @@
             document.getElementById('resetTemplateForm').submit();
         }
 
-        // Tags are copied rather than inserted: the cursor may be in the
-        // subject input or inside CKEditor, and copy works for both.
+        // A tag chip goes where the user was last typing: the subject input or
+        // the body editor. A button steals focus on click, so remember the field.
+        let templateField = 'body';
+        document.addEventListener('focusin', function(event) {
+            if (event.target.matches('input[name="subject"]')) {
+                templateField = 'subject';
+            } else if (event.target.closest('.ck-editor')) {
+                templateField = 'body';
+            }
+        });
+
+        // Insert the tag into the field the user was in. Returns false when
+        // there is nowhere to put it, so the caller can fall back to copying.
+        // A *_url tag in the body becomes a LINK: it wraps the selected text
+        // ("View Project"), or inserts "Click here" linked to it when nothing
+        // is selected - a bare URL tag in the body is not what anyone wants.
+        function insertTemplateTag(text) {
+            if (templateField === 'subject') {
+                const input = document.querySelector('input[name="subject"]');
+                if (!input) {
+                    return false;
+                }
+                const start = input.selectionStart ?? input.value.length;
+                const end = input.selectionEnd ?? input.value.length;
+                input.value = input.value.slice(0, start) + text + input.value.slice(end);
+                input.focus();
+                input.setSelectionRange(start + text.length, start + text.length);
+                return true;
+            }
+
+            const editor = window.templateEditor;
+            if (!editor) {
+                return false;
+            }
+            const isUrl = /_url\}$/.test(text);
+
+            editor.model.change(function(writer) {
+                const selection = editor.model.document.selection;
+                if (isUrl && !selection.isCollapsed) {
+                    editor.execute('link', text);
+                } else if (isUrl) {
+                    editor.model.insertContent(writer.createText('Click here', { linkHref: text }));
+                } else {
+                    editor.model.insertContent(writer.createText(text));
+                }
+            });
+            editor.editing.view.focus();
+            return true;
+        }
+
         document.addEventListener('click', function(event) {
             const tag = event.target.closest('.template-tag');
             if (!tag) {
@@ -487,6 +537,10 @@
                     tag.classList.remove('is-copied');
                 }, 900);
             };
+            if (insertTemplateTag(text)) {
+                done();
+                return;
+            }
             if (navigator.clipboard && navigator.clipboard.writeText) {
                 navigator.clipboard.writeText(text).then(done).catch(function() {});
                 return;
