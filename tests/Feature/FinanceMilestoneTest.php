@@ -410,6 +410,27 @@ class FinanceMilestoneTest extends TestCase
         $this->assertArrayNotHasKey('zone_entered:'.$this->zone('archived')->id, $options['Zone Moves']);
     }
 
+    public function test_an_option_seeded_with_only_tpo_rows_gets_the_standard_four_ahead_of_them(): void
+    {
+        $m1 = $this->zone('m1');
+        $tpoOnly = $this->financeOption([]);
+        $tpoOnly->update(['name' => 'Prepaid PPA']);
+        $tpoOnly->milestones()->create(['key' => 'solar_tpo_m1', 'label' => 'Solar Milestone 1', 'trigger_type' => 'zone_date', 'trigger_zone_id' => $m1->id, 'amount_type' => 'percent', 'amount_value' => 70, 'amount_base' => 'solar_tpo_credit', 'payee' => 'others', 'sort_order' => 1]);
+
+        $complete = FinanceOption::create(['name' => 'Complete', 'loan_id' => 0, 'holdback' => 0, 'dollar_watt_value' => 0, 'pto_restriction' => 0, 'no_of_days' => 0]);
+        $complete->milestones()->create(['key' => 'deal_review', 'label' => 'Deal Review', 'trigger_type' => 'project_created', 'amount_type' => 'fixed', 'amount_value' => 1000, 'sort_order' => 1]);
+        $complete->milestones()->create(['key' => 'solar_tpo_m1', 'label' => 'Solar Milestone 1', 'trigger_type' => 'zone_date', 'trigger_zone_id' => $m1->id, 'amount_type' => 'percent', 'amount_value' => 70, 'amount_base' => 'solar_tpo_credit', 'payee' => 'others', 'sort_order' => 2]);
+
+        (require database_path('migrations/2026_11_03_000007_seed_default_milestones_beside_tpo_rows.php'))->up();
+
+        $this->assertSame(
+            ['deal_review', 'permit_approval', 'solar_install', 'inspection_approval', 'solar_tpo_m1'],
+            $tpoOnly->milestones()->pluck('key')->all()
+        );
+        $this->assertSame('customer_portion', $tpoOnly->milestones()->where('key', 'inspection_approval')->value('amount_base'));
+        $this->assertSame(['deal_review', 'solar_tpo_m1'], $complete->milestones()->pluck('key')->all());
+    }
+
     public function test_the_m1_tab_shows_its_approval_date(): void
     {
         $option = $this->financeOption([]);
