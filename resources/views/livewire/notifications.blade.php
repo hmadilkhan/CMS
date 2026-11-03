@@ -13,11 +13,17 @@
         </h5>
     </div>
     <div class="notification-search px-3 pt-3">
-        <div class="position-relative">
-            <i class="icofont-search-1 notification-search-icon"></i>
-            <input type="search" class="form-control form-control-sm" placeholder="Search notifications..."
+        <div class="sf-search" role="search">
+            <i class="icofont-search-1 sf-search-icon" aria-hidden="true"></i>
+            <input type="search" class="sf-search-input" placeholder="Search notifications..."
                 aria-label="Search notifications" autocomplete="off"
                 wire:model.live.debounce.300ms="search" wire:keydown.escape="$set('search', '')">
+            @if ($search !== '')
+                <button type="button" class="sf-search-clear" title="Clear search" aria-label="Clear search"
+                    wire:click="$set('search', '')">
+                    <i class="icofont-close-line"></i>
+                </button>
+            @endif
         </div>
     </div>
     <div class="tab-content card-body">
@@ -29,8 +35,8 @@
                         <a wire:click.prevent="unread('{{ $notification->id }}','{{ $notification->data['url'] ?? '#' }}')" href="#" class="d-flex flex-fill" wire:loading.attr="disabled">
                             <img class="avatar rounded-circle" src="assets/images/xs/avatar1.jpg" alt="">
                             <div class="flex-fill ms-2">
-                                <p class="d-flex justify-content-between mb-0 "><span class="font-weight-bold">{{ $notification->data['mentioned_by'] ?? 'System' }}</span> <small>{{ $notification->created_at->diffForHumans() }}</small></p>
-                                <span class="">{{ $notification->data['note'] ?? $notification->data['subject'] ?? 'New notification' }} @if(isset($notification->data['project_name']))<span class="badge bg-success">{{$notification->data['project_name']}}</span>@endif</span>
+                                <p class="d-flex justify-content-between mb-0 "><span class="font-weight-bold">{{ \App\Support\NotificationSearch::highlight($notification->data['mentioned_by'] ?? 'System', $searchTerm) }}</span> <small>{{ $notification->created_at->diffForHumans() }}</small></p>
+                                <span class="">{{ \App\Support\NotificationSearch::highlight($notification->data['note'] ?? $notification->data['subject'] ?? 'New notification', $searchTerm) }} @if(isset($notification->data['project_name']))<span class="badge bg-success">{{ \App\Support\NotificationSearch::highlight($notification->data['project_name'], $searchTerm) }}</span>@endif</span>
                             </div>
                         </a>
                         @if (!$notification->read_at)

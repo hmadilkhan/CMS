@@ -298,19 +298,98 @@
         cursor: default;
     }
 
-    .notifications .notification-search .form-control {
-        padding-left: 2rem;
-        border-radius: 999px;
+    /* Search box in the Salesforce Lightning style (icon left, clear button
+       right, thin border, square-ish corners, brand glow on focus), in the
+       Solen palette. Used by the notifications dropdown and the notifications
+       page. Its own class, not .form-control, so the theme's input rules above
+       stay out of it. */
+    .sf-search {
+        position: relative;
+        display: flex;
+        align-items: center;
+        width: 100%;
     }
 
-    .notifications .notification-search-icon {
+    .sf-search .sf-search-input {
+        width: 100%;
+        height: 2rem;
+        padding: 0 2rem 0 2.1rem;
+        border: 1px solid #c9c9c9;
+        border-radius: 0.25rem;
+        background: #ffffff;
+        color: #181818;
+        font-size: 0.8125rem;
+        line-height: 1.875rem;
+        box-shadow: none;
+        transition: border-color 0.1s linear, box-shadow 0.1s linear;
+        -webkit-appearance: none;
+        appearance: none;
+    }
+
+    .sf-search .sf-search-input::placeholder {
+        color: #747474;
+    }
+
+    .sf-search .sf-search-input:hover {
+        border-color: #aeaeae;
+    }
+
+    .sf-search .sf-search-input:focus {
+        outline: 0;
+        border-color: var(--solen-primary);
+        box-shadow: 0 0 0 1px var(--solen-primary), 0 0 3px 1px rgba(238, 143, 69, 0.45);
+    }
+
+    /* The browser's own clear "x" would sit on top of ours. */
+    .sf-search .sf-search-input::-webkit-search-cancel-button,
+    .sf-search .sf-search-input::-webkit-search-decoration {
+        -webkit-appearance: none;
+        appearance: none;
+    }
+
+    .sf-search .sf-search-icon {
         position: absolute;
-        top: 50%;
         left: 0.75rem;
-        transform: translateY(-50%);
-        color: #6c757d;
+        color: #747474;
         font-size: 0.85rem;
         pointer-events: none;
+    }
+
+    .sf-search:focus-within .sf-search-icon {
+        color: var(--solen-primary-deep);
+    }
+
+    .sf-search .sf-search-clear {
+        position: absolute;
+        right: 0.25rem;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 1.5rem;
+        height: 1.5rem;
+        padding: 0;
+        border: 0;
+        border-radius: 50%;
+        background: transparent;
+        color: #747474 !important;
+        font-size: 0.8rem;
+        text-decoration: none;
+        cursor: pointer;
+    }
+
+    .sf-search .sf-search-clear:hover,
+    .sf-search .sf-search-clear:focus-visible {
+        background: #f3f3f3;
+        color: #181818 !important;
+        outline: 0;
+    }
+
+    /* Where a search result matched. */
+    mark.search-hit {
+        padding: 0 0.1rem;
+        border-radius: 2px;
+        background: rgba(255, 193, 143, 0.55);
+        color: inherit;
     }
 
     /* Read notifications stay in the dropdown list, just visually muted. */

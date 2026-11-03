@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Livewire\Notifications;
 use App\Models\User;
 use App\Models\UserType;
+use App\Support\NotificationSearch;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Str;
 use Livewire\Livewire;
@@ -47,13 +48,13 @@ class NotificationSearchTest extends TestCase
 
         Livewire::test(Notifications::class)
             ->set('search', 'review the permit')
-            ->assertSee('Please review the Permit packet')
-            ->assertDontSee('Inverter fault at site')
+            ->assertSeeText('Please review the Permit packet')
+            ->assertDontSeeText('Inverter fault at site')
             ->set('search', 'YUNJIAO')
-            ->assertSee('Please review the Permit packet')
+            ->assertSeeText('Please review the Permit packet')
             ->set('search', 'inverter')
-            ->assertSee('Inverter fault at site')
-            ->assertDontSee('Please review the Permit packet');
+            ->assertSeeText('Inverter fault at site')
+            ->assertDontSeeText('Please review the Permit packet');
     }
 
     public function test_dropdown_does_not_match_json_key_names(): void
@@ -74,6 +75,25 @@ class NotificationSearchTest extends TestCase
             ->assertSee('No notifications match "%"', false);
     }
 
+    public function test_dropdown_highlights_the_match(): void
+    {
+        $this->actingAs($this->user);
+
+        Livewire::test(Notifications::class)
+            ->set('search', 'permit')
+            ->assertSeeHtml('review the <mark class="search-hit">Permit</mark> packet');
+    }
+
+    public function test_highlight_escapes_the_text_and_never_marks_inside_an_entity(): void
+    {
+        $this->assertSame(
+            'R&amp;D &lt;b&gt;<mark class="search-hit">Permit</mark>&lt;/b&gt;',
+            (string) NotificationSearch::highlight('R&D <b>Permit</b>', 'permit')
+        );
+        $this->assertSame('R&amp;D', (string) NotificationSearch::highlight('R&D', 'amp'));
+        $this->assertSame('a &lt;b&gt;', (string) NotificationSearch::highlight('a <b>', '  '));
+    }
+
     // The page also renders the header dropdown, which lists every notification,
     // so the list is checked through the paginator rather than the HTML.
     public function test_index_page_filters_by_q_and_keeps_it_in_the_box(): void
@@ -82,7 +102,7 @@ class NotificationSearchTest extends TestCase
             ->get(route('notifications.index', ['q' => 'utility bill']))
             ->assertOk()
             ->assertSee('value="utility bill"', false)
-            ->assertSee('1 notification matching')
+            ->assertSee('1 result for')
             ->assertViewHas('notifications', fn ($page) => $page->total() === 1
                 && $page->first()->data['email_subject'] === 'Utility bill attached'
                 && str_contains($page->url(2), 'q=utility'));
