@@ -65,11 +65,16 @@
         </select>
     </td>
     <td>
-        <select class="form-select" data-field="payee" name="milestones[{{ $index }}][payee]" aria-label="Payee" required>
+        {{-- The last option opens the "New Payee" dialog instead of being picked. --}}
+        <select class="form-select milestone-payee" data-field="payee" name="milestones[{{ $index }}][payee]" aria-label="Payee" required>
             @foreach ($milestonePayees as $value => $label)
                 <option value="{{ $value }}" @selected(($row['payee'] ?? 'customer') === $value)>{{ $label }}</option>
             @endforeach
+            <option value="__new__">+ Add new payee…</option>
         </select>
+        @error("milestones.$index.payee")
+            <div class="ms-error">{{ $message }}</div>
+        @enderror
     </td>
     <td>
         {{-- The hidden 0 is posted when the switch is off; checked, the 1 after it wins. --}}

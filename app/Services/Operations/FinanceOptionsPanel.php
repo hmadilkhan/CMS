@@ -31,7 +31,7 @@ class FinanceOptionsPanel implements OperationsPanel
             'milestoneTriggers' => $milestones->triggerOptions(),
             'milestoneAmountTypes' => FinanceMilestoneService::AMOUNT_TYPES,
             'milestoneBases' => config('finance_milestones.amount_bases', []),
-            'milestonePayees' => AccountTransaction::PAYEES,
+            'milestonePayees' => AccountTransaction::payeeOptions(),
         ];
     }
 }

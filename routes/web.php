@@ -320,6 +320,7 @@ Route::middleware('auth')->group(function () {
         Route::post('/finance-option-store', 'financeOptionStore')->name("finance.option.store");
         Route::post('/finance-option-update', 'financeOptionUpdate')->name("finance.option.update");
         Route::post('/finance-option-delete', 'financeOptionDelete')->name("finance.option.delete");
+        Route::post('/finance-milestone-payee-store', 'financeMilestonePayeeStore')->name("finance.milestone.payee.store");
         Route::post('/finance-milestone-recipient-store', 'financeMilestoneRecipientStore')->name("finance.milestone.recipient.store");
         Route::post('/finance-milestone-recipient-update', 'financeMilestoneRecipientUpdate')->name("finance.milestone.recipient.update");
         Route::post('/finance-milestone-recipient-delete', 'financeMilestoneRecipientDelete')->name("finance.milestone.recipient.delete");

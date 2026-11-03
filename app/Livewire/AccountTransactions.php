@@ -3,6 +3,7 @@
 namespace App\Livewire;
 
 use App\Models\AccountTransaction;
+use Illuminate\Validation\Rule;
 use Livewire\Component;
 
 class AccountTransactions extends Component
@@ -20,15 +21,18 @@ class AccountTransactions extends Component
     public $isEditMode = false;
     public $confirmingDeleteId = null;
 
-    protected $rules = [
-        'payee' => 'required|in:sales_partner,sub_contractor,supplier,customer,others',
-        'milestone' => 'required|string|max:255',
-        'amount' => 'required|numeric',
-        'deduction_amount' => 'required|numeric',
-        'transaction_date' => 'required|date',
-        'transaction_details' => 'required|string',
-        'status' => 'required|in:Open,Closed',
-    ];
+    protected function rules()
+    {
+        return [
+            'payee' => ['required', Rule::in(array_keys(AccountTransaction::payeeOptions()))],
+            'milestone' => 'required|string|max:255',
+            'amount' => 'required|numeric',
+            'deduction_amount' => 'required|numeric',
+            'transaction_date' => 'required|date',
+            'transaction_details' => 'required|string',
+            'status' => 'required|in:Open,Closed',
+        ];
+    }
 
     public function mount($project_id = null)
     {

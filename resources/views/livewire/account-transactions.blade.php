@@ -70,11 +70,9 @@
                         <select class="form-select form-control" aria-label="Default select Payee"
                             wire:model.defer="payee">
                             <option value="">Select Payee</option>
-                            <option value="sales_partner">Sales Partner</option>
-                            <option value="sub_contractor">Sub-Contractor</option>
-                            <option value="supplier">Supplier</option>
-                            <option value="customer">Customer</option>
-                            <option value="others">Others</option>
+                            @foreach (\App\Models\AccountTransaction::payeeOptions() as $value => $label)
+                                <option value="{{ $value }}">{{ $label }}</option>
+                            @endforeach
                         </select>
                         @error('payee')
                             <span class="text-danger">{{ $message }}</span>

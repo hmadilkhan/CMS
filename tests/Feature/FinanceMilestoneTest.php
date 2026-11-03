@@ -8,6 +8,7 @@ use App\Models\CustomerFinance;
 use App\Models\Department;
 use App\Models\FinanceOption;
 use App\Models\FinanceOptionMilestone;
+use App\Models\Payee;
 use App\Models\Project;
 use App\Models\ProjectFinanceMilestoneEvent;
 use App\Models\SalesPartner;
@@ -449,5 +450,61 @@ class FinanceMilestoneTest extends TestCase
             ->assertSee('M1 Approval Date')
             ->assertSee('id="zone-field-'.$m1->id.'-zone_approval_date"', false)
             ->assertSee('value="2026-11-10"', false);
+    }
+
+    public function test_a_payee_added_from_the_editor_can_be_picked_and_is_what_fires(): void
+    {
+        $admin = $this->superAdmin();
+
+        $this->assertSame(
+            ['sales_partner', 'sub_contractor', 'supplier', 'customer', 'others'],
+            array_keys(AccountTransaction::payeeOptions()),
+            'The five built-in payees stay, under their old keys.'
+        );
+
+        $response = $this->actingAs($admin)
+            ->postJson(route('finance.milestone.payee.store'), ['label' => '  Solar   Fund LLC '])
+            ->assertOk()
+            ->assertJson(['key' => 'solar_fund_llc', 'label' => 'Solar Fund LLC', 'created' => true]);
+
+        // Same name again (any case) is the same payee, not a second one.
+        $this->actingAs($admin)
+            ->postJson(route('finance.milestone.payee.store'), ['label' => 'solar fund llc'])
+            ->assertJson(['key' => 'solar_fund_llc', 'created' => false]);
+        $this->assertSame(1, Payee::where('label', 'Solar Fund LLC')->count());
+
+        $this->actingAs($admin)
+            ->postJson(route('finance.milestone.payee.store'), ['label' => '!!!'])
+            ->assertStatus(422);
+
+        $this->assertSame('Solar Fund LLC', AccountTransaction::payeeOptions()[$response->json('key')]);
+
+        $this->actingAs($admin)->post(route('finance.option.store'), $this->financeOptionPayload([
+            $this->row('Deal Review', 'project_created', 'fixed', 1000, 'contract_amount', 'solar_fund_llc'),
+        ]))->assertSessionHasNoErrors();
+
+        $this->actingAs($admin)->post(route('finance.option.store'), ['name' => 'Bad Payee'] + $this->financeOptionPayload([
+            $this->row('Deal Review', 'project_created', 'fixed', 1000, 'contract_amount', 'nobody'),
+        ]))->assertSessionHasErrors('milestones.0.payee');
+
+        $option = FinanceOption::where('name', 'Dynamic Financing')->firstOrFail();
+        app(FinanceMilestoneService::class)->triggerProjectCreated($this->project($option));
+
+        $transaction = AccountTransaction::where('milestone', 'Deal Review')->firstOrFail();
+        $this->assertSame('solar_fund_llc', $transaction->payee);
+        $this->assertSame('Solar Fund LLC', $transaction->payee_label);
+    }
+
+    public function test_the_editor_offers_added_payees_and_the_add_option(): void
+    {
+        $admin = $this->superAdmin();
+        Payee::findOrCreateByLabel('Solar Fund LLC');
+
+        $this->actingAs($admin)
+            ->get(route('finance.option.types'))
+            ->assertOk()
+            ->assertSee('<option value="solar_fund_llc"', false)
+            ->assertSee('<option value="__new__">+ Add new payee', false)
+            ->assertSee('id="milestone_payee_modal"', false);
     }
 }

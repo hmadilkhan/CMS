@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Models\AccountTransaction;
 use App\Models\Employee;
 use App\Models\EmployeeDepartment;
 use App\Models\User;
@@ -617,7 +618,7 @@ class AiSqlBuilderService
 
             $query->select(
                 'projects.project_name',
-                DB::raw("case account_transactions.payee when 'sales_partner' then 'Sales Partner' when 'sub_contractor' then 'Sub-Contractor' when 'supplier' then 'Supplier' when 'customer' then 'Customer' when 'others' then 'Others' else account_transactions.payee end as payee_label"),
+                DB::raw($this->payeeLabelSql()),
                 'account_transactions.milestone',
                 'account_transactions.amount',
                 'account_transactions.deduction_amount',
@@ -977,6 +978,18 @@ class AiSqlBuilderService
                 break;
             }
         }
+    }
+
+    /** Payee key → its label, for every payee including the ones users added. */
+    private function payeeLabelSql(): string
+    {
+        $pdo = DB::connection()->getPdo();
+
+        $cases = collect(AccountTransaction::payeeOptions())
+            ->map(fn ($label, $key) => 'when '.$pdo->quote((string) $key).' then '.$pdo->quote((string) $label))
+            ->implode(' ');
+
+        return "case account_transactions.payee {$cases} else account_transactions.payee end as payee_label";
     }
 
     private function ensureJoin(Builder $query, string $table, string $first, string $operator, string $second): void

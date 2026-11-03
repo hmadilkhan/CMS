@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Database\QueryException;
 
 class AccountTransaction extends Model
 {
@@ -26,6 +27,11 @@ class AccountTransaction extends Model
         'status',
     ];
 
+    /**
+     * The built-in payees. The list people pick from is the `payees` table
+     * (payeeOptions()), which holds these five plus any added by users; this
+     * stays as the fallback for a database without that table.
+     */
     public const PAYEES = [
         'sales_partner' => 'Sales Partner',
         'sub_contractor' => 'Sub-Contractor',
@@ -38,9 +44,37 @@ class AccountTransaction extends Model
         'status' => self::STATUS_OPEN,
     ];
 
+    private const PAYEE_OPTIONS_BINDING = 'account_transactions.payee_options';
+
+    /**
+     * Every payee as key => label, built-ins first. Read once per request (a
+     * report labels every row with it); Payee drops the copy when one is added.
+     */
+    public static function payeeOptions(): array
+    {
+        $app = app();
+
+        if (! $app->bound(self::PAYEE_OPTIONS_BINDING)) {
+            try {
+                $options = Payee::orderByDesc('is_system')->orderBy('id')->pluck('label', 'key')->all();
+            } catch (QueryException) {
+                $options = [];
+            }
+
+            $app->instance(self::PAYEE_OPTIONS_BINDING, $options + self::PAYEES);
+        }
+
+        return $app->make(self::PAYEE_OPTIONS_BINDING);
+    }
+
+    public static function forgetPayeeOptions(): void
+    {
+        app()->forgetInstance(self::PAYEE_OPTIONS_BINDING);
+    }
+
     public function getPayeeLabelAttribute()
     {
-        return self::PAYEES[$this->payee] ?? $this->payee;
+        return self::payeeOptions()[$this->payee] ?? $this->payee;
     }
 
     public function getFormattedAmountAttribute()

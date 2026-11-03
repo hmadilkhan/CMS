@@ -374,8 +374,15 @@ sync is gone, so the editor's rows are the truth.
 
 - **A row** = name, trigger, amount type (`fixed` / `percent` / `remaining`),
   value, **base** (`amount_base`: contract amount, customer portion, Solar TPO
-  credit, Battery TPO credit — `config/finance_milestones.php`), **payee**
-  (`AccountTransaction::PAYEES`), active.
+  credit, Battery TPO credit — `config/finance_milestones.php`), **payee**, active.
+- **Payees are a table** (`payees`, `App\Models\Payee`): the five built-ins
+  (`is_system`, old keys, so stored values keep their meaning) plus any a user
+  adds from the editor's "+ Add new payee…" option (AJAX
+  `finance.milestone.payee.store`; same name, any case, returns the existing
+  one). Read the list through `AccountTransaction::payeeOptions()` (memoised per
+  request) - the milestone editor, the Account Transactions form, `payee_label`
+  and the assistant's transaction report all do. `PAYEES` is only the fallback
+  for a database without the table. There is no rename/delete screen yet.
 - **Triggers** (the editor's dropdown is `FinanceMilestoneService::triggerOptions()`):
   `project_created`; `project_date` on a column listed in
   `config('finance_milestones.project_dates')`; `zone_date` (a zone's own

@@ -406,6 +406,28 @@
         </div>
     </div>
     <!-- Modal  Delete Folder/ File-->
+    {{-- Outside the finance option form, so Enter here never submits that form. --}}
+    <div class="modal fade" id="milestone_payee_modal" tabindex="-1" aria-labelledby="milestone_payee_modal_label" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-sm">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title fw-bold" id="milestone_payee_modal_label">New Payee</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <label class="form-label" for="milestone_payee_label">Payee name</label>
+                    <input type="text" class="form-control" id="milestone_payee_label" maxlength="100" autocomplete="off" placeholder="e.g. Solar Fund LLC">
+                    <div class="text-danger small mt-1" id="milestone_payee_error" style="display: none"></div>
+                    <div class="form-text">Added to the payee list for every milestone and account transaction.</div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" id="milestone_payee_save"><i class="icofont-plus"></i> Add Payee</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <div class="modal fade" id="deleteproject" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered modal-md modal-dialog-scrollable">
             <input type="hidden" id="deleteId" />
@@ -613,6 +635,93 @@
             syncMilestoneStatus($(this));
         });
         renumberMilestones();
+
+        {{-- "+ Add new payee…" opens the dialog; the select keeps its previous
+             payee until the new one is saved, and goes back to it on cancel. --}}
+        var payeeSelect = null;
+
+        $("#milestone_rows").on("focus", ".milestone-payee", function() {
+            if ($(this).val() !== "__new__") {
+                $(this).data("previous", $(this).val());
+            }
+        });
+
+        $("#milestone_rows").on("change", ".milestone-payee", function() {
+            if ($(this).val() !== "__new__") {
+                $(this).data("previous", $(this).val());
+                return;
+            }
+
+            payeeSelect = $(this);
+            $("#milestone_payee_label").val("");
+            $("#milestone_payee_error").hide().text("");
+            $("#milestone_payee_modal").modal("show");
+        });
+
+        $("#milestone_payee_modal").on("shown.bs.modal", function() {
+            $("#milestone_payee_label").trigger("focus");
+        });
+
+        $("#milestone_payee_modal").on("hidden.bs.modal", function() {
+            if (payeeSelect && payeeSelect.val() === "__new__") {
+                payeeSelect.val(payeeSelect.data("previous") || "customer");
+            }
+            payeeSelect = null;
+        });
+
+        $("#milestone_payee_label").on("keydown", function(event) {
+            if (event.key === "Enter") {
+                event.preventDefault();
+                $("#milestone_payee_save").trigger("click");
+            }
+        });
+
+        {{-- Every payee select, the new-row template's included, gets the payee. --}}
+        function addPayeeOption(key, label) {
+            var template = document.getElementById("milestone_row_template");
+            var selects = $("#milestone_rows .milestone-payee").add($(template.content).find(".milestone-payee"));
+
+            selects.each(function() {
+                if ($(this).find("option").filter(function() { return this.value === key; }).length === 0) {
+                    $("<option>", { value: key }).text(label).insertBefore($(this).find("option[value='__new__']"));
+                }
+            });
+        }
+
+        $("#milestone_payee_save").on("click", function() {
+            var button = $(this);
+            var label = $.trim($("#milestone_payee_label").val());
+
+            if (label === "") {
+                $("#milestone_payee_error").text("Enter a payee name.").show();
+                return;
+            }
+
+            button.prop("disabled", true);
+
+            $.ajax({
+                method: "POST",
+                url: "{{ route('finance.milestone.payee.store') }}",
+                data: {
+                    _token: "{{ csrf_token() }}",
+                    label: label
+                },
+                success: function(response) {
+                    addPayeeOption(response.key, response.label);
+                    if (payeeSelect) {
+                        payeeSelect.val(response.key).data("previous", response.key);
+                    }
+                    $("#milestone_payee_modal").modal("hide");
+                },
+                error: function(xhr) {
+                    var errors = xhr.responseJSON && xhr.responseJSON.errors;
+                    $("#milestone_payee_error").text(errors && errors.label ? errors.label[0] : "The payee could not be added.").show();
+                },
+                complete: function() {
+                    button.prop("disabled", false);
+                }
+            });
+        });
 
         function deleteMilestoneRecipient(id) {
             if (!confirm("Delete this milestone recipient?")) {

@@ -19,6 +19,7 @@ use App\Models\InverterTypeRate;
 use App\Models\LoanApr;
 use App\Models\LoanTerm;
 use App\Models\NotificationTemplate;
+use App\Models\Payee;
 use App\Models\SalesPartner;
 use App\Models\SubContractor;
 use App\Models\SubDepartment;
@@ -338,6 +339,27 @@ class OperationController extends Controller
         } catch (\Throwable $th) {
             return $this->backToOperations($request, "finance.option.types")->with('error', $th->getMessage());
         }
+    }
+
+    /**
+     * Adds a payee from the milestone editor's Payee dropdown and returns it,
+     * so the editor can offer it at once. An existing name returns that payee.
+     */
+    public function financeMilestonePayeeStore(Request $request)
+    {
+        $validated = $request->validate([
+            "label" => ["required", "string", "max:100", "regex:/[\pL\pN]/u"],
+        ], [
+            "label.regex" => "The payee name needs at least one letter or number.",
+        ]);
+
+        $payee = Payee::findOrCreateByLabel($validated["label"]);
+
+        return response()->json([
+            "key" => $payee->key,
+            "label" => $payee->label,
+            "created" => $payee->wasRecentlyCreated,
+        ]);
     }
 
     public function financeMilestoneRecipientStore(Request $request)
@@ -1304,7 +1326,7 @@ class OperationController extends Controller
                 "milestones.*.amount_type" => ["required", Rule::in(array_keys(FinanceMilestoneService::AMOUNT_TYPES))],
                 "milestones.*.amount_value" => ["nullable", "required_unless:milestones.*.amount_type,remaining", "numeric", "min:0"],
                 "milestones.*.amount_base" => ["required", Rule::in(array_keys(config("finance_milestones.amount_bases", [])))],
-                "milestones.*.payee" => ["required", Rule::in(array_keys(AccountTransaction::PAYEES))],
+                "milestones.*.payee" => ["required", Rule::in(array_keys(AccountTransaction::payeeOptions()))],
                 "milestones.*.is_active" => ["required", Rule::in([0, 1])],
             ];
         }
