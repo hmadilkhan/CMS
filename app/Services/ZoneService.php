@@ -3,8 +3,10 @@
 namespace App\Services;
 
 use App\Models\Project;
+use App\Models\ProjectZoneDate;
 use App\Models\ProjectZoneMovement;
 use App\Models\Zone;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 
@@ -25,6 +27,9 @@ use Illuminate\Support\Facades\DB;
  */
 class ZoneService
 {
+    /** The form input a zone tab posts its own approval date under. */
+    public const APPROVAL_DATE_INPUT = 'zone_approval_date';
+
     /** Zones in board order, memoised for the request. */
     private ?Collection $zones = null;
 
@@ -215,9 +220,37 @@ class ZoneService
             return false;
         }
 
-        $this->applyMove($project, $zone, null, $note ?? 'Enrolled in Zones.', true, $enteredAt);
+        // Placing old work on the board is not the project reaching the zone
+        // now, so it raises no "Moved into" finance milestone.
+        $this->applyMove($project, $zone, null, $note ?? 'Enrolled in Zones.', true, $enteredAt, false);
 
         return true;
+    }
+
+    /** The project's own approval date for a zone, as Y-m-d, or null. */
+    public function approvalDate(Project $project, Zone $zone): ?string
+    {
+        $date = ProjectZoneDate::where('project_id', $project->id)
+            ->where('zone_id', $zone->id)
+            ->value('approval_date');
+
+        return $date ? Carbon::parse($date)->format('Y-m-d') : null;
+    }
+
+    /**
+     * File (or clear, with null) a zone's approval date for a project. Filing it
+     * fires the finance milestones that wait on that zone's date.
+     */
+    public function setApprovalDate(Project $project, Zone $zone, ?string $date): void
+    {
+        ProjectZoneDate::updateOrCreate(
+            ['project_id' => $project->id, 'zone_id' => $zone->id],
+            ['approval_date' => $date]
+        );
+
+        if ($date !== null) {
+            app(FinanceMilestoneService::class)->triggerZoneDate($project, $zone);
+        }
     }
 
     /**
@@ -237,7 +270,7 @@ class ZoneService
      * Write the move: the project's current zone, the clock the board's "days in
      * zone" reads, and the history row the zone tabs are built from.
      */
-    private function applyMove(Project $project, Zone $zone, ?int $userId, ?string $note, bool $isAuto, ?\DateTimeInterface $enteredAt = null): void
+    private function applyMove(Project $project, Zone $zone, ?int $userId, ?string $note, bool $isAuto, ?\DateTimeInterface $enteredAt = null, bool $fireMilestones = true): void
     {
         $fromZoneId = $project->zone_id;
         $enteredAt = $enteredAt ?? now();
@@ -271,6 +304,12 @@ class ZoneService
                 'is_auto' => $isAuto,
             ])
             ->log("{$actor} moved the project to the {$zone->name} zone.");
+
+        // A finance milestone may be paid on reaching this zone. It never holds
+        // the move up - the move is already written - and fires once at most.
+        if ($fireMilestones) {
+            app(FinanceMilestoneService::class)->triggerZoneEntered($project, $zone);
+        }
     }
 
     /** A project's zone history, newest first. */

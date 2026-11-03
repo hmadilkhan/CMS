@@ -26,19 +26,21 @@ class AccountTransaction extends Model
         'status',
     ];
 
+    public const PAYEES = [
+        'sales_partner' => 'Sales Partner',
+        'sub_contractor' => 'Sub-Contractor',
+        'supplier' => 'Supplier',
+        'customer' => 'Customer',
+        'others' => 'Others',
+    ];
+
     protected $attributes = [
         'status' => self::STATUS_OPEN,
     ];
 
     public function getPayeeLabelAttribute()
     {
-        return [
-            'sales_partner' => 'Sales Partner',
-            'sub_contractor' => 'Sub-Contractor',
-            'supplier' => 'Supplier',
-            'customer' => 'Customer',
-            'others' => 'Others',
-        ][$this->payee] ?? $this->payee;
+        return self::PAYEES[$this->payee] ?? $this->payee;
     }
 
     public function getFormattedAmountAttribute()

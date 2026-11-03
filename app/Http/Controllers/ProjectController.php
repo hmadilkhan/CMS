@@ -336,11 +336,7 @@ class ProjectController extends Controller
         try {
             $project->update($validated);
             $project->refresh();
-            app(FinanceMilestoneService::class)->triggerDateMilestones($project, array_intersect(array_keys($request->toArray()), [
-                'permitting_approval_date',
-                'solar_install_date',
-                'inspection_approval_date',
-            ]));
+            app(FinanceMilestoneService::class)->triggerDateMilestones($project, array_keys($request->toArray()));
 
             return response()->json(['status' => 200, 'messsage' => 'Project updated successfully']);
         } catch (\Throwable $th) {
@@ -608,11 +604,7 @@ class ProjectController extends Controller
             // clear the follow ups to match.
             $documentFollowUpService->sync($project);
             DB::commit();
-            app(FinanceMilestoneService::class)->triggerDateMilestones($project, array_intersect(array_keys($updateItems), [
-                'permitting_approval_date',
-                'solar_install_date',
-                'inspection_approval_date',
-            ]));
+            app(FinanceMilestoneService::class)->triggerDateMilestones($project, array_keys($updateItems));
 
             return redirect()->route('projects.index');
         } catch (\Throwable $th) {

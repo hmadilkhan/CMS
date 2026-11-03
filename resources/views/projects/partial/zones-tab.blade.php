@@ -75,12 +75,12 @@
                     <div class="col-lg-8 col-md-12 mb-3 sample-notes-column">
                         @livewire('project.notes-section', ['projectId' => $project->id, 'taskId' => $task->id, 'departmentId' => $project->department_id, 'projectDepartmentId' => $project->department_id, 'ghost' => $ghost, 'viewSource' => 'crm', 'zoneId' => $zone->id, 'projectZoneId' => $currentZoneId, 'sectionTitle' => $zone->name . ' Notes'], key('zone-notes-' . $zone->id))
 
-                        {{-- The fields this zone owns, from config('zones.zone_fields').
-                             Only NTP declares any today: the NTP Approval Date, which
-                             left the Deal Review department fields. No zone move is
-                             gated on it - Operations asks for it on the Permitting ->
-                             Installation move. Editable in the project's current zone
-                             only, like the notes and files beside it. --}}
+                        {{-- The fields this zone owns, from config('zones.zone_fields')
+                             (only NTP: the NTP Approval Date), plus the zone's own
+                             approval date when zones.has_approval_date is on (M1, M2).
+                             No zone move is gated on any of them. Editable in the
+                             project's current zone only, like the notes and files
+                             beside it. --}}
                         @php
                             $zoneFields = app(\App\Services\ZoneService::class)->fieldsFor($zone);
                             $followUps = app(\App\Services\DocumentFollowUpService::class);
@@ -90,8 +90,12 @@
                                 ->filter(fn($column) => $followUps->isAwaitingColumn($project, $column))
                                 ->values();
                             $canSaveZoneFields = $isCurrentZone || $awaitedFields->isNotEmpty();
+                            $collectsApprovalDate = $zone->collectsApprovalDate();
+                            $zoneApprovalDate = $collectsApprovalDate
+                                ? optional($project->zoneDates->firstWhere('zone_id', $zone->id))->approval_date
+                                : null;
                         @endphp
-                        @if (!empty($zoneFields))
+                        @if (!empty($zoneFields) || $collectsApprovalDate)
                             <div class="project-section-panel">
                                 <div class="project-section-header">
                                     <i class="icofont-list me-2"></i>{{ $zone->name }} Fields
@@ -129,6 +133,20 @@
                                                 @endif
                                             </div>
                                         @endforeach
+                                        {{-- The zone's own approval date (zones.has_approval_date),
+                                             kept in project_zone_dates. Filing it can raise a
+                                             finance milestone; editable in the current zone only. --}}
+                                        @if ($collectsApprovalDate)
+                                            <div class="col-sm-6 mb-3">
+                                                <label class="form-label"
+                                                    for="zone-field-{{ $zone->id }}-zone_approval_date">{{ $zone->approvalDateLabel() }}</label>
+                                                <input class="form-control" type="date"
+                                                    id="zone-field-{{ $zone->id }}-zone_approval_date"
+                                                    name="zone_approval_date"
+                                                    value="{{ $zoneApprovalDate ? \Illuminate\Support\Carbon::parse($zoneApprovalDate)->format('Y-m-d') : '' }}"
+                                                    @disabled(!$isCurrentZone)>
+                                            </div>
+                                        @endif
                                         @if ($canSaveZoneFields)
                                             <div class="col-12 d-flex align-items-center gap-2">
                                                 <button type="submit" class="btn btn-primary btn-sm">

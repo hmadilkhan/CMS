@@ -22,7 +22,7 @@
     <div class="operation-page-header">
         <div>
             <h1 class="operation-page-title">Finance Options</h1>
-            <p class="operation-page-subtitle">Maintain finance products, restrictions, variances, and holdback settings.</p>
+            <p class="operation-page-subtitle">Maintain finance products, restrictions, variances, holdback settings, and milestone payments.</p>
         </div>
         <div class="operation-summary">
             <span>Total Records</span>
@@ -173,50 +173,44 @@
                             <div class="text-danger message mt-2">{{ $message }}</div>
                         @enderror
                     </div>
-                    <div class="col-xl-3 col-lg-4 col-md-6 col-12" id="milestone_amount_source_div" style="display: none">
-                        <label class="form-label">Milestone Amount Source</label>
-                        <select class="form-select select2" id="milestone_amount_source" name="milestone_amount_source" required>
-                            <option value="contract_amount" @if (old('milestone_amount_source', !empty($finance) ? $finance->milestone_amount_source : 'contract_amount') == 'contract_amount') selected @endif>Contract Amount</option>
-                            <option value="customer_portion" @if (old('milestone_amount_source', !empty($finance) ? $finance->milestone_amount_source : 'contract_amount') == 'customer_portion') selected @endif>Customer Portion</option>
-                        </select>
-                        @error('milestone_amount_source')
-                            <div class="text-danger message mt-2">{{ $message }}</div>
-                        @enderror
-                    </div>
+                    {{-- The milestone schedule. Each row: what fires it, how much
+                         (fixed, a percent of its base, or what is left of its
+                         base), and who the transaction is for. Zone triggers
+                         come from the zones table, so a new zone shows up here
+                         on its own. Only posted while Milestone is Yes. --}}
                     <div class="col-12" id="milestone_schedule_div" style="display: none">
+                        <input type="hidden" name="milestones_submitted" id="milestones_submitted" value="1">
+                        @error('milestones')
+                            <div class="alert alert-danger py-2 mb-2">{{ $message }}</div>
+                        @enderror
                         <div class="table-responsive">
-                            <table class="table table-sm table-hover operation-table mb-0">
+                            <table class="table table-sm table-hover operation-table mb-0" id="milestone_table">
                                 <thead>
                                     <tr>
-                                        <th>Milestone</th>
-                                        <th>Trigger</th>
-                                        <th>Amount</th>
+                                        <th style="min-width: 170px">Milestone</th>
+                                        <th style="min-width: 200px">Trigger</th>
+                                        <th style="min-width: 150px">Amount Type</th>
+                                        <th style="min-width: 110px">Amount</th>
+                                        <th style="min-width: 160px">Of (Base)</th>
+                                        <th style="min-width: 140px">Payee</th>
+                                        <th style="min-width: 110px">Status</th>
+                                        <th></th>
                                     </tr>
                                 </thead>
-                                <tbody>
-                                    <tr>
-                                        <td>Deal Review</td>
-                                        <td>Project Create</td>
-                                        <td>$1,000 fixed</td>
-                                    </tr>
-                                    <tr>
-                                        <td>Permit Approval Date</td>
-                                        <td>Permitting Approval Date filled</td>
-                                        <td>50%</td>
-                                    </tr>
-                                    <tr>
-                                        <td>Solar Install Date</td>
-                                        <td>Solar Install Date filled</td>
-                                        <td>35%</td>
-                                    </tr>
-                                    <tr>
-                                        <td>Inspection Approval Date</td>
-                                        <td>Inspection Approval Date filled</td>
-                                        <td>Remaining Amount</td>
-                                    </tr>
+                                <tbody id="milestone_rows">
+                                    @foreach ($milestoneRows as $index => $row)
+                                        @include('operations.finance-options.milestone-row', ['index' => $index, 'row' => $row])
+                                    @endforeach
                                 </tbody>
                             </table>
                         </div>
+                        <div class="text-muted small mt-1" id="milestone_empty" style="display: none">No milestones - this finance option raises no payments.</div>
+                        <button type="button" class="btn btn-sm btn-outline-primary mt-2" id="milestone_add">
+                            <i class="icofont-plus"></i> Add Milestone
+                        </button>
+                        <template id="milestone_row_template">
+                            @include('operations.finance-options.milestone-row', ['index' => '__INDEX__', 'row' => ['amount_type' => 'percent', 'amount_base' => 'contract_amount', 'payee' => 'customer', 'is_active' => true]])
+                        </template>
                     </div>
                     <div class="col-12">
                         <div class="operation-actions">
@@ -357,7 +351,6 @@
                         <th>Holdback</th>
                         <th>Dollar Watt Value</th>
                         <th>Milestone</th>
-                        <th>Amount Source</th>
                         <th>Actions</th>
                     </tr>
                 </thead>
@@ -375,8 +368,7 @@
                             <td>{{ $financeOption->no_of_days }}</td>
                             <td>{{ $financeOption->holdback == 1 ? 'Yes' : 'No' }}</td>
                             <td>{{ $financeOption->dollar_watt_value }}</td>
-                            <td>{{ $financeOption->milestone_enabled ? 'Yes' : 'No' }}</td>
-                            <td>{{ $financeOption->milestone_amount_source == 'customer_portion' ? 'Customer Portion' : 'Contract Amount' }}</td>
+                            <td>{{ $financeOption->milestone_enabled ? 'Yes (' . $financeOption->milestones->where('is_active', true)->count() . ')' : 'No' }}</td>
                             <td class="text-center">
                                 <a class="action-link" data-toggle="tooltip" title="Edit"
                                     href="{{ $screenUrl($financeOption->id) }}">
@@ -469,17 +461,60 @@
             }
         });
 
+        {{-- Milestone off: the schedule is hidden and not posted at all, so a
+             hidden row can neither block the save nor be rewritten. --}}
         $("#milestone_enabled").change(function() {
-            if ($(this).val() == 1) {
-                $("#milestone_amount_source_div").show();
-                $("#milestone_schedule_div").show();
-                $("#milestone_amount_source").prop("required", true);
-            } else {
-                $("#milestone_amount_source_div").hide();
-                $("#milestone_schedule_div").hide();
-                $("#milestone_amount_source").prop("required", false);
-            }
+            var enabled = $(this).val() == 1;
+
+            $("#milestone_schedule_div").toggle(enabled);
+            $("#milestone_schedule_div").find("input, select").prop("disabled", !enabled);
         });
+
+        function renumberMilestones() {
+            $("#milestone_rows .milestone-row").each(function(index) {
+                $(this).find("[data-field]").each(function() {
+                    $(this).attr("name", "milestones[" + index + "][" + $(this).data("field") + "]");
+                });
+            });
+
+            $("#milestone_empty").toggle($("#milestone_rows .milestone-row").length === 0);
+        }
+
+        {{-- Remaining has no amount of its own: it takes what is left of its base. --}}
+        function syncMilestoneAmount(row) {
+            var remaining = row.find(".milestone-amount-type").val() === "remaining";
+            var input = row.find(".milestone-amount-value");
+
+            input.prop("readonly", remaining).prop("required", !remaining);
+            if (remaining) {
+                input.val("");
+            }
+            input.attr("placeholder", remaining ? "Whatever is left" : "$ or %");
+        }
+
+        $("#milestone_add").on("click", function() {
+            var html = $("#milestone_row_template").html().replace(/__INDEX__/g, $("#milestone_rows .milestone-row").length);
+            var row = $($.parseHTML($.trim(html))).filter("tr");
+
+            $("#milestone_rows").append(row);
+            syncMilestoneAmount(row);
+            renumberMilestones();
+            row.find("[data-field=label]").trigger("focus");
+        });
+
+        $("#milestone_rows").on("click", ".milestone-remove", function() {
+            $(this).closest(".milestone-row").remove();
+            renumberMilestones();
+        });
+
+        $("#milestone_rows").on("change", ".milestone-amount-type", function() {
+            syncMilestoneAmount($(this).closest(".milestone-row"));
+        });
+
+        $("#milestone_rows .milestone-row").each(function() {
+            syncMilestoneAmount($(this));
+        });
+        renumberMilestones();
 
         function deleteMilestoneRecipient(id) {
             if (!confirm("Delete this milestone recipient?")) {

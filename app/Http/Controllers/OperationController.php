@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Http\Controllers\Concerns\ReturnsToOperationsConsole;
+use App\Models\AccountTransaction;
 use App\Models\Adder;
 use App\Models\AdderSubType;
 use App\Models\AdderType;
@@ -43,6 +44,7 @@ use App\Services\Operations\UtilityCompanyPanel;
 use App\Traits\MediaTrait;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
 
 class OperationController extends Controller
@@ -268,12 +270,9 @@ class OperationController extends Controller
     public function financeOptionStore(Request $request)
     {
         $validated = $this->validateFinanceOption($request);
-        $milestoneAmountSource = strcasecmp(trim($validated["name"]), "Prepaid PPA") === 0
-            ? "customer_portion"
-            : $validated["milestone_amount_source"];
 
         try {
-            DB::transaction(function () use ($validated, $milestoneAmountSource) {
+            DB::transaction(function () use ($request, $validated) {
                 $finance = FinanceOption::create([
                     "name" => $validated["name"],
                     "loan_id" => $validated["loan_id"],
@@ -286,9 +285,14 @@ class OperationController extends Controller
                     "holdback" => $validated["holdback"],
                     "dollar_watt_value" => ($validated["holdback"] == 0 ? 0 : $validated["dollar_watt_value"]),
                     "milestone_enabled" => $validated["milestone_enabled"],
-                    "milestone_amount_source" => $milestoneAmountSource,
                 ]);
-                app(FinanceMilestoneService::class)->syncDefaultMilestones($finance);
+                // The editor's rows when it sent them; otherwise the standard
+                // four, so turning milestones on later has a schedule to edit.
+                if ($this->milestonesSubmitted($request)) {
+                    app(FinanceMilestoneService::class)->syncMilestones($finance, $validated["milestones"] ?? []);
+                } else {
+                    app(FinanceMilestoneService::class)->seedDefaultMilestones($finance);
+                }
                 LoanTerm::create([
                     "finance_option_id" => $finance->id,
                     "year" => '10 Years',
@@ -308,9 +312,6 @@ class OperationController extends Controller
     public function financeOptionUpdate(Request $request)
     {
         $validated = $this->validateFinanceOption($request, $request->id);
-        $milestoneAmountSource = strcasecmp(trim($validated["name"]), "Prepaid PPA") === 0
-            ? "customer_portion"
-            : $validated["milestone_amount_source"];
 
         try {
             $adder = FinanceOption::findOrFail($validated["id"]);
@@ -325,9 +326,14 @@ class OperationController extends Controller
             $adder->holdback = $validated["holdback"];
             $adder->dollar_watt_value = ($validated["holdback"] == 0 ? 0 : $validated["dollar_watt_value"]);
             $adder->milestone_enabled = $validated["milestone_enabled"];
-            $adder->milestone_amount_source = $milestoneAmountSource;
-            $adder->save();
-            app(FinanceMilestoneService::class)->syncDefaultMilestones($adder);
+            DB::transaction(function () use ($request, $validated, $adder) {
+                $adder->save();
+                // Rows are only rewritten while milestones are on: switched
+                // off, the editor is hidden and its rows are left as they were.
+                if ($this->milestonesSubmitted($request)) {
+                    app(FinanceMilestoneService::class)->syncMilestones($adder, $validated["milestones"] ?? []);
+                }
+            });
             return $this->backToOperations($request, "finance.option.types");
         } catch (\Throwable $th) {
             return $this->backToOperations($request, "finance.option.types")->with('error', $th->getMessage());
@@ -1281,14 +1287,61 @@ class OperationController extends Controller
             "holdback" => ["required", Rule::in([0, 1])],
             "dollar_watt_value" => ["required_if:holdback,1", "nullable", "numeric", "min:0"],
             "milestone_enabled" => ["required", Rule::in([0, 1])],
-            "milestone_amount_source" => ["required", Rule::in(["contract_amount", "customer_portion"])],
         ];
 
         if (!empty($ignoreId)) {
             $rules["id"] = ["required", "exists:finance_options,id"];
         }
 
-        return $request->validate($rules);
+        $milestones = app(FinanceMilestoneService::class);
+
+        if ($this->milestonesSubmitted($request)) {
+            $rules += [
+                "milestones" => ["nullable", "array"],
+                "milestones.*.id" => ["nullable", "integer"],
+                "milestones.*.label" => ["required", "string", "max:255"],
+                "milestones.*.trigger" => ["required", Rule::in($milestones->triggerValues())],
+                "milestones.*.amount_type" => ["required", Rule::in(array_keys(FinanceMilestoneService::AMOUNT_TYPES))],
+                "milestones.*.amount_value" => ["nullable", "required_unless:milestones.*.amount_type,remaining", "numeric", "min:0"],
+                "milestones.*.amount_base" => ["required", Rule::in(array_keys(config("finance_milestones.amount_bases", [])))],
+                "milestones.*.payee" => ["required", Rule::in(array_keys(AccountTransaction::PAYEES))],
+                "milestones.*.is_active" => ["required", Rule::in([0, 1])],
+            ];
+        }
+
+        $validator = Validator::make($request->all(), $rules, [
+            "milestones.*.label.required" => "Every milestone needs a name.",
+            "milestones.*.amount_value.required_unless" => "Enter an amount for every Fixed or Percent milestone.",
+        ]);
+
+        $validator->after(function ($validator) use ($request, $milestones) {
+            if (!$this->milestonesSubmitted($request) || $validator->errors()->isNotEmpty()) {
+                return;
+            }
+
+            $rows = (array) $request->input("milestones", []);
+
+            foreach ($rows as $index => $row) {
+                if (($row["amount_type"] ?? null) === "percent" && (float) ($row["amount_value"] ?? 0) > 100) {
+                    $validator->errors()->add("milestones.{$index}.amount_value", "A percent milestone cannot be more than 100%.");
+                }
+            }
+
+            foreach ($milestones->rowErrors($rows) as $key => $message) {
+                $validator->errors()->add($key, $message);
+            }
+        });
+
+        return $validator->validate();
+    }
+
+    /**
+     * Did the form send its milestone schedule? Only while milestones are on -
+     * switched off, the editor is hidden and its rows are not touched.
+     */
+    private function milestonesSubmitted(Request $request): bool
+    {
+        return $request->boolean("milestones_submitted") && (int) $request->input("milestone_enabled") === 1;
     }
 
     private function validatePartner(Request $request, string $modelClass, $ignoreId = null): array

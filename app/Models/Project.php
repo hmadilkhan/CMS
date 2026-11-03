@@ -144,6 +144,11 @@ class Project extends Model
         return $this->belongsTo(Zone::class, 'zone_id', 'id');
     }
 
+    public function zoneDates()
+    {
+        return $this->hasMany(ProjectZoneDate::class);
+    }
+
     public function zoneMovements()
     {
         return $this->hasMany(ProjectZoneMovement::class, 'project_id', 'id');

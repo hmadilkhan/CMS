@@ -6,6 +6,7 @@ use App\Models\Department;
 use App\Models\Project;
 use App\Models\Zone;
 use App\Services\DocumentFollowUpService;
+use App\Services\FinanceMilestoneService;
 use App\Services\ZoneService;
 use Illuminate\Http\Request;
 
@@ -101,6 +102,10 @@ class ZoneController extends Controller
      * zone tab is read-only, exactly as its notes and files are - and only the
      * columns that zone declares in `config('zones.zone_fields')`, so this
      * endpoint can never be talked into writing an arbitrary project column.
+     *
+     * A zone with `has_approval_date` also takes its own approval date
+     * (`zone_approval_date`), stored in `project_zone_dates` rather than on the
+     * project, so a new zone needs no new column.
      */
     public function fields(Request $request)
     {
@@ -113,8 +118,9 @@ class ZoneController extends Controller
         $zone = Zone::findOrFail($validated['zone_id']);
 
         $fields = $this->zones->fieldsFor($zone);
+        $collectsApprovalDate = $zone->collectsApprovalDate();
 
-        if (empty($fields)) {
+        if (empty($fields) && ! $collectsApprovalDate) {
             return $this->fieldsResponse($request, 422, 'This zone has no fields to fill in.');
         }
 
@@ -130,7 +136,11 @@ class ZoneController extends Controller
             fn ($column) => $isCurrentZone || $followUps->isAwaitingColumn($project, $column)
         );
 
-        if ($writable === []) {
+        // The zone's own approval date follows the plain rule: no chase waits
+        // on it, so only the zone the project is in may file it.
+        $approvalDateWritable = $collectsApprovalDate && $isCurrentZone;
+
+        if ($writable === [] && ! $approvalDateWritable) {
             return $this->fieldsResponse($request, 422, 'Only the zone the project is in can be edited.');
         }
 
@@ -150,14 +160,39 @@ class ZoneController extends Controller
             $updates[$column] = $value;
         }
 
-        if (empty($updates)) {
+        $approvalDateSubmitted = $approvalDateWritable && $request->has(ZoneService::APPROVAL_DATE_INPUT);
+        $approvalDate = null;
+
+        if ($approvalDateSubmitted) {
+            $approvalDate = $this->normalisedFieldValue($request->input(ZoneService::APPROVAL_DATE_INPUT), ['type' => 'date']);
+
+            if ($approvalDate === null && $request->filled(ZoneService::APPROVAL_DATE_INPUT)) {
+                return $this->fieldsResponse($request, 422, 'Please enter a valid '.$zone->approvalDateLabel().'.', ZoneService::APPROVAL_DATE_INPUT);
+            }
+        }
+
+        if (empty($updates) && ! $approvalDateSubmitted) {
             return $this->fieldsResponse($request, 422, 'Nothing to save.');
         }
 
-        $project->forceFill($updates)->save();
+        if (! empty($updates)) {
+            $project->forceFill($updates)->save();
 
-        foreach ($updates as $column => $value) {
-            $this->logFieldChange($project, $fields[$column]['label'], $value, 'from the '.$zone->name.' zone');
+            foreach ($updates as $column => $value) {
+                $this->logFieldChange($project, $fields[$column]['label'], $value, 'from the '.$zone->name.' zone');
+            }
+        }
+
+        // Written on every save, like the project dates: a milestone added after
+        // the date was filed fires on the next save of it. Logged only when the
+        // date actually changed.
+        if ($approvalDateSubmitted) {
+            $changed = $approvalDate !== $this->zones->approvalDate($project, $zone);
+            $this->zones->setApprovalDate($project, $zone, $approvalDate);
+
+            if ($changed) {
+                $this->logFieldChange($project, $zone->approvalDateLabel(), $approvalDate, 'from the '.$zone->name.' zone');
+            }
         }
 
         // Filing the NTP Approval Date here is what releases a project waiting
@@ -165,6 +200,9 @@ class ZoneController extends Controller
         // it parks the project until the funding side answers. See
         // docs/follow-ups.md.
         app(DocumentFollowUpService::class)->sync($project->refresh());
+
+        // A finance milestone may wait on one of these dates.
+        app(FinanceMilestoneService::class)->triggerDateMilestones($project, array_keys($updates));
 
         return $this->fieldsResponse($request, 200, $zone->name.' fields saved.');
     }

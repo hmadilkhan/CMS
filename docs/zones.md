@@ -45,6 +45,7 @@ historic backlog is exactly that, by decision — see §4.
 | History | `project_zone_movements`, `App\Models\ProjectZoneMovement` |
 | Zone notes | `project_zone_notes`, `App\Models\ProjectZoneNote` |
 | Zone files | `project_zone_files`, `App\Models\ProjectZoneFile` |
+| Zone approval dates | `project_zone_dates`, `App\Models\ProjectZoneDate` (zones with `has_approval_date`) |
 | Board fragment | `resources/views/zones/partials/board.blade.php` (+ `project-card`, `move-modal`) |
 | Board's host page + tabs + JS | `resources/views/projects/index.blade.php`, `projects/scripts.blade.php` |
 | Project page section (inside Project Activity) | `resources/views/projects/partial/zones-tab.blade.php` |
@@ -336,12 +337,45 @@ report. On success the page reloads, because saving the date can move the
 project out of its parked lane and the rest of the page would otherwise still
 show the old one.
 
+### A zone's own approval date (M1, M2, …)
+
+Separate from `zone_fields`: a zone with **`zones.has_approval_date = 1`** gets
+a "**<Zone> Approval Date**" field in its tab (M1 and M2 today; NTP is off,
+because its date is the older `projects.ntp_approval_date` column above). The
+value lives in **`project_zone_dates`** (one row per project + zone), not on
+`projects`, so a new zone never needs a new column.
+
+- It posts as `zone_approval_date` to the same `POST /zones/fields`, and follows
+  the plain rule: writable only while the project is in that zone (no chase
+  waits on it, so there is no awaited-field exception).
+- `ZoneService::approvalDate()` / `setApprovalDate()` read and write it. Filing
+  a date fires the finance milestones that wait on it (below). It is re-saved
+  on every submit so a milestone added later fires on the next save; the
+  activity log only records an actual change.
+
+### Zones and finance milestones
+
+A finance option's milestone (Operations → Finance Options) can be triggered by
+a zone in two ways, both offered straight from the `zones` table:
+
+- **"<Zone> Approval Date"** (`trigger_type = zone_date`) — fires when that
+  date is filed. Every zone with `has_approval_date` offers it.
+- **"Moved into <Zone>"** (`trigger_type = zone_entered`) — fires from
+  `ZoneService::applyMove()` when the project enters the zone, by hand or
+  automatically. Every zone but the archive offers it. **`zones:backfill` does
+  not fire it** (placing old work is not reaching the zone now).
+
+A milestone fires once per project at most, so moving out and back in raises
+nothing new. See the Finance milestones section of `CLAUDE.md`.
+
 ### No zone move is gated
 
 Zone moves stay free in both directions, the archive included. A zone field is
 something the funding side records, never something that blocks a zone move —
 the NTP Approval Date holds up a *department* move (it parks the project in
-Install Pending Document), never a zone one.
+Install Pending Document), never a zone one. A move may *raise* a finance
+milestone afterwards, but the move is already written by then and a milestone
+failure is only logged.
 
 ---
 ## 8. Access
@@ -426,7 +460,10 @@ Everyone else sees no trace of the module.
 
 ## 10. Adding a sixth zone
 
-1. Insert the row in `zones` (slug, name, order, `show_in_list`) via a migration.
+1. Insert the row in `zones` (slug, name, order, `show_in_list`,
+   `has_approval_date`) via a migration. With `has_approval_date = 1` its tab
+   collects "<Zone> Approval Date", and the finance-milestone trigger list
+   offers "<Zone> Approval Date" and "Moved into <Zone>" — no code change.
 2. If it takes part in an automatic rule, extend `config/zones.php` and
    `ZoneService::handleDepartmentArrival()` — nothing else reads those rules.
    Fields of its own are config too: `zone_fields` (§7). A field listed there

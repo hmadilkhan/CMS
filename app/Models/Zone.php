@@ -20,6 +20,7 @@ class Zone extends Model
 
     protected $casts = [
         'show_in_list' => 'boolean',
+        'has_approval_date' => 'boolean',
     ];
 
     public function projects()
@@ -41,5 +42,20 @@ class Zone extends Model
     public function isArchive(): bool
     {
         return $this->slug === config('zones.archived_zone', 'archived');
+    }
+
+    /**
+     * Does this zone's tab collect its own approval date ("M1 Approval Date")?
+     * Turning the flag on is all a new zone needs for the date field and its
+     * finance-milestone trigger to appear.
+     */
+    public function collectsApprovalDate(): bool
+    {
+        return $this->has_approval_date && ! $this->isArchive();
+    }
+
+    public function approvalDateLabel(): string
+    {
+        return $this->name.' Approval Date';
     }
 }

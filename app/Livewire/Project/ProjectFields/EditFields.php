@@ -435,11 +435,7 @@ class EditFields extends Component
                 $this->project->customer()->update($customerUpdateItems);
             }
             $this->project->refresh();
-            app(FinanceMilestoneService::class)->triggerDateMilestones($this->project, array_intersect(array_keys($updateItems), [
-                'permitting_approval_date',
-                'solar_install_date',
-                'inspection_approval_date',
-            ]));
+            app(FinanceMilestoneService::class)->triggerDateMilestones($this->project, array_keys($updateItems));
             // The sub-contractor's Labor Payable is raised the first time the
             // Inspection Approval Date is entered - not on every later save of
             // this form, which sends the date again.

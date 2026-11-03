@@ -358,12 +358,52 @@ applies to every project, including ones already in Installation. The old
   is what stops a second one (deleted ones included). No sub-contractor on the
   customer, or no Labor invoice → nothing is created (logged). No backfill of
   projects that already have the date. Material invoices create nothing.
-- Separate from `FinanceMilestoneService`, which still raises the customer's
-  "Inspection Approval Date" milestone payment for finance options with
-  milestones on.
+- Separate from `FinanceMilestoneService`, which raises the finance option's
+  own milestone payments (see "Finance milestones" below).
 - Finance used to key the Labor Payable in by hand (often before inspection,
   dated the Friday pay run); they stop doing that once this is live, or there
   will be duplicates.
+
+## Finance milestones — editable rows, any trigger
+
+A finance option with Milestone = Yes raises an account transaction per
+milestone row. The rows are **data** (`finance_option_milestones`), edited in
+Operations → Finance Options; `app/Services/FinanceMilestoneService.php` fires
+them. They used to be four hard-coded rows re-synced on every trigger — that
+sync is gone, so the editor's rows are the truth.
+
+- **A row** = name, trigger, amount type (`fixed` / `percent` / `remaining`),
+  value, **base** (`amount_base`: contract amount, customer portion, Solar TPO
+  credit, Battery TPO credit — `config/finance_milestones.php`), **payee**
+  (`AccountTransaction::PAYEES`), active.
+- **Triggers** (the editor's dropdown is `FinanceMilestoneService::triggerOptions()`):
+  `project_created`; `project_date` on a column listed in
+  `config('finance_milestones.project_dates')`; `zone_date` (a zone's own
+  approval date, `project_zone_dates`); `zone_entered` (moved into a zone). Both
+  zone kinds come from the `zones` table, so a new zone (M3) appears without
+  code — see `docs/zones.md`. A new *project* date trigger needs a config line.
+- **Fires once per project per `key`** (`project_finance_milestone_events`
+  unique). Editing a row keeps its key, so it never fires twice; a removed row
+  is soft deleted and its transactions stay. Nothing is backfilled: a new or
+  edited row fires when its trigger next comes round.
+- **Remaining = base − what this project's milestones on the SAME base already
+  raised** (events carry `amount_base`). Before, it subtracted every event, which
+  was right only while all rows shared one base; the TPO rows would have eaten
+  into the customer's last instalment.
+- A row whose base is 0 is skipped and not recorded (e.g. a TPO milestone on a
+  customer saved before the credit split).
+- Callers pass every column they wrote to `triggerDateMilestones()`; the service
+  filters to the configured list. `triggerProjectCreated()` also fires any
+  configured date already filled at creation.
+- `finance_options.milestone_amount_source` is no longer read (the base is per
+  row) — migration `2026_11_03_000005` copied it onto every row and event.
+  The four TPO rows (Solar/Battery 70% at M1, 30% at M2, payee Others) were
+  seeded on Prepaid PPA + Wheelhouse by `2026_11_03_000006`.
+- The editor posts rows only while Milestone = Yes (`milestones_submitted`);
+  switched off, its inputs are disabled and the stored rows are left alone. A
+  new option posted without rows gets the standard four.
+
+Covered by `tests/Feature/FinanceMilestoneTest.php`.
 
 ## Zones (Funding Manager module)
 
