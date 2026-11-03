@@ -179,35 +179,54 @@
                          come from the zones table, so a new zone shows up here
                          on its own. Only posted while Milestone is Yes. --}}
                     <div class="col-12" id="milestone_schedule_div" style="display: none">
+                        @include('operations.finance-options.milestone-styles')
                         <input type="hidden" name="milestones_submitted" id="milestones_submitted" value="1">
-                        @error('milestones')
-                            <div class="alert alert-danger py-2 mb-2">{{ $message }}</div>
-                        @enderror
-                        <div class="table-responsive">
-                            <table class="table table-sm table-hover operation-table mb-0" id="milestone_table">
-                                <thead>
-                                    <tr>
-                                        <th style="min-width: 170px">Milestone</th>
-                                        <th style="min-width: 200px">Trigger</th>
-                                        <th style="min-width: 150px">Amount Type</th>
-                                        <th style="min-width: 110px">Amount</th>
-                                        <th style="min-width: 160px">Of (Base)</th>
-                                        <th style="min-width: 140px">Payee</th>
-                                        <th style="min-width: 110px">Status</th>
-                                        <th></th>
-                                    </tr>
-                                </thead>
-                                <tbody id="milestone_rows">
-                                    @foreach ($milestoneRows as $index => $row)
-                                        @include('operations.finance-options.milestone-row', ['index' => $index, 'row' => $row])
-                                    @endforeach
-                                </tbody>
-                            </table>
+                        <div class="ms-card">
+                            <div class="ms-card-header">
+                                <div class="ms-card-title">
+                                    <span class="ms-card-icon"><i class="icofont-money-bag"></i></span>
+                                    <div>
+                                        <h5>Milestone Schedule <span class="ms-count" id="milestone_count">({{ count($milestoneRows) }})</span></h5>
+                                        <p>Payments this finance option raises, and what fires each one.</p>
+                                    </div>
+                                </div>
+                                <button type="button" class="ms-btn-neutral" id="milestone_add">
+                                    <i class="icofont-plus"></i> New Milestone
+                                </button>
+                            </div>
+                            @error('milestones')
+                                <div class="ms-alert"><i class="icofont-warning-alt"></i> {{ $message }}</div>
+                            @enderror
+                            <div class="ms-table-wrap">
+                                <table class="ms-table" id="milestone_table">
+                                    <thead>
+                                        <tr>
+                                            <th class="ms-col-num">#</th>
+                                            <th class="ms-col-label">Milestone</th>
+                                            <th class="ms-col-trigger">Trigger</th>
+                                            <th class="ms-col-type">Amount Type</th>
+                                            <th class="ms-col-amount">Amount</th>
+                                            <th class="ms-col-base">Of (Base)</th>
+                                            <th class="ms-col-payee">Payee</th>
+                                            <th class="ms-col-status">Status</th>
+                                            <th class="ms-col-action"><span class="visually-hidden">Actions</span></th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="milestone_rows">
+                                        @foreach ($milestoneRows as $index => $row)
+                                            @include('operations.finance-options.milestone-row', ['index' => $index, 'row' => $row])
+                                        @endforeach
+                                    </tbody>
+                                </table>
+                                <div class="ms-empty" id="milestone_empty" style="display: none">
+                                    <i class="icofont-info-circle"></i>
+                                    No milestones yet - this finance option raises no payments. Use <strong>New Milestone</strong> to add one.
+                                </div>
+                            </div>
+                            {{-- Per-base totals, worked out as you type: a base whose
+                                 percents pass 100% is flagged before the save refuses it. --}}
+                            <div class="ms-card-footer" id="milestone_totals"></div>
                         </div>
-                        <div class="text-muted small mt-1" id="milestone_empty" style="display: none">No milestones - this finance option raises no payments.</div>
-                        <button type="button" class="btn btn-sm btn-outline-primary mt-2" id="milestone_add">
-                            <i class="icofont-plus"></i> Add Milestone
-                        </button>
                         <template id="milestone_row_template">
                             @include('operations.finance-options.milestone-row', ['index' => '__INDEX__', 'row' => ['amount_type' => 'percent', 'amount_base' => 'contract_amount', 'payee' => 'customer', 'is_active' => true]])
                         </template>
@@ -471,25 +490,94 @@
         });
 
         function renumberMilestones() {
-            $("#milestone_rows .milestone-row").each(function(index) {
+            var rows = $("#milestone_rows .milestone-row");
+
+            rows.each(function(index) {
+                $(this).find(".ms-row-number").text(index + 1);
                 $(this).find("[data-field]").each(function() {
                     $(this).attr("name", "milestones[" + index + "][" + $(this).data("field") + "]");
                 });
             });
 
-            $("#milestone_empty").toggle($("#milestone_rows .milestone-row").length === 0);
+            $("#milestone_count").text("(" + rows.length + ")");
+            $("#milestone_table").toggle(rows.length > 0);
+            $("#milestone_empty").toggle(rows.length === 0);
+            renderMilestoneTotals();
         }
 
         {{-- Remaining has no amount of its own: it takes what is left of its base. --}}
         function syncMilestoneAmount(row) {
-            var remaining = row.find(".milestone-amount-type").val() === "remaining";
+            var type = row.find(".milestone-amount-type").val();
+            var remaining = type === "remaining";
             var input = row.find(".milestone-amount-value");
 
+            row.find(".ms-amount").removeClass("is-fixed is-percent is-remaining").addClass("is-" + type);
             input.prop("readonly", remaining).prop("required", !remaining);
             if (remaining) {
                 input.val("");
             }
-            input.attr("placeholder", remaining ? "Whatever is left" : "$ or %");
+            input.attr("placeholder", remaining ? "Balance" : (type === "fixed" ? "0.00" : "0"));
+        }
+
+        function syncMilestoneStatus(row) {
+            var active = row.find(".milestone-active").is(":checked");
+
+            row.toggleClass("is-inactive", !active);
+            row.find(".ms-toggle-label").text(active ? "Active" : "Inactive");
+        }
+
+        {{-- One chip per base across the active rows: its percents, its fixed
+             amounts, and whether a Remaining row closes it. --}}
+        function renderMilestoneTotals() {
+            var bases = {};
+
+            $("#milestone_rows .milestone-row").each(function() {
+                var row = $(this);
+
+                if (!row.find(".milestone-active").is(":checked")) {
+                    return;
+                }
+
+                var baseSelect = row.find(".milestone-amount-base");
+                var key = baseSelect.val();
+                var type = row.find(".milestone-amount-type").val();
+                var value = parseFloat(row.find(".milestone-amount-value").val()) || 0;
+
+                bases[key] = bases[key] || { label: baseSelect.find("option:selected").text(), percent: 0, fixed: 0, remaining: false };
+
+                if (type === "percent") {
+                    bases[key].percent += value;
+                } else if (type === "fixed") {
+                    bases[key].fixed += value;
+                } else {
+                    bases[key].remaining = true;
+                }
+            });
+
+            var footer = $("#milestone_totals").empty();
+
+            $.each(bases, function(key, base) {
+                var parts = [];
+
+                if (base.percent) {
+                    parts.push(Math.round(base.percent * 100) / 100 + "%");
+                }
+                if (base.fixed) {
+                    parts.push("$" + base.fixed.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
+                }
+                if (base.remaining) {
+                    parts.push("Remaining");
+                }
+
+                $("<span>", { "class": "ms-total" + (base.percent > 100 ? " is-over" : "") })
+                    .append($("<span>").text(base.label + ":"))
+                    .append($("<strong>").text(parts.join(" + ") || "-"))
+                    .appendTo(footer);
+            });
+
+            if (!$.isEmptyObject(bases)) {
+                footer.prepend($("<span>").text("Totals per base"));
+            }
         }
 
         $("#milestone_add").on("click", function() {
@@ -498,6 +586,7 @@
 
             $("#milestone_rows").append(row);
             syncMilestoneAmount(row);
+            syncMilestoneStatus(row);
             renumberMilestones();
             row.find("[data-field=label]").trigger("focus");
         });
@@ -509,10 +598,19 @@
 
         $("#milestone_rows").on("change", ".milestone-amount-type", function() {
             syncMilestoneAmount($(this).closest(".milestone-row"));
+            renderMilestoneTotals();
         });
+
+        $("#milestone_rows").on("change", ".milestone-active", function() {
+            syncMilestoneStatus($(this).closest(".milestone-row"));
+            renderMilestoneTotals();
+        });
+
+        $("#milestone_rows").on("input change", ".milestone-amount-value, .milestone-amount-base", renderMilestoneTotals);
 
         $("#milestone_rows .milestone-row").each(function() {
             syncMilestoneAmount($(this));
+            syncMilestoneStatus($(this));
         });
         renumberMilestones();
 
