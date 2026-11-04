@@ -19,6 +19,13 @@
                     <i class="icofont-layers fs-5"></i> <span>Zones</span> <span class=" ms-auto text-end fs-5"></span>
                 </a>
             </li>
+            @can('View Transaction Portal')
+            <li class="collapsed">
+                <a class="m-link {{ Route::currentRouteName() == 'transaction-portal.index' ? 'active' : '' }}" href="{{ route('transaction-portal.index') }}">
+                    <i class="icofont-wallet fs-5"></i> <span>Transaction Portal</span> <span class=" ms-auto text-end fs-5"></span>
+                </a>
+            </li>
+            @endcan
             @else
             @can('Dashboard')
             <li class="collapsed">
@@ -30,6 +37,12 @@
             <li class="collapsed">
                 <a class="m-link {{ str_starts_with(Route::currentRouteName() ?? '', 'ai-chat.') ? 'active' : '' }}" href="{{ route('ai-chat.index') }}">
                     <i class="icofont-robot fs-5"></i> <span>SolenAssist</span> <span class=" ms-auto text-end fs-5"></span></a>
+            </li>
+            @endcan
+            @can('View Transaction Portal')
+            <li class="collapsed">
+                <a class="m-link {{ Route::currentRouteName() == 'transaction-portal.index' ? 'active' : '' }}" href="{{ route('transaction-portal.index') }}">
+                    <i class="icofont-wallet fs-5"></i> <span>Transaction Portal</span> <span class=" ms-auto text-end fs-5"></span></a>
             </li>
             @endcan
             @can('User Management')

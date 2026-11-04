@@ -364,6 +364,19 @@ applies to every project, including ones already in Installation. The old
   dated the Friday pay run); they stop doing that once this is live, or there
   will be duplicates.
 
+## Transaction Portal (Finance)
+
+`/transaction-portal`: five sections of money in / out for one week or month.
+**Read `docs/transaction-portal.md` before changing it.** Brain:
+`TransactionPortalService` (rows + close/reopen), page
+`resources/views/transaction-portal/index.blade.php` (the approved prototype,
+ported as is; its CSS is scoped under `.tp`). Three permissions: the page,
+`Transaction Portal Expected AR` (Funding Manager), and `Transaction Portal Other
+Sections`. Closing a row stores `settled_amount` / `settled_date`. Closing a
+customer payment can raise the sales partner's commission
+(`CommissionPayableService`: received − Labor − Material − already raised, once
+both invoices are on file, due the Friday of the following week).
+
 ## Finance milestones — editable rows, any trigger
 
 A finance option with Milestone = Yes raises an account transaction per

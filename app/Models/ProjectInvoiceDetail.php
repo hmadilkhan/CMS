@@ -21,6 +21,9 @@ class ProjectInvoiceDetail extends Model
         'invoice_type',
         'invoice_date',
         'amount',
+        'status',
+        'settled_amount',
+        'settled_date',
         'notes',
         'file_name',
         'original_file_name',
@@ -28,9 +31,20 @@ class ProjectInvoiceDetail extends Model
         'uploaded_by',
     ];
 
+    /** A material invoice is paid from the Transaction Portal; labor goes through its payable. */
+    public const STATUS_OPEN = 'Open';
+
+    public const STATUS_CLOSED = 'Closed';
+
+    protected $attributes = [
+        'status' => self::STATUS_OPEN,
+    ];
+
     protected $casts = [
         'invoice_date' => 'date',
         'amount' => 'decimal:2',
+        'settled_amount' => 'decimal:2',
+        'settled_date' => 'date',
     ];
 
     public function project()

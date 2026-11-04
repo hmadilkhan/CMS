@@ -131,6 +131,16 @@ Route::middleware('auth')->group(function () {
         Route::post('zones/fields', [ZoneController::class, 'fields'])->name('zones.fields');
     });
 
+    /* TRANSACTION PORTAL - money in and out, week by week. Each section has its
+       own permission on top of this one; the controller checks it per row. */
+    Route::middleware('can:View Transaction Portal')->group(function () {
+        Route::get('transaction-portal', [App\Http\Controllers\TransactionPortalController::class, 'index'])->name('transaction-portal.index');
+        Route::get('transaction-portal/data', [App\Http\Controllers\TransactionPortalController::class, 'data'])->name('transaction-portal.data');
+        Route::get('transaction-portal/export', [App\Http\Controllers\TransactionPortalController::class, 'export'])->name('transaction-portal.export');
+        Route::post('transaction-portal/settle', [App\Http\Controllers\TransactionPortalController::class, 'settle'])->name('transaction-portal.settle');
+        Route::post('transaction-portal/reopen', [App\Http\Controllers\TransactionPortalController::class, 'reopen'])->name('transaction-portal.reopen');
+    });
+
     // The only way into the employee screens is the sidebar link, which is
     // wrapped in @can('View Employees'). get-employees-with-department is left
     // out of the group on purpose: the projects list calls it to fill the

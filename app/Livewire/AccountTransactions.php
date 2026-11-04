@@ -3,6 +3,8 @@
 namespace App\Livewire;
 
 use App\Models\AccountTransaction;
+use App\Models\Project;
+use App\Services\CommissionPayableService;
 use Illuminate\Validation\Rule;
 use Livewire\Component;
 
@@ -17,6 +19,10 @@ class AccountTransactions extends Component
     public $transaction_date;
     public $transaction_details;
     public $status = AccountTransaction::STATUS_OPEN;
+    // What closing records: the amount received / paid and the day it was.
+    public $settled_amount;
+    public $settled_date;
+    public $originalStatus = null;
     public $transactionIdBeingEdited = null;
     public $isEditMode = false;
     public $confirmingDeleteId = null;
@@ -31,7 +37,49 @@ class AccountTransactions extends Component
             'transaction_date' => 'required|date',
             'transaction_details' => 'required|string',
             'status' => 'required|in:Open,Closed',
+            'settled_amount' => [Rule::requiredIf(fn () => $this->closingNow()), 'nullable', 'numeric', 'min:0'],
+            'settled_date' => [Rule::requiredIf(fn () => $this->closingNow()), 'nullable', 'date'],
         ];
+    }
+
+    /** Being closed by this save (a row that was already closed is not asked again). */
+    private function closingNow(): bool
+    {
+        return $this->status === AccountTransaction::STATUS_CLOSED
+            && (! $this->isEditMode || $this->originalStatus !== AccountTransaction::STATUS_CLOSED);
+    }
+
+    public function updatedStatus($value)
+    {
+        if ($this->closingNow() && blank($this->settled_date)) {
+            $this->settled_amount = round(abs((float) $this->amount - (float) $this->deduction_amount), 2) ?: null;
+            $this->settled_date = now()->toDateString();
+        }
+    }
+
+    /** The settlement columns this save writes: kept on a closed row, cleared on an open one. */
+    private function settlementItems(): array
+    {
+        if ($this->status !== AccountTransaction::STATUS_CLOSED) {
+            return ['settled_amount' => null, 'settled_date' => null];
+        }
+
+        if (! $this->closingNow()) {
+            return [];
+        }
+
+        return [
+            'settled_amount' => round(abs((float) $this->settled_amount), 2),
+            'settled_date' => $this->settled_date,
+        ];
+    }
+
+    /** A customer payment received raises the sales partner's commission (see CommissionPayableService). */
+    private function raiseCommission(bool $closedNow): void
+    {
+        if ($closedNow && (float) $this->amount > 0 && $project = Project::find($this->project_id)) {
+            app(CommissionPayableService::class)->raiseForPayment($project, $this->settled_date);
+        }
     }
 
     public function mount($project_id = null)
@@ -54,6 +102,9 @@ class AccountTransactions extends Component
         $this->transaction_date = '';
         $this->transaction_details = '';
         $this->status = AccountTransaction::STATUS_OPEN;
+        $this->settled_amount = null;
+        $this->settled_date = null;
+        $this->originalStatus = null;
         $this->transactionIdBeingEdited = null;
         $this->isEditMode = false;
     }
@@ -70,7 +121,8 @@ class AccountTransactions extends Component
             'transaction_date' => $this->transaction_date,
             'transaction_details' => $this->transaction_details,
             'status' => $this->status,
-        ];
+        ] + $this->settlementItems();
+        $closedNow = $this->closingNow();
 
         $account = AccountTransaction::create($items);
 
@@ -84,6 +136,7 @@ class AccountTransactions extends Component
             ->setEvent("created")
             ->log("{$username} created the account transaction: {$changedFields}.");
 
+        $this->raiseCommission($closedNow);
         $this->resetForm();
         $this->fetchTransactions();
         session()->flash('message', 'Transaction added successfully.');
@@ -100,6 +153,9 @@ class AccountTransactions extends Component
         $this->transaction_date = $transaction->transaction_date;
         $this->transaction_details = $transaction->transaction_details;
         $this->status = $transaction->status ?: AccountTransaction::STATUS_OPEN;
+        $this->originalStatus = $this->status;
+        $this->settled_amount = $transaction->settled_amount;
+        $this->settled_date = $transaction->settled_date;
         $this->isEditMode = true;
     }
 
@@ -115,7 +171,8 @@ class AccountTransactions extends Component
             'transaction_date' => $this->transaction_date,
             'transaction_details' => $this->transaction_details,
             'status' => $this->status,
-        ];
+        ] + $this->settlementItems();
+        $closedNow = $this->closingNow();
         $transaction->update($items);
         // ADDING TO LOGS
         $username = auth()->user()->name;
@@ -127,6 +184,7 @@ class AccountTransactions extends Component
             ->withProperties($items)
             ->setEvent("updated")
             ->log("{$username} updated the account transaction: {$changedFields}.");
+        $this->raiseCommission($closedNow);
         $this->resetForm();
         $this->fetchTransactions();
         session()->flash('message', 'Transaction updated successfully.');

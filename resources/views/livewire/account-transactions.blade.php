@@ -118,7 +118,7 @@
                     <div class="col-xl-3 col-lg-4 col-md-6">
                         <label class="form-label">Status</label>
                         <select class="form-select form-control" aria-label="Default select Status"
-                            wire:model.defer="status">
+                            wire:model.live="status">
                             <option value="Open">Open</option>
                             <option value="Closed">Closed</option>
                         </select>
@@ -126,6 +126,22 @@
                             <span class="text-danger">{{ $message }}</span>
                         @enderror
                     </div>
+                    @if ($status === 'Closed')
+                        <div class="col-xl-3 col-lg-4 col-md-6">
+                            <label class="form-label">Received / Paid Amount</label>
+                            <input type="number" step="0.01" min="0" class="form-control" wire:model.defer="settled_amount">
+                            @error('settled_amount')
+                                <span class="text-danger">{{ $message }}</span>
+                            @enderror
+                        </div>
+                        <div class="col-xl-3 col-lg-4 col-md-6">
+                            <label class="form-label">Received / Paid Date</label>
+                            <input type="date" class="form-control" wire:model.defer="settled_date">
+                            @error('settled_date')
+                                <span class="text-danger">{{ $message }}</span>
+                            @enderror
+                        </div>
+                    @endif
                     <div class="col-xl-2 col-lg-4 col-md-6 account-transaction-action-col">
                         <button type="submit" class="btn btn-primary w-100">
                             {{ $isEditMode ? 'Update' : 'Add' }}
@@ -175,6 +191,9 @@
                             <td>
                                 <span
                                     class="badge {{ $transaction->status === 'Open' ? 'bg-success' : 'bg-secondary' }}">{{ $transaction->status }}</span>
+                                @if ($transaction->settled_date)
+                                    <small class="d-block text-muted mt-1">${{ number_format($transaction->settled_amount, 2) }} on {{ date('d M Y', strtotime($transaction->settled_date)) }}</small>
+                                @endif
                             </td>
                             @can('Account Transactions Edit')
                                 <td class="transaction-actions text-center">

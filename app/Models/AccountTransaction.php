@@ -23,8 +23,11 @@ class AccountTransaction extends Model
         'amount',
         'deduction_amount',
         'transaction_date',
+        'due_date',
         'transaction_details',
         'status',
+        'settled_amount',
+        'settled_date',
     ];
 
     /**
@@ -105,6 +108,12 @@ class AccountTransaction extends Model
     public function project()
     {
         return $this->belongsTo(Project::class)->withTrashed();
+    }
+
+    /** The invoice a system-raised payable (the Labor Payable) was created for. */
+    public function invoice()
+    {
+        return $this->belongsTo(ProjectInvoiceDetail::class, 'project_invoice_detail_id')->withTrashed();
     }
 
     // App\Models\Transaction.php
