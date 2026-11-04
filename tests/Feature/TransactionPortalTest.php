@@ -153,7 +153,7 @@ class TransactionPortalTest extends TestCase
             ->assertOk()
             ->assertSee('is-embedded', false)
             ->assertDontSee('notificationsBell', false)
-            ->assertDontSee('menu-list', false)
+            ->assertDontSee('class="sidebar px-4', false)
             ->assertSee('Back to Dashboard');
     }
 
