@@ -1,5 +1,7 @@
 @extends('layouts.master')
 @section('title', 'Transaction Portal')
+{{-- Full screen: no sidebar or header; the back link below replaces them. --}}
+@section('chromeless', '1')
 @section('content')
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -33,6 +35,7 @@
 
     background: var(--bg); color: var(--fg); font-family: var(--font-ui); font-size: 14px; line-height: 1.45;
     border-radius: 14px; padding: 18px 16px 110px; display: grid; gap: 18px;
+    width: 100%; min-height: calc(100vh - 16px); align-content: start;
 }
 .tp *, .tp *::before, .tp *::after { box-sizing: border-box; }
 .tp button, .tp input, .tp select { font: inherit; color: inherit; }
@@ -41,6 +44,9 @@
 
 .tp .crumbs { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; font-size: 12.5px; color: var(--muted); }
 .tp .crumbs b { color: var(--fg); font-weight: 600; }
+.tp .back { display: inline-flex; align-items: center; gap: 6px; border: 1px solid var(--line); background: var(--surface); border-radius: 999px; padding: 4px 12px 4px 9px; color: var(--fg); font-weight: 600; font-size: 12.5px; text-decoration: none; }
+.tp .back:hover { border-color: var(--accent); color: var(--accent-deep); }
+.tp .back svg { width: 14px; height: 14px; }
 
 .tp .head { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 16px; }
 .tp .head h1 { margin: 0; font-size: 26px; font-weight: 800; letter-spacing: -.01em; color: var(--fg); font-family: var(--font-ui); }
@@ -151,14 +157,14 @@
 .tp .cell-link:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 .tp .table-wrap input[type="checkbox"] { accent-color: var(--accent); width: 16px; height: 16px; }
 
-.tp .bulk { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(18px + env(safe-area-inset-bottom, 0px)); background: var(--fg); color: var(--bg); border-radius: 12px; padding: 9px 10px 9px 16px; display: flex; align-items: center; gap: 12px; box-shadow: 0 10px 30px rgba(0, 0, 0, .25); z-index: 1080; max-width: calc(100% - 32px); flex-wrap: wrap; }
+.tp .bulk { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(18px + env(safe-area-inset-bottom, 0px)); background: var(--fg); color: var(--bg); border-radius: 12px; padding: 9px 10px 9px 16px; display: flex; align-items: center; gap: 12px; box-shadow: 0 10px 30px rgba(0, 0, 0, .25); z-index: 100400; max-width: calc(100% - 32px); flex-wrap: wrap; }
 .tp .bulk .mono { font-weight: 600; }
 .tp .bulk .link-btn { color: var(--bg); opacity: .8; }
 .tp .bulk label { display: inline-flex; align-items: center; gap: 6px; margin: 0; font-size: 13px; }
 .tp .bulk input[type="date"] { border: 0; border-radius: 7px; padding: 4px 6px; color: var(--fg); background: var(--surface); }
 
-.tp .scrim { position: fixed; inset: 0; background: var(--scrim); z-index: 1085; }
-.tp .drawer { position: fixed; top: 0; right: 0; bottom: 0; width: min(440px, 100%); background: var(--surface); border-left: 1px solid var(--line); z-index: 1090; display: flex; flex-direction: column; transform: translateX(100%); transition: transform .22s ease; visibility: hidden; }
+.tp .scrim { position: fixed; inset: 0; background: var(--scrim); z-index: 100410; }
+.tp .drawer { position: fixed; top: 0; right: 0; bottom: 0; width: min(440px, 100%); background: var(--surface); border-left: 1px solid var(--line); z-index: 100420; display: flex; flex-direction: column; transform: translateX(100%); transition: transform .22s ease; visibility: hidden; }
 .tp .drawer.open { transform: none; visibility: visible; }
 .tp .d-head { padding: 16px 18px 14px; border-bottom: 1px solid var(--line); display: grid; gap: 4px; }
 .tp .d-top { display: flex; align-items: center; gap: 10px; }
@@ -179,7 +185,7 @@
 .tp .file { display: flex; align-items: center; gap: 8px; font-size: 12.5px; font-family: var(--font-num); overflow-wrap: anywhere; }
 .tp .d-foot { padding: 12px 18px; border-top: 1px solid var(--line); display: flex; gap: 8px; justify-content: flex-end; flex-wrap: wrap; }
 
-.tp .tp-toast { position: fixed; left: 16px; bottom: calc(18px + env(safe-area-inset-bottom, 0px)); background: var(--surface); border: 1px solid var(--line); box-shadow: var(--shadow); border-radius: 10px; padding: 10px 14px; z-index: 1100; max-width: min(420px, calc(100% - 32px)); font-size: 13px; color: var(--fg); }
+.tp .tp-toast { position: fixed; left: 16px; bottom: calc(18px + env(safe-area-inset-bottom, 0px)); background: var(--surface); border: 1px solid var(--line); box-shadow: var(--shadow); border-radius: 10px; padding: 10px 14px; z-index: 100430; max-width: min(420px, calc(100% - 32px)); font-size: 13px; color: var(--fg); }
 .tp .no-sections { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 28px; text-align: center; color: var(--muted); }
 
 .tp button:focus-visible, .tp input:focus-visible, .tp select:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
@@ -204,6 +210,7 @@
 
 <div class="tp" id="tp">
     <div class="crumbs">
+        <a class="back" href="{{ $backUrl }}"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M10 3L5 8l5 5"></path></svg>Back to {{ $backLabel }}</a>
         <span>Finance</span><span aria-hidden="true">›</span><b>Transaction Portal</b>
     </div>
 

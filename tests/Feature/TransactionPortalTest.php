@@ -146,6 +146,17 @@ class TransactionPortalTest extends TestCase
         $this->actingAs($this->finance())->get(route('transaction-portal.index'))->assertOk()->assertSee('Transaction Portal');
     }
 
+    public function test_the_page_is_full_screen_with_a_way_back(): void
+    {
+        $this->actingAs($this->finance())
+            ->get(route('transaction-portal.index'))
+            ->assertOk()
+            ->assertSee('is-embedded', false)
+            ->assertDontSee('notificationsBell', false)
+            ->assertDontSee('menu-list', false)
+            ->assertSee('Back to Dashboard');
+    }
+
     public function test_the_funding_manager_sees_only_expected_ar(): void
     {
         $project = $this->project();

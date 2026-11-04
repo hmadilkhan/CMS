@@ -25,10 +25,19 @@ class TransactionPortalController extends Controller
 
     public function index(Request $request)
     {
-        $sections = $this->portal->sections($request->user());
+        $user = $request->user();
+        $sections = $this->portal->sections($user);
+
+        // The page has no sidebar, so it carries its own way back: the
+        // dashboard, or Zones for a Funding Manager who has no dashboard.
+        [$backUrl, $backLabel] = $user->can('Dashboard') || ! $user->isZoneOnlyUser()
+            ? [route('dashboard'), 'Dashboard']
+            : [route('projects.index', ['tab' => 'zones']), 'Zones'];
 
         return view('transaction-portal.index', [
             'sections' => $sections,
+            'backUrl' => $backUrl,
+            'backLabel' => $backLabel,
             'financeOptions' => FinanceOption::orderBy('name')->pluck('name')->unique()->values(),
             // One variable: Blade's @json splits its argument on commas.
             'portalConfig' => [

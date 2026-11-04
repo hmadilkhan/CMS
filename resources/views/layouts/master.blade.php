@@ -198,8 +198,10 @@
     {{-- "embedded" is a page opened INSIDE another one - today the Operations
          console, which shows these same screens in one window. The page keeps
          its own routes, permissions and behaviour; it simply leaves out the
-         chrome it would otherwise draw a second time. --}}
-    @php $embedded = request()->boolean('embedded'); @endphp
+         chrome it would otherwise draw a second time.
+         A page that is full-screen by design (the Transaction Portal) asks for
+         the same with @section('chromeless', '1') and draws its own way back. --}}
+    @php $embedded = request()->boolean('embedded') || $__env->hasSection('chromeless'); @endphp
 
     <div id="mytask-layout" class="theme-indigo {{ $embedded ? 'is-embedded' : '' }}">
         <!-- sidebar -->
