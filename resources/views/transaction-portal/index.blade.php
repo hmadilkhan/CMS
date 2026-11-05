@@ -459,10 +459,9 @@
             const due = sum(['com', 'lab', 'mat'].flatMap(openOf));
             tiles.push('<div class="tile"><span class="k"><span class="dot in"></span>Received</span><span class="v">' + money(sum(L.aar.inRange)) + '</span><span class="s">' + plural(L.aar.inRange.length, 'deposit') + ' in this ' + S.mode + '</span></div>');
             tiles.push('<div class="tile"><span class="k"><span class="dot out"></span>Payables due</span><span class="v">' + money(due) + '</span><span class="s">Commission ' + money(sum(openOf('com'))) + ' · Labor ' + money(sum(openOf('lab'))) + ' · Material ' + money(sum(openOf('mat'))) + '</span></div>');
-            if (has('ear')) {
-                const net = sum(L.aar.inRange) + sum(openOf('ear')) - due;
-                tiles.push('<div class="tile net"><span class="k"><span class="dot acc"></span>Net position</span><span class="v' + (net < 0 ? ' neg' : '') + '">' + (net < 0 ? '−' : '') + money(Math.abs(net)) + '</span><span class="s">' + lateLine + '</span></div>');
-            }
+            // Net = cash received in the period minus what is still owed out.
+            const net = sum(L.aar.inRange) - due;
+            tiles.push('<div class="tile net"><span class="k"><span class="dot acc"></span>Net position</span><span class="v' + (net < 0 ? ' neg' : '') + '">' + (net < 0 ? '−' : '') + money(Math.abs(net)) + '</span><span class="s">' + lateLine + '</span></div>');
         }
         if (tiles.length < 2) tiles.push('<div class="tile"><span class="k"><span class="dot acc"></span>Overdue</span><span class="v">' + money(sum(late)) + '</span><span class="s">' + lateLine + '</span></div>');
         $('tiles').style.setProperty('--tiles', tiles.length);
