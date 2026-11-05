@@ -478,6 +478,11 @@
             color: #15803d;
         }
 
+        .project-tag-chip.pto-greenlight-tag.pto-greenlight-not-approved {
+            background: rgba(217, 119, 6, 0.12);
+            color: #b45309;
+        }
+
         .project-tag-chip.ahj-website-tag {
             border: 0;
             cursor: pointer;
@@ -1300,6 +1305,12 @@
             border: 1px solid rgba(22, 163, 74, 0.18);
             color: #15803d !important;
             font-size: 0.76rem;
+        }
+
+        #project-show-page.project-workspace-redesign .project-stage-meta .pto-greenlight-tag.pto-greenlight-not-approved {
+            background: rgba(217, 119, 6, 0.1) !important;
+            border-color: rgba(217, 119, 6, 0.22);
+            color: #b45309 !important;
         }
 
         #project-show-page.project-workspace-redesign .navbar,
@@ -2393,6 +2404,8 @@
                                 @endif
                                 @if ($isPtoGreenlightApproved)
                                     <span class="project-tag-chip pto-greenlight-tag">PTO Greenlight Approved</span>
+                                @elseif ($alertStatus)
+                                    <span class="project-tag-chip pto-greenlight-tag pto-greenlight-not-approved">PTO Greenlight Not Approved</span>
                                 @endif
                             </div>
                         </div>
