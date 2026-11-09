@@ -136,6 +136,22 @@ class TransactionPortalImportTest extends TestCase
         $this->assertNull(Payee::where('label', 'WheelHouse')->first());
     }
 
+    public function test_a_new_payee_spelt_two_ways_is_listed_and_created_once(): void
+    {
+        $this->project('Hui-Dong', 'Hui', 'Dong');
+        $user = $this->user();
+
+        $preview = $this->preview($user, $this->sheet([
+            ['Hui Dong', 'Wheelhouse', 'Milestone 1', '100'],
+            ['Hui Dong', 'WheelHouse ', 'Full Payment', '200'],
+        ]))->assertSee('New payees that will be created: <b>Wheelhouse</b>.', false);
+
+        $this->actingAs($user)->post(route('transaction-portal.import.store'), $this->form($preview));
+
+        $this->assertSame(1, Payee::whereRaw('LOWER(label) = ?', ['wheelhouse'])->count());
+        $this->assertSame(['wheelhouse'], AccountTransaction::distinct()->pluck('payee')->all());
+    }
+
     /**
      * What the preview form posts when left as it opens: every row with its
      * values, duplicates unticked. `$edits` changes rows by line.

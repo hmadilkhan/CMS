@@ -125,7 +125,7 @@
             $attention = $rowsC->filter(fn ($r) => ! empty($r['errors']) || ! $r['project_id'] || $r['match'] === 'partial');
             $dupes = $rowsC->filter(fn ($r) => $r['duplicate']);
             $ready = $rowsC->filter(fn ($r) => empty($r['errors']) && $r['project_id'] && $r['match'] !== 'partial' && ! $r['duplicate']);
-            $newPayees = $rowsC->where('payee_new', true)->pluck('payee_label')->unique()->values();
+            $newPayees = $rowsC->where('payee_new', true)->pluck('payee_label')->unique(fn ($label) => mb_strtolower($label))->values();
         @endphp
         <datalist id="tpi-payees">
             @foreach ($payees as $label)
