@@ -2,7 +2,6 @@
 
 namespace App\Services\Operations;
 
-use App\Models\AccountTransaction;
 use App\Models\FinanceMilestoneEmailRecipient;
 use App\Models\FinanceMilestoneSetting;
 use App\Models\FinanceOption;
@@ -31,7 +30,6 @@ class FinanceOptionsPanel implements OperationsPanel
             'milestoneTriggers' => $milestones->triggerOptions(),
             'milestoneAmountTypes' => FinanceMilestoneService::AMOUNT_TYPES,
             'milestoneBases' => config('finance_milestones.amount_bases', []),
-            'milestonePayees' => AccountTransaction::payeeOptions(),
         ];
     }
 }

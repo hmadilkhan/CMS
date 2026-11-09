@@ -70,7 +70,7 @@
                         <select class="form-select form-control" aria-label="Default select Payee"
                             wire:model.defer="payee">
                             <option value="">Select Payee</option>
-                            @foreach (\App\Models\AccountTransaction::payeeOptions() as $value => $label)
+                            @foreach (\App\Models\AccountTransaction::payeeChoices($originalPayee) as $value => $label)
                                 <option value="{{ $value }}">{{ $label }}</option>
                             @endforeach
                         </select>

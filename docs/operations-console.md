@@ -8,8 +8,8 @@ A section is drawn one of two ways, and `config/operations_console.php` alone
 decides which:
 
 - **a panel** — the console draws the screen itself, inside the console page:
-  one scroll, one set of scripts, one history. **All twenty-one screens are
-  panels today.**
+  one scroll, one set of scripts, one history. **All twenty-two screens are
+  panels today** (Payees, under Finance, was the twenty-second).
 - **a frame** — the console loads the screen's own page embedded
   (`?embedded=1`), without the sidebar and header. Nothing uses this now, but it
   is still how a screen joins the console before it is promoted, and it is still

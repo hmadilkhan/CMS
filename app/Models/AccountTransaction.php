@@ -49,9 +49,12 @@ class AccountTransaction extends Model
 
     private const PAYEE_OPTIONS_BINDING = 'account_transactions.payee_options';
 
+    private const INACTIVE_PAYEES_BINDING = 'account_transactions.inactive_payees';
+
     /**
-     * Every payee as key => label, built-ins first. Read once per request (a
-     * report labels every row with it); Payee drops the copy when one is added.
+     * Every payee as key => label, built-ins first, switched-off ones included -
+     * this is what LABELS a stored row. Read once per request (a report labels
+     * every row with it); Payee drops the copy when one is saved.
      */
     public static function payeeOptions(): array
     {
@@ -70,9 +73,39 @@ class AccountTransaction extends Model
         return $app->make(self::PAYEE_OPTIONS_BINDING);
     }
 
+    /**
+     * The payees a picker offers: the active ones, plus any of `$keep` (the
+     * value a record already holds), so editing a row whose payee was switched
+     * off neither loses it nor fails validation.
+     */
+    public static function payeeChoices(?string ...$keep): array
+    {
+        $app = app();
+
+        if (! $app->bound(self::INACTIVE_PAYEES_BINDING)) {
+            try {
+                $inactive = Payee::where('is_active', false)->pluck('key')->all();
+            } catch (QueryException) {
+                $inactive = [];
+            }
+
+            $app->instance(self::INACTIVE_PAYEES_BINDING, array_flip($inactive));
+        }
+
+        $inactive = $app->make(self::INACTIVE_PAYEES_BINDING);
+        $keep = array_flip(array_filter($keep, fn ($key) => $key !== null && $key !== ''));
+
+        return array_filter(
+            self::payeeOptions(),
+            fn ($key) => ! isset($inactive[$key]) || isset($keep[$key]),
+            ARRAY_FILTER_USE_KEY
+        );
+    }
+
     public static function forgetPayeeOptions(): void
     {
         app()->forgetInstance(self::PAYEE_OPTIONS_BINDING);
+        app()->forgetInstance(self::INACTIVE_PAYEES_BINDING);
     }
 
     public function getPayeeLabelAttribute()

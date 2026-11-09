@@ -23,6 +23,8 @@ class AccountTransactions extends Component
     public $settled_amount;
     public $settled_date;
     public $originalStatus = null;
+    // The payee the row being edited already has - still offered if it was switched off since.
+    public $originalPayee = null;
     public $transactionIdBeingEdited = null;
     public $isEditMode = false;
     public $confirmingDeleteId = null;
@@ -30,7 +32,7 @@ class AccountTransactions extends Component
     protected function rules()
     {
         return [
-            'payee' => ['required', Rule::in(array_keys(AccountTransaction::payeeOptions()))],
+            'payee' => ['required', Rule::in(array_keys(AccountTransaction::payeeChoices($this->originalPayee)))],
             'milestone' => 'required|string|max:255',
             'amount' => 'required|numeric',
             'deduction_amount' => 'required|numeric',
@@ -105,6 +107,7 @@ class AccountTransactions extends Component
         $this->settled_amount = null;
         $this->settled_date = null;
         $this->originalStatus = null;
+        $this->originalPayee = null;
         $this->transactionIdBeingEdited = null;
         $this->isEditMode = false;
     }
@@ -147,6 +150,7 @@ class AccountTransactions extends Component
         $transaction = AccountTransaction::findOrFail($id);
         $this->transactionIdBeingEdited = $id;
         $this->payee = $transaction->payee;
+        $this->originalPayee = $transaction->payee;
         $this->milestone = $transaction->milestone;
         $this->amount = $transaction->amount;
         $this->deduction_amount = $transaction->deduction_amount;

@@ -67,7 +67,8 @@
     <td>
         {{-- The last option opens the "New Payee" dialog instead of being picked. --}}
         <select class="form-select milestone-payee" data-field="payee" name="milestones[{{ $index }}][payee]" aria-label="Payee" required>
-            @foreach ($milestonePayees as $value => $label)
+            {{-- Active payees, plus this row's own if it was switched off since. --}}
+            @foreach (\App\Models\AccountTransaction::payeeChoices($row['payee'] ?? 'customer') as $value => $label)
                 <option value="{{ $value }}" @selected(($row['payee'] ?? 'customer') === $value)>{{ $label }}</option>
             @endforeach
             <option value="__new__">+ Add new payee…</option>

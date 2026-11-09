@@ -16,6 +16,7 @@ use App\Services\Operations\LaborCostPanel;
 use App\Services\Operations\LoanTermsPanel;
 use App\Services\Operations\ModuleTypesPanel;
 use App\Services\Operations\OfficeCostPanel;
+use App\Services\Operations\PayeesPanel;
 use App\Services\Operations\SalesPartnersPanel;
 use App\Services\Operations\SubContractorsPanel;
 use App\Services\Operations\SubDepartmentsPanel;
@@ -82,6 +83,7 @@ return [
             'sections' => [
                 ['key' => 'finance-options', 'label' => 'Finance Options', 'route' => 'finance.option.types', 'icon' => 'icofont-bank-alt', 'panel' => FinanceOptionsPanel::class],
                 ['key' => 'loan-terms', 'label' => 'Loan Terms', 'route' => 'loan.term', 'icon' => 'icofont-calendar', 'panel' => LoanTermsPanel::class],
+                ['key' => 'payees', 'label' => 'Payees', 'route' => 'payees.index', 'icon' => 'icofont-wallet', 'panel' => PayeesPanel::class],
             ],
         ],
         [

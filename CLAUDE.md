@@ -395,7 +395,15 @@ sync is gone, so the editor's rows are the truth.
   one). Read the list through `AccountTransaction::payeeOptions()` (memoised per
   request) - the milestone editor, the Account Transactions form, `payee_label`
   and the assistant's transaction report all do. `PAYEES` is only the fallback
-  for a database without the table. There is no rename/delete screen yet.
+  for a database without the table.
+- **Operations → Payees** (`PayeeController`, `PayeesPanel`, route `payees.index`)
+  manages the list. Built-ins are locked. A user-added payee can be renamed (the
+  key never changes, so stored rows follow the new label), switched off
+  (`payees.is_active`), or deleted only while no transaction/milestone row,
+  deleted ones included, stores its key. **Pickers use
+  `AccountTransaction::payeeChoices($current)`** (active + the record's own
+  value); **labels use `payeeOptions()`** (all, switched-off included). Asking
+  for a switched-off payee by name from the milestone editor switches it back on.
 - **Triggers** (the editor's dropdown is `FinanceMilestoneService::triggerOptions()`):
   `project_created`; `project_date` on a column listed in
   `config('finance_milestones.project_dates')`; `zone_date` (a zone's own
@@ -455,7 +463,7 @@ fields/move bar.
 
 ## Operations Console
 
-One window for the twenty-one Operations screens (`/operations`,
+One window for the twenty-two Operations screens (`/operations`,
 `can:User Management`): the sections on the left, the chosen screen in the
 middle. **Read `docs/operations-console.md` before changing it.**
 

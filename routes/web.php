@@ -177,6 +177,13 @@ Route::middleware('auth')->group(function () {
         Route::resource('office-costs', OfficeCostController::class);
         Route::resource('labor-costs', LaborCostController::class);
 
+        // Payees: who an account transaction / finance milestone is paid to.
+        Route::get('payees/{id?}', [App\Http\Controllers\PayeeController::class, 'index'])->whereNumber('id')->name('payees.index');
+        Route::post('payees', [App\Http\Controllers\PayeeController::class, 'store'])->name('payees.store');
+        Route::put('payees/{payee}', [App\Http\Controllers\PayeeController::class, 'update'])->name('payees.update');
+        Route::post('payees/{payee}/toggle', [App\Http\Controllers\PayeeController::class, 'toggle'])->name('payees.toggle');
+        Route::delete('payees/{payee}', [App\Http\Controllers\PayeeController::class, 'destroy'])->name('payees.destroy');
+
         Route::resource('tools', ToolController::class);
         Route::get('tools-index/{id?}', [App\Http\Controllers\ToolController::class, 'index'])->name('tools.manage');
         Route::post('tools-delete', [App\Http\Controllers\ToolController::class, 'toolDelete'])->name('tools.delete');
