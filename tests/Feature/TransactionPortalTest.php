@@ -477,6 +477,57 @@ class TransactionPortalTest extends TestCase
         $this->assertEqualsCanonicalizing(['t'.$first->id, 't'.$second->id, 't'.$other->id], $aar->all());
     }
 
+    public function test_received_payments_can_be_deleted_with_the_edit_permission(): void
+    {
+        $project = $this->project();
+        $handEntered = $this->transaction($project, ['amount' => 16500, 'milestone' => 'Permit Approval Date', 'status' => 'Closed', 'settled_amount' => 16500, 'settled_date' => '2026-11-02']);
+        $imported = $this->transaction($project, ['amount' => 16500, 'milestone' => 'Permit', 'transaction_details' => 'Imported from Untitled spreadsheet.xlsx', 'status' => 'Closed', 'settled_amount' => 16500, 'settled_date' => '2026-11-03']);
+        $expected = $this->transaction($project, ['amount' => 700]);
+        // A commission raised after the duplicate was received.
+        $this->transaction($project, ['payee' => 'sales_partner', 'amount' => -900, 'transaction_date' => '2026-11-03']);
+
+        // Hints on the Actual AR rows.
+        $rows = collect($this->actingAs($this->finance())->getJson(route('transaction-portal.data', $this->week()))->json('rows'))->keyBy('id');
+        $this->assertTrue($rows['t'.$imported->id]['imported']);
+        $this->assertFalse($rows['t'.$handEntered->id]['imported']);
+        $this->assertTrue($rows['t'.$imported->id]['twin']);
+        $this->assertTrue($rows['t'.$handEntered->id]['twin']);
+        $this->assertTrue($rows['t'.$imported->id]['commissionAfter']);
+
+        // The portal permissions alone are not enough to delete.
+        $finance = $this->finance();
+        $this->actingAs($finance)->get(route('transaction-portal.index'))->assertSee('"canDelete":false', false);
+        $this->actingAs($finance)->postJson(route('transaction-portal.delete-received'), ['items' => ['t'.$imported->id]])->assertForbidden();
+
+        $editor = $this->user('Finance Editor', [
+            TransactionPortalService::PERMISSION_PAGE,
+            TransactionPortalService::PERMISSION_EXPECTED,
+            TransactionPortalService::PERMISSION_OTHER,
+            TransactionPortalService::PERMISSION_DELETE,
+        ]);
+        $this->actingAs($editor)->get(route('transaction-portal.index'))->assertSee('"canDelete":true', false);
+
+        // Only received payments: one other row in the batch stops the whole batch.
+        $this->actingAs($editor)->postJson(route('transaction-portal.delete-received'), ['items' => ['t'.$imported->id, 't'.$expected->id]])->assertStatus(422);
+        $this->assertNotSoftDeleted($imported);
+
+        $this->actingAs($editor)->postJson(route('transaction-portal.delete-received'), ['items' => ['t'.$imported->id]])
+            ->assertOk()->assertJsonPath('deleted', 1);
+
+        $this->assertSoftDeleted($imported);
+        $this->assertNotSoftDeleted($handEntered);
+        $this->assertDatabaseHas('activity_log', ['subject_id' => $imported->id, 'event' => 'deleted', 'description' => $editor->name.' deleted the received payment from the Transaction Portal.']);
+
+        $ids = collect($this->actingAs($editor)->getJson(route('transaction-portal.data', $this->week()))->json('rows'))->keyBy('id');
+        $this->assertFalse($ids->has('t'.$imported->id));
+        $this->assertFalse($ids['t'.$handEntered->id]['twin'], 'With the copy gone, no twin is left.');
+
+        // A Funding Manager (no Actual AR section) cannot, even with the edit permission.
+        $fm = $this->user('Funding Manager', [TransactionPortalService::PERMISSION_PAGE, TransactionPortalService::PERMISSION_EXPECTED, TransactionPortalService::PERMISSION_DELETE]);
+        $this->actingAs($fm)->postJson(route('transaction-portal.delete-received'), ['items' => ['t'.$handEntered->id]])->assertForbidden();
+        $this->assertNotSoftDeleted($handEntered);
+    }
+
     public function test_payables_to_every_other_payee_go_to_other_payables(): void
     {
         $project = $this->project();

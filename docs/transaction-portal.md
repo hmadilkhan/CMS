@@ -117,7 +117,22 @@ full expected amount (amount − deduction) on that date - so each moves to Actu
 AR and raises the commission exactly as one recorded from the drawer would. A
 partial amount still goes through the drawer. Payments and payables can be
 ticked together (the bar counts them apart, says "received / paid"); the pay
-run controls appear only for payables and send only payable ids. The project
+run controls appear only for payables and send only payable ids.
+
+**Deleting received payments (duplicates).** Actual AR rows take a tick box
+(and the drawer a Delete button) only for a user with the Actual AR section
+AND `Account Transactions Edit` (`PERMISSION_DELETE`; page config `canDelete`).
+`POST transaction-portal/delete-received` checks every row before deleting any
+(each must resolve to `aar` - a closed positive row - under the user's own
+section permission), then soft-deletes it with an activity-log line, so it can be
+restored. To help spot duplicates, each Actual AR row carries hints
+(`withReceivedHints()`): **Imported** (details start "Imported from"), **Same
+amount** (another live positive payment on the project has the same amount -
+the 2026-11-09 import doubled hand-entered rows under other milestone names,
+e.g. "Permit" vs "Permit Approval Date", "Storage Milestone 2" vs "Storage M2"),
+and `commissionAfter` (a sales-partner commission dated on/after the payment was
+received). The confirm dialog lists the rows and, for the last case, warns that
+deleting the payment does **not** take the commission back. The project
 page's Account Transactions form asks for the same two fields when a row is switched
 to Closed. A paid payable can be reopened, which clears both fields.
 

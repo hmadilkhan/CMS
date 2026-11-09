@@ -39,6 +39,9 @@ class TransactionPortalService
 
     public const PERMISSION_OTHER = 'Transaction Portal Other Sections';
 
+    /** Deleting a received payment also needs the Account Transactions edit permission. */
+    public const PERMISSION_DELETE = 'Account Transactions Edit';
+
     /** How a period reads its payables (see rows()). */
     private const ALL = 'all';
 
@@ -110,12 +113,12 @@ class TransactionPortalService
         }
 
         if (in_array('aar', $sections, true)) {
-            $rows[] = $this->transactions($user)
+            $rows[] = $this->withReceivedHints($this->transactions($user)
                 ->where('amount', '>', 0)
                 ->where('status', AccountTransaction::STATUS_CLOSED)
                 ->whereBetween('settled_date', [$start->toDateString(), $end->toDateString()])
                 ->get()
-                ->map(fn ($t) => $this->actualRow($t));
+                ->map(fn ($t) => $this->actualRow($t)));
         }
 
         if (in_array('com', $sections, true)) {
@@ -291,6 +294,7 @@ class TransactionPortalService
             ->concat($invoices->map(fn ($i) => $this->materialRow($i)))
             ->sortByDesc(fn ($r) => $this->placedOn($r))
             ->values();
+        $rows = $this->withReceivedHints($rows);
 
         return [
             'rows' => $rows->take(self::SEARCH_LIMIT)->all(),
@@ -379,6 +383,76 @@ class TransactionPortalService
         }
 
         return null;
+    }
+
+    /**
+     * Delete a received payment (an Actual AR row), e.g. a duplicate. Soft
+     * delete, logged, so it can be restored. A commission it helped raise is
+     * NOT taken back: the page warns when the project has one.
+     */
+    public function deleteReceived(AccountTransaction $transaction): void
+    {
+        DB::transaction(function () use ($transaction) {
+            $transaction->delete();
+
+            $user = auth()->user();
+
+            activity('AccountTransaction')
+                ->performedOn($transaction)
+                ->causedBy($user)
+                ->withProperties($transaction->only(['project_id', 'payee', 'milestone', 'amount', 'transaction_date', 'settled_amount', 'settled_date', 'transaction_details']))
+                ->setEvent('deleted')
+                ->log(($user?->name ?? 'System').' deleted the received payment from the Transaction Portal.');
+        });
+    }
+
+    /**
+     * Hints on Actual AR rows, for spotting duplicates and what deleting one
+     * leaves behind:
+     *   imported         came from a spreadsheet import;
+     *   twin             another payment on the project has the same amount;
+     *   commissionAfter  the sales partner's commission was raised on or after
+     *                    this payment was received (deleting it does not undo that).
+     */
+    private function withReceivedHints($rows)
+    {
+        $rows = collect($rows);
+        $received = $rows->where('b', 'aar');
+
+        if ($received->isEmpty()) {
+            return $rows;
+        }
+
+        $projectIds = $received->pluck('projectId')->filter()->unique()->values()->all();
+
+        $twins = AccountTransaction::whereIn('project_id', $projectIds)
+            ->where('amount', '>', 0)
+            ->selectRaw('project_id, ROUND(amount, 2) as rounded, COUNT(*) as copies')
+            ->groupBy('project_id', DB::raw('ROUND(amount, 2)'))
+            ->get()
+            ->filter(fn ($g) => (int) $g->copies > 1)
+            ->mapWithKeys(fn ($g) => [$g->project_id.'|'.number_format((float) $g->rounded, 2, '.', '') => true]);
+
+        $lastCommission = AccountTransaction::whereIn('project_id', $projectIds)
+            ->where('payee', 'sales_partner')
+            ->where('amount', '<', 0)
+            ->selectRaw('project_id, MAX(transaction_date) as last')
+            ->groupBy('project_id')
+            ->pluck('last', 'project_id');
+
+        return $rows->map(function ($r) use ($twins, $lastCommission) {
+            if ($r['b'] !== 'aar') {
+                return $r;
+            }
+
+            $last = $lastCommission[$r['projectId']] ?? null;
+
+            return $r + [
+                'imported' => str_starts_with((string) $r['details'], 'Imported from'),
+                'twin' => isset($twins[$r['projectId'].'|'.number_format((float) $r['expectedAmount'], 2, '.', '')]),
+                'commissionAfter' => $last !== null && $r['received'] !== null && $this->date($last) >= $r['received'],
+            ];
+        });
     }
 
     public function reopenTransaction(AccountTransaction $transaction): void
@@ -528,6 +602,8 @@ class TransactionPortalService
             'milestone' => $t->milestone,
             'received' => $this->date($t->settled_date),
             'amount' => (float) $t->settled_amount,
+            'expectedAmount' => round((float) $t->amount, 2),
+            'details' => $t->transaction_details,
             'status' => $t->status,
         ];
     }

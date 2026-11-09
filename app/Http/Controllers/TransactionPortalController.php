@@ -50,6 +50,9 @@ class TransactionPortalController extends Controller
                 'searchUrl' => route('transaction-portal.search'),
                 'searchLimit' => TransactionPortalService::SEARCH_LIMIT,
                 'exportUrl' => route('transaction-portal.export'),
+                'deleteUrl' => route('transaction-portal.delete-received'),
+                // Received payments (Actual AR) can be ticked and deleted only with both permissions.
+                'canDelete' => in_array('aar', $sections, true) && $user->can(TransactionPortalService::PERMISSION_DELETE),
             ],
         ]);
     }
@@ -149,6 +152,34 @@ class TransactionPortalController extends Controller
         }
 
         return response()->json(['updated' => $updated]);
+    }
+
+    /**
+     * Delete received payments (Actual AR rows), e.g. duplicates. Needs the
+     * Actual AR section's permission (checked per row) AND Account Transactions
+     * Edit; only a closed positive row qualifies. Soft delete, logged.
+     */
+    public function deleteReceived(Request $request)
+    {
+        $validated = $request->validate([
+            'items' => 'required|array|min:1|max:200',
+            'items.*' => 'required|string|max:20',
+        ]);
+
+        abort_unless($request->user()->can(TransactionPortalService::PERMISSION_DELETE), 403);
+
+        // Check every row before deleting any, so a bad one stops the whole batch.
+        $records = collect($validated['items'])->unique()->map(function ($item) use ($request) {
+            [$record, $section] = $this->resolve($request, $item);
+
+            abort_unless($section === 'aar', 422, 'Only received payments (Actual AR) can be deleted here.');
+
+            return $record;
+        });
+
+        $records->each(fn ($record) => $this->portal->deleteReceived($record));
+
+        return response()->json(['deleted' => $records->count()]);
     }
 
     /** Put a paid payable back to Open (a mistake undone). */

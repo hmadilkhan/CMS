@@ -73,6 +73,8 @@
 .tp .tp-btn.primary { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
 .tp .tp-btn.primary:hover { filter: brightness(.96); }
 .tp .tp-btn[disabled] { opacity: .6; cursor: progress; }
+.tp .tp-btn.danger { background: var(--danger); border-color: var(--danger); color: #fff; }
+.tp .tp-btn.danger:hover { filter: brightness(.95); color: #fff; }
 .tp .search { position: relative; }
 .tp .search input { width: 220px; max-width: 100%; border: 1px solid var(--line); background: var(--surface); border-radius: 9px; padding: 7px 11px 7px 30px; }
 .tp .search svg { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); width: 14px; height: 14px; color: var(--muted); pointer-events: none; }
@@ -407,7 +409,10 @@
     }
 
     function chip(r) {
-        if (r.b === 'aar') return '<span class="chip ok">Received</span>';
+        // Received, plus what helps spot a duplicate: where it came from, and a twin amount.
+        if (r.b === 'aar') return '<span class="chip ok">Received</span>' +
+            (r.imported ? '<span class="chip">Imported</span>' : '') +
+            (r.twin ? '<span class="chip warn" title="Another payment on this project has the same amount">Same amount</span>' : '');
         if (r.status === 'Closed') return '<span class="chip ok">Paid' + (r.paidOn ? ' ' + us(r.paidOn) : '') + '</span>';
         const due = dueOf(r);
         if (!due) return '';
@@ -440,10 +445,11 @@
     };
 
     // Rows that take a tick box: every payable, and Expected AR (bulk "Mark as received").
-    const canPick = b => b === 'ear' || B[b].kind === 'out';
+    // Actual AR too, for whoever may delete received payments (e.g. duplicates).
+    const canPick = b => b === 'ear' || B[b].kind === 'out' || (b === 'aar' && !!CFG.canDelete);
     function pick(r) {
         if (!canPick(r.b)) return '';
-        if (r.status !== 'Open') return '<span class="paid-mark" aria-hidden="true">✓</span>';
+        if (r.status !== 'Open' && r.b !== 'aar') return '<span class="paid-mark" aria-hidden="true">✓</span>';
         return '<input type="checkbox" class="pick" data-id="' + esc(r.id) + '"' + (S.sel.has(r.id) ? ' checked' : '') + ' aria-label="Select ' + esc(r.project) + ' ' + B[r.b].short + '">';
     }
     function itemHTML(r) {
@@ -553,16 +559,18 @@
     function renderBulk() {
         const bar = $('bulk');
         const picked = [...S.sel].map(byId).filter(r => r && r.status === 'Open');
-        if (!picked.length) { bar.hidden = true; bar.innerHTML = ''; return; }
+        const dels = receivedPicked();
+        if (!picked.length && !dels.length) { bar.hidden = true; bar.innerHTML = ''; return; }
         // Money in (Expected AR payments) and money out (payables) are counted apart;
-        // the pay run is for payables only.
+        // the pay run is for payables only; received payments (Actual AR) can only be deleted.
         const ins = picked.filter(r => r.b === 'ear'), outs = picked.filter(r => r.b !== 'ear');
         const verb = !outs.length ? 'received' : (!ins.length ? 'paid' : 'received / paid');
         const keepDate = $('bulk-date') ? $('bulk-date').value : iso(TODAY);
         const keepRun = $('bulk-run-date') ? $('bulk-run-date').value : iso(nextFriday());
         const what = [
             ins.length ? plural(ins.length, 'payment') + ' · <span class="mono">' + money(sum(ins)) + '</span>' : '',
-            outs.length ? plural(outs.length, 'payable') + ' · <span class="mono">' + money(sum(outs)) + '</span>' : ''
+            outs.length ? plural(outs.length, 'payable') + ' · <span class="mono">' + money(sum(outs)) + '</span>' : '',
+            dels.length ? plural(dels.length, 'received payment') + ' · <span class="mono">' + money(sum(dels)) + '</span>' : ''
         ].filter(Boolean).join(' and ');
         bar.hidden = false;
         bar.innerHTML = '<span>' + what + ' selected</span>' +
@@ -571,8 +579,41 @@
                   '<button type="button" class="tp-btn" id="bulk-run">Add to pay run</button>' +
                   (outs.some(r => r.payRun) ? '<button type="button" class="link-btn" id="bulk-unrun">Remove from pay run</button>' : '')
                 : '') +
-            '<label for="bulk-date">' + (verb === 'paid' ? 'Paid on' : verb === 'received' ? 'Received on' : 'Received / paid on') + ' <input type="date" id="bulk-date" value="' + esc(keepDate) + '"></label>' +
-            '<button type="button" class="link-btn" id="bulk-clear">Clear</button><button type="button" class="tp-btn primary" id="bulk-paid">Mark as ' + verb + '</button>';
+            (picked.length
+                ? '<label for="bulk-date">' + (verb === 'paid' ? 'Paid on' : verb === 'received' ? 'Received on' : 'Received / paid on') + ' <input type="date" id="bulk-date" value="' + esc(keepDate) + '"></label>'
+                : '') +
+            '<button type="button" class="link-btn" id="bulk-clear">Clear</button>' +
+            (dels.length ? '<button type="button" class="tp-btn danger" id="bulk-delete">Delete ' + plural(dels.length, 'received payment') + '</button>' : '') +
+            (picked.length ? '<button type="button" class="tp-btn primary" id="bulk-paid">Mark as ' + verb + '</button>' : '');
+    }
+
+    // Ticked received payments (Actual AR), the only rows that can be deleted here.
+    const receivedPicked = () => [...S.sel].map(byId).filter(r => r && r.b === 'aar');
+
+    // Confirm, then delete received payments. Warns when a commission was raised
+    // after one of them was received: deleting the payment does not take it back.
+    async function deleteReceived(ids, button) {
+        const list = ids.map(byId).filter(r => r && r.b === 'aar');
+        if (!list.length) return;
+        const raised = [...new Set(list.filter(r => r.commissionAfter).map(r => r.project))];
+        const message = 'Delete ' + plural(list.length, 'received payment') + ' (' + money(sum(list)) + ')?\n\n' +
+            list.slice(0, 8).map(r => '• ' + r.project + ' · ' + (r.milestone || '') + ' · ' + money(r.amount) + ' · received ' + us(r.received)).join('\n') +
+            (list.length > 8 ? '\n• … and ' + (list.length - 8) + ' more' : '') +
+            '\n\nThey are removed from Account Transactions (the activity log keeps a record).' +
+            (raised.length ? '\n\nCommission was already raised on ' + raised.join(', ') + ' after these were received. Deleting the payment does NOT take that commission back - check Commission Payable.' : '');
+        if (!window.confirm(message)) return;
+        if (button) button.disabled = true;
+        try {
+            const json = await post(CFG.deleteUrl, { items: list.map(r => r.id) });
+            list.forEach(r => S.sel.delete(r.id));
+            closeDrawer();
+            toast(plural(json.deleted, 'received payment') + ' deleted · ' + money(sum(list)) + '.');
+            await load();
+        } catch (err) {
+            toast(err.message);
+        } finally {
+            if (button) button.disabled = false;
+        }
     }
 
     function render() {
@@ -605,7 +646,7 @@
             if (seq !== loadSeq) return;
             rows = json.rows;
             truncated = !!json.truncated;
-            S.sel.forEach(id => { const r = byId(id); if (!r || r.status !== 'Open') S.sel.delete(id); });
+            S.sel.forEach(id => { const r = byId(id); if (!r || (r.status !== 'Open' && r.b !== 'aar')) S.sel.delete(id); });
         } catch (err) {
             if (seq === loadSeq) toast('The transactions could not be loaded. Refresh the page to try again.');
         } finally {
@@ -654,6 +695,7 @@
         if (r.file) extra += '<div class="box"><h4>Invoice file</h4><span class="file">📄 ' + esc(r.file) + '</span><p>Uploaded on the project’s Invoices tab.</p></div>';
         if (out && !open) extra += '<div class="box"><h4>Paid' + (r.paidOn ? ' on ' + us(r.paidOn) : '') + '</h4><p>Reopen it if it was marked by mistake.</p></div>';
         const actions = (out && !open ? '<button type="button" class="tp-btn" data-act="reopen">Reopen</button>' : '') +
+            (r.b === 'aar' && CFG.canDelete ? '<button type="button" class="tp-btn danger" data-act="delete">Delete</button>' : '') +
             (r.projectUrl ? '<a class="tp-btn" href="' + esc(r.projectUrl) + '" target="_blank" rel="noopener">Open project</a>' : '');
         $('drawer').innerHTML =
             '<div class="d-head"><div class="d-top"><span class="eyebrow"><span class="dot ' + info.kind + '"></span>' + info.title + '</span><button type="button" class="icon-btn" data-act="close" aria-label="Close details">×</button></div>' +
@@ -743,12 +785,14 @@
         if (t.id === 'bulk-paid') {
             const date = $('bulk-date').value;
             if (!date) { toast('Choose the date they were received or paid.'); return; }
-            settle([...S.sel], date, null, t); return;
+            settle([...S.sel].filter(id => (byId(id) || {}).status === 'Open'), date, null, t); return;
         }
         if (t.id === 'bulk-run') {
             const date = $('bulk-run-date').value;
             if (!date) { toast('Choose the day of the pay run.'); return; }
-            payRun([...S.sel].filter(id => (byId(id) || {}).b !== 'ear'), date, t); return;
+            payRun([...S.sel].filter(id => { const r = byId(id); return r && B[r.b].kind === 'out' && r.status === 'Open'; }), date, t); return;
+        }
+        if (t.id === 'bulk-delete') { deleteReceived(receivedPicked().map(r => r.id), t); return;
         }
         if (t.id === 'bulk-unrun') { payRun([...S.sel].filter(id => (byId(id) || {}).payRun), null, t); return; }
         const act = t.dataset.act;
@@ -759,6 +803,7 @@
             payRun([S.drawer], date, t);
         }
         else if (act === 'unrun') payRun([S.drawer], null, t);
+        else if (act === 'delete') deleteReceived([S.drawer], t);
         else if (act === 'reopen') {
             const r = byId(S.drawer);
             t.disabled = true;
