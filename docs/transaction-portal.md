@@ -23,8 +23,17 @@ due tile and the Net position. Payees with their own section are
 `PAYABLE_SECTIONS` (the controller's pay-run / reopen checks and the page's
 `PAYABLES` list read it - keep them in step). Before this, those rows were saved
 but never shown in the portal. The CSV export has a `Payee` column, last, so the
-existing columns keep their place. Six lanes need ~1,724px; narrower screens
-scroll the board sideways, as five lanes already did below ~1,452px.
+existing columns keep their place.
+
+**Layout.** Lanes are `minmax(236px, 1fr)`, so six fit a ~1,510px window
+(1920 at 125% scaling is 1,536). Below that only the board scrolls sideways,
+inside `.board-scroll`: `.tp` is a grid with `grid-template-columns:
+minmax(0, 1fr)` and `.tp > * { min-width: 0 }`. Without those, its implicit
+`auto` column grew to the board's minimum width and the WHOLE page scrolled,
+cutting off the title and header (reported 2026-11-10 at ~1,550px). A card's
+`.main` is `minmax(0, 1fr)` too, so a long project name ends in "…" instead of
+pushing the card out of its lane. Checked in headless Edge at 1366 / 1550 /
+1920.
 
 Each section shows the rows that fall in the period **plus every earlier row
 that is still Open** ("Earlier, still open", in red), so nothing overdue drops

@@ -36,7 +36,10 @@
     background: var(--bg); color: var(--fg); font-family: var(--font-ui); font-size: 14px; line-height: 1.45;
     border-radius: 14px; padding: 18px 16px 110px; display: grid; gap: 18px;
     width: 100%; min-height: calc(100vh - 16px); align-content: start;
+    /* One column no wider than the page: a wide board scrolls inside its own box, never the page. */
+    grid-template-columns: minmax(0, 1fr);
 }
+.tp > * { min-width: 0; }
 .tp *, .tp *::before, .tp *::after { box-sizing: border-box; }
 .tp button, .tp input, .tp select { font: inherit; color: inherit; }
 .tp .mono { font-family: var(--font-num); font-variant-numeric: tabular-nums; }
@@ -94,7 +97,9 @@
 .tp .bad-text { color: var(--danger); font-weight: 600; }
 
 .tp .board-scroll { overflow-x: auto; padding-bottom: 6px; scroll-snap-type: x proximity; }
-.tp .board { display: grid; grid-template-columns: repeat(var(--lanes, 5), minmax(272px, 1fr)); gap: 12px; align-items: stretch; transition: opacity .15s; }
+.tp .board { display: grid; grid-template-columns: repeat(var(--lanes, 5), minmax(236px, 1fr)); gap: 12px; align-items: stretch; transition: opacity .15s; }
+/* A card never grows past its lane: a long project name is cut with "…". */
+.tp .item .main { grid-template-columns: minmax(0, 1fr); }
 .tp .board.single { grid-template-columns: minmax(0, 640px); }
 .tp .board.loading, .tp .table-wrap.loading { opacity: .55; }
 .tp .grp { display: flex; align-items: center; gap: 10px; font-size: 11px; text-transform: uppercase; letter-spacing: .1em; font-weight: 800; padding: 0 2px; }
