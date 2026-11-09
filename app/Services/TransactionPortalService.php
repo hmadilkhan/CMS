@@ -198,39 +198,64 @@ class TransactionPortalService
     }
 
     /**
-     * Money owed out to `$payee`, keyed on `$keyDate`: the ones that fall in the
-     * period (paid or not) and the older ones still open.
+     * Money owed out to `$payee`. An open row sits in the period of `$keyDate`
+     * (and is carried forward while still open); a paid row sits in the period
+     * it was PAID in. A row closed before the portal existed has no paid date,
+     * so it stays on `$keyDate`.
      */
     private function payables(User $user, string $payee, string $keyDate, Carbon $start, Carbon $end): Builder
     {
+        $period = [$start->toDateString(), $end->toDateString()];
+
         return $this->transactions($user)
             ->where('payee', $payee)
             ->where('amount', '<', 0)
-            ->where(function ($q) use ($keyDate, $start, $end) {
-                $q->whereRaw("$keyDate between ? and ?", [$start->toDateString(), $end->toDateString()])
-                    ->orWhere(function ($q) use ($keyDate, $start) {
-                        $q->where('status', AccountTransaction::STATUS_OPEN)
-                            ->whereRaw("$keyDate < ?", [$start->toDateString()]);
-                    });
+            ->where(function ($q) use ($keyDate, $start, $period) {
+                $q->where(function ($q) use ($keyDate, $start) {
+                    $q->where('status', AccountTransaction::STATUS_OPEN)
+                        ->whereRaw("$keyDate < ?", [$start->toDateString()]);
+                })->orWhere(function ($q) use ($keyDate, $period) {
+                    $q->where('status', AccountTransaction::STATUS_OPEN)
+                        ->whereRaw("$keyDate between ? and ?", $period);
+                })->orWhere(function ($q) use ($keyDate, $period) {
+                    $q->where('status', AccountTransaction::STATUS_CLOSED)
+                        ->whereRaw("COALESCE(settled_date, $keyDate) between ? and ?", $period);
+                });
             });
     }
 
-    /** Material invoices whose due date (invoice date + N days) is in the period, or earlier and unpaid. */
+    /**
+     * Material invoices. Open: due (invoice date + N days) in the period, or
+     * earlier. Paid: paid in the period (an invoice paid before the portal
+     * existed has no paid date and stays on its due date).
+     */
     private function materialInvoices(Carbon $start, Carbon $end)
     {
         $days = $this->materialDueDays();
+        $period = [$start->toDateString(), $end->toDateString()];
+        $invoicedFor = [
+            $start->copy()->subDays($days)->toDateString(),
+            $end->copy()->subDays($days)->toDateString(),
+        ];
 
         return ProjectInvoiceDetail::query()
             ->where('invoice_type', 'material')
             ->whereHas('project', fn ($q) => $q->whereNull('projects.deleted_at'))
             ->with(self::RELATIONS)
-            ->where(function ($q) use ($start, $end, $days) {
-                $q->whereBetween('invoice_date', [
-                    $start->copy()->subDays($days)->toDateString(),
-                    $end->copy()->subDays($days)->toDateString(),
-                ])->orWhere(function ($q) use ($start, $days) {
+            ->where(function ($q) use ($start, $days, $period, $invoicedFor) {
+                $q->where(function ($q) use ($start, $days) {
                     $q->where('status', ProjectInvoiceDetail::STATUS_OPEN)
                         ->whereDate('invoice_date', '<', $start->copy()->subDays($days));
+                })->orWhere(function ($q) use ($invoicedFor) {
+                    $q->where('status', ProjectInvoiceDetail::STATUS_OPEN)
+                        ->whereBetween('invoice_date', $invoicedFor);
+                })->orWhere(function ($q) use ($period) {
+                    $q->where('status', ProjectInvoiceDetail::STATUS_CLOSED)
+                        ->whereBetween('settled_date', $period);
+                })->orWhere(function ($q) use ($invoicedFor) {
+                    $q->where('status', ProjectInvoiceDetail::STATUS_CLOSED)
+                        ->whereNull('settled_date')
+                        ->whereBetween('invoice_date', $invoicedFor);
                 });
             })
             ->get();

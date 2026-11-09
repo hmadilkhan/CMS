@@ -294,6 +294,35 @@ class TransactionPortalTest extends TestCase
         $this->assertFalse($rows->has('t'.$paidLastMonth->id));
     }
 
+    public function test_a_paid_payable_sits_in_the_week_it_was_paid(): void
+    {
+        $project = $this->project();
+        // Hand-entered commission: payment received 10/30, no due date, paid 11/06.
+        $paidThisWeek = $this->transaction($project, ['payee' => 'sales_partner', 'amount' => -20262, 'transaction_date' => '2026-10-30', 'status' => 'Closed', 'settled_amount' => 20262, 'settled_date' => '2026-11-06']);
+        // Falls in this week, but was paid the week before.
+        $paidLastWeek = $this->transaction($project, ['payee' => 'sub_contractor', 'amount' => -4560, 'transaction_date' => '2026-11-02', 'status' => 'Closed', 'settled_amount' => 4560, 'settled_date' => '2026-10-28']);
+        // Closed before the portal existed: no paid date, stays on its own date.
+        $legacy = $this->transaction($project, ['payee' => 'sub_contractor', 'amount' => -900, 'transaction_date' => '2026-11-03', 'status' => 'Closed']);
+        $materialPaid = $this->invoice($project, 'material', 7000, '2026-08-01'); // due 08/31, paid 11/05
+        $materialPaid->update(['status' => 'Closed', 'settled_amount' => 7000, 'settled_date' => '2026-11-05']);
+        $materialPaidEarly = $this->invoice($project, 'material', 800, '2026-10-04'); // due 11/03, paid 10/20
+        $materialPaidEarly->update(['status' => 'Closed', 'settled_amount' => 800, 'settled_date' => '2026-10-20']);
+
+        $user = $this->finance();
+        $ids = collect($this->actingAs($user)->getJson(route('transaction-portal.data', $this->week()))->json('rows'))->pluck('id');
+
+        $this->assertTrue($ids->contains('t'.$paidThisWeek->id));
+        $this->assertFalse($ids->contains('t'.$paidLastWeek->id));
+        $this->assertTrue($ids->contains('t'.$legacy->id));
+        $this->assertTrue($ids->contains('i'.$materialPaid->id));
+        $this->assertFalse($ids->contains('i'.$materialPaidEarly->id));
+
+        $lastWeek = collect($this->actingAs($user)->getJson(route('transaction-portal.data', ['start' => '2026-10-25', 'end' => '2026-10-31']))->json('rows'))->pluck('id');
+
+        $this->assertFalse($lastWeek->contains('t'.$paidThisWeek->id));
+        $this->assertTrue($lastWeek->contains('t'.$paidLastWeek->id));
+    }
+
     public function test_export_downloads_the_week_as_csv(): void
     {
         $this->transaction($this->project(), ['amount' => 5000]);

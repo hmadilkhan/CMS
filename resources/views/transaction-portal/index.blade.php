@@ -332,8 +332,9 @@
     const S = { mode: 'week', anchor: new Date(TODAY), view: 'board', status: 'all', fin: '', q: '', laneQ: {}, carry: true, sel: new Set(), tab: SECTIONS[0], drawer: null };
 
     const byId = id => rows.find(r => r.id === id);
-    // The date a row is placed in a week by.
-    const key = r => ({ ear: r.expected, aar: r.received, com: r.due || r.paymentReceived, lab: r.inspection, mat: r.due })[r.b];
+    // The date a row is placed in a week by. A paid payable sits in the week it was paid.
+    const key = r => (r.b !== 'ear' && r.b !== 'aar' && r.status === 'Closed' && r.paidOn) ? r.paidOn
+        : ({ ear: r.expected, aar: r.received, com: r.due || r.paymentReceived, lab: r.inspection, mat: r.due })[r.b];
     // The date a row is late after; labor has none yet.
     const dueOf = r => r.b === 'ear' ? r.expected : (r.b === 'aar' ? null : r.due);
     const isOverdue = r => r.status === 'Open' && !!dueOf(r) && d(dueOf(r)) < TODAY;
