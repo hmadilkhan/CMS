@@ -389,6 +389,12 @@ both invoices are on file, due the Friday of the following week).
 A past week or month shows only the payables PAID in it; a week with a **pay
 run** (`pay_run_date`, picked on Thursday for Friday) shows only the picked
 open payables and moves the rest to next week. Months are never narrowed.
+**Import** (`/transaction-portal/import`, `can:Account Transactions Edit`):
+upload a sheet → editable preview → import. `TransactionImportService` matches
+each row's project by name (letters/digits only, so "Shu Hui Yang" = "Shu
+Hui-Yang"), offers the closest names first when none matches, and writes only
+what the user left in the preview - no commission/milestone/payable side effects.
+See the Import section of `docs/transaction-portal.md`.
 
 ## Finance milestones — editable rows, any trigger
 

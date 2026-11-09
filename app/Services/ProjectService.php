@@ -11,7 +11,6 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
-use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
 
 class ProjectService
@@ -27,13 +26,13 @@ class ProjectService
             $query->whereHas("customer", function ($query) {
                 $query->where("sales_partner_id", auth()->user()->id);
             });
-        } else if (auth()->user()->getRoleNames()[0] == "Manager") {
+        } elseif (auth()->user()->getRoleNames()[0] == "Manager") {
             $query->whereIn("department_id", EmployeeDepartment::whereIn("employee_id", Employee::where("user_id", auth()->user()->id)->pluck("id"))->pluck("department_id"));
-        } else if (auth()->user()->getRoleNames()[0] == "Sales Manager") {
+        } elseif (auth()->user()->getRoleNames()[0] == "Sales Manager") {
             $query->whereHas("customer", function ($query) {
                 $query->where("sales_partner_id", auth()->user()->sales_partner_id);
             });
-        } else if (auth()->user()->getRoleNames()[0] == "Employee") {
+        } elseif (auth()->user()->getRoleNames()[0] == "Employee") {
             $latestActiveTaskIds = Task::selectRaw("MAX(id)")
                 ->whereIn("status", ["In-Progress", "Hold", "Cancelled"])
                 ->groupBy("project_id");
@@ -65,6 +64,14 @@ class ProjectService
         "Employee",
     ];
 
+    /** Does the user see every project (holds at least one role that is not narrowed)? */
+    public function seesEveryProject(User $user): bool
+    {
+        $roles = $user->getRoleNames();
+
+        return $roles->isEmpty() || $roles->intersect(self::NARROWED_ROLES)->count() !== $roles->count();
+    }
+
     /**
      * Is this one project inside what the user is already allowed to see?
      *
@@ -84,7 +91,7 @@ class ProjectService
         $narrowing = $roles->intersect(self::NARROWED_ROLES);
 
         // Holding even one unrestricted role is enough.
-        if ($narrowing->count() !== $roles->count() || $roles->isEmpty()) {
+        if ($this->seesEveryProject($user)) {
             return Project::where("id", $projectId)->exists();
         }
 

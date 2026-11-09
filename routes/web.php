@@ -140,6 +140,14 @@ Route::middleware('auth')->group(function () {
         Route::post('transaction-portal/settle', [App\Http\Controllers\TransactionPortalController::class, 'settle'])->name('transaction-portal.settle');
         Route::post('transaction-portal/reopen', [App\Http\Controllers\TransactionPortalController::class, 'reopen'])->name('transaction-portal.reopen');
         Route::post('transaction-portal/pay-run', [App\Http\Controllers\TransactionPortalController::class, 'payRun'])->name('transaction-portal.pay-run');
+
+        // Import account transactions from a spreadsheet: upload -> preview -> import.
+        Route::middleware('can:Account Transactions Edit')->group(function () {
+            Route::get('transaction-portal/import', [App\Http\Controllers\TransactionPortalImportController::class, 'create'])->name('transaction-portal.import');
+            Route::post('transaction-portal/import/preview', [App\Http\Controllers\TransactionPortalImportController::class, 'preview'])->name('transaction-portal.import.preview');
+            Route::post('transaction-portal/import', [App\Http\Controllers\TransactionPortalImportController::class, 'store'])->name('transaction-portal.import.store');
+            Route::get('transaction-portal/import/template', [App\Http\Controllers\TransactionPortalImportController::class, 'template'])->name('transaction-portal.import.template');
+        });
     });
 
     // The only way into the employee screens is the sidebar link, which is

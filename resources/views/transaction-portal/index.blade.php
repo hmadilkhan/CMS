@@ -244,6 +244,9 @@
                 <button type="button" data-view="table" aria-pressed="false">Table</button>
             </div>
             <button class="tp-btn" id="export" type="button">Export</button>
+            @can('Account Transactions Edit')
+                <a class="tp-btn" href="{{ route('transaction-portal.import') }}" style="text-decoration:none">Import</a>
+            @endcan
         </div>
     </header>
 

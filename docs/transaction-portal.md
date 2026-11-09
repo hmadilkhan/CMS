@@ -103,3 +103,49 @@ Inspection Approval Date. It has **no due date** yet (client to confirm), so it
 never shows as overdue.
 
 Covered by `tests/Feature/TransactionPortalTest.php`.
+
+## Import (account transactions from a spreadsheet)
+
+The **Import** button (shown with `Account Transactions Edit`, which the routes
+also require) opens `/transaction-portal/import`. Files:
+`TransactionPortalImportController`, `TransactionImportService`,
+`resources/views/transaction-portal/import.blade.php`.
+
+1. **Upload** an .xlsx / .xls / .csv (≤ 1000 rows) with a date and a status for
+   rows that have none. Without a header row the columns are read as
+   Project Name, Payee, Milestone, Amount, Date, Status, Details (the client's
+   sheet has the first four only). With a header row they are found by name, in
+   any order, and `Project Code` may replace the name. Formulas are read as
+   their result; `$ 9,072.00` and `(1,000)` are understood.
+2. **Preview** - nothing is saved. Every row is an editable line: project,
+   payee (free text with the payee list), milestone, amount, date, status,
+   details, plus an Import tick. The parsed rows wait in the cache (2 h) under
+   a token tied to the user.
+   - **Project match**: names are compared on letters and digits only, against
+     the project name, then the customer's first+last name, then as the start of
+     a project name (sibling projects -> "more than one matches"). A name ending
+     `- Solar` / `- Storage` / `- Battery` is matched without that word, and the
+     word is added to the milestone (`Milestone 1 - Storage`), the way those TPO
+     rows are already named.
+   - **No match**: a project select with the **closest names first**
+     (`similar()`: spelling similarity + whole words of the name, so reversed or
+     misspelt names - "Spencer Fabian" -> Fabian-Spencer - come up top), then
+     every project. The 3 non-project rows of the client's first sheet (Charge
+     Ready Home Program, Taamiat Deposit, GoodLeap) have no close name.
+   - **Duplicates** (same project + payee + milestone + amount, already in the
+     system or earlier in the file) open **unticked**; "Import them anyway"
+     ticks them. The date is not part of the key - the client's sheet has none.
+   - A payee that does not exist is created at import (`findOrCreateByLabel`)
+     and listed as "New payee" first.
+   - The page checks ticked rows before posting (project and values filled,
+     amount a non-zero number) and marks what is missing.
+3. **Import** writes the ticked rows with the values as left. Each is re-checked
+   on the server (incl. `ProjectService::canAccessProject`, so a posted project
+   id the user cannot see is refused); anything still incomplete is skipped and
+   listed with its reason. A Closed row gets `settled_amount` = |amount −
+   deduction| and `settled_date` = its date. **Only what the sheet holds is
+   written**: no commission, finance milestone or Labor Payable is raised (the
+   client asked for this), and each row is logged in the activity log with the
+   file name and row number.
+
+Covered by `tests/Feature/TransactionPortalImportTest.php`.
