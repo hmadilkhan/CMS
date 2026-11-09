@@ -80,9 +80,19 @@ class TransactionPortalImportController extends Controller
     {
         $validated = $request->validate([
             'token' => ['required', 'uuid'],
+            // The page posts the kept rows as one JSON field (PHP's max_input_vars
+            // would silently cut a long sheet sent as separate inputs).
+            'payload' => ['nullable', 'json'],
             'rows' => ['array'],
             'rows.*' => ['array'],
         ]);
+
+        if (filled($validated['payload'] ?? null)) {
+            $validated['rows'] = collect(json_decode($validated['payload'], true))
+                ->filter(fn ($row) => is_array($row))
+                ->map(fn ($row) => array_map(fn ($v) => is_scalar($v) ? (string) $v : null, $row) + ['include' => '1'])
+                ->all();
+        }
 
         $user = $request->user();
         $key = $this->cacheKey($user->id, $validated['token']);

@@ -329,9 +329,31 @@
             box.textContent = bad + (bad === 1 ? ' row is' : ' rows are') + ' missing a project or a value (marked in red). Fill them in, or untick those rows to leave them out.';
             box.hidden = false;
             (first.closest('td') || first).scrollIntoView({ behavior: 'smooth', block: 'center' });
-        } else {
-            box.hidden = true;
+            return;
         }
+        box.hidden = true;
+
+        // Send the kept rows as ONE field: a few hundred rows of separate inputs
+        // would pass PHP's max_input_vars, which silently drops the rest.
+        var payload = {};
+        var rowField = /^rows\[(\d+)\]\[(\w+)\]$/;
+        rows().forEach(function (tr) {
+            if (!tr.querySelector('.tpi-include').checked) return;
+            tr.querySelectorAll('[name]').forEach(function (el) {
+                var m = el.name.match(rowField);
+                if (!m) return;
+                (payload[m[1]] = payload[m[1]] || {})[m[2]] = el.value;
+            });
+        });
+        var hidden = document.createElement('input');
+        hidden.type = 'hidden';
+        hidden.name = 'payload';
+        hidden.value = JSON.stringify(payload);
+        form.appendChild(hidden);
+        form.querySelectorAll('[name]').forEach(function (el) {
+            if (rowField.test(el.name) || el.name === 'dupe_mode') el.disabled = true;
+        });
+        form.querySelector('button[type="submit"]').disabled = true;
     });
 
     rows().forEach(function (tr) { setIncluded(tr, tr.querySelector('.tpi-include').checked); });

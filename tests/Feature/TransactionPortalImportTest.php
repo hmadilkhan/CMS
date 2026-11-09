@@ -270,6 +270,33 @@ class TransactionPortalImportTest extends TestCase
         $this->assertSame('2026-10-30', substr((string) $t->settled_date, 0, 10));
     }
 
+    public function test_a_long_sheet_posted_as_one_json_field_imports_every_kept_row(): void
+    {
+        // 600 rows x 8 inputs would pass the server's max_input_vars (5000) and
+        // be cut silently; the page posts the kept rows as one JSON field.
+        $paul = $this->project('Paul-Wilhite', 'Paul', 'Wilhite');
+        $user = $this->user();
+        $sheet = [];
+        for ($i = 1; $i <= 600; $i++) {
+            $sheet[] = ['Paul Wilhite', 'Customer', 'Payment '.$i, (string) (100 + $i)];
+        }
+
+        $form = $this->form($this->preview($user, $this->sheet($sheet)));
+        $payload = collect($form['rows'])
+            ->reject(fn ($row, $line) => $line === 600)            // unticked: not in the payload
+            ->map(fn ($row) => collect($row)->except('include')->all())
+            ->all();
+
+        $this->actingAs($user)->post(route('transaction-portal.import.store'), [
+            'token' => $form['token'],
+            'payload' => json_encode($payload),
+        ])->assertRedirect(route('transaction-portal.import'));
+
+        $this->assertSame(599, AccountTransaction::where('project_id', $paul->id)->count());
+        $this->assertSame(599, session('importResult')['created']);
+        $this->assertFalse(AccountTransaction::where('milestone', 'Payment 600')->exists());
+    }
+
     public function test_a_project_the_user_cannot_access_is_refused_even_if_posted(): void
     {
         $this->project('Paul-Wilhite', 'Paul', 'Wilhite');
