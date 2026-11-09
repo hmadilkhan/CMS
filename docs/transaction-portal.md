@@ -20,6 +20,36 @@ out of sight. Expected AR shows every open money-in row dated up to the end of
 the period. A payment leaves Expected AR the moment it is closed and appears in
 Actual AR under the week it was received.
 
+**A past week or month is closed.** Once a period's last day is before today,
+its Commission, Labor and Material sections show only the rows **paid** in it.
+An unpaid payable is no longer listed under the old week where it fell due, or
+under every week since; it shows in the current week under "Earlier, still
+open" (and in future weeks). Expected AR and Actual AR are unchanged by this.
+The rule lives in `TransactionPortalService::rows()` (`isClosedPeriod()`), so
+the board, the table and the CSV export all follow it.
+
+## Pay run (pick on Thursday, pay on Friday)
+
+Finance ticks the open payables to pay this week (Commission, Labor, Material,
+system-raised or hand-entered alike) and clicks **Add to pay run**; the day
+defaults to the next Friday. It is stored as `pay_run_date` on
+`account_transactions` / `project_invoice_details` (route
+`transaction-portal.pay-run`, same per-row permission check as closing).
+
+- **A week with a pay run** (any payable with `pay_run_date` in it) shows, of
+  its open payables, **only the picked ones**. Every other open payable moves to
+  the next week, where it sits under "Earlier, still open". Nothing is
+  rewritten: due dates, and so the overdue days, stay as they were. Paid rows
+  show as always. Taking the last row out of the pay run restores the week.
+- **A month is never narrowed** by a pay run (`isWeek()`), and a past week is
+  already paid-only.
+- A pay run that is not paid by the end of its week just carries on as open in
+  the next week; its old `pay_run_date` no longer counts there (re-pick it).
+- Expected AR has no pay run (422). The day cannot be in the past (422).
+- The page shows a **Pay run** filter (the Friday list), a **Pay run** tile
+  (to pay / paid), a chip on each picked row, a Pay run box in the drawer, and a
+  Pay Run column in the CSV.
+
 The Expected AR amount is the remitted amount (`amount - deduction_amount`).
 
 ## Permissions

@@ -46,6 +46,7 @@ class TransactionPortalController extends Controller
                 'dataUrl' => route('transaction-portal.data'),
                 'settleUrl' => route('transaction-portal.settle'),
                 'reopenUrl' => route('transaction-portal.reopen'),
+                'payRunUrl' => route('transaction-portal.pay-run'),
                 'exportUrl' => route('transaction-portal.export'),
             ],
         ]);
@@ -110,6 +111,36 @@ class TransactionPortalController extends Controller
         return response()->json(['closed' => $closed, 'commissions' => $commissions]);
     }
 
+    /**
+     * Put open payables in the pay run for `date` (picked on Thursday for
+     * Friday), or take them out (`date` empty). Once a week has a pay run, its
+     * other open payables move to the next week. Expected AR has no pay run.
+     */
+    public function payRun(Request $request)
+    {
+        $validated = $request->validate([
+            'items' => 'required|array|min:1|max:200',
+            'items.*' => 'required|string|max:20',
+            'date' => 'nullable|date|after_or_equal:today',
+        ], [
+            'date.after_or_equal' => 'A pay run cannot be planned for a day that has passed.',
+        ]);
+
+        $updated = 0;
+
+        foreach ($validated['items'] as $item) {
+            [$record, $section] = $this->resolve($request, $item);
+
+            abort_unless(in_array($section, ['com', 'lab', 'mat'], true), 422, 'Only Commission, Labor and Material payables go in a pay run.');
+
+            if ($this->portal->setPayRun($record, $validated['date'] ?? null)) {
+                $updated++;
+            }
+        }
+
+        return response()->json(['updated' => $updated]);
+    }
+
     /** Put a paid payable back to Open (a mistake undone). */
     public function reopen(Request $request)
     {
@@ -152,7 +183,7 @@ class TransactionPortalController extends Controller
 
         return response()->streamDownload(function () use ($rows, $titles, $dateOf, $safe) {
             $out = fopen('php://output', 'w');
-            fputcsv($out, ['Section', 'Project Name', 'Finance Option', 'Sales Partner', 'Sub-Contractor', 'Date', 'Due Date', 'Amount', 'Status', 'Received / Paid On']);
+            fputcsv($out, ['Section', 'Project Name', 'Finance Option', 'Sales Partner', 'Sub-Contractor', 'Date', 'Due Date', 'Amount', 'Status', 'Received / Paid On', 'Pay Run']);
 
             foreach ($rows as $r) {
                 fputcsv($out, array_map($safe, [
@@ -166,6 +197,7 @@ class TransactionPortalController extends Controller
                     number_format((float) $r['amount'], 2, '.', ''),
                     $r['status'],
                     $r['received'] ?? $r['paidOn'] ?? '',
+                    $r['payRun'] ?? '',
                 ]));
             }
 

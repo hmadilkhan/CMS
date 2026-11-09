@@ -27,6 +27,7 @@ class ProjectInvoiceDetail extends Model
         'status',
         'settled_amount',
         'settled_date',
+        'pay_run_date',
         'notes',
         'file_name',
         'original_file_name',
@@ -48,6 +49,7 @@ class ProjectInvoiceDetail extends Model
         'amount' => 'decimal:2',
         'settled_amount' => 'decimal:2',
         'settled_date' => 'date',
+        'pay_run_date' => 'date',
     ];
 
     public function project()

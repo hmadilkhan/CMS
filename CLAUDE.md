@@ -386,6 +386,9 @@ Sections`. Closing a row stores `settled_amount` / `settled_date`. Closing a
 customer payment can raise the sales partner's commission
 (`CommissionPayableService`: received − Labor − Material − already raised, once
 both invoices are on file, due the Friday of the following week).
+A past week or month shows only the payables PAID in it; a week with a **pay
+run** (`pay_run_date`, picked on Thursday for Friday) shows only the picked
+open payables and moves the rest to next week. Months are never narrowed.
 
 ## Finance milestones — editable rows, any trigger
 

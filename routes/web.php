@@ -139,6 +139,7 @@ Route::middleware('auth')->group(function () {
         Route::get('transaction-portal/export', [App\Http\Controllers\TransactionPortalController::class, 'export'])->name('transaction-portal.export');
         Route::post('transaction-portal/settle', [App\Http\Controllers\TransactionPortalController::class, 'settle'])->name('transaction-portal.settle');
         Route::post('transaction-portal/reopen', [App\Http\Controllers\TransactionPortalController::class, 'reopen'])->name('transaction-portal.reopen');
+        Route::post('transaction-portal/pay-run', [App\Http\Controllers\TransactionPortalController::class, 'payRun'])->name('transaction-portal.pay-run');
     });
 
     // The only way into the employee screens is the sidebar link, which is

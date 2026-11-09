@@ -130,6 +130,7 @@
 .tp .chip.bad { background: var(--danger-soft); color: var(--danger); border-color: transparent; }
 .tp .chip.warn { background: var(--warn-soft); color: var(--warn); border-color: transparent; }
 .tp .chip.ok { background: var(--ok-soft); color: var(--ok); border-color: transparent; }
+.tp .chip.run { background: var(--accent-soft); color: var(--accent-deep); border-color: transparent; }
 .tp .chip.st { background: none; font-weight: 600; }
 .tp .lane-foot { border-top: 1px dashed var(--line-strong); padding: 10px 14px 12px; display: grid; grid-template-columns: 1fr auto; align-items: baseline; gap: 2px 8px; }
 .tp .lane-foot span { font-size: 12px; text-transform: uppercase; letter-spacing: .07em; font-weight: 700; color: var(--muted); }
@@ -258,6 +259,7 @@
                 <button type="button" data-status="all" aria-pressed="true">All</button>
                 <button type="button" data-status="open" aria-pressed="false">Open</button>
                 <button type="button" data-status="overdue" aria-pressed="false">Overdue</button>
+                <button type="button" data-status="payrun" aria-pressed="false">Pay run</button>
                 <button type="button" data-status="closed" aria-pressed="false">Closed</button>
             </div>
             <label>Finance option
@@ -338,6 +340,13 @@
     // The date a row is late after; labor has none yet.
     const dueOf = r => r.b === 'ear' ? r.expected : (r.b === 'aar' ? null : r.due);
     const isOverdue = r => r.status === 'Open' && !!dueOf(r) && d(dueOf(r)) < TODAY;
+    // Pay run: payables picked (on Thursday) to be paid on a day of the period shown.
+    const inPeriod = s => { const [a, b] = range(), x = d(s); return x >= a && x <= b; };
+    const inPayRun = r => !!r.payRun && inPeriod(r.payRun);
+    const runChip = r => r.payRun && r.status === 'Open' && (inPeriod(r.payRun) || d(r.payRun) >= TODAY)
+        ? '<span class="chip run">Pay run ' + us(r.payRun) + '</span>' : '';
+    // The next Friday from today (today when it is Friday): the default pay run day.
+    const nextFriday = () => addDays(TODAY, (5 - TODAY.getDay() + 7) % 7);
 
     function range() {
         if (S.mode === 'week') { const s = addDays(S.anchor, -S.anchor.getDay()); return [s, addDays(s, 6)]; }
@@ -362,6 +371,7 @@
         if (S.status === 'open') return r.status === 'Open';
         if (S.status === 'closed') return r.status === 'Closed';
         if (S.status === 'overdue') return isOverdue(r);
+        if (S.status === 'payrun') return inPayRun(r);
         return true;
     }
     function lane(b) {
@@ -399,9 +409,9 @@
     const COLS = {
         ear: [['Project Name', link], ['Finance Option', r => txt(r.finance)], ['Expected Receivable Date', r => us(r.expected)], ['Amount', r => money(r.amount), 'num'], ['Status', r => chip(r) || statusChip(r)]],
         aar: [['Sales Partner', r => txt(r.partner)], ['Project Name', link], ['Finance Option', r => txt(r.finance)], ['Actual Received Amount', r => money(r.amount), 'num'], ['Date Received', r => us(r.received)], ['Status', statusChip]],
-        com: [['Project Name', link], ['Sales Partner', r => txt(r.partner)], ['Payment Received Date', r => us(r.paymentReceived)], ['Payable Amount', r => money(r.amount), 'num'], ['Due Date', r => us(r.due)], ['Days Overdue', daysOver], ['Status', r => chip(r) || statusChip(r)]],
-        lab: [['Project Name', link], ['Sub-Contractor', r => txt(r.sub)], ['Inspection Approval Date', r => us(r.inspection)], ['Payable Amount', r => money(r.amount), 'num'], ['Due Date', r => us(r.due)], ['Days Overdue', daysOver], ['Status', r => chip(r) || statusChip(r)]],
-        mat: [['Project Name', link], ['Invoice Date', r => us(r.invoiceDate)], ['Invoice Amount', r => money(r.amount), 'num'], ['Due Date', r => us(r.due)], ['Days Overdue', daysOver], ['Status', r => chip(r) || statusChip(r)]]
+        com: [['Project Name', link], ['Sales Partner', r => txt(r.partner)], ['Payment Received Date', r => us(r.paymentReceived)], ['Payable Amount', r => money(r.amount), 'num'], ['Due Date', r => us(r.due)], ['Days Overdue', daysOver], ['Status', r => (chip(r) || statusChip(r)) + runChip(r)]],
+        lab: [['Project Name', link], ['Sub-Contractor', r => txt(r.sub)], ['Inspection Approval Date', r => us(r.inspection)], ['Payable Amount', r => money(r.amount), 'num'], ['Due Date', r => us(r.due)], ['Days Overdue', daysOver], ['Status', r => (chip(r) || statusChip(r)) + runChip(r)]],
+        mat: [['Project Name', link], ['Invoice Date', r => us(r.invoiceDate)], ['Invoice Amount', r => money(r.amount), 'num'], ['Due Date', r => us(r.due)], ['Days Overdue', daysOver], ['Status', r => (chip(r) || statusChip(r)) + runChip(r)]]
     };
 
     function pick(r) {
@@ -414,7 +424,7 @@
             '<button type="button" class="main" data-open="' + esc(r.id) + '">' +
             '<span class="l1"><span class="proj">' + esc(r.project) + '</span><span class="amt">' + money(r.amount) + '</span></span>' +
             '<span class="meta">' + meta(r) + '</span>' +
-            '<span class="chips">' + chip(r) + (r.b !== 'aar' ? statusChip(r) : '') + '</span></button></div>';
+            '<span class="chips">' + chip(r) + runChip(r) + (r.b !== 'aar' ? statusChip(r) : '') + '</span></button></div>';
     }
 
     // The lanes are built once, so typing in a lane's search box never loses focus.
@@ -463,6 +473,13 @@
             // Net = cash received in the period minus what is still owed out.
             const net = sum(L.aar.inRange) - due;
             tiles.push('<div class="tile net"><span class="k"><span class="dot acc"></span>Net position</span><span class="v' + (net < 0 ? ' neg' : '') + '">' + (net < 0 ? '−' : '') + money(Math.abs(net)) + '</span><span class="s">' + lateLine + '</span></div>');
+            // The pay run: what is planned to go out this week. Its other open payables moved to next week.
+            const run = ['com', 'lab', 'mat'].filter(has).flatMap(b => L[b].all.filter(inPayRun));
+            if (run.length) {
+                const toPay = run.filter(r => r.status === 'Open'), paid = run.length - toPay.length;
+                const runDays = [...new Set(run.map(r => r.payRun))].sort();
+                tiles.push('<div class="tile"><span class="k"><span class="dot out"></span>Pay run ' + (runDays.length === 1 ? us(runDays[0]) : '') + '</span><span class="v">' + money(sum(toPay)) + '</span><span class="s">' + plural(toPay.length, 'payable') + ' to pay' + (paid ? ' · ' + paid + ' paid' : '') + '. Other open payables moved to next week.</span></div>');
+            }
         }
         if (tiles.length < 2) tiles.push('<div class="tile"><span class="k"><span class="dot acc"></span>Overdue</span><span class="v">' + money(sum(late)) + '</span><span class="s">' + lateLine + '</span></div>');
         $('tiles').style.setProperty('--tiles', tiles.length);
@@ -495,8 +512,12 @@
         const picked = [...S.sel].map(byId).filter(r => r && r.status === 'Open');
         if (!picked.length) { bar.hidden = true; bar.innerHTML = ''; return; }
         const keepDate = $('bulk-date') ? $('bulk-date').value : iso(TODAY);
+        const keepRun = $('bulk-run-date') ? $('bulk-run-date').value : iso(nextFriday());
         bar.hidden = false;
         bar.innerHTML = '<span>' + plural(picked.length, 'payable') + ' selected · <span class="mono">' + money(sum(picked)) + '</span></span>' +
+            '<label for="bulk-run-date">Pay run <input type="date" id="bulk-run-date" min="' + iso(TODAY) + '" value="' + esc(keepRun) + '"></label>' +
+            '<button type="button" class="tp-btn" id="bulk-run">Add to pay run</button>' +
+            (picked.some(r => r.payRun) ? '<button type="button" class="link-btn" id="bulk-unrun">Remove from pay run</button>' : '') +
             '<label for="bulk-date">Paid on <input type="date" id="bulk-date" value="' + esc(keepDate) + '"></label>' +
             '<button type="button" class="link-btn" id="bulk-clear">Clear</button><button type="button" class="tp-btn primary" id="bulk-paid">Mark as paid</button>';
     }
@@ -564,6 +585,11 @@
                 '<div class="row2"><div class="field"><label for="st-amt">Amount paid</label><input id="st-amt" type="number" step="0.01" min="0.01" value="' + Number(r.amount).toFixed(2) + '" required></div>' +
                 '<div class="field"><label for="st-date">Date paid</label><input id="st-date" type="date" value="' + iso(TODAY) + '" required></div></div>' +
                 '<div><button class="tp-btn primary" type="submit">Mark as paid</button></div></form>';
+            extra += r.payRun && d(r.payRun) >= TODAY
+                ? '<div class="box"><h4>In the pay run for ' + us(r.payRun) + '</h4><p>Take it out and it moves to next week with the other open payables.</p><div><button type="button" class="tp-btn" data-act="unrun">Remove from pay run</button></div></div>'
+                : '<div class="box"><h4>Pay run</h4><p>Plan to pay it on this day. Once a week has a pay run, its other open payables move to next week.</p>' +
+                    '<div class="field"><label for="run-date">Pay on</label><input id="run-date" type="date" min="' + iso(TODAY) + '" value="' + iso(nextFriday()) + '"></div>' +
+                    '<div><button type="button" class="tp-btn" data-act="run">Add to pay run</button></div></div>';
         }
         if (r.file) extra += '<div class="box"><h4>Invoice file</h4><span class="file">📄 ' + esc(r.file) + '</span><p>Uploaded on the project’s Invoices tab.</p></div>';
         if (out && !open) extra += '<div class="box"><h4>Paid' + (r.paidOn ? ' on ' + us(r.paidOn) : '') + '</h4><p>Reopen it if it was marked by mistake.</p></div>';
@@ -607,6 +633,24 @@
         }
     }
 
+    // Put payables in the pay run for `date`, or take them out (date null).
+    async function payRun(ids, date, button) {
+        if (button) button.disabled = true;
+        try {
+            const json = await post(CFG.payRunUrl, { items: ids, date: date });
+            ids.forEach(id => S.sel.delete(id));
+            closeDrawer();
+            toast(date
+                ? plural(json.updated, 'payable') + ' added to the ' + us(date) + ' pay run. Other open payables of that week move to the next week.'
+                : plural(json.updated, 'payable') + ' taken out of the pay run.');
+            await load();
+        } catch (err) {
+            toast(err.message);
+        } finally {
+            if (button) button.disabled = false;
+        }
+    }
+
     // events
     document.addEventListener('click', e => {
         if (!e.target.closest('#tp')) return;
@@ -629,8 +673,20 @@
             if (!date) { toast('Choose the date the payables were paid.'); return; }
             settle([...S.sel], date, null, t); return;
         }
+        if (t.id === 'bulk-run') {
+            const date = $('bulk-run-date').value;
+            if (!date) { toast('Choose the day of the pay run.'); return; }
+            payRun([...S.sel], date, t); return;
+        }
+        if (t.id === 'bulk-unrun') { payRun([...S.sel].filter(id => (byId(id) || {}).payRun), null, t); return; }
         const act = t.dataset.act;
         if (act === 'close') closeDrawer();
+        else if (act === 'run') {
+            const date = $('run-date').value;
+            if (!date) { toast('Choose the day of the pay run.'); return; }
+            payRun([S.drawer], date, t);
+        }
+        else if (act === 'unrun') payRun([S.drawer], null, t);
         else if (act === 'reopen') {
             const r = byId(S.drawer);
             t.disabled = true;

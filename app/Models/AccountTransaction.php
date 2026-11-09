@@ -24,6 +24,7 @@ class AccountTransaction extends Model
         'deduction_amount',
         'transaction_date',
         'due_date',
+        'pay_run_date',
         'transaction_details',
         'status',
         'settled_amount',
