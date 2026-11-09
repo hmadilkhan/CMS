@@ -439,8 +439,10 @@
         oth: [['Project Name', link], ['Payee', r => txt(r.payee)], ['Milestone', r => txt(r.milestone)], ['Date', r => us(r.date)], ['Payable Amount', r => money(r.amount), 'num'], ['Days Overdue', daysOver], ['Status', r => (chip(r) || statusChip(r)) + runChip(r)]]
     };
 
+    // Rows that take a tick box: every payable, and Expected AR (bulk "Mark as received").
+    const canPick = b => b === 'ear' || B[b].kind === 'out';
     function pick(r) {
-        if (B[r.b].kind !== 'out') return '';
+        if (!canPick(r.b)) return '';
         if (r.status !== 'Open') return '<span class="paid-mark" aria-hidden="true">✓</span>';
         return '<input type="checkbox" class="pick" data-id="' + esc(r.id) + '"' + (S.sel.has(r.id) ? ' checked' : '') + ' aria-label="Select ' + esc(r.project) + ' ' + B[r.b].short + '">';
     }
@@ -532,7 +534,7 @@
             const L = lane(b);
             return '<button type="button" role="tab" class="tp-tab" data-tab="' + b + '" aria-selected="' + (S.tab === b) + '"><b><span class="dot ' + B[b].kind + '"></span>' + B[b].short + ' · ' + L.all.length + '</b><small>' + money(sum(L.all)) + '</small></button>';
         }).join('');
-        const b = S.tab, cols = COLS[b], L = lane(b), out = B[b].kind === 'out';
+        const b = S.tab, cols = COLS[b], L = lane(b), out = canPick(b);
         const amtIdx = cols.findIndex(c => c[2] === 'num');
         const tr = r => '<tr class="' + (r.status === 'Open' ? '' : 'closed') + '">' + (out ? '<td>' + pick(r) + '</td>' : '') + cols.map(c => '<td class="' + (c[2] || '') + '">' + c[1](r) + '</td>').join('') + '</tr>';
         const span = cols.length + (out ? 1 : 0);
@@ -552,15 +554,25 @@
         const bar = $('bulk');
         const picked = [...S.sel].map(byId).filter(r => r && r.status === 'Open');
         if (!picked.length) { bar.hidden = true; bar.innerHTML = ''; return; }
+        // Money in (Expected AR payments) and money out (payables) are counted apart;
+        // the pay run is for payables only.
+        const ins = picked.filter(r => r.b === 'ear'), outs = picked.filter(r => r.b !== 'ear');
+        const verb = !outs.length ? 'received' : (!ins.length ? 'paid' : 'received / paid');
         const keepDate = $('bulk-date') ? $('bulk-date').value : iso(TODAY);
         const keepRun = $('bulk-run-date') ? $('bulk-run-date').value : iso(nextFriday());
+        const what = [
+            ins.length ? plural(ins.length, 'payment') + ' · <span class="mono">' + money(sum(ins)) + '</span>' : '',
+            outs.length ? plural(outs.length, 'payable') + ' · <span class="mono">' + money(sum(outs)) + '</span>' : ''
+        ].filter(Boolean).join(' and ');
         bar.hidden = false;
-        bar.innerHTML = '<span>' + plural(picked.length, 'payable') + ' selected · <span class="mono">' + money(sum(picked)) + '</span></span>' +
-            '<label for="bulk-run-date">Pay run <input type="date" id="bulk-run-date" min="' + iso(TODAY) + '" value="' + esc(keepRun) + '"></label>' +
-            '<button type="button" class="tp-btn" id="bulk-run">Add to pay run</button>' +
-            (picked.some(r => r.payRun) ? '<button type="button" class="link-btn" id="bulk-unrun">Remove from pay run</button>' : '') +
-            '<label for="bulk-date">Paid on <input type="date" id="bulk-date" value="' + esc(keepDate) + '"></label>' +
-            '<button type="button" class="link-btn" id="bulk-clear">Clear</button><button type="button" class="tp-btn primary" id="bulk-paid">Mark as paid</button>';
+        bar.innerHTML = '<span>' + what + ' selected</span>' +
+            (outs.length
+                ? '<label for="bulk-run-date">Pay run <input type="date" id="bulk-run-date" min="' + iso(TODAY) + '" value="' + esc(keepRun) + '"></label>' +
+                  '<button type="button" class="tp-btn" id="bulk-run">Add to pay run</button>' +
+                  (outs.some(r => r.payRun) ? '<button type="button" class="link-btn" id="bulk-unrun">Remove from pay run</button>' : '')
+                : '') +
+            '<label for="bulk-date">' + (verb === 'paid' ? 'Paid on' : verb === 'received' ? 'Received on' : 'Received / paid on') + ' <input type="date" id="bulk-date" value="' + esc(keepDate) + '"></label>' +
+            '<button type="button" class="link-btn" id="bulk-clear">Clear</button><button type="button" class="tp-btn primary" id="bulk-paid">Mark as ' + verb + '</button>';
     }
 
     function render() {
@@ -666,9 +678,13 @@
             const list = ids.map(byId).filter(Boolean);
             const json = await post(CFG.settleUrl, { items: ids, date: date, amount: amount });
             const single = list.length === 1 ? list[0] : null;
+            const ins = list.filter(r => r.b === 'ear'), outs = list.filter(r => r.b !== 'ear');
             let msg = single && single.b === 'ear'
                 ? 'Payment recorded for ' + single.project + '.'
-                : plural(json.closed, 'payable') + ' marked paid · ' + money(sum(list));
+                : [
+                    ins.length ? plural(ins.length, 'payment') + ' recorded as received · ' + money(sum(ins)) : '',
+                    outs.length ? plural(outs.length, 'payable') + ' marked paid · ' + money(sum(outs)) : ''
+                ].filter(Boolean).join('; ') + '.';
             (json.commissions || []).forEach(c => { msg += ' Commission payable raised: ' + money(c.amount) + ', due ' + us(c.due) + '.'; });
             ids.forEach(id => S.sel.delete(id));
             closeDrawer();
@@ -726,13 +742,13 @@
         if (t.id === 'bulk-clear') { S.sel.clear(); render(); return; }
         if (t.id === 'bulk-paid') {
             const date = $('bulk-date').value;
-            if (!date) { toast('Choose the date the payables were paid.'); return; }
+            if (!date) { toast('Choose the date they were received or paid.'); return; }
             settle([...S.sel], date, null, t); return;
         }
         if (t.id === 'bulk-run') {
             const date = $('bulk-run-date').value;
             if (!date) { toast('Choose the day of the pay run.'); return; }
-            payRun([...S.sel], date, t); return;
+            payRun([...S.sel].filter(id => (byId(id) || {}).b !== 'ear'), date, t); return;
         }
         if (t.id === 'bulk-unrun') { payRun([...S.sel].filter(id => (byId(id) || {}).payRun), null, t); return; }
         const act = t.dataset.act;

@@ -110,8 +110,15 @@ cannot close a payable by posting its id. The migration
 Closing always records **what** was received / paid and **when**:
 `settled_amount` + `settled_date` on `account_transactions` and on
 `project_invoice_details`. The portal's drawer asks for both. The bulk bar
-closes each ticked payable at its own amount on one date. The project page's
-Account Transactions form asks for the same two fields when a row is switched
+closes each ticked payable at its own amount on one date. Expected AR rows take
+a tick box too (added 2026-11-10): ticking payments turns
+the bar into "Received on [date] · Mark as received", which records each at its
+full expected amount (amount − deduction) on that date - so each moves to Actual
+AR and raises the commission exactly as one recorded from the drawer would. A
+partial amount still goes through the drawer. Payments and payables can be
+ticked together (the bar counts them apart, says "received / paid"); the pay
+run controls appear only for payables and send only payable ids. The project
+page's Account Transactions form asks for the same two fields when a row is switched
 to Closed. A paid payable can be reopened, which clears both fields.
 
 Rows closed before these columns existed have no settlement, so they never

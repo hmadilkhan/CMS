@@ -446,6 +446,37 @@ class TransactionPortalTest extends TestCase
         $this->assertNull($expected->fresh()->pay_run_date);
     }
 
+    public function test_several_expected_payments_can_be_received_at_once(): void
+    {
+        $project = $this->project();
+        $this->invoice($project, 'labor', 1000);
+        $this->invoice($project, 'material', 2000);
+        $first = $this->transaction($project, ['amount' => 5000]);
+        $second = $this->transaction($project, ['amount' => 3000, 'deduction_amount' => 500, 'transaction_date' => '2026-10-20']);
+        $other = $this->transaction($this->project('Paul Wilhite'), ['amount' => 700]);
+
+        // The Funding Manager owns Expected AR, so the bulk bar works for them too.
+        $this->actingAs($this->fundingManager())
+            ->postJson(route('transaction-portal.settle'), ['items' => ['t'.$first->id, 't'.$second->id, 't'.$other->id], 'date' => '2026-11-03'])
+            ->assertOk()
+            ->assertJsonPath('closed', 3);
+
+        foreach ([[$first, 5000], [$second, 2500], [$other, 700]] as [$t, $received]) {
+            $t->refresh();
+            $this->assertSame('Closed', $t->status);
+            $this->assertEquals($received, (float) $t->settled_amount); // amount less its deduction
+            $this->assertSame('2026-11-03', substr((string) $t->settled_date, 0, 10));
+        }
+
+        // Each payment is received the way a single one is: the commission follows.
+        $commission = AccountTransaction::where('project_id', $project->id)->where('payee', 'sales_partner')->sum('amount');
+        $this->assertEquals(-4500, (float) $commission); // 5000 + 2500 - 1000 - 2000
+
+        // They now show in Actual AR for the week received.
+        $aar = collect($this->actingAs($this->finance())->getJson(route('transaction-portal.data', $this->week()))->json('rows'))->where('b', 'aar')->pluck('id');
+        $this->assertEqualsCanonicalizing(['t'.$first->id, 't'.$second->id, 't'.$other->id], $aar->all());
+    }
+
     public function test_payables_to_every_other_payee_go_to_other_payables(): void
     {
         $project = $this->project();
