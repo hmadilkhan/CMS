@@ -19,12 +19,20 @@ use Illuminate\Support\Facades\DB;
  *   com  Commission   negative transactions paid to the Sales Partner
  *   lab  Labor        negative transactions paid to the Sub-Contractor
  *   mat  Material     Material invoices (project_invoice_details)
+ *   oth  Other        negative transactions paid to anyone else (Supplier,
+ *                     Others, Customer, a payee added by a user...)
  *
  * Expected AR is behind its own permission (the Funding Manager's section); the
- * other four share one. Closing a row needs the permission of its section.
+ * others share one. Closing a row needs the permission of its section.
  */
 class TransactionPortalService
 {
+    /** Payees with a section of their own; every other payee's payables are "Other". */
+    public const OWN_SECTION_PAYEES = ['sales_partner', 'sub_contractor'];
+
+    /** The money-out sections: a pay run, a tick box and Reopen apply to these. */
+    public const PAYABLE_SECTIONS = ['com', 'lab', 'mat', 'oth'];
+
     public const PERMISSION_PAGE = 'View Transaction Portal';
 
     public const PERMISSION_EXPECTED = 'Transaction Portal Expected AR';
@@ -56,7 +64,7 @@ class TransactionPortalService
         }
 
         if ($user->can(self::PERMISSION_OTHER)) {
-            array_push($sections, 'aar', 'com', 'lab', 'mat');
+            array_push($sections, 'aar', 'com', 'lab', 'mat', 'oth');
         }
 
         return $sections;
@@ -124,6 +132,12 @@ class TransactionPortalService
             $rows[] = $this->materialInvoices($start, $end, $mode)->map(fn ($i) => $this->materialRow($i));
         }
 
+        if (in_array('oth', $sections, true)) {
+            $rows[] = $this->payables($user, null, 'COALESCE(due_date, transaction_date)', $start, $end, $mode)
+                ->get()
+                ->map(fn ($t) => $this->otherRow($t));
+        }
+
         return collect($rows)->flatten(1)->values()->all();
     }
 
@@ -145,9 +159,9 @@ class TransactionPortalService
     {
         $period = [$start->toDateString(), $end->toDateString()];
 
+        // Every payee's payables: Commission, Labor and Other.
         $transactions = $this->transactions($user)
             ->where('amount', '<', 0)
-            ->whereIn('payee', ['sales_partner', 'sub_contractor'])
             ->whereBetween('pay_run_date', $period)
             ->exists();
 
@@ -196,7 +210,7 @@ class TransactionPortalService
         return match ($transaction->payee) {
             'sales_partner' => 'com',
             'sub_contractor' => 'lab',
-            default => null,
+            default => 'oth',
         };
     }
 
@@ -288,12 +302,15 @@ class TransactionPortalService
      * Open rows by `$mode`: ALL = due in the period or earlier; PAY_RUN = only
      * those in a pay run on a day of the period; PAID_ONLY = none.
      */
-    private function payables(User $user, string $payee, string $keyDate, Carbon $start, Carbon $end, string $mode = self::ALL): Builder
+    private function payables(User $user, ?string $payee, string $keyDate, Carbon $start, Carbon $end, string $mode = self::ALL): Builder
     {
         $period = [$start->toDateString(), $end->toDateString()];
 
         return $this->transactions($user)
-            ->where('payee', $payee)
+            // null = every payee without a section of its own (no payee at all included).
+            ->when($payee, fn ($q) => $q->where('payee', $payee), fn ($q) => $q->where(function ($q) {
+                $q->whereNotIn('payee', self::OWN_SECTION_PAYEES)->orWhereNull('payee');
+            }))
             ->where('amount', '<', 0)
             ->where(function ($q) use ($keyDate, $end, $period, $mode) {
                 $q->where(function ($q) use ($keyDate, $period) {
@@ -414,6 +431,24 @@ class TransactionPortalService
             'payRun' => $this->date($t->pay_run_date),
             'invoiceNo' => $invoice ? app(SubContractorPayableService::class)->invoiceNumber($invoice) : null,
             'file' => $invoice?->original_file_name,
+        ];
+    }
+
+    /** A payable to anyone without a section of their own. Due on its own date. */
+    private function otherRow(AccountTransaction $t): array
+    {
+        return $this->projectFields($t->project) + [
+            'id' => 't'.$t->id,
+            'b' => 'oth',
+            'payee' => $t->payee ? $t->payee_label : null,
+            'milestone' => $t->milestone,
+            'details' => $t->transaction_details,
+            'date' => $this->date($t->transaction_date),
+            'due' => $this->date($t->due_date ?? $t->transaction_date),
+            'amount' => abs((float) $t->amount),
+            'status' => $t->status,
+            'paidOn' => $this->date($t->settled_date),
+            'payRun' => $this->date($t->pay_run_date),
         ];
     }
 

@@ -376,7 +376,9 @@ makes a second one per invoice). The commission still waits for both invoices.
 
 ## Transaction Portal (Finance)
 
-`/transaction-portal`: five sections of money in / out for one week or month.
+`/transaction-portal`: six sections of money in / out for one week or month
+(the sixth, **Other Payables**, holds negative transactions to any payee other
+than the Sales Partner / Sub-Contractor).
 **Read `docs/transaction-portal.md` before changing it.** Brain:
 `TransactionPortalService` (rows + close/reopen), page
 `resources/views/transaction-portal/index.blade.php` (the approved prototype,

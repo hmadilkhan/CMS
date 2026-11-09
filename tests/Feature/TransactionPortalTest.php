@@ -446,13 +446,66 @@ class TransactionPortalTest extends TestCase
         $this->assertNull($expected->fresh()->pay_run_date);
     }
 
+    public function test_payables_to_every_other_payee_go_to_other_payables(): void
+    {
+        $project = $this->project();
+        \App\Models\Payee::create(['key' => 'maxwell_power', 'label' => 'Maxwell Power']);
+
+        $supplier = $this->transaction($project, ['payee' => 'supplier', 'amount' => -9072, 'milestone' => 'Panels', 'transaction_date' => '2026-11-05']);
+        $maxwell = $this->transaction($project, ['payee' => 'maxwell_power', 'amount' => -1200, 'transaction_date' => '2026-10-20']); // overdue, carried
+        $refund = $this->transaction($project, ['payee' => 'customer', 'amount' => -75.50, 'transaction_date' => '2026-11-03']);
+        $noPayee = $this->transaction($project, ['payee' => null, 'amount' => -40, 'transaction_date' => '2026-11-02']);
+        $nextWeek = $this->transaction($project, ['payee' => 'others', 'amount' => -10, 'transaction_date' => '2026-11-12']);
+        $labor = $this->transaction($project, ['payee' => 'sub_contractor', 'amount' => -4560]);
+        $commission = $this->transaction($project, ['payee' => 'sales_partner', 'amount' => -300]);
+
+        $user = $this->finance();
+        $rows = collect($this->actingAs($user)->getJson(route('transaction-portal.data', $this->week()))->json('rows'))->keyBy('id');
+        $other = $rows->where('b', 'oth');
+
+        $this->assertEqualsCanonicalizing(
+            ['t'.$supplier->id, 't'.$maxwell->id, 't'.$refund->id, 't'.$noPayee->id],
+            $other->keys()->all()
+        );
+        $this->assertSame('lab', $rows['t'.$labor->id]['b']);
+        $this->assertSame('com', $rows['t'.$commission->id]['b']);
+        $this->assertFalse($rows->has('t'.$nextWeek->id));
+
+        $row = $other['t'.$supplier->id];
+        $this->assertSame('Supplier', $row['payee']);
+        $this->assertSame('Panels', $row['milestone']);
+        $this->assertEquals(9072, $row['amount']);
+        $this->assertSame('2026-11-05', $row['due']);
+        $this->assertSame('Maxwell Power', $other['t'.$maxwell->id]['payee']);
+
+        // The Funding Manager's view stays Expected AR only.
+        $this->assertSame([], collect($this->actingAs($this->fundingManager())->getJson(route('transaction-portal.data', $this->week()))->json('rows'))->where('b', 'oth')->all());
+
+        // It is paid, reopened and put in a pay run like any payable.
+        $this->actingAs($user)->postJson(route('transaction-portal.settle'), ['items' => ['t'.$refund->id], 'date' => '2026-11-04'])->assertOk()->assertJsonPath('closed', 1);
+        $this->assertEquals(75.50, (float) $refund->fresh()->settled_amount);
+        $this->actingAs($user)->postJson(route('transaction-portal.reopen'), ['item' => 't'.$refund->id])->assertOk();
+        $this->assertSame('Open', $refund->fresh()->status);
+
+        // Picking only an Other Payable narrows the week to the pay run.
+        $this->actingAs($user)->postJson(route('transaction-portal.pay-run'), ['items' => ['t'.$supplier->id], 'date' => '2026-11-06'])->assertOk()->assertJsonPath('updated', 1);
+        $ids = collect($this->actingAs($user)->getJson(route('transaction-portal.data', $this->week()))->json('rows'))->pluck('id');
+        $this->assertTrue($ids->contains('t'.$supplier->id));
+        $this->assertFalse($ids->contains('t'.$maxwell->id));
+        $this->assertFalse($ids->contains('t'.$labor->id));
+    }
+
     public function test_export_downloads_the_week_as_csv(): void
     {
         $this->transaction($this->project(), ['amount' => 5000]);
+        $this->transaction($this->project('Paul Wilhite'), ['payee' => 'supplier', 'amount' => -900]);
 
         $response = $this->actingAs($this->finance())->get(route('transaction-portal.export', $this->week()));
 
         $response->assertOk();
-        $this->assertStringContainsString('Expected Accounts Receivable', $response->streamedContent());
+        $csv = $response->streamedContent();
+        $this->assertStringContainsString('Expected Accounts Receivable', $csv);
+        $this->assertStringContainsString('Other Payables', $csv);
+        $this->assertStringContainsString(',Supplier', $csv);
     }
 }

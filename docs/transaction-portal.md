@@ -13,6 +13,18 @@ prototype; keep the screen as it is.
 | `com` | Commission Payable | `payee = sales_partner`, `amount < 0` | `due_date` (falls back to `transaction_date`) |
 | `lab` | Labor Payable | `payee = sub_contractor`, `amount < 0` | `transaction_date` (the Inspection Approval Date) |
 | `mat` | Material Invoices Payable | `project_invoice_details`, `invoice_type = material` | invoice date + `material_due_days` (30) |
+| `oth` | Other Payables | `amount < 0` with any other payee (Supplier, Others, Customer, a user-added payee) or none | `due_date` (falls back to `transaction_date`) |
+
+**Other Payables** (added 2026-11-10) behaves exactly like Commission / Labor:
+same permission (`Transaction Portal Other Sections`), Mark as paid, Reopen,
+pay run, "Earlier, still open", past-week rule, and it counts in the Payables
+due tile and the Net position. Payees with their own section are
+`TransactionPortalService::OWN_SECTION_PAYEES`; the money-out sections are
+`PAYABLE_SECTIONS` (the controller's pay-run / reopen checks and the page's
+`PAYABLES` list read it - keep them in step). Before this, those rows were saved
+but never shown in the portal. The CSV export has a `Payee` column, last, so the
+existing columns keep their place. Six lanes need ~1,724px; narrower screens
+scroll the board sideways, as five lanes already did below ~1,452px.
 
 Each section shows the rows that fall in the period **plus every earlier row
 that is still Open** ("Earlier, still open", in red), so nothing overdue drops
@@ -21,7 +33,7 @@ the period. A payment leaves Expected AR the moment it is closed and appears in
 Actual AR under the week it was received.
 
 **A past week or month is closed.** Once a period's last day is before today,
-its Commission, Labor and Material sections show only the rows **paid** in it.
+its Commission, Labor, Material and Other sections show only the rows **paid** in it.
 An unpaid payable is no longer listed under the old week where it fell due, or
 under every week since; it shows in the current week under "Earlier, still
 open" (and in future weeks). Expected AR and Actual AR are unchanged by this.

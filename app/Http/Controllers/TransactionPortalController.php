@@ -131,7 +131,7 @@ class TransactionPortalController extends Controller
         foreach ($validated['items'] as $item) {
             [$record, $section] = $this->resolve($request, $item);
 
-            abort_unless(in_array($section, ['com', 'lab', 'mat'], true), 422, 'Only Commission, Labor and Material payables go in a pay run.');
+            abort_unless(in_array($section, TransactionPortalService::PAYABLE_SECTIONS, true), 422, 'Only payables (money out) go in a pay run.');
 
             if ($this->portal->setPayRun($record, $validated['date'] ?? null)) {
                 $updated++;
@@ -148,7 +148,7 @@ class TransactionPortalController extends Controller
 
         [$record, $section] = $this->resolve($request, $validated['item']);
 
-        abort_unless(in_array($section, ['com', 'lab', 'mat'], true), 422, 'Only a paid payable can be reopened.');
+        abort_unless(in_array($section, TransactionPortalService::PAYABLE_SECTIONS, true), 422, 'Only a paid payable can be reopened.');
 
         if ($record instanceof ProjectInvoiceDetail) {
             $this->portal->reopenInvoice($record);
@@ -171,8 +171,9 @@ class TransactionPortalController extends Controller
             'com' => 'Commission Payable',
             'lab' => 'Labor Payable',
             'mat' => 'Material Invoices Payable',
+            'oth' => 'Other Payables',
         ];
-        $dateOf = fn ($r) => $r['expected'] ?? $r['received'] ?? $r['paymentReceived'] ?? $r['inspection'] ?? $r['invoiceDate'] ?? '';
+        $dateOf = fn ($r) => $r['expected'] ?? $r['received'] ?? $r['paymentReceived'] ?? $r['inspection'] ?? $r['invoiceDate'] ?? $r['date'] ?? '';
 
         // A cell starting with = + - @ (or a tab / CR) would run as a formula in Excel.
         $safe = fn ($value) => is_string($value) && $value !== '' && in_array($value[0], ['=', '+', '-', '@', "\t", "\r"], true)
@@ -183,7 +184,8 @@ class TransactionPortalController extends Controller
 
         return response()->streamDownload(function () use ($rows, $titles, $dateOf, $safe) {
             $out = fopen('php://output', 'w');
-            fputcsv($out, ['Section', 'Project Name', 'Finance Option', 'Sales Partner', 'Sub-Contractor', 'Date', 'Due Date', 'Amount', 'Status', 'Received / Paid On', 'Pay Run']);
+            // Payee last, so the columns people already use keep their place.
+            fputcsv($out, ['Section', 'Project Name', 'Finance Option', 'Sales Partner', 'Sub-Contractor', 'Date', 'Due Date', 'Amount', 'Status', 'Received / Paid On', 'Pay Run', 'Payee']);
 
             foreach ($rows as $r) {
                 fputcsv($out, array_map($safe, [
@@ -198,6 +200,7 @@ class TransactionPortalController extends Controller
                     $r['status'],
                     $r['received'] ?? $r['paidOn'] ?? '',
                     $r['payRun'] ?? '',
+                    $r['payee'] ?? '',
                 ]));
             }
 

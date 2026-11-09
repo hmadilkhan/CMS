@@ -328,8 +328,11 @@
         aar: { title: 'Actual Accounts Receivable', short: 'Actual AR', kind: 'in', fields: 'Sales Partner · Project Name · Finance Option · Actual Received Amount · Date Received · Status' },
         com: { title: 'Commission Payable', short: 'Commission', kind: 'out', fields: 'Project Name · Payment Received Date · Payable Amount · Due Date · Days Overdue · Status' },
         lab: { title: 'Labor Payable', short: 'Labor', kind: 'out', fields: 'Project Name · Inspection Approval Date · Payable Amount · Due Date · Days Overdue · Status' },
-        mat: { title: 'Material Invoices Payable', short: 'Material', kind: 'out', fields: 'Project Name · Invoice Date · Invoice Amount · Due Date · Days Overdue · Status' }
+        mat: { title: 'Material Invoices Payable', short: 'Material', kind: 'out', fields: 'Project Name · Invoice Date · Invoice Amount · Due Date · Days Overdue · Status' },
+        oth: { title: 'Other Payables', short: 'Other', kind: 'out', fields: 'Project Name · Payee · Milestone · Date · Payable Amount · Days Overdue · Status' }
     };
+    // The money-out sections that count toward "Payables due" and a pay run.
+    const PAYABLES = ['com', 'lab', 'mat', 'oth'];
 
     let rows = [];
     let loaded = false;
@@ -339,7 +342,7 @@
     const byId = id => rows.find(r => r.id === id);
     // The date a row is placed in a week by. A paid payable sits in the week it was paid.
     const key = r => (r.b !== 'ear' && r.b !== 'aar' && r.status === 'Closed' && r.paidOn) ? r.paidOn
-        : ({ ear: r.expected, aar: r.received, com: r.due || r.paymentReceived, lab: r.inspection, mat: r.due })[r.b];
+        : ({ ear: r.expected, aar: r.received, com: r.due || r.paymentReceived, lab: r.inspection, mat: r.due, oth: r.due })[r.b];
     // The date a row is late after; labor has none yet.
     const dueOf = r => r.b === 'ear' ? r.expected : (r.b === 'aar' ? null : r.due);
     const isOverdue = r => r.status === 'Open' && !!dueOf(r) && d(dueOf(r)) < TODAY;
@@ -366,7 +369,7 @@
         return n === 0 ? name + ' · this month' : name;
     }
 
-    const matches = (r, q) => [r.project, r.partner, r.sub, r.finance, r.milestone, r.invoiceNo, r.file].join(' ').toLowerCase().includes(q.toLowerCase());
+    const matches = (r, q) => [r.project, r.partner, r.sub, r.finance, r.milestone, r.invoiceNo, r.file, r.payee].join(' ').toLowerCase().includes(q.toLowerCase());
     function passes(r) {
         if (S.fin && r.finance !== S.fin) return false;
         if (S.q && !matches(r, S.q)) return false;
@@ -403,6 +406,7 @@
             case 'aar': return txt(r.partner, 'No sales partner') + ' · ' + txt(r.finance, 'No finance option') + ' · Received ' + us(r.received);
             case 'com': return txt(r.partner, 'No sales partner') + ' · Payment rec’d ' + us(r.paymentReceived) + ' · Due ' + us(r.due);
             case 'lab': return txt(r.sub, 'No sub-contractor') + ' · Inspection approved ' + us(r.inspection);
+            case 'oth': return txt(r.payee, 'No payee') + (r.milestone ? ' · ' + esc(r.milestone) : '') + ' · Due ' + us(r.due);
             default: return 'Invoice ' + us(r.invoiceDate) + ' · Due ' + us(r.due);
         }
     }
@@ -414,7 +418,8 @@
         aar: [['Sales Partner', r => txt(r.partner)], ['Project Name', link], ['Finance Option', r => txt(r.finance)], ['Actual Received Amount', r => money(r.amount), 'num'], ['Date Received', r => us(r.received)], ['Status', statusChip]],
         com: [['Project Name', link], ['Sales Partner', r => txt(r.partner)], ['Payment Received Date', r => us(r.paymentReceived)], ['Payable Amount', r => money(r.amount), 'num'], ['Due Date', r => us(r.due)], ['Days Overdue', daysOver], ['Status', r => (chip(r) || statusChip(r)) + runChip(r)]],
         lab: [['Project Name', link], ['Sub-Contractor', r => txt(r.sub)], ['Inspection Approval Date', r => us(r.inspection)], ['Payable Amount', r => money(r.amount), 'num'], ['Due Date', r => us(r.due)], ['Days Overdue', daysOver], ['Status', r => (chip(r) || statusChip(r)) + runChip(r)]],
-        mat: [['Project Name', link], ['Invoice Date', r => us(r.invoiceDate)], ['Invoice Amount', r => money(r.amount), 'num'], ['Due Date', r => us(r.due)], ['Days Overdue', daysOver], ['Status', r => (chip(r) || statusChip(r)) + runChip(r)]]
+        mat: [['Project Name', link], ['Invoice Date', r => us(r.invoiceDate)], ['Invoice Amount', r => money(r.amount), 'num'], ['Due Date', r => us(r.due)], ['Days Overdue', daysOver], ['Status', r => (chip(r) || statusChip(r)) + runChip(r)]],
+        oth: [['Project Name', link], ['Payee', r => txt(r.payee)], ['Milestone', r => txt(r.milestone)], ['Date', r => us(r.date)], ['Payable Amount', r => money(r.amount), 'num'], ['Days Overdue', daysOver], ['Status', r => (chip(r) || statusChip(r)) + runChip(r)]]
     };
 
     function pick(r) {
@@ -470,14 +475,14 @@
             tiles.push('<div class="tile"><span class="k"><span class="dot in"></span>Expected in</span><span class="v">' + money(sum(openOf('ear'))) + '</span><span class="s">' + plural(openOf('ear').length, 'payment') + ' still to arrive</span></div>');
         }
         if (has('aar')) {
-            const due = sum(['com', 'lab', 'mat'].flatMap(openOf));
+            const due = sum(PAYABLES.flatMap(openOf));
             tiles.push('<div class="tile"><span class="k"><span class="dot in"></span>Received</span><span class="v">' + money(sum(L.aar.inRange)) + '</span><span class="s">' + plural(L.aar.inRange.length, 'deposit') + ' in this ' + S.mode + '</span></div>');
-            tiles.push('<div class="tile"><span class="k"><span class="dot out"></span>Payables due</span><span class="v">' + money(due) + '</span><span class="s">Commission ' + money(sum(openOf('com'))) + ' · Labor ' + money(sum(openOf('lab'))) + ' · Material ' + money(sum(openOf('mat'))) + '</span></div>');
+            tiles.push('<div class="tile"><span class="k"><span class="dot out"></span>Payables due</span><span class="v">' + money(due) + '</span><span class="s">Commission ' + money(sum(openOf('com'))) + ' · Labor ' + money(sum(openOf('lab'))) + ' · Material ' + money(sum(openOf('mat'))) + ' · Other ' + money(sum(openOf('oth'))) + '</span></div>');
             // Net = cash received in the period minus what is still owed out.
             const net = sum(L.aar.inRange) - due;
             tiles.push('<div class="tile net"><span class="k"><span class="dot acc"></span>Net position</span><span class="v' + (net < 0 ? ' neg' : '') + '">' + (net < 0 ? '−' : '') + money(Math.abs(net)) + '</span><span class="s">' + lateLine + '</span></div>');
             // The pay run: what is planned to go out this week. Its other open payables moved to next week.
-            const run = ['com', 'lab', 'mat'].filter(has).flatMap(b => L[b].all.filter(inPayRun));
+            const run = PAYABLES.filter(has).flatMap(b => L[b].all.filter(inPayRun));
             if (run.length) {
                 const toPay = run.filter(r => r.status === 'Open'), paid = run.length - toPay.length;
                 const runDays = [...new Set(run.map(r => r.payRun))].sort();
@@ -576,7 +581,8 @@
         const r = byId(S.drawer); if (!r) return;
         const info = B[r.b], out = info.kind === 'out', open = r.status === 'Open';
         const fields = COLS[r.b].map(c => '<dt>' + c[0] + '</dt><dd>' + (c[0] === 'Project Name' ? esc(r.project) : c[1](r)) + '</dd>');
-        if (r.milestone) fields.splice(1, 0, '<dt>Milestone</dt><dd>' + esc(r.milestone) + '</dd>');
+        if (r.milestone && !COLS[r.b].some(c => c[0] === 'Milestone')) fields.splice(1, 0, '<dt>Milestone</dt><dd>' + esc(r.milestone) + '</dd>');
+        if (r.details) fields.push('<dt>Details</dt><dd>' + esc(r.details) + '</dd>');
         let extra = '';
         if (r.b === 'ear' && open) {
             extra = '<form class="box" id="settle-form"><h4>Record payment received</h4><p>Moves this payment to Actual AR. When the Labor and Material invoices are on file, the sales partner’s commission is raised, due the Friday of the following week.</p>' +
