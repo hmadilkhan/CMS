@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Livewire\AccountTransactions;
+use App\Livewire\Project\InvoiceDetails;
 use App\Models\AccountTransaction;
 use App\Models\Customer;
 use App\Models\Project;
@@ -10,9 +11,13 @@ use App\Models\ProjectInvoiceDetail;
 use App\Models\SalesPartner;
 use App\Models\SubContractor;
 use App\Models\User;
+use App\Models\UserType;
 use App\Services\SubContractorPayableService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
 use Livewire\Livewire;
+use Spatie\Permission\Models\Role;
 use Tests\TestCase;
 
 /**
@@ -145,6 +150,47 @@ class SubContractorPayableTest extends TestCase
         $this->assertSame(0, $this->service()->createForInspectionApproval($noDate));
 
         $this->assertSame(0, AccountTransaction::count());
+    }
+
+    public function test_a_labor_invoice_uploaded_after_inspection_approval_raises_the_payable(): void
+    {
+        // Labor is only needed to reach PTO, so it can come in after the date.
+        Storage::fake('public');
+        $project = $this->project();
+        UserType::firstOrCreate(['name' => 'Admin']);
+        $admin = User::factory()->create(['user_type_id' => 1]);
+        $admin->assignRole(Role::firstOrCreate(['name' => 'Super Admin']));
+
+        $upload = fn (string $type, string $file) => Livewire::actingAs($admin)
+            ->test(InvoiceDetails::class, ['projectId' => $project->id])
+            ->set('invoiceType', $type)
+            ->set('invoiceDate', '2026-09-02')
+            ->set('amount', 6020)
+            ->set('file', UploadedFile::fake()->create($file, 10, 'application/pdf'))
+            ->call('save')
+            ->assertHasNoErrors();
+
+        $upload('material', 'MATERIAL_77.pdf');
+        $this->assertSame(0, AccountTransaction::count());
+
+        $upload('labor', 'INVOICE_2400_from_Electrical best services,INC_.pdf');
+
+        $transaction = AccountTransaction::where('project_id', $project->id)->sole();
+        $this->assertSame('Full Payment - Invoice #2400', $transaction->milestone);
+        $this->assertEquals(-6020.00, (float) $transaction->amount);
+        $this->assertSame('2026-08-27', substr((string) $transaction->transaction_date, 0, 10));
+
+        // Before the date, an upload raises nothing - the date will.
+        $early = $this->project(true, null);
+        Livewire::actingAs($admin)
+            ->test(InvoiceDetails::class, ['projectId' => $early->id])
+            ->set('invoiceType', 'labor')
+            ->set('invoiceDate', '2026-09-02')
+            ->set('amount', 500)
+            ->set('file', UploadedFile::fake()->create('INVOICE_2401_x.pdf', 10, 'application/pdf'))
+            ->call('save')
+            ->assertHasNoErrors();
+        $this->assertSame(0, AccountTransaction::where('project_id', $early->id)->count());
     }
 
     public function test_a_transaction_added_by_hand_starts_open_and_can_be_closed(): void

@@ -254,56 +254,114 @@ class ProjectMoveMissingFieldsTest extends TestCase
         ]);
     }
 
-    public function test_inspection_is_refused_when_both_invoices_are_missing(): void
+    public function test_inspection_is_refused_without_the_material_invoice(): void
     {
         $fixture = $this->fixtureInInstallation();
+        // Labor alone does not open Inspection - it is PTO's invoice.
+        $this->addInvoice($fixture['project'], 'labor');
 
         $response = $this->moveToInspection($fixture)
             ->assertStatus(422)
-            ->assertJson(['status' => 422, 'requires' => 'invoices']);
+            ->assertJson(['status' => 422, 'requires' => 'invoices', 'missing_invoices' => ['Material']]);
 
-        $this->assertEqualsCanonicalizing(['Labor', 'Material'], $response->json('missing_invoices'));
-        $this->assertStringContainsString('Labor invoice and Material invoice', $response->json('error'));
+        $this->assertStringContainsString('cannot be moved to Inspection until the Material invoice is created', $response->json('error'));
+        $this->assertStringNotContainsString('Labor', $response->json('error'));
         $this->assertSame($fixture['installation']->id, (int) $fixture['project']->refresh()->department_id);
+
+        // A deleted invoice does not count.
+        $this->addInvoice($fixture['project'], 'material')->delete();
+        $this->moveToInspection($fixture)->assertStatus(422);
     }
 
-    public function test_the_refusal_names_only_the_invoice_that_is_missing(): void
+    public function test_the_material_invoice_alone_moves_the_project_to_inspection(): void
     {
         $fixture = $this->fixtureInInstallation();
-        $this->addInvoice($fixture['project'], 'labor');
-
-        $this->moveToInspection($fixture)
-            ->assertStatus(422)
-            ->assertJson(['missing_invoices' => ['Material']]);
-
         $this->addInvoice($fixture['project'], 'material');
-        $fixture['project']->invoiceDetails()->where('invoice_type', 'labor')->delete();
-
-        $this->moveToInspection($fixture)
-            ->assertStatus(422)
-            ->assertJson(['missing_invoices' => ['Labor']]);
-    }
-
-    public function test_a_project_with_both_invoices_moves_to_inspection(): void
-    {
-        $fixture = $this->fixtureInInstallation();
-        $this->addInvoice($fixture['project'], 'labor');
-        $this->addInvoice($fixture['project'], 'material');
-
-        // Inspection has to be staffed or the move stops at the assignment.
-        $inspectionUser = User::factory()->create(['user_type_id' => 2]);
-        $inspectionUser->assignRole(Role::firstOrCreate(['name' => 'Manager']));
-        Employee::create([
-            'name' => 'Inspection Manager',
-            'code' => 'EMP-INSPECT',
-            'email' => 'inspection.manager@example.com',
-            'phone' => '555-444-4444',
-            'user_id' => $inspectionUser->id,
-        ])->department()->attach($fixture['inspection']->id);
+        $this->staff($fixture['inspection'], 'INSPECT');
 
         $this->moveToInspection($fixture)->assertOk()->assertJson(['status' => 200]);
 
         $this->assertSame($fixture['inspection']->id, (int) $fixture['project']->refresh()->department_id);
+    }
+
+    public function test_pto_is_refused_without_the_labor_invoice(): void
+    {
+        $fixture = $this->fixtureInInspection();
+        $this->addInvoice($fixture['project'], 'material');
+
+        $response = $this->moveToPto($fixture)
+            ->assertStatus(422)
+            ->assertJson(['requires' => 'invoices', 'missing_invoices' => ['Labor']]);
+
+        $this->assertStringContainsString('cannot be moved to PTO until the Labor invoice is created', $response->json('error'));
+        $this->assertSame($fixture['inspection']->id, (int) $fixture['project']->refresh()->department_id);
+    }
+
+    public function test_the_labor_invoice_moves_the_project_to_pto(): void
+    {
+        $fixture = $this->fixtureInInspection();
+        $this->addInvoice($fixture['project'], 'labor');
+        $this->staff($fixture['pto'], 'PTO');
+
+        $this->moveToPto($fixture)->assertOk()->assertJson(['status' => 200]);
+
+        $this->assertSame($fixture['pto']->id, (int) $fixture['project']->refresh()->department_id);
+    }
+
+    /** A department needs a manager or the move stops at the assignment. */
+    private function staff(Department $department, string $code): void
+    {
+        $user = User::factory()->create(['user_type_id' => 2]);
+        $user->assignRole(Role::firstOrCreate(['name' => 'Manager']));
+        Employee::create([
+            'name' => $department->name.' Manager',
+            'code' => 'EMP-'.$code,
+            'email' => strtolower($code).'.manager@example.com',
+            'phone' => '555-444-4444',
+            'user_id' => $user->id,
+        ])->department()->attach($department->id);
+    }
+
+    /** The same project, sitting in Inspection with PTO to go to. */
+    private function fixtureInInspection(): array
+    {
+        $fixture = $this->fixtureInInstallation();
+        $this->staff($fixture['inspection'], 'INSPECT');
+
+        $pto = Department::create(['id' => 7, 'name' => 'PTO']);
+        $ptoLane = SubDepartment::create([
+            'id' => 25,
+            'department_id' => $pto->id,
+            'name' => 'PTO Submitted',
+            'show_in_move_list' => 1,
+        ]);
+
+        $fixture['project']->update([
+            'department_id' => $fixture['inspection']->id,
+            'sub_department_id' => $fixture['inspectionLane']->id,
+        ]);
+        $fixture['task']->update(['status' => 'Completed']);
+
+        $task = Task::create([
+            'project_id' => $fixture['project']->id,
+            'employee_id' => $fixture['task']->employee_id,
+            'department_id' => $fixture['inspection']->id,
+            'sub_department_id' => $fixture['inspectionLane']->id,
+            'status' => 'In-Progress',
+            'user_id' => $fixture['task']->user_id,
+        ]);
+
+        return array_merge($fixture, compact('pto', 'ptoLane') + ['task' => $task]);
+    }
+
+    private function moveToPto(array $fixture)
+    {
+        return $this->actingAs($this->superAdmin())->postJson(route('move.project'), [
+            'projectId' => $fixture['project']->id,
+            'taskId' => $fixture['task']->id,
+            'departmentId' => $fixture['pto']->id,
+            'subDepartmentId' => $fixture['ptoLane']->id,
+        ]);
     }
 
     public function test_the_invoice_rule_only_applies_to_the_installation_to_inspection_move(): void

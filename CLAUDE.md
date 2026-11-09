@@ -329,16 +329,26 @@ and the **Funding Manager files the date from the Zones NTP tab**, which release
 it. It is the only chase whose document comes from outside Operations, so it has
 no dashboard card and opens at the move rather than when the date goes missing.
 
-## Installation → Inspection needs both invoices
+## Invoice gates: Inspection needs Material, PTO needs Labor
 
 `ProjectController::moveProject()` refuses (422, English message naming what is
-missing) a move from Installation to Inspection unless the project has at least
-one Labor **and** one Material invoice (`project_invoice_details`, soft-deleted
-rows don't count). The rule lives in `Project::missingInvoiceTypeLabels()` /
-`ProjectInvoiceDetail::REQUIRED_TYPES` and runs BEFORE the Fire Review chase can
-park the move. Departments are matched by name, like the follow-up service. It
-applies to every project, including ones already in Installation. The old
+missing) two moves until an invoice is on file (`project_invoice_details`,
+soft-deleted rows don't count):
+
+- **Installation → Inspection** needs a **Material** invoice.
+- **Inspection → PTO** needs a **Labor** invoice.
+
+The table is `Project::INVOICE_GATES` (target department → `from` + invoice
+types), read through `Project::missingInvoiceTypeLabels($types)`. It runs BEFORE
+the Fire Review chase can park the move. Departments are matched by name, like
+the follow-up service. Only those exact from → to pairs are gated. The old
 `projectMove()` is unrouted. Covered by `ProjectMoveMissingFieldsTest`.
+(Until 2026-11-09 Inspection needed both invoices.)
+
+Because Labor can now arrive after the Inspection Approval Date, uploading a
+Labor invoice on a project that already has that date raises its Labor Payable
+right away (`InvoiceDetails::save` → `SubContractorPayableService`, which never
+makes a second one per invoice). The commission still waits for both invoices.
 
 ## Account Transactions — status, and the Labor Payable
 

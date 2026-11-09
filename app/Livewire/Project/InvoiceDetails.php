@@ -5,6 +5,7 @@ namespace App\Livewire\Project;
 use App\Livewire\Concerns\AuthorizesProjectAccess;
 use App\Models\Project;
 use App\Models\ProjectInvoiceDetail;
+use App\Services\SubContractorPayableService;
 use Illuminate\Support\Facades\Storage;
 use Livewire\Attributes\Locked;
 use Livewire\Component;
@@ -71,6 +72,17 @@ class InvoiceDetails extends Component
             ->setEvent('updated')
             ->withProperties(['project_invoice_detail_id' => $invoice->id])
             ->log(auth()->user()->name . ' added an invoice detail.');
+
+        // The Labor invoice is only needed to reach PTO, so it can arrive after
+        // the Inspection Approval Date that raises the Labor Payable. Raise it
+        // now then; an invoice never gets a second one.
+        if ($this->invoiceType === 'labor') {
+            $project->refresh();
+
+            if (! empty($project->inspection_approval_date)) {
+                app(SubContractorPayableService::class)->createForInspectionApproval($project);
+            }
+        }
 
         $this->resetForm();
         session()->flash('invoice_message', 'Invoice detail saved successfully.');

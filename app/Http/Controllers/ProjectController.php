@@ -819,23 +819,22 @@ class ProjectController extends Controller
             }
         }
 
-        // A project leaves Installation for Inspection only once both its Labor
-        // and Material invoices exist. Checked before the Fire Review chase can
-        // park the move, so that lane is never a way around it.
-        $installationId = Department::where('name', 'Installation')->value('id');
-        $inspectionId = Department::where('name', 'Inspection')->value('id');
+        // Installation -> Inspection waits for the Material invoice, Inspection ->
+        // PTO for the Labor one (Project::INVOICE_GATES). Checked before the Fire
+        // Review chase can park the move, so that lane is never a way around it.
+        $targetName = Department::whereKey($request->departmentId)->value('name');
+        $gate = Project::INVOICE_GATES[$targetName] ?? null;
 
-        if ($installationId && $inspectionId
-            && (int) $currentDepartmentId === (int) $installationId
-            && (int) $request->departmentId === (int) $inspectionId) {
-            $missingInvoices = $project->missingInvoiceTypeLabels();
+        if ($gate && (int) $currentDepartmentId === (int) Department::where('name', $gate['from'])->value('id')) {
+            $missingInvoices = $project->missingInvoiceTypeLabels($gate['types']);
 
             if (! empty($missingInvoices)) {
+                $named = implode(' and ', array_map(fn ($label) => $label.' invoice', $missingInvoices));
+
                 return response()->json([
                     'status' => 422,
-                    'error' => 'This project cannot be moved to Inspection until both the Labor and Material invoices are created. Missing: '
-                        .implode(' and ', array_map(fn ($label) => $label.' invoice', $missingInvoices))
-                        .'. Add it in the Invoice Details section of the project, then move it again.',
+                    'error' => "This project cannot be moved to {$targetName} until the {$named} is created. "
+                        .'Add it in the Invoice Details section of the project, then move it again.',
                     'requires' => 'invoices',
                     'missing_invoices' => $missingInvoices,
                 ], 422);

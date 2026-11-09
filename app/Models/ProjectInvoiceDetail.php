@@ -10,7 +10,10 @@ class ProjectInvoiceDetail extends Model
 {
     use HasFactory, SoftDeletes;
 
-    /** The invoice types a project must have on file before it can go to Inspection. */
+    /**
+     * The two invoice types a project carries. Which move waits for which is
+     * Project::INVOICE_GATES; the commission waits for both.
+     */
     public const REQUIRED_TYPES = [
         'labor' => 'Labor',
         'material' => 'Material',

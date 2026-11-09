@@ -113,19 +113,32 @@ class Project extends Model
     }
 
     /**
-     * Labels of the required invoice types ("Labor", "Material") this project has
-     * no invoice for. Deleted invoices do not count (the model soft-deletes).
+     * Moves that wait for an invoice, by department name: a project leaves
+     * `from` for the target department only once it has an invoice of each of
+     * `types`. Material is needed to reach Inspection, Labor to reach PTO.
+     */
+    public const INVOICE_GATES = [
+        'Inspection' => ['from' => 'Installation', 'types' => ['material']],
+        'PTO' => ['from' => 'Inspection', 'types' => ['labor']],
+    ];
+
+    /**
+     * Labels of the invoice types ("Labor", "Material") this project has no
+     * invoice for, out of `$types` (both by default). Deleted invoices do not
+     * count (the model soft-deletes).
      *
+     * @param  array<int, string>|null  $types
      * @return array<int, string>
      */
-    public function missingInvoiceTypeLabels(): array
+    public function missingInvoiceTypeLabels(?array $types = null): array
     {
+        $wanted = $types === null
+            ? ProjectInvoiceDetail::REQUIRED_TYPES
+            : array_intersect_key(ProjectInvoiceDetail::REQUIRED_TYPES, array_flip($types));
+
         $present = $this->invoiceDetails()->pluck('invoice_type')->all();
 
-        return array_values(array_diff_key(
-            ProjectInvoiceDetail::REQUIRED_TYPES,
-            array_flip($present)
-        ));
+        return array_values(array_diff_key($wanted, array_flip($present)));
     }
 
     public function serviceTickets()
