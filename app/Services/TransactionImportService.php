@@ -174,7 +174,9 @@ class TransactionImportService
                 'milestone' => $milestone,
                 'amount' => $amount === null ? null : round($amount, 2),
                 'deduction' => round($deduction, 2),
-                'date' => $date ?: $defaultDate,
+                // An unreadable date is left empty (not the default), so the
+                // preview will not import the row until a date is filled in.
+                'date' => $date === false ? '' : ($date ?: $defaultDate),
                 'status' => $status ?: $defaultStatus,
                 'details' => trim((string) $r['details']) ?: null,
                 'errors' => $errors,

@@ -297,6 +297,37 @@ class TransactionPortalImportTest extends TestCase
         $this->assertFalse(AccountTransaction::where('milestone', 'Payment 600')->exists());
     }
 
+    public function test_a_date_column_and_negative_amounts_are_read_from_the_file(): void
+    {
+        $paul = $this->project('Paul-Wilhite', 'Paul', 'Wilhite');
+        $user = $this->user();
+
+        // No header: the 5th column is the date. E1 is a real Excel date cell.
+        $file = $this->sheet([
+            ['Paul Wilhite', 'Sales Partner', 'Commission', '-500', 46333],
+            ['Paul Wilhite', 'Sub-Contractor', 'Labor', '($1,250.00)', '10/31/2026'],
+            ['Paul Wilhite', 'Customer', 'Refund', '-$75.50', '31/10/2026'],      // day first: unreadable
+            ['Paul Wilhite', 'Customer', 'Permit', '1000', null],                // no date: the upload's
+        ]);
+
+        $preview = $this->preview($user, $file);
+        $rows = collect($preview->viewData('rows'))->keyBy('line');
+
+        $this->assertSame('2026-11-07', $rows[1]['date']);
+        $this->assertEquals(-500, $rows[1]['amount']);
+        $this->assertSame('2026-10-31', $rows[2]['date']);
+        $this->assertEquals(-1250, $rows[2]['amount']);
+        $this->assertSame('', $rows[3]['date'], 'An unreadable date is left for the user to fill in.');
+        $this->assertStringContainsString('is not a date', implode(' ', $rows[3]['errors']));
+        $this->assertSame('2026-11-06', $rows[4]['date']);
+
+        // Kept as it opens, row 3 has no date and is not written.
+        $this->actingAs($user)->post(route('transaction-portal.import.store'), $this->form($preview));
+
+        $this->assertEqualsCanonicalizing([-500.0, -1250.0, 1000.0], AccountTransaction::where('project_id', $paul->id)->pluck('amount')->map(fn ($a) => (float) $a)->all());
+        $this->assertSame([3], array_column(session('importResult')['skipped'], 'line'));
+    }
+
     public function test_a_project_the_user_cannot_access_is_refused_even_if_posted(): void
     {
         $this->project('Paul-Wilhite', 'Paul', 'Wilhite');
