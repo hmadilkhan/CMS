@@ -140,6 +140,7 @@ Route::middleware('auth')->group(function () {
         Route::post('transaction-portal/settle', [App\Http\Controllers\TransactionPortalController::class, 'settle'])->name('transaction-portal.settle');
         Route::post('transaction-portal/reopen', [App\Http\Controllers\TransactionPortalController::class, 'reopen'])->name('transaction-portal.reopen');
         Route::post('transaction-portal/pay-run', [App\Http\Controllers\TransactionPortalController::class, 'payRun'])->name('transaction-portal.pay-run');
+        Route::get('transaction-portal/search', [App\Http\Controllers\TransactionPortalController::class, 'search'])->name('transaction-portal.search');
 
         // Import account transactions from a spreadsheet: upload -> preview -> import.
         Route::middleware('can:Account Transactions Edit')->group(function () {

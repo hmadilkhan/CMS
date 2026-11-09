@@ -62,6 +62,27 @@ defaults to the next Friday. It is stored as `pay_run_date` on
   (to pay / paid), a chip on each picked row, a Pay run box in the drawer, and a
   Pay Run column in the CSV.
 
+## Search ("All time")
+
+The search box normally filters only the rows loaded for the period on screen
+(in the browser). Ticking **All time** sends the search to the server instead
+(`transaction-portal.search`, `TransactionPortalService::search()`): every
+row of any date and status, in the sections the user may see, scoped the same
+way as the board (`filterByRole`, live projects only).
+
+- Matches the project name and code, the customer's first / last name, sales
+  partner, sub-contractor, finance option, milestone, transaction details,
+  payee (by its label, so user-added payees are found), the labor/material
+  invoice file name, and - when the search is a number (`$4,560` works) - the
+  amount or the amount received / paid.
+- At least 2 characters (422 otherwise). Newest first, at most
+  `SEARCH_LIMIT` (200) rows; the tile says when there were more.
+- Results show per section with no week split, and open / pay / reopen / pay
+  run work on them as usual. Export is off while it is on. Choosing a week,
+  month, Previous / Next or "Go to today" leaves the all-time search.
+- Positive transactions closed before settlement existed (no received date) are
+  not found, as they are never in Actual AR.
+
 The Expected AR amount is the remitted amount (`amount - deduction_amount`).
 
 ## Permissions

@@ -47,6 +47,8 @@ class TransactionPortalController extends Controller
                 'settleUrl' => route('transaction-portal.settle'),
                 'reopenUrl' => route('transaction-portal.reopen'),
                 'payRunUrl' => route('transaction-portal.pay-run'),
+                'searchUrl' => route('transaction-portal.search'),
+                'searchLimit' => TransactionPortalService::SEARCH_LIMIT,
                 'exportUrl' => route('transaction-portal.export'),
             ],
         ]);
@@ -61,6 +63,14 @@ class TransactionPortalController extends Controller
             'end' => $end->toDateString(),
             'rows' => $this->portal->rows($request->user(), $start, $end),
         ]);
+    }
+
+    /** The "All time" search: matching rows of every period, newest first. */
+    public function search(Request $request)
+    {
+        $validated = $request->validate(['q' => 'required|string|min:2|max:100']);
+
+        return response()->json($this->portal->search($request->user(), $validated['q']));
     }
 
     /**

@@ -46,6 +46,9 @@ class TransactionPortalService
 
     private const PAY_RUN = 'pay_run';
 
+    /** The most rows an all-time search returns. */
+    public const SEARCH_LIMIT = 200;
+
     private const RELATIONS = [
         'project.customer.finances.finance',
         'project.customer.salespartner',
@@ -198,6 +201,135 @@ class TransactionPortalService
                 : " took the {$what} out of the pay run from the Transaction Portal."));
 
         return true;
+    }
+
+    /**
+     * Search every period at once: rows of any date and status, in the
+     * sections `$user` may see, scoped exactly like the board. Matches the
+     * project (name, code, customer), sales partner, sub-contractor, finance
+     * option, milestone, details, payee, invoice file - and, when the search
+     * is a number, the amount. Newest first, at most SEARCH_LIMIT rows.
+     *
+     * @return array{rows: array, truncated: bool}
+     */
+    public function search(User $user, string $q): array
+    {
+        $sections = $this->sections($user);
+        $canExpected = in_array('ear', $sections, true);
+        $canOther = in_array('aar', $sections, true);
+        $q = trim($q);
+
+        if ((! $canExpected && ! $canOther) || mb_strlen($q) < 2) {
+            return ['rows' => [], 'truncated' => false];
+        }
+
+        $like = '%'.addcslashes($q, '%_\\').'%';
+        $number = preg_replace('/[$,\s]/', '', $q);
+        $amount = is_numeric($number) ? round((float) $number, 2) : null;
+        $payees = collect(AccountTransaction::payeeOptions())
+            ->filter(fn ($label) => mb_stripos((string) $label, $q) !== false)
+            ->keys()
+            ->all();
+
+        $transactions = $this->transactions($user)
+            ->with('invoice')
+            ->whereNotNull('transaction_date')
+            ->where(function ($w) use ($canExpected, $canOther) {
+                if ($canExpected) {
+                    $w->orWhere(fn ($q) => $q->where('amount', '>', 0)->where('status', AccountTransaction::STATUS_OPEN));
+                }
+                if ($canOther) {
+                    // Actual AR lists only payments with a received date, as the board does.
+                    $w->orWhere(fn ($q) => $q->where('amount', '>', 0)
+                        ->where('status', AccountTransaction::STATUS_CLOSED)
+                        ->whereNotNull('settled_date'));
+                    $w->orWhere('amount', '<', 0);
+                }
+            })
+            ->where(function ($w) use ($like, $payees, $amount) {
+                $w->where('milestone', 'like', $like)
+                    ->orWhere('transaction_details', 'like', $like)
+                    ->orWhereHas('project', fn ($p) => $this->projectMatches($p, $like))
+                    ->orWhereHas('invoice', fn ($i) => $i->where('original_file_name', 'like', $like));
+
+                if ($payees) {
+                    $w->orWhereIn('payee', $payees);
+                }
+                if ($amount !== null) {
+                    $w->orWhereRaw('ABS(amount) = ?', [$amount])->orWhere('settled_amount', $amount);
+                }
+            })
+            ->orderByDesc('id')
+            ->limit(self::SEARCH_LIMIT + 1)
+            ->get();
+
+        $invoices = ! $canOther ? collect() : ProjectInvoiceDetail::query()
+            ->where('invoice_type', 'material')
+            ->whereNotNull('invoice_date')
+            ->whereHas('project', fn ($q) => $q->whereNull('projects.deleted_at'))
+            ->with(self::RELATIONS)
+            ->where(function ($w) use ($like, $amount) {
+                $w->where('original_file_name', 'like', $like)
+                    ->orWhereHas('project', fn ($p) => $this->projectMatches($p, $like));
+
+                if ($amount !== null) {
+                    $w->orWhere('amount', $amount)->orWhere('settled_amount', $amount);
+                }
+            })
+            ->orderByDesc('id')
+            ->limit(self::SEARCH_LIMIT + 1)
+            ->get();
+
+        $rows = $transactions
+            ->map(fn ($t) => match ($this->sectionOf($t)) {
+                'ear' => $this->expectedRow($t),
+                'aar' => $this->actualRow($t),
+                'com' => $this->commissionRow($t),
+                'lab' => $this->laborRow($t),
+                default => $this->otherRow($t),
+            })
+            ->concat($invoices->map(fn ($i) => $this->materialRow($i)))
+            ->sortByDesc(fn ($r) => $this->placedOn($r))
+            ->values();
+
+        return [
+            'rows' => $rows->take(self::SEARCH_LIMIT)->all(),
+            'truncated' => $rows->count() > self::SEARCH_LIMIT,
+        ];
+    }
+
+    /** A project whose name, code, customer, partner, sub-contractor or finance option matches. */
+    private function projectMatches($project, string $like): void
+    {
+        $project->where(function ($p) use ($like) {
+            $p->where('project_name', 'like', $like)
+                ->orWhere('code', 'like', $like)
+                ->orWhereHas('customer', function ($c) use ($like) {
+                    $c->where(function ($c) use ($like) {
+                        $c->where('first_name', 'like', $like)
+                            ->orWhere('last_name', 'like', $like)
+                            ->orWhereHas('salespartner', fn ($s) => $s->where('name', 'like', $like))
+                            ->orWhereHas('subContractor', fn ($s) => $s->where('name', 'like', $like))
+                            ->orWhereHas('finances.finance', fn ($f) => $f->where('name', 'like', $like));
+                    });
+                });
+        });
+    }
+
+    /** The date a row is placed in a period by - the board's own key() - used to sort results. */
+    private function placedOn(array $r): string
+    {
+        if (! in_array($r['b'], ['ear', 'aar'], true) && $r['status'] === AccountTransaction::STATUS_CLOSED && ! empty($r['paidOn'])) {
+            return $r['paidOn'];
+        }
+
+        return (string) match ($r['b']) {
+            'ear' => $r['expected'],
+            'aar' => $r['received'],
+            'com' => $r['due'] ?? $r['paymentReceived'],
+            'lab' => $r['inspection'],
+            default => $r['due'],
+        };
     }
 
     /** Which section a transaction belongs to, or null when the portal does not show it. */

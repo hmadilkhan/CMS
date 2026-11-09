@@ -495,6 +495,55 @@ class TransactionPortalTest extends TestCase
         $this->assertFalse($ids->contains('t'.$labor->id));
     }
 
+    public function test_all_time_search_finds_rows_from_any_week(): void
+    {
+        $sunrise = $this->project('Sunrise Ridge');
+        $other = $this->project('Yunjiao Guan'); // same customer name (Rito Guzman) in the fixture
+        // Today is 11/04: these sit in other weeks and months, open and paid.
+        $paidLongAgo = $this->transaction($sunrise, ['payee' => 'sales_partner', 'amount' => -2063.08, 'transaction_date' => '2026-06-01', 'status' => 'Closed', 'settled_amount' => 2063.08, 'settled_date' => '2026-06-12']);
+        $receivedLongAgo = $this->transaction($sunrise, ['amount' => 5000, 'transaction_date' => '2026-05-01', 'status' => 'Closed', 'settled_amount' => 5000, 'settled_date' => '2026-05-03']);
+        $nextMonth = $this->transaction($sunrise, ['payee' => 'sub_contractor', 'amount' => -4560, 'transaction_date' => '2026-12-15']);
+        $expected = $this->transaction($sunrise, ['transaction_date' => '2027-01-10']);
+        $material = $this->invoice($sunrise, 'material', 700, '2026-03-01');
+        $notRito = $this->transaction($other, ['payee' => 'sales_partner', 'amount' => -10, 'transaction_date' => '2026-06-01']);
+
+        $rows = collect($this->actingAs($this->finance())->getJson(route('transaction-portal.search', ['q' => 'sunrise']))->assertOk()->json('rows'))->keyBy('id');
+
+        $this->assertEqualsCanonicalizing(
+            ['t'.$paidLongAgo->id, 't'.$receivedLongAgo->id, 't'.$nextMonth->id, 't'.$expected->id, 'i'.$material->id],
+            $rows->keys()->all()
+        );
+        $this->assertSame('com', $rows['t'.$paidLongAgo->id]['b']);
+        $this->assertSame('aar', $rows['t'.$receivedLongAgo->id]['b']);
+        $this->assertSame('lab', $rows['t'.$nextMonth->id]['b']);
+        $this->assertSame('ear', $rows['t'.$expected->id]['b']);
+        $this->assertSame('mat', $rows['i'.$material->id]['b']);
+        // Newest first.
+        $this->assertSame('t'.$expected->id, $rows->keys()->first());
+
+        // By amount, by sales partner.
+        $byAmount = collect($this->actingAs($this->finance())->getJson(route('transaction-portal.search', ['q' => '$4,560']))->json('rows'))->pluck('id');
+        $this->assertEquals(['t'.$nextMonth->id], $byAmount->all());
+
+        $byPartner = collect($this->actingAs($this->finance())->getJson(route('transaction-portal.search', ['q' => 'Artemis']))->json('rows'))->pluck('id');
+        $this->assertTrue($byPartner->contains('t'.$notRito->id));
+        $this->assertTrue($byPartner->contains('t'.$paidLongAgo->id));
+    }
+
+    public function test_all_time_search_keeps_to_the_sections_the_user_may_see(): void
+    {
+        $project = $this->project();
+        $expected = $this->transaction($project, ['transaction_date' => '2026-07-01']);
+        $this->transaction($project, ['payee' => 'sub_contractor', 'amount' => -4560, 'transaction_date' => '2026-07-01']);
+        $this->invoice($project, 'material', 700, '2026-07-01');
+
+        $ids = collect($this->actingAs($this->fundingManager())->getJson(route('transaction-portal.search', ['q' => 'Rito']))->assertOk()->json('rows'))->pluck('id');
+
+        $this->assertEquals(['t'.$expected->id], $ids->all());
+
+        $this->actingAs($this->finance())->getJson(route('transaction-portal.search', ['q' => 'R']))->assertStatus(422);
+    }
+
     public function test_export_downloads_the_week_as_csv(): void
     {
         $this->transaction($this->project(), ['amount' => 5000]);

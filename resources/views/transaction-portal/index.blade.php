@@ -131,6 +131,8 @@
 .tp .chip.warn { background: var(--warn-soft); color: var(--warn); border-color: transparent; }
 .tp .chip.ok { background: var(--ok-soft); color: var(--ok); border-color: transparent; }
 .tp .chip.run { background: var(--accent-soft); color: var(--accent-deep); border-color: transparent; }
+.tp .all-time { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 600; color: var(--muted); white-space: nowrap; cursor: pointer; }
+.tp .all-time input { accent-color: var(--accent); width: 15px; height: 15px; }
 .tp .chip.st { background: none; font-weight: 600; }
 .tp .lane-foot { border-top: 1px dashed var(--line-strong); padding: 10px 14px 12px; display: grid; grid-template-columns: 1fr auto; align-items: baseline; gap: 2px 8px; }
 .tp .lane-foot span { font-size: 12px; text-transform: uppercase; letter-spacing: .07em; font-weight: 700; color: var(--muted); }
@@ -239,6 +241,7 @@
                 <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="7" cy="7" r="5"></circle><path d="M11 11l3.5 3.5"></path></svg>
                 <input id="q" type="search" placeholder="Search project, partner…" aria-label="Search all sections">
             </div>
+            <label class="all-time" title="Search every week and month, not just the one shown"><input type="checkbox" id="all-time"> All time</label>
             <div class="seg" role="group" aria-label="View">
                 <button type="button" data-view="board" aria-pressed="true">Board</button>
                 <button type="button" data-view="table" aria-pressed="false">Table</button>
@@ -337,7 +340,10 @@
     let rows = [];
     let loaded = false;
     let loadSeq = 0;
-    const S = { mode: 'week', anchor: new Date(TODAY), view: 'board', status: 'all', fin: '', q: '', laneQ: {}, carry: true, sel: new Set(), tab: SECTIONS[0], drawer: null };
+    const S = { mode: 'week', anchor: new Date(TODAY), view: 'board', status: 'all', fin: '', q: '', laneQ: {}, carry: true, sel: new Set(), tab: SECTIONS[0], drawer: null, all: false };
+    // "All time": the search runs on the server across every period; rows then hold its results.
+    let truncated = false;
+    let searchTimer;
 
     const byId = id => rows.find(r => r.id === id);
     // The date a row is placed in a week by. A paid payable sits in the week it was paid.
@@ -372,7 +378,8 @@
     const matches = (r, q) => [r.project, r.partner, r.sub, r.finance, r.milestone, r.invoiceNo, r.file, r.payee].join(' ').toLowerCase().includes(q.toLowerCase());
     function passes(r) {
         if (S.fin && r.finance !== S.fin) return false;
-        if (S.q && !matches(r, S.q)) return false;
+        // In "All time" the server already searched (more fields than this), so do not filter again.
+        if (S.q && !S.all && !matches(r, S.q)) return false;
         if (S.laneQ[r.b] && !matches(r, S.laneQ[r.b])) return false;
         if (S.status === 'open') return r.status === 'Open';
         if (S.status === 'closed') return r.status === 'Closed';
@@ -381,6 +388,11 @@
         return true;
     }
     function lane(b) {
+        if (S.all) {
+            // Search results: one list per section, newest first, no week split.
+            const found = rows.filter(r => r.b === b && passes(r)).sort((x, y) => d(key(y)) - d(key(x)));
+            return { inRange: found, carry: [], all: found };
+        }
         const [s] = range();
         const list = rows.filter(r => r.b === b && passes(r)).sort((x, y) => d(key(x)) - d(key(y)));
         const isCarry = r => d(key(r)) < s;
@@ -457,14 +469,30 @@
             if (L.inRange.length) body += '<p class="sect">In this ' + S.mode + '</p>';
         }
         body += L.inRange.map(itemHTML).join('');
-        if (!L.all.length) body += '<p class="empty">Nothing in this ' + S.mode + '.</p>';
+        if (!L.all.length) body += '<p class="empty">' + emptyText() + '</p>';
         $('lc-' + b).textContent = L.all.length;
         $('lb-' + b).innerHTML = body;
         $('lf-' + b).innerHTML = '<span>Total</span><strong>' + money(sum(L.all)) + '</strong>' +
             (b === 'aar' ? '' : '<small>' + (b === 'ear' ? 'Still expected ' : 'Unpaid ') + money(open) + '</small>');
     }
 
+    const emptyText = () => !S.all ? 'Nothing in this ' + S.mode + '.'
+        : (S.q.length < 2 ? 'Type at least 2 letters to search.' : 'No match in any week.');
+
+    function renderSearchTiles() {
+        const found = SECTIONS.flatMap(b => lane(b).all), open = found.filter(r => r.status === 'Open');
+        const tiles = [
+            '<div class="tile net"><span class="k"><span class="dot acc"></span>All-time search</span><span class="v">' + plural(found.length, 'result') + '</span><span class="s">' +
+                (S.q.length < 2 ? 'Type at least 2 letters to search every week and month.'
+                    : 'for “' + esc(S.q) + '” in every week and month' + (truncated ? ' · showing the newest ' + CFG.searchLimit + ', narrow the search to see more' : '')) + '</span></div>',
+            '<div class="tile"><span class="k"><span class="dot out"></span>Still open</span><span class="v">' + money(sum(open)) + '</span><span class="s">' + plural(open.length, 'item') + ' not yet received or paid</span></div>'
+        ];
+        $('tiles').style.setProperty('--tiles', tiles.length);
+        $('tiles').innerHTML = tiles.join('');
+    }
+
     function renderTiles() {
+        if (S.all) { renderSearchTiles(); return; }
         const has = b => SECTIONS.includes(b);
         const L = {}; SECTIONS.forEach(b => L[b] = lane(b));
         const openOf = b => has(b) ? L[b].all.filter(r => r.status === 'Open') : [];
@@ -506,7 +534,7 @@
         let body = '';
         if (L.carry.length) body += '<tr class="group"><td colspan="' + span + '">Earlier, still open · ' + L.carry.length + '</td></tr>' + L.carry.map(tr).join('') + (L.inRange.length ? '<tr class="group plain"><td colspan="' + span + '">In this ' + S.mode + '</td></tr>' : '');
         body += L.inRange.map(tr).join('');
-        if (!L.all.length) body = '<tr><td colspan="' + span + '" style="text-align:center;color:var(--muted);padding:28px">Nothing in this ' + S.mode + '.</td></tr>';
+        if (!L.all.length) body = '<tr><td colspan="' + span + '" style="text-align:center;color:var(--muted);padding:28px">' + emptyText() + '</td></tr>';
         const lead = amtIdx + (out ? 1 : 0);
         $('tbl').innerHTML = '<thead><tr>' + (out ? '<th><span class="tp-sr">Select</span></th>' : '') + cols.map(c => '<th class="' + (c[2] || '') + '">' + c[0] + '</th>').join('') + '</tr></thead><tbody>' + body + '</tbody>' +
             '<tfoot><tr><td colspan="' + lead + '">Total</td><td class="num">' + money(sum(L.all)) + '</td><td colspan="' + (span - lead - 1) + '"></td></tr></tfoot>';
@@ -532,8 +560,9 @@
 
     function render() {
         const [s, e] = range();
-        $('dates').textContent = us(s) + ' – ' + us(e);
-        $('rel').textContent = relLabel();
+        $('dates').textContent = S.all ? 'All time' : us(s) + ' – ' + us(e);
+        $('rel').textContent = S.all ? 'Search across every week and month' : relLabel();
+        $('export').disabled = S.all;
         if (!SECTIONS.length || !loaded) return;
         renderTiles();
         if (S.view === 'board') SECTIONS.forEach(renderLane); else renderTable();
@@ -547,13 +576,18 @@
         render();
         if (!SECTIONS.length) return;
         const seq = ++loadSeq, [s, e] = range();
+        if (S.all && S.q.length < 2) { rows = []; truncated = false; loaded = true; render(); return; }
         $('board').classList.add('loading'); $('table-wrap').classList.add('loading');
         try {
-            const res = await fetch(CFG.dataUrl + '?start=' + iso(s) + '&end=' + iso(e), { headers: { Accept: 'application/json' } });
+            const url = S.all
+                ? CFG.searchUrl + '?q=' + encodeURIComponent(S.q)
+                : CFG.dataUrl + '?start=' + iso(s) + '&end=' + iso(e);
+            const res = await fetch(url, { headers: { Accept: 'application/json' } });
             if (!res.ok) throw new Error(res.status);
             const json = await res.json();
             if (seq !== loadSeq) return;
             rows = json.rows;
+            truncated = !!json.truncated;
             S.sel.forEach(id => { const r = byId(id); if (!r || r.status !== 'Open') S.sel.delete(id); });
         } catch (err) {
             if (seq === loadSeq) toast('The transactions could not be loaded. Refresh the page to try again.');
@@ -642,6 +676,12 @@
         }
     }
 
+    function leaveAllTime() {
+        if (!S.all) return;
+        S.all = false; S.sel.clear(); clearTimeout(searchTimer);
+        $('all-time').checked = false;
+    }
+
     // Put payables in the pay run for `date`, or take them out (date null).
     async function payRun(ids, date, button) {
         if (button) button.disabled = true;
@@ -665,13 +705,15 @@
         if (!e.target.closest('#tp')) return;
         const t = e.target.closest('button'); if (!t) return;
         if (t.dataset.open) { openDrawer(t.dataset.open); return; }
+        // Choosing a period leaves the all-time search and goes back to that week or month.
         if (t.id === 'prev' || t.id === 'next') {
             const n = t.id === 'prev' ? -1 : 1;
-            S.anchor = S.mode === 'week' ? addDays(S.anchor, 7 * n) : new Date(S.anchor.getFullYear(), S.anchor.getMonth() + n, 1);
+            if (S.all) leaveAllTime();
+            else S.anchor = S.mode === 'week' ? addDays(S.anchor, 7 * n) : new Date(S.anchor.getFullYear(), S.anchor.getMonth() + n, 1);
             load(); return;
         }
-        if (t.id === 'today') { S.anchor = new Date(TODAY); load(); return; }
-        if (t.dataset.mode) { S.mode = t.dataset.mode; pressed('[data-mode]', t); load(); return; }
+        if (t.id === 'today') { leaveAllTime(); S.anchor = new Date(TODAY); load(); return; }
+        if (t.dataset.mode) { leaveAllTime(); S.mode = t.dataset.mode; pressed('[data-mode]', t); load(); return; }
         if (t.dataset.view) { S.view = t.dataset.view; pressed('[data-view]', t); render(); return; }
         if (t.dataset.status) { S.status = t.dataset.status; pressed('[data-status]', t); render(); return; }
         if (t.dataset.tab) { S.tab = t.dataset.tab; render(); return; }
@@ -712,10 +754,14 @@
         if (t.classList.contains('pick')) { const id = t.dataset.id; t.checked ? S.sel.add(id) : S.sel.delete(id); renderBulk(); }
         else if (t.id === 'fin') { S.fin = t.value; render(); }
         else if (t.id === 'carry') { S.carry = t.checked; render(); }
+        else if (t.id === 'all-time') { S.all = t.checked; S.sel.clear(); clearTimeout(searchTimer); load(); }
     });
     document.addEventListener('input', e => {
         const t = e.target;
-        if (t.id === 'q') { S.q = t.value.trim(); render(); }
+        if (t.id === 'q') {
+            S.q = t.value.trim();
+            if (S.all) { clearTimeout(searchTimer); searchTimer = setTimeout(load, 350); } else render();
+        }
         else if (t.classList && t.classList.contains('lane-search')) { S.laneQ[t.dataset.lane] = t.value.trim(); if (loaded) { renderTiles(); renderLane(t.dataset.lane); } }
         else if (t.id === 'tq') { S.laneQ[S.tab] = t.value.trim(); const ls = $('ls-' + S.tab); if (ls) ls.value = t.value; render(); }
     });
