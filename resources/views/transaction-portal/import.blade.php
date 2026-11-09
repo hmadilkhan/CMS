@@ -111,7 +111,7 @@
             <p class="help">
                 Columns, in this order when the file has no header row: <code>Project Name</code> <code>Payee</code> <code>Milestone</code> <code>Amount</code>,
                 then optionally <code>Date</code> <code>Status</code> <code>Details</code>. With a header row the columns can be in any order, and a <code>Project Code</code> column may be used instead of the name.
-                A name ending in <code>- Solar</code> or <code>- Storage</code> is the project, and that word is added to the milestone (<em>Milestone 1 - Storage</em>).
+                A name ending in <code>- Solar</code> or <code>- Storage</code> is the project, and that word is added to the start of the milestone (<em>Storage Milestone 1</em>).
                 A payee that does not exist yet is created.
                 <a href="{{ route('transaction-portal.import.template') }}">Download a template</a>.
             </p>

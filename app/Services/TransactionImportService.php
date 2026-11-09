@@ -130,7 +130,8 @@ class TransactionImportService
             if ($milestone === '') {
                 $errors[] = 'Milestone is missing.';
             } elseif ($part && stripos($milestone, $part) === false) {
-                $milestone .= ' - '.$part;
+                // "Jun Du - Storage" + "Milestone 1" -> "Storage Milestone 1" (the client's wording).
+                $milestone = $part.' '.$milestone;
             }
 
             $payeeLabel = Payee::normaliseLabel((string) $r['payee']);
@@ -467,9 +468,22 @@ class TransactionImportService
         return preg_replace('/[^a-z0-9]/', '', Str::lower((string) $value));
     }
 
+    /**
+     * A milestone's words, in any order: "Storage Milestone 2" (how the import
+     * writes it) and "Milestone 2 - Storage" (how older rows were keyed in) are
+     * the same milestone for the duplicate check.
+     */
+    private function milestoneKey(?string $milestone): string
+    {
+        $words = preg_split('/[^a-z0-9]+/', Str::lower((string) $milestone), -1, PREG_SPLIT_NO_EMPTY);
+        sort($words);
+
+        return implode(' ', $words);
+    }
+
     private function duplicateKey(int $projectId, string $payee, string $milestone, float $amount): string
     {
-        return implode('|', [$projectId, $payee, $this->norm($milestone), number_format($amount, 2, '.', '')]);
+        return implode('|', [$projectId, $payee, $this->milestoneKey($milestone), number_format($amount, 2, '.', '')]);
     }
 
     private function existing(int $projectId, ?string $payeeKey, string $milestone, float $amount): ?AccountTransaction
@@ -482,7 +496,7 @@ class TransactionImportService
             ->where('payee', $payeeKey)
             ->where('amount', $amount)
             ->get(['id', 'milestone', 'transaction_date', 'status'])
-            ->first(fn ($t) => $this->norm($t->milestone) === $this->norm($milestone));
+            ->first(fn ($t) => $this->milestoneKey($t->milestone) === $this->milestoneKey($milestone));
     }
 
     /** "$ 9,072.00", "(1,000)", 9072 -> float; anything else -> null. */

@@ -137,8 +137,8 @@ also require) opens `/transaction-portal/import`. Files:
      the project name, then the customer's first+last name, then as the start of
      a project name (sibling projects -> "more than one matches"). A name ending
      `- Solar` / `- Storage` / `- Battery` is matched without that word, and the
-     word is added to the milestone (`Milestone 1 - Storage`), the way those TPO
-     rows are already named.
+     word is put at the **start** of the milestone: `Jun Du - Storage` +
+     `Milestone 1` -> `Storage Milestone 1` (the client's wording, 2026-11-10).
    - **No match**: a project select with the **closest names first**
      (`similar()`: spelling similarity + whole words of the name, so reversed or
      misspelt names - "Spencer Fabian" -> Fabian-Spencer - come up top), then
@@ -147,6 +147,8 @@ also require) opens `/transaction-portal/import`. Files:
    - **Duplicates** (same project + payee + milestone + amount, already in the
      system or earlier in the file) open **unticked**; "Import them anyway"
      ticks them. The date is not part of the key - the client's sheet has none.
+     The milestone is compared by its words in any order (`milestoneKey()`), so
+     `Storage Milestone 2` matches an older row keyed in as `Milestone 2 - Storage`.
    - A payee that does not exist is created at import (`findOrCreateByLabel`)
      and listed as "New payee" first.
    - The page checks ticked rows before posting (project and values filled,

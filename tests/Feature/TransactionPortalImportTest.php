@@ -114,7 +114,7 @@ class TransactionPortalImportTest extends TestCase
         $rows = collect($response->viewData('rows'))->keyBy('line');
 
         $this->assertSame($paul->id, $rows[1]['project_id']);
-        $this->assertSame('Milestone 1 - Storage', $rows[1]['milestone']);
+        $this->assertSame('Storage Milestone 1', $rows[1]['milestone']);
         $this->assertSame('maxwell_power', $rows[1]['payee_key'] ?? 'maxwell_power'); // created below if missing
         $this->assertEquals(9072.00, $rows[1]['amount']);
         $this->assertSame('2026-11-06', $rows[1]['date']);
@@ -207,7 +207,7 @@ class TransactionPortalImportTest extends TestCase
 
         $storage = AccountTransaction::where('project_id', $paul->id)->sole();
         $this->assertSame('concert', $storage->payee);
-        $this->assertSame('Milestone 1 - Storage', $storage->milestone);
+        $this->assertSame('Storage Milestone 1', $storage->milestone);
         $this->assertEquals(9072.00, (float) $storage->amount);
         $this->assertSame('2026-11-06', substr((string) $storage->transaction_date, 0, 10));
         $this->assertSame('Closed', $storage->status);
@@ -215,7 +215,7 @@ class TransactionPortalImportTest extends TestCase
         $this->assertSame('2026-11-06', substr((string) $storage->settled_date, 0, 10));
         $this->assertSame('Imported from Untitled spreadsheet.xlsx', $storage->transaction_details);
 
-        $this->assertSame('Milestone 1 - Solar', AccountTransaction::where('project_id', $spencer->id)->value('milestone'));
+        $this->assertSame('Solar Milestone 1', AccountTransaction::where('project_id', $spencer->id)->value('milestone'));
         $this->assertTrue(Payee::where('key', 'concert')->where('is_system', false)->exists());
 
         // Nothing the file did not hold: no commission, nothing else.
@@ -241,6 +241,8 @@ class TransactionPortalImportTest extends TestCase
         ]);
 
         $rows = collect($this->preview($user, $file())->viewData('rows'))->keyBy('line');
+        // "Storage Milestone 2" from the file is the stored "Milestone 2 - Storage": word order does not matter.
+        $this->assertSame('Storage Milestone 2', $rows[1]['milestone']);
         $this->assertStringContainsString('Already in Account Transactions', $rows[1]['duplicate']);
         $this->assertNull($rows[2]['duplicate']);
         $this->assertSame('Same as row 2 of this file.', $rows[3]['duplicate']);
