@@ -69,6 +69,31 @@ class Department extends Model
     }
 
     /**
+     * Where this department sits in the pipeline, as a pair that sorts the same
+     * way the global scope orders: `sort_order` first, id breaking ties.
+     */
+    public function pipelinePosition(): array
+    {
+        return [(int) $this->sort_order, (int) $this->id];
+    }
+
+    /**
+     * Whether this department comes earlier in the pipeline than another, which
+     * is what "moving the project backwards" means. Compares the positions in
+     * PHP rather than querying, so a list already in hand costs nothing - and
+     * it replaces `id <` comparisons, which only held while the sequence
+     * happened to be the id.
+     */
+    public function comesBefore(?self $other): bool
+    {
+        if (! $other) {
+            return false;
+        }
+
+        return ($this->pipelinePosition() <=> $other->pipelinePosition()) < 0;
+    }
+
+    /**
      * The position a newly created department gets: the end of the sequence.
      */
     public static function nextSortOrder(): int

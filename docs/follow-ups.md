@@ -143,8 +143,30 @@ Order no longer matters between this and MPU — both park in the same lane, and
 
 `sub_departments.show_in_move_list`
 : `1` = normal lane. `0` = **closed lane**: never offered as a move destination
-  anywhere, and a project sitting in one cannot be moved by hand. Managed from
-  Operations › Sub Departments (checkbox + Shown/Hidden badge).
+  anywhere, and a project sitting in one may only be moved **backwards**, to a
+  department earlier in the pipeline. Managed from Operations › Sub Departments
+  (checkbox + Shown/Hidden badge).
+
+: Backwards is the one way out that is not the document arriving. Without it a
+  parked project is stuck: the work that has to happen before the paperwork can
+  exist - a design change, a permit revision - belongs to an earlier department,
+  and the only escapes were filing a document that is not in yet or editing the
+  lane by hand. Forward and sideways stay shut; those are the moves the chase
+  exists to hold.
+
+: **Moving back ends the chases parked in that lane** (`resolved_reason`
+  `moved_back`, via `DocumentFollowUpService::cancelChasesParkedIn()`), and
+  nothing is carried over. The paperwork is usually still owed, so `syncType()`
+  opens a FRESH chase with its own `opened_at`, and the next time the project
+  reaches the intercepted move it parks again on that new chase. Two chases
+  parked in the same lane (MPU and NTP both use Install Pending Document) are
+  both ended. The move itself is an ordinary hand-over: the receiving
+  department IS told, unlike the move that parked the project.
+
+: "Backwards" follows the pipeline sequence - `Department::comesBefore()`, which
+  compares `sort_order` with the id breaking ties - not the raw id. The move bar
+  decides which lanes to offer the same way, so what the UI paints green is
+  exactly what `moveProject()` accepts.
 
 Project columns: `mpu_required`, `meter_spot_result`, `utility_bill_required`,
 `fire_review_required`.

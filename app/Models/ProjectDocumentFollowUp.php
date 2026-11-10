@@ -29,6 +29,14 @@ class ProjectDocumentFollowUp extends Model
      */
     public const REASON_PRE_EXISTING = 'pre_existing';
 
+    /**
+     * The project was moved back to an earlier department out of the lane this
+     * chase had parked it in, so this chase is finished with. The paperwork may
+     * well still be owed - a fresh chase opens for it, with its own clock, and
+     * parks the project again the next time it reaches the intercepted move.
+     */
+    public const REASON_MOVED_BACK = 'moved_back';
+
     protected $guarded = [];
 
     protected $casts = [

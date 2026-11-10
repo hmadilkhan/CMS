@@ -13,8 +13,10 @@ use App\Models\Task;
 use App\Models\User;
 use App\Models\UserType;
 use App\Models\Zone;
+use App\Notifications\ProjectAssignedNotification;
 use App\Services\DocumentFollowUpService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Notification;
 use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
 use Tests\TestCase;
@@ -144,6 +146,17 @@ class ProjectNtpApprovalFollowUpTest extends TestCase
         ], $extra));
     }
 
+    /** Out of the parked lane the only way a parked project may still go. */
+    private function moveBackToPermitting(array $fixture)
+    {
+        return $this->actingAs($this->superAdmin())->postJson(route('move.project'), [
+            'projectId' => $fixture['project']->id,
+            'taskId' => Task::where('project_id', $fixture['project']->id)->latest('id')->value('id'),
+            'departmentId' => $fixture['permitting']->id,
+            'subDepartmentId' => 1,
+        ]);
+    }
+
     /** The funding side, filing the date from the NTP zone tab. */
     private function fileNtpDateFromTheZone(Project $project, string $date)
     {
@@ -208,7 +221,7 @@ class ProjectNtpApprovalFollowUpTest extends TestCase
         );
     }
 
-    public function test_a_parked_project_cannot_be_moved_by_hand(): void
+    public function test_a_parked_project_cannot_be_moved_forward_by_hand(): void
     {
         $fixture = $this->fixture();
         $this->moveToInstallation($fixture)->assertOk();
@@ -231,6 +244,105 @@ class ProjectNtpApprovalFollowUpTest extends TestCase
         ])->assertStatus(422);
 
         $this->assertSame(31, (int) $fixture['project']->refresh()->sub_department_id);
+    }
+
+    public function test_a_parked_project_can_be_moved_back_to_an_earlier_department(): void
+    {
+        $fixture = $this->fixture();
+        $this->moveToInstallation($fixture)->assertOk();
+
+        // Backwards is the one way out of a parked lane that is not the
+        // paperwork arriving: the work that has to happen before the date can be
+        // filed belongs to Permitting.
+        $this->moveBackToPermitting($fixture)->assertOk();
+
+        $project = $fixture['project']->refresh();
+        $this->assertSame($fixture['permitting']->id, (int) $project->department_id);
+        $this->assertSame(1, (int) $project->sub_department_id);
+    }
+
+    public function test_moving_back_cancels_the_chase_that_was_holding_the_project(): void
+    {
+        $fixture = $this->fixture();
+        $this->moveToInstallation($fixture)->assertOk();
+
+        $chase = ProjectDocumentFollowUp::where('project_id', $fixture['project']->id)
+            ->where('type', DocumentFollowUpService::TYPE_NTP_APPROVAL)
+            ->firstOrFail();
+        $this->assertSame(ProjectDocumentFollowUp::STATUS_PENDING, $chase->status);
+
+        $this->moveBackToPermitting($fixture)->assertOk();
+
+        $chase->refresh();
+        $this->assertSame(ProjectDocumentFollowUp::STATUS_RESOLVED, $chase->status);
+        $this->assertSame(ProjectDocumentFollowUp::REASON_MOVED_BACK, $chase->resolved_reason);
+        $this->assertNotNull($chase->resolved_at);
+    }
+
+    public function test_the_chase_starts_again_from_scratch_when_the_project_comes_forward(): void
+    {
+        $fixture = $this->fixture();
+        $this->moveToInstallation($fixture)->assertOk();
+
+        $firstChaseId = ProjectDocumentFollowUp::where('project_id', $fixture['project']->id)
+            ->where('type', DocumentFollowUpService::TYPE_NTP_APPROVAL)
+            ->value('id');
+
+        $this->moveBackToPermitting($fixture)->assertOk();
+
+        // The date is still missing, so coming forward parks the project again -
+        // on a NEW chase with its own clock, not the one that was cancelled.
+        $this->moveToInstallation($fixture, [
+            'taskId' => Task::where('project_id', $fixture['project']->id)->latest('id')->value('id'),
+        ])->assertOk();
+
+        $this->assertSame(31, (int) $fixture['project']->refresh()->sub_department_id);
+
+        $pending = ProjectDocumentFollowUp::where('project_id', $fixture['project']->id)
+            ->where('type', DocumentFollowUpService::TYPE_NTP_APPROVAL)
+            ->where('status', ProjectDocumentFollowUp::STATUS_PENDING)
+            ->firstOrFail();
+
+        $this->assertNotSame((int) $firstChaseId, (int) $pending->id);
+    }
+
+    public function test_a_closed_lane_is_never_a_destination_even_moving_backwards(): void
+    {
+        $fixture = $this->fixture();
+        $this->moveToInstallation($fixture)->assertOk();
+
+        $closedPermittingLane = SubDepartment::create([
+            'id' => 40,
+            'department_id' => $fixture['permitting']->id,
+            'name' => 'Permitting Pending Document',
+            'show_in_move_list' => 0,
+        ]);
+
+        $this->actingAs($this->superAdmin())->postJson(route('move.project'), [
+            'projectId' => $fixture['project']->id,
+            'taskId' => Task::where('project_id', $fixture['project']->id)->latest('id')->value('id'),
+            'departmentId' => $fixture['permitting']->id,
+            'subDepartmentId' => $closedPermittingLane->id,
+        ])->assertStatus(422);
+
+        $this->assertSame(31, (int) $fixture['project']->refresh()->sub_department_id);
+    }
+
+    public function test_moving_back_tells_the_receiving_department_as_any_other_move_does(): void
+    {
+        $fixture = $this->fixture();
+        $this->moveToInstallation($fixture)->assertOk();
+
+        // The move that PARKS a project is the only one that stays quiet. Moving
+        // back is an ordinary hand-over, so the department taking the project on
+        // is told, exactly as it would be for any other backward move.
+        Notification::fake();
+        $this->moveBackToPermitting($fixture)->assertOk();
+
+        Notification::assertSentTo(
+            User::whereHas('employee', fn ($q) => $q->where('code', 'EMP-PERMIT'))->firstOrFail(),
+            ProjectAssignedNotification::class
+        );
     }
 
     public function test_filing_the_date_from_the_zone_releases_the_project(): void

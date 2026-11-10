@@ -468,6 +468,7 @@ class DocumentFollowUpService
                 default => 'meter spot result "'.$project->meter_spot_result.'" was filled in',
             },
             ProjectDocumentFollowUp::REASON_PROJECT_ARCHIVED => 'the project was archived',
+            ProjectDocumentFollowUp::REASON_MOVED_BACK => 'the project was moved back to an earlier department',
             default => match ($type) {
                 self::TYPE_UTILITY_BILL => 'Utility Bill Uploaded is no longer No',
                 self::TYPE_FIRE_REVIEW => 'Fire Review Required is no longer Yes',
@@ -617,6 +618,47 @@ class DocumentFollowUpService
 
             $this->open($project, $type, $causer);
         }
+    }
+
+    /**
+     * End the chases holding a project in the lane it is being moved back out
+     * of, and say which types those were.
+     *
+     * Moving backwards is the one way out of a parked lane that is not the
+     * document arriving, so the chase it was serving is finished with: its
+     * clock stops here and the record says why. The paperwork may well still be
+     * owed, and that is deliberate - `syncType()` opens a FRESH chase for it,
+     * with its own `opened_at`, and the next time the project reaches the
+     * intercepted move `forcedTypeForMove()` parks it again. Nothing is carried
+     * over from the chase that ends here.
+     *
+     * Only the chases parked in THIS lane are ended. A project can be held by
+     * two at once (MPU and NTP both park in Install Pending Document) and both
+     * are let go; a chase parked elsewhere is none of this move's business.
+     *
+     * Call it BEFORE the move is written, while the project still sits in the
+     * lane being left.
+     */
+    public function cancelChasesParkedIn(Project $project, $subDepartmentId, ?User $causer = null): array
+    {
+        $cancelled = [];
+
+        foreach (self::types() as $type) {
+            if ((int) $this->parkedSubDepartmentId($type) !== (int) $subDepartmentId) {
+                continue;
+            }
+
+            $pending = $this->pendingFor($project->id, $type);
+
+            if (! $pending) {
+                continue;
+            }
+
+            $this->resolve($pending, $project, ProjectDocumentFollowUp::REASON_MOVED_BACK, $causer);
+            $cancelled[] = $type;
+        }
+
+        return $cancelled;
     }
 
     /** Note the forced lane on the project once the move has been written. */

@@ -2486,7 +2486,9 @@
                     @php
                         $movementLocked = $project->subdepartment && ! $project->subdepartment->show_in_move_list;
                         $movementLockedTitle = $movementLocked
-                            ? 'Movement locked while this project is in ' . $project->subdepartment->name
+                            ? 'Movement locked while this project is in ' .
+                                $project->subdepartment->name .
+                                ' - it can only be moved back to an earlier department'
                             : '';
                     @endphp
                     <div class="d-flex justify-content-center align-items-center">
@@ -2517,21 +2519,22 @@
                                                         })
                                                         ->values();
                                                 }
-                                                $departmentProgressStatus = $department->id < $project->department_id
+                                                $departmentProgressStatus = $department->comesBefore($project->department)
                                                     ? 'Completed'
                                                     : ($department->id == $project->department_id
                                                         ? 'In Progress'
                                                         : 'Pending');
                                                 $departmentStepLabel = str_pad($loop->iteration, 2, '0', STR_PAD_LEFT) . ' ' . $department->name;
                                             @endphp
-                                            @if ($department->id < $project->department_id)
+                                            @if ($department->comesBefore($project->department))
+                                                {{-- Backward is the one direction a parked project may still go. --}}
                                                 <li class="nav-item dropdown bg-success">
-                                                    <a class="nav-link {{ $movementLocked ? '' : 'dropdown-toggle' }}  text-white" id="navbarDropdown"
-                                                        role="button" @if (!$movementLocked) data-bs-toggle="dropdown" aria-expanded="false" @else title="{{ $movementLockedTitle }}" @endif>
+                                                    <a class="nav-link dropdown-toggle text-white" id="navbarDropdown"
+                                                        role="button" data-bs-toggle="dropdown" aria-expanded="false">
                                                         <span class="department-pipeline-title">{{ $departmentStepLabel }}</span>
                                                         <span class="department-pipeline-status">{{ $departmentProgressStatus }}</span>
                                                     </a>
-                                                    @if (!$movementLocked && count($filtered_collection) > 0)
+                                                    @if (count($filtered_collection) > 0)
                                                         <ul class="dropdown-menu" aria-labelledby="navbarDropdown">
                                                             @foreach ($filtered_collection as $subdepartment)
                                                                 <li><a onclick="moveProjectModal('{{ $project->id }}', currentProjectTaskId, '{{ $department->id }}','{{ $subdepartment->id }}')"

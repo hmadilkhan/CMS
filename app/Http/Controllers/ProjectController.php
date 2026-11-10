@@ -689,15 +689,26 @@ class ProjectController extends Controller
             return response()->json(['error' => 'Project not found'], 404);
         }
 
-        // A closed lane is a dead end for manual moves: nothing may be moved out
-        // of one, and nothing may be moved into one. The UI hides both, so this
-        // only catches a request that skipped the UI.
+        // A closed lane is a dead end for manual moves in every direction but
+        // one: BACKWARDS. A project parked there is waiting for paperwork, and
+        // without a way back it is simply stuck - the work that has to happen
+        // before the document can arrive (a design change, a permit revision)
+        // belongs to an earlier department, and the only ways out used to be
+        // filing a document that is not in yet or editing the lane by hand.
+        //
+        // Forward and sideways stay shut: those are the moves the chase exists
+        // to hold. Nothing may be moved INTO a closed lane in any direction -
+        // the system puts projects there, people do not.
+        $targetDepartment = Department::find($request->departmentId);
+        $movingBackwards = $targetDepartment && $targetDepartment->comesBefore($project->department);
+
         $currentSubDepartment = SubDepartment::find($project->sub_department_id);
 
-        if ($currentSubDepartment && $currentSubDepartment->isClosedForMovement()) {
+        if ($currentSubDepartment && $currentSubDepartment->isClosedForMovement() && ! $movingBackwards) {
             return response()->json([
                 'status' => 422,
-                'error' => 'This project cannot be moved while it is in '.$currentSubDepartment->name.'.',
+                'error' => 'This project cannot be moved while it is in '.$currentSubDepartment->name
+                    .'. It can only be moved back to an earlier department.',
             ], 422);
         }
 
@@ -709,6 +720,11 @@ class ProjectController extends Controller
                 'error' => $requestedSubDepartment->name.' is not available as a move destination.',
             ], 422);
         }
+
+        // The lane being left, read before the move writes over it.
+        $leavingClosedLane = $movingBackwards
+            && $currentSubDepartment
+            && $currentSubDepartment->isClosedForMovement();
 
         // THIS WILL CHECK THE PROJECT EITHER PROJECT IS FORWARD OR BACKWARD
         $checkProject = Task::where('project_id', $request->projectId)->where('department_id', $request->departmentId)->count();
@@ -892,6 +908,17 @@ class ProjectController extends Controller
                     'status' => 'Resolved',
                     'resolved_date' => now(),
                 ]);
+            }
+
+            // Moving back out of a parked lane ends the chases that were holding
+            // the project there. Done before the move is written, so the record
+            // closes against the lane it was actually parked in.
+            if ($leavingClosedLane) {
+                $documentFollowUpService->cancelChasesParkedIn(
+                    $project,
+                    $currentSubDepartment->id,
+                    auth()->user()
+                );
             }
 
             $project->update([

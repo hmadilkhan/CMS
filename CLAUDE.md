@@ -320,7 +320,11 @@ Quick orientation: `app/Services/DocumentFollowUpService.php` is the whole brain
 `project_document_follow_ups` holds the chase rows; `project_files.category`
 groups a chase's documents into its own section; `sub_departments.show_in_move_list = 0`
 marks a lane closed to manual movement (enforced in the UI *and* in
-`ProjectController::moveProject()`).
+`ProjectController::moveProject()`) — **except backwards**: a parked project may
+always be moved to an earlier department, which ends the chases parked in that
+lane (`moved_back`) and lets a fresh one open and park it again on the way
+forward. Forward and sideways stay shut, and no lane is ever a destination.
+
 
 A **fourth chase** rides the same Permitting → Installation move: the NTP
 approval date. It used to be a refusal answered by a date input in the move
