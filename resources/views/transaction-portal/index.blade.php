@@ -772,7 +772,11 @@
     // "+ New": add a transaction (or a material invoice) to a section, in the
     // drawer. Each section asks only for the fields it needs; the server checks
     // them again and refuses a section the user may not add to.
-    let projects = null, projectIds = {};
+    // The project dropdown: loaded once, A-Z (the server sorts it). Two projects
+    // with the same name are told apart by their id.
+    let projects = null;
+    const projectOptions = keep => '<option value="">' + (projects ? 'Choose a project…' : 'Loading projects…') + '</option>' +
+        (projects || []).map(p => '<option value="' + p.id + '"' + (String(p.id) === String(keep) ? ' selected' : '') + '>' + esc(p.label) + '</option>').join('');
     async function loadProjects() {
         if (projects) return;
         try {
@@ -780,18 +784,13 @@
             if (!res.ok) throw new Error(res.status);
             const list = await res.json(), seen = {};
             list.forEach(p => { seen[p.name] = (seen[p.name] || 0) + 1; });
-            projectIds = {};
-            projects = list.map(p => {
-                const label = seen[p.name] > 1 ? p.name + ' (#' + p.id + ')' : p.name;
-                projectIds[label.toLowerCase()] = p.id;
-                return label;
-            });
+            projects = list.map(p => ({ id: p.id, label: seen[p.name] > 1 ? p.name + ' (#' + p.id + ')' : p.name }));
         } catch (err) {
             toast('The project list could not be loaded. Refresh the page to try again.');
             return;
         }
-        const dl = $('nf-projects');
-        if (dl) dl.innerHTML = projects.map(n => '<option value="' + esc(n) + '"></option>').join('');
+        const select = $('nf-project');
+        if (select) select.innerHTML = projectOptions(select.value);
     }
 
     const today = () => iso(TODAY);
@@ -814,8 +813,7 @@
         oth: 'A payable to any other payee (supplier, finance company, refund…).'
     };
     function newFields(b) {
-        const project = fld('project', 'Project', '<input id="nf-project" list="nf-projects" autocomplete="off" required placeholder="Type the project name…"><datalist id="nf-projects">' +
-            (projects || []).map(n => '<option value="' + esc(n) + '"></option>').join('') + '</datalist>');
+        const project = fld('project', 'Project', '<select id="nf-project" required>' + projectOptions() + '</select>');
         const details = v => fld('transaction_details', 'Details', inp('transaction_details', 'text', ' required maxlength="1000" value="' + esc(v || '') + '"'));
         const milestone = v => fld('milestone', 'Milestone', inp('milestone', 'text', ' required maxlength="255" value="' + esc(v || '') + '"'));
         const row = (a, c) => '<div class="row2">' + a + c + '</div>';
@@ -885,13 +883,13 @@
     }
     async function submitCreate(form) {
         const b = S.creating, button = form.querySelector('button[type="submit"]');
-        const label = $('nf-project').value.trim(), projectId = projectIds[label.toLowerCase()];
+        const select = $('nf-project'), projectId = select.value;
+        const label = projectId ? select.options[select.selectedIndex].text : '';
         // Every required field, said once, before anything is sent.
         const missing = [...form.querySelectorAll('[required]')].filter(i => !String(i.value).trim()).map(i => i.name || 'project');
-        if (!projectId && !missing.includes('project')) missing.push('project');
         if (missing.length) {
             const names = missing.map(n => (form.querySelector('[data-f="' + (n === 'project_id' ? 'project' : n) + '"] label') || {}).textContent || n);
-            showErrors([(!projectId && label ? 'Choose the project from the list. ' : '') + 'Fill in: ' + names.map(s => s.replace(' (optional)', '')).join(', ') + '.'], missing);
+            showErrors(['Fill in: ' + names.map(s => s.replace(' (optional)', '')).join(', ') + '.'], missing);
             return;
         }
         const data = new FormData(form);

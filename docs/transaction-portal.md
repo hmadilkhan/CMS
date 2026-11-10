@@ -158,7 +158,7 @@ A **+ New** button in the header and on each lane opens a form in the drawer
 (the same panel as Record payment) with a Section picker and only the fields
 that section needs. `POST transaction-portal/store`
 (`TransactionPortalController::store` → `TransactionPortalService::create`);
-the project picker is `GET transaction-portal/projects` (the import's
+the project dropdown (a plain select, A-Z, loaded once) is `GET transaction-portal/projects` (the import's
 `pickableProjects()`, so the same project scoping), and the server checks
 `ProjectService::canAccessProject` again.
 
