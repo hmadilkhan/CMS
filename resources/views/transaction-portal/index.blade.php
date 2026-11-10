@@ -138,8 +138,6 @@
 .tp .chip.warn { background: var(--warn-soft); color: var(--warn); border-color: transparent; }
 .tp .chip.ok { background: var(--ok-soft); color: var(--ok); border-color: transparent; }
 .tp .chip.run { background: var(--accent-soft); color: var(--accent-deep); border-color: transparent; }
-.tp .all-time { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 600; color: var(--muted); white-space: nowrap; cursor: pointer; }
-.tp .all-time input { accent-color: var(--accent); width: 15px; height: 15px; }
 .tp .chip.st { background: none; font-weight: 600; }
 .tp .lane-foot { border-top: 1px dashed var(--line-strong); padding: 10px 14px 12px; display: grid; grid-template-columns: 1fr auto; align-items: baseline; gap: 2px 8px; }
 .tp .lane-foot span { font-size: 12px; text-transform: uppercase; letter-spacing: .07em; font-weight: 700; color: var(--muted); }
@@ -246,9 +244,8 @@
         <div class="tools">
             <div class="search">
                 <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="7" cy="7" r="5"></circle><path d="M11 11l3.5 3.5"></path></svg>
-                <input id="q" type="search" placeholder="Search project, partner…" aria-label="Search all sections">
+                <input id="q" type="search" placeholder="Search all dates…" title="Searches every week and month, in every section" aria-label="Search every date, in all sections">
             </div>
-            <label class="all-time" title="Search every week and month, not just the one shown"><input type="checkbox" id="all-time"> All time</label>
             <div class="seg" role="group" aria-label="View">
                 <button type="button" data-view="board" aria-pressed="true">Board</button>
                 <button type="button" data-view="table" aria-pressed="false">Table</button>
@@ -348,7 +345,7 @@
     let loaded = false;
     let loadSeq = 0;
     const S = { mode: 'week', anchor: new Date(TODAY), view: 'board', status: 'all', fin: '', q: '', laneQ: {}, carry: true, sel: new Set(), tab: SECTIONS[0], drawer: null, all: false };
-    // "All time": the search runs on the server across every period; rows then hold its results.
+    // The top search box (2+ letters) searches every date on the server; rows then hold its results.
     let truncated = false;
     let searchTimer;
 
@@ -619,7 +616,7 @@
     function render() {
         const [s, e] = range();
         $('dates').textContent = S.all ? 'All time' : us(s) + ' – ' + us(e);
-        $('rel').textContent = S.all ? 'Search across every week and month' : relLabel();
+        $('rel').textContent = S.all ? 'Search results from every week and month · clear the search to go back' : relLabel();
         $('export').disabled = S.all;
         if (!SECTIONS.length || !loaded) return;
         renderTiles();
@@ -739,10 +736,11 @@
         }
     }
 
+    // Back to the period: clears the top search, which is what put the page on every date.
     function leaveAllTime() {
         if (!S.all) return;
-        S.all = false; S.sel.clear(); clearTimeout(searchTimer);
-        $('all-time').checked = false;
+        S.all = false; S.q = ''; S.sel.clear(); clearTimeout(searchTimer);
+        $('q').value = '';
     }
 
     // Put payables in the pay run for `date`, or take them out (date null).
@@ -820,13 +818,18 @@
         if (t.classList.contains('pick')) { const id = t.dataset.id; t.checked ? S.sel.add(id) : S.sel.delete(id); renderBulk(); }
         else if (t.id === 'fin') { S.fin = t.value; render(); }
         else if (t.id === 'carry') { S.carry = t.checked; render(); }
-        else if (t.id === 'all-time') { S.all = t.checked; S.sel.clear(); clearTimeout(searchTimer); load(); }
     });
     document.addEventListener('input', e => {
         const t = e.target;
         if (t.id === 'q') {
+            // Two letters or more search every date; fewer (or a cleared box) is the period shown.
             S.q = t.value.trim();
-            if (S.all) { clearTimeout(searchTimer); searchTimer = setTimeout(load, 350); } else render();
+            const wasAll = S.all;
+            S.all = S.q.length >= 2;
+            clearTimeout(searchTimer);
+            if (S.all) { if (!wasAll) S.sel.clear(); searchTimer = setTimeout(load, 350); }
+            else if (wasAll) { S.sel.clear(); load(); }
+            else render();
         }
         else if (t.classList && t.classList.contains('lane-search')) { S.laneQ[t.dataset.lane] = t.value.trim(); if (loaded) { renderTiles(); renderLane(t.dataset.lane); } }
         else if (t.id === 'tq') { S.laneQ[S.tab] = t.value.trim(); const ls = $('ls-' + S.tab); if (ls) ls.value = t.value; render(); }

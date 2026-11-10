@@ -71,13 +71,17 @@ defaults to the next Friday. It is stored as `pay_run_date` on
   (to pay / paid), a chip on each picked row, a Pay run box in the drawer, and a
   Pay Run column in the CSV.
 
-## Search ("All time")
+## Search (every date)
 
-The search box normally filters only the rows loaded for the period on screen
-(in the browser). Ticking **All time** sends the search to the server instead
-(`transaction-portal.search`, `TransactionPortalService::search()`): every
-row of any date and status, in the sections the user may see, scoped the same
-way as the board (`filterByRole`, live projects only).
+The search box at the top **always searches every date** (since 2026-11-10;
+before that it filtered only the period on screen unless an "All time" box was
+ticked - the box is gone). From 2 characters the search goes to the server
+(`transaction-portal.search`, `TransactionPortalService::search()`, debounced
+350 ms): every row of any date and status, in the sections the user may see,
+scoped the same way as the board (`filterByRole`, live projects only), and each
+result is shown in its own lane. One character still filters the period on
+screen; clearing the box goes back to it. The per-lane search boxes (and the
+table's) stay local filters on what is loaded.
 
 - Matches the project name and code, the customer's first / last name, sales
   partner, sub-contractor, finance option, milestone, transaction details,
@@ -88,7 +92,8 @@ way as the board (`filterByRole`, live projects only).
   `SEARCH_LIMIT` (200) rows; the tile says when there were more.
 - Results show per section with no week split, and open / pay / reopen / pay
   run work on them as usual. Export is off while it is on. Choosing a week,
-  month, Previous / Next or "Go to today" leaves the all-time search.
+  month, Previous / Next or "Go to today" clears the search and goes back to
+  that period.
 - Positive transactions closed before settlement existed (no received date) are
   not found, as they are never in Actual AR.
 
