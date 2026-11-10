@@ -360,55 +360,53 @@ class TransactionPortalTest extends TestCase
         $this->assertTrue($october->contains('t'.$paidLabor->id));
     }
 
-    public function test_a_pay_run_keeps_only_the_picked_payables_and_moves_the_rest_to_next_week(): void
+    public function test_a_batch_hides_and_moves_nothing(): void
     {
         $project = $this->project();
-        // Today is Wednesday 11/04; the pay run is Friday 11/06.
+        // Today is Wednesday 11/04; the batch is for Friday 11/06.
         $labor = $this->transaction($project, ['payee' => 'sub_contractor', 'amount' => -4560, 'transaction_date' => '2026-11-02']);
         $carried = $this->transaction($project, ['payee' => 'sales_partner', 'amount' => -300, 'transaction_date' => '2026-10-01', 'due_date' => '2026-10-09']);
         $commission = $this->transaction($project, ['payee' => 'sales_partner', 'amount' => -2063.08, 'transaction_date' => '2026-10-27', 'due_date' => '2026-11-05']);
         $material = $this->invoice($project, 'material', 18320.75, '2026-10-04'); // due 11/03
         $paid = $this->transaction($project, ['payee' => 'sub_contractor', 'amount' => -900, 'transaction_date' => '2026-10-20', 'status' => 'Closed', 'settled_amount' => 900, 'settled_date' => '2026-11-03']);
         $expected = $this->transaction($project, ['transaction_date' => '2026-11-05']);
+        // Due after this week, but put in this week's batch.
+        $later = $this->transaction($project, ['payee' => 'supplier', 'amount' => -150, 'transaction_date' => '2026-11-20']);
 
         $user = $this->finance();
+        $all = ['t'.$labor->id, 't'.$carried->id, 't'.$commission->id, 'i'.$material->id, 't'.$paid->id, 't'.$expected->id];
+        $before = collect($this->actingAs($user)->getJson(route('transaction-portal.data', $this->week()))->json('rows'))->pluck('id');
+        $this->assertEqualsCanonicalizing($all, $before->all());
+
         $this->actingAs($user)
-            ->postJson(route('transaction-portal.pay-run'), ['items' => ['t'.$labor->id, 't'.$carried->id], 'date' => '2026-11-06'])
+            ->postJson(route('transaction-portal.pay-run'), ['items' => ['t'.$labor->id, 't'.$carried->id, 't'.$later->id], 'date' => '2026-11-06'])
             ->assertOk()
-            ->assertJsonPath('updated', 2);
+            ->assertJsonPath('updated', 3);
 
         $this->assertSame('2026-11-06', substr((string) $labor->fresh()->pay_run_date, 0, 10));
+        $this->assertDatabaseHas('activity_log', ['subject_id' => $labor->id, 'description' => $user->name.' put the account transaction in the 11/06/2026 batch from the Transaction Portal.']);
 
+        // Every lane keeps every row; the batched one due later is listed too, so the Batch filter finds it.
         $thisWeek = collect($this->actingAs($user)->getJson(route('transaction-portal.data', $this->week()))->json('rows'))->keyBy('id');
-
-        $this->assertEqualsCanonicalizing(
-            ['t'.$labor->id, 't'.$carried->id, 't'.$paid->id, 't'.$expected->id],
-            $thisWeek->keys()->all()
-        );
+        $this->assertEqualsCanonicalizing(array_merge($all, ['t'.$later->id]), $thisWeek->keys()->all());
         $this->assertSame('2026-11-06', $thisWeek['t'.$labor->id]['payRun']);
+        $this->assertNull($thisWeek['t'.$commission->id]['payRun']);
 
-        // The ones left out are in next week, under "Earlier, still open".
+        // Nothing is pushed into next week either: it shows there only as it always would (still open, carried).
         $nextWeek = collect($this->actingAs($user)->getJson(route('transaction-portal.data', ['start' => '2026-11-08', 'end' => '2026-11-14']))->json('rows'))->pluck('id');
         $this->assertTrue($nextWeek->contains('t'.$commission->id));
-        $this->assertTrue($nextWeek->contains('i'.$material->id));
 
-        // A month is never narrowed by a pay run.
-        $november = collect($this->actingAs($user)->getJson(route('transaction-portal.data', ['start' => '2026-11-01', 'end' => '2026-11-30']))->json('rows'))->pluck('id');
-        $this->assertTrue($november->contains('t'.$commission->id));
-        $this->assertTrue($november->contains('i'.$material->id));
-
-        // Emptying the pay run gives the week back its open payables.
+        // Taking them out changes nothing else.
         $this->actingAs($user)
-            ->postJson(route('transaction-portal.pay-run'), ['items' => ['t'.$labor->id, 't'.$carried->id], 'date' => null])
+            ->postJson(route('transaction-portal.pay-run'), ['items' => ['t'.$labor->id, 't'.$carried->id, 't'.$later->id], 'date' => null])
             ->assertOk();
 
         $thisWeek = collect($this->actingAs($user)->getJson(route('transaction-portal.data', $this->week()))->json('rows'))->pluck('id');
-        $this->assertTrue($thisWeek->contains('t'.$commission->id));
-        $this->assertTrue($thisWeek->contains('i'.$material->id));
+        $this->assertEqualsCanonicalizing($all, $thisWeek->all());
         $this->assertNull($labor->fresh()->pay_run_date);
     }
 
-    public function test_a_material_invoice_can_be_put_in_a_pay_run(): void
+    public function test_a_material_invoice_can_be_put_in_a_batch(): void
     {
         $project = $this->project();
         $picked = $this->invoice($project, 'material', 500, '2026-10-04'); // due 11/03
@@ -419,13 +417,14 @@ class TransactionPortalTest extends TestCase
             ->postJson(route('transaction-portal.pay-run'), ['items' => ['i'.$picked->id], 'date' => '2026-11-06'])
             ->assertOk();
 
-        $ids = collect($this->actingAs($user)->getJson(route('transaction-portal.data', $this->week()))->json('rows'))->pluck('id');
+        $rows = collect($this->actingAs($user)->getJson(route('transaction-portal.data', $this->week()))->json('rows'))->keyBy('id');
 
-        $this->assertTrue($ids->contains('i'.$picked->id));
-        $this->assertFalse($ids->contains('i'.$left->id));
+        $this->assertSame('2026-11-06', $rows['i'.$picked->id]['payRun']);
+        $this->assertTrue($rows->has('i'.$left->id), 'The invoice left out stays where it was.');
+        $this->assertNull($rows['i'.$left->id]['payRun']);
     }
 
-    public function test_a_pay_run_takes_only_payables_on_a_day_still_to_come(): void
+    public function test_a_batch_takes_only_payables_on_a_day_still_to_come(): void
     {
         $project = $this->project();
         $labor = $this->transaction($project, ['payee' => 'sub_contractor', 'amount' => -4560]);
@@ -564,18 +563,18 @@ class TransactionPortalTest extends TestCase
         // The Funding Manager's view stays Expected AR only.
         $this->assertSame([], collect($this->actingAs($this->fundingManager())->getJson(route('transaction-portal.data', $this->week()))->json('rows'))->where('b', 'oth')->all());
 
-        // It is paid, reopened and put in a pay run like any payable.
+        // It is paid, reopened and put in a batch like any payable.
         $this->actingAs($user)->postJson(route('transaction-portal.settle'), ['items' => ['t'.$refund->id], 'date' => '2026-11-04'])->assertOk()->assertJsonPath('closed', 1);
         $this->assertEquals(75.50, (float) $refund->fresh()->settled_amount);
         $this->actingAs($user)->postJson(route('transaction-portal.reopen'), ['item' => 't'.$refund->id])->assertOk();
         $this->assertSame('Open', $refund->fresh()->status);
 
-        // Picking only an Other Payable narrows the week to the pay run.
+        // Batching an Other Payable hides nothing, in its lane or any other.
         $this->actingAs($user)->postJson(route('transaction-portal.pay-run'), ['items' => ['t'.$supplier->id], 'date' => '2026-11-06'])->assertOk()->assertJsonPath('updated', 1);
-        $ids = collect($this->actingAs($user)->getJson(route('transaction-portal.data', $this->week()))->json('rows'))->pluck('id');
-        $this->assertTrue($ids->contains('t'.$supplier->id));
-        $this->assertFalse($ids->contains('t'.$maxwell->id));
-        $this->assertFalse($ids->contains('t'.$labor->id));
+        $rows = collect($this->actingAs($user)->getJson(route('transaction-portal.data', $this->week()))->json('rows'))->keyBy('id');
+        $this->assertSame('2026-11-06', $rows['t'.$supplier->id]['payRun']);
+        $this->assertTrue($rows->has('t'.$maxwell->id));
+        $this->assertTrue($rows->has('t'.$labor->id));
     }
 
     public function test_all_time_search_finds_rows_from_any_week(): void

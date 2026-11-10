@@ -274,9 +274,9 @@ class TransactionPortalController extends Controller
     }
 
     /**
-     * Put open payables in the pay run for `date` (picked on Thursday for
-     * Friday), or take them out (`date` empty). Once a week has a pay run, its
-     * other open payables move to the next week. Expected AR has no pay run.
+     * Put open payables in the batch for `date` (the day they are to be paid)
+     * or take them out (`date` empty). Nothing else on the board moves; the
+     * Batch filter shows the picked ones. Expected AR has no batch.
      */
     public function payRun(Request $request)
     {
@@ -285,7 +285,7 @@ class TransactionPortalController extends Controller
             'items.*' => 'required|string|max:20',
             'date' => 'nullable|date|after_or_equal:today',
         ], [
-            'date.after_or_equal' => 'A pay run cannot be planned for a day that has passed.',
+            'date.after_or_equal' => 'A batch cannot be planned for a day that has passed.',
         ]);
 
         $updated = 0;
@@ -293,7 +293,7 @@ class TransactionPortalController extends Controller
         foreach ($validated['items'] as $item) {
             [$record, $section] = $this->resolve($request, $item);
 
-            abort_unless(in_array($section, TransactionPortalService::PAYABLE_SECTIONS, true), 422, 'Only payables (money out) go in a pay run.');
+            abort_unless(in_array($section, TransactionPortalService::PAYABLE_SECTIONS, true), 422, 'Only payables (money out) go in a batch.');
 
             if ($this->portal->setPayRun($record, $validated['date'] ?? null)) {
                 $updated++;
@@ -376,7 +376,7 @@ class TransactionPortalController extends Controller
             $out = fopen('php://output', 'w');
             // Payee last, so the columns people already use keep their place.
             // Full Amount / Paid So Far last too: an open row's Amount is its balance once part paid.
-            fputcsv($out, ['Section', 'Project Name', 'Finance Option', 'Sales Partner', 'Sub-Contractor', 'Date', 'Due Date', 'Amount', 'Status', 'Received / Paid On', 'Pay Run', 'Payee', 'Full Amount', 'Paid So Far']);
+            fputcsv($out, ['Section', 'Project Name', 'Finance Option', 'Sales Partner', 'Sub-Contractor', 'Date', 'Due Date', 'Amount', 'Status', 'Received / Paid On', 'Batch', 'Payee', 'Full Amount', 'Paid So Far']);
 
             foreach ($rows as $r) {
                 fputcsv($out, array_map($safe, [

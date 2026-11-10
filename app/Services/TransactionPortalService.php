@@ -56,8 +56,6 @@ class TransactionPortalService
 
     private const PAID_ONLY = 'paid_only';
 
-    private const PAY_RUN = 'pay_run';
-
     /** The most rows an all-time search returns. */
     public const SEARCH_LIMIT = 200;
 
@@ -99,10 +97,11 @@ class TransactionPortalService
      * not listed again under every week it has been outstanding. Expected AR
      * is not affected.
      *
-     * A week with a pay run (payables picked to be paid on a day in it) shows,
-     * of its open payables, only the picked ones; the rest move to the next
-     * week, where they sit under "Earlier, still open". Paid rows show as
-     * always. A month is never narrowed this way.
+     * A batch (payables picked to be paid on a day, `pay_run_date`) hides and
+     * moves nothing: every lane shows what it always shows, and the page's
+     * Batch filter narrows the payable lanes to the picked rows. An open row
+     * batched for a day in the period is listed in it even when it falls due
+     * later, so the filter finds it.
      */
     public function rows(User $user, Carbon $start, Carbon $end): array
     {
@@ -111,7 +110,6 @@ class TransactionPortalService
         $end = $end->copy()->startOfDay();
         $mode = match (true) {
             $this->isClosedPeriod($end) => self::PAID_ONLY,
-            $this->isWeek($start, $end) && $this->hasPayRun($user, $start, $end) => self::PAY_RUN,
             default => self::ALL,
         };
         $rows = [];
@@ -185,27 +183,10 @@ class TransactionPortalService
             && (int) $start->diffInDays($end) === 6;
     }
 
-    /** Whether any payable the user can see is in a pay run on a day of this period. */
-    public function hasPayRun(User $user, Carbon $start, Carbon $end): bool
-    {
-        $period = [$start->toDateString(), $end->toDateString()];
-
-        // Every payee's payables: Commission, Labor and Other.
-        $transactions = $this->transactions($user)
-            ->where('amount', '<', 0)
-            ->whereBetween('pay_run_date', $period)
-            ->exists();
-
-        return $transactions || ProjectInvoiceDetail::query()
-            ->where('invoice_type', 'material')
-            ->whereHas('project', fn ($q) => $q->whereNull('projects.deleted_at'))
-            ->whereBetween('pay_run_date', $period)
-            ->exists();
-    }
-
     /**
-     * Put an open payable in the pay run for `$date`, or take it out (null).
-     * A paid one keeps its pay run, which is what it was paid under.
+     * Put an open payable in the batch for `$date` (the day it is to be paid),
+     * or take it out (null). A paid one keeps its batch, which is what it was
+     * paid under. Stored as `pay_run_date` (the batch was called a pay run).
      */
     public function setPayRun(AccountTransaction|ProjectInvoiceDetail $record, ?string $date): bool
     {
@@ -225,8 +206,8 @@ class TransactionPortalService
             ->withProperties(['pay_run_date' => $date])
             ->setEvent('updated')
             ->log(($user?->name ?? 'System').($date
-                ? " put the {$what} in the ".Carbon::parse($date)->format('m/d/Y').' pay run from the Transaction Portal.'
-                : " took the {$what} out of the pay run from the Transaction Portal."));
+                ? " put the {$what} in the ".Carbon::parse($date)->format('m/d/Y').' batch from the Transaction Portal.'
+                : " took the {$what} out of the batch from the Transaction Portal."));
 
         return true;
     }
@@ -697,8 +678,8 @@ class TransactionPortalService
      * it was PAID in. A row closed before the portal existed has no paid date,
      * so it stays on `$keyDate`.
      *
-     * Open rows by `$mode`: ALL = due in the period or earlier; PAY_RUN = only
-     * those in a pay run on a day of the period; PAID_ONLY = none.
+     * Open rows by `$mode`: ALL = due in the period or earlier, or batched for
+     * a day of it; PAID_ONLY = none.
      */
     private function payables(User $user, ?string $payee, string $keyDate, Carbon $start, Carbon $end, string $mode = self::ALL): Builder
     {
@@ -717,14 +698,10 @@ class TransactionPortalService
                 });
 
                 if ($mode === self::ALL) {
-                    $q->orWhere(function ($q) use ($keyDate, $end) {
+                    $q->orWhere(function ($q) use ($keyDate, $end, $period) {
                         $q->where('status', AccountTransaction::STATUS_OPEN)
-                            ->whereRaw("$keyDate <= ?", [$end->toDateString()]);
-                    });
-                } elseif ($mode === self::PAY_RUN) {
-                    $q->orWhere(function ($q) use ($period) {
-                        $q->where('status', AccountTransaction::STATUS_OPEN)
-                            ->whereBetween('pay_run_date', $period);
+                            ->where(fn ($q) => $q->whereRaw("$keyDate <= ?", [$end->toDateString()])
+                                ->orWhereBetween('pay_run_date', $period));
                     });
                 }
             });
@@ -734,7 +711,7 @@ class TransactionPortalService
      * Material invoices. Open: due (invoice date + N days) in the period, or
      * earlier. Paid: paid in the period (an invoice paid before the portal
      * existed has no paid date and stays on its due date). Open ones follow
-     * `$mode` the way payables() does.
+     * `$mode` the way payables() does (batched for a day of the period counts).
      */
     private function materialInvoices(Carbon $start, Carbon $end, string $mode = self::ALL)
     {
@@ -760,14 +737,10 @@ class TransactionPortalService
                 });
 
                 if ($mode === self::ALL) {
-                    $q->orWhere(function ($q) use ($invoicedFor) {
+                    $q->orWhere(function ($q) use ($invoicedFor, $period) {
                         $q->where('status', ProjectInvoiceDetail::STATUS_OPEN)
-                            ->whereDate('invoice_date', '<=', $invoicedFor[1]);
-                    });
-                } elseif ($mode === self::PAY_RUN) {
-                    $q->orWhere(function ($q) use ($period) {
-                        $q->where('status', ProjectInvoiceDetail::STATUS_OPEN)
-                            ->whereBetween('pay_run_date', $period);
+                            ->where(fn ($q) => $q->whereDate('invoice_date', '<=', $invoicedFor[1])
+                                ->orWhereBetween('pay_run_date', $period));
                     });
                 }
             })

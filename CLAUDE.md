@@ -398,9 +398,10 @@ payment's day, and Actual AR lists one item per payment (`p<id>`). **+ New**
 customer payment, in full or in part, can raise the sales partner's commission
 (`CommissionPayableService`: received − Labor − Material − already raised, once
 both invoices are on file, due the Friday of the following week).
-A past week or month shows only the payables PAID in it; a week with a **pay
-run** (`pay_run_date`, picked on Thursday for Friday) shows only the picked
-open payables and moves the rest to next week. Months are never narrowed.
+A past week or month shows only the payables PAID in it. A **batch** (was "pay
+run"; still `pay_run_date` / route `pay-run`) only tags the picked payables with
+a day: it hides and moves nothing, and the page's Batch filter narrows the
+payable lanes to them (Expected / Actual AR unfiltered).
 **Import** (`/transaction-portal/import`, `can:Account Transactions Edit`):
 upload a sheet → editable preview → import. `TransactionImportService` matches
 each row's project by name (letters/digits only, so "Shu Hui Yang" = "Shu

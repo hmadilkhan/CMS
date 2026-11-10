@@ -17,7 +17,7 @@ prototype; keep the screen as it is.
 
 **Other Payables** (added 2026-11-10) behaves exactly like Commission / Labor:
 same permission (`Transaction Portal Other Sections`), Mark as paid, Reopen,
-pay run, "Earlier, still open", past-week rule, and it counts in the Payables
+batch, "Earlier, still open", past-week rule, and it counts in the Payables
 due tile and the Net position. Payees with their own section are
 `TransactionPortalService::OWN_SECTION_PAYEES`; the money-out sections are
 `PAYABLE_SECTIONS` (the controller's pay-run / reopen checks and the page's
@@ -49,27 +49,30 @@ open" (and in future weeks). Expected AR and Actual AR are unchanged by this.
 The rule lives in `TransactionPortalService::rows()` (`isClosedPeriod()`), so
 the board, the table and the CSV export all follow it.
 
-## Pay run (pick on Thursday, pay on Friday)
+## Batch (was "Pay run")
 
-Finance ticks the open payables to pay this week (Commission, Labor, Material,
-system-raised or hand-entered alike) and clicks **Add to pay run**; the day
+Finance ticks the open payables to pay on a day (Commission, Labor, Material,
+Other, system-raised or hand-entered alike) and clicks **Add to batch**; the day
 defaults to the next Friday. It is stored as `pay_run_date` on
 `account_transactions` / `project_invoice_details` (route
-`transaction-portal.pay-run`, same per-row permission check as closing).
+`transaction-portal.pay-run`, same per-row permission check as closing). The
+column and route keep the old name; only the screen says Batch.
 
-- **A week with a pay run** (any payable with `pay_run_date` in it) shows, of
-  its open payables, **only the picked ones**. Every other open payable moves to
-  the next week, where it sits under "Earlier, still open". Nothing is
-  rewritten: due dates, and so the overdue days, stay as they were. Paid rows
-  show as always. Taking the last row out of the pay run restores the week.
-- **A month is never narrowed** by a pay run (`isWeek()`), and a past week is
-  already paid-only.
-- A pay run that is not paid by the end of its week just carries on as open in
-  the next week; its old `pay_run_date` no longer counts there (re-pick it).
-- Expected AR has no pay run (422). The day cannot be in the past (422).
-- The page shows a **Pay run** filter (the Friday list), a **Pay run** tile
-  (to pay / paid), a chip on each picked row, a Pay run box in the drawer, and a
-  Pay Run column in the CSV.
+- **A batch hides and moves nothing** (since 2026-11-11). Every lane shows what
+  it always shows; the picked rows only gain a "Batch 11/13" chip. Before, a
+  week with a pay run showed only the picked payables and pushed every other
+  open payable - in every lane, not just the one picked from - to next week;
+  that rule (`PAY_RUN` mode, `hasPayRun()`) is gone.
+- The **Batch** filter (Filter bar) narrows the payable lanes (Commission,
+  Labor, Material, Other) to the rows batched for a day of the period shown.
+  Expected AR and Actual AR are not filtered by it (the client asked for that).
+- An open payable batched for a day of the period is loaded with the period
+  even if it falls due later, so the filter finds it.
+- A batch that is not paid by the end of its week carries on as open; its old
+  date no longer counts in later weeks (re-pick it).
+- Expected AR has no batch (422). The day cannot be in the past (422).
+- Also: a **Batch** tile (to pay / paid), a Batch box in the drawer, and a
+  `Batch` column in the CSV (same place as the old `Pay Run`).
 
 ## Search (every date)
 

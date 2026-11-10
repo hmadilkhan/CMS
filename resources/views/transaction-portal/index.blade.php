@@ -297,7 +297,7 @@
                 <button type="button" data-status="all" aria-pressed="true">All</button>
                 <button type="button" data-status="open" aria-pressed="false">Open</button>
                 <button type="button" data-status="overdue" aria-pressed="false">Overdue</button>
-                <button type="button" data-status="payrun" aria-pressed="false">Pay run</button>
+                <button type="button" data-status="payrun" aria-pressed="false" title="Only the payables picked for a batch in this period">Batch</button>
                 <button type="button" data-status="closed" aria-pressed="false">Closed</button>
             </div>
             <label>Finance option
@@ -368,7 +368,7 @@
         mat: { title: 'Material Invoices Payable', short: 'Material', kind: 'out', fields: 'Project Name · Invoice Date · Invoice Amount · Due Date · Days Overdue · Status' },
         oth: { title: 'Other Payables', short: 'Other', kind: 'out', fields: 'Project Name · Payee · Milestone · Date · Payable Amount · Days Overdue · Status' }
     };
-    // The money-out sections that count toward "Payables due" and a pay run.
+    // The money-out sections that count toward "Payables due" and take a batch.
     const PAYABLES = ['com', 'lab', 'mat', 'oth'];
 
     let rows = [];
@@ -386,12 +386,13 @@
     // The date a row is late after; labor has none yet.
     const dueOf = r => r.b === 'ear' ? r.expected : (r.b === 'aar' ? null : r.due);
     const isOverdue = r => r.status === 'Open' && !!dueOf(r) && d(dueOf(r)) < TODAY;
-    // Pay run: payables picked (on Thursday) to be paid on a day of the period shown.
+    // Batch: payables picked to be paid on a day of the period shown (stored as payRun).
+    // A batch hides and moves nothing; the Batch filter shows only the picked rows.
     const inPeriod = s => { const [a, b] = range(), x = d(s); return x >= a && x <= b; };
     const inPayRun = r => !!r.payRun && inPeriod(r.payRun);
     const runChip = r => r.payRun && r.status === 'Open' && (inPeriod(r.payRun) || d(r.payRun) >= TODAY)
-        ? '<span class="chip run">Pay run ' + us(r.payRun) + '</span>' : '';
-    // The next Friday from today (today when it is Friday): the default pay run day.
+        ? '<span class="chip run">Batch ' + us(r.payRun) + '</span>' : '';
+    // The next Friday from today (today when it is Friday): the default batch day.
     const nextFriday = () => addDays(TODAY, (5 - TODAY.getDay() + 7) % 7);
 
     function range() {
@@ -418,7 +419,8 @@
         if (S.status === 'open') return r.status === 'Open';
         if (S.status === 'closed') return r.status === 'Closed';
         if (S.status === 'overdue') return isOverdue(r);
-        if (S.status === 'payrun') return inPayRun(r);
+        // Batch narrows the payable lanes only; money coming in shows as usual.
+        if (S.status === 'payrun') return B[r.b].kind === 'in' || inPayRun(r);
         return true;
     }
     function lane(b) {
@@ -577,12 +579,12 @@
             // Net = cash received in the period minus what is still owed out.
             const net = sum(L.aar.inRange) - due;
             tiles.push('<div class="tile net"><span class="k"><span class="dot acc"></span>Net position</span><span class="v' + (net < 0 ? ' neg' : '') + '">' + (net < 0 ? '−' : '') + money(Math.abs(net)) + '</span><span class="s">' + lateLine + '</span></div>');
-            // The pay run: what is planned to go out this week. Its other open payables moved to next week.
+            // The batch: what is planned to go out in this period. Nothing else moved.
             const run = PAYABLES.filter(has).flatMap(b => L[b].all.filter(inPayRun));
             if (run.length) {
                 const toPay = run.filter(r => r.status === 'Open'), paid = run.length - toPay.length;
                 const runDays = [...new Set(run.map(r => r.payRun))].sort();
-                tiles.push('<div class="tile"><span class="k"><span class="dot out"></span>Pay run ' + (runDays.length === 1 ? us(runDays[0]) : '') + '</span><span class="v">' + money(sum(toPay)) + '</span><span class="s">' + plural(toPay.length, 'payable') + ' to pay' + (paid ? ' · ' + paid + ' paid' : '') + '. Other open payables moved to next week.</span></div>');
+                tiles.push('<div class="tile"><span class="k"><span class="dot out"></span>Batch ' + (runDays.length === 1 ? us(runDays[0]) : '') + '</span><span class="v">' + money(sum(toPay)) + '</span><span class="s">' + plural(toPay.length, 'payable') + ' to pay' + (paid ? ' · ' + paid + ' paid' : '') + '. Choose Batch in the filter to see only these.</span></div>');
             }
         }
         if (tiles.length < 2) tiles.push('<div class="tile"><span class="k"><span class="dot acc"></span>Overdue</span><span class="v">' + money(sum(late)) + '</span><span class="s">' + lateLine + '</span></div>');
@@ -617,7 +619,7 @@
         const dels = receivedPicked();
         if (!picked.length && !dels.length) { bar.hidden = true; bar.innerHTML = ''; return; }
         // Money in (Expected AR payments) and money out (payables) are counted apart;
-        // the pay run is for payables only; received payments (Actual AR) can only be deleted.
+        // a batch is for payables only; received payments (Actual AR) can only be deleted.
         const ins = picked.filter(r => r.b === 'ear'), outs = picked.filter(r => r.b !== 'ear');
         const verb = !outs.length ? 'received' : (!ins.length ? 'paid' : 'received / paid');
         const keepDate = $('bulk-date') ? $('bulk-date').value : iso(TODAY);
@@ -630,9 +632,9 @@
         bar.hidden = false;
         bar.innerHTML = '<span>' + what + ' selected</span>' +
             (outs.length
-                ? '<label for="bulk-run-date">Pay run <input type="date" id="bulk-run-date" min="' + iso(TODAY) + '" value="' + esc(keepRun) + '"></label>' +
-                  '<button type="button" class="tp-btn" id="bulk-run">Add to pay run</button>' +
-                  (outs.some(r => r.payRun) ? '<button type="button" class="link-btn" id="bulk-unrun">Remove from pay run</button>' : '')
+                ? '<label for="bulk-run-date">Batch <input type="date" id="bulk-run-date" min="' + iso(TODAY) + '" value="' + esc(keepRun) + '"></label>' +
+                  '<button type="button" class="tp-btn" id="bulk-run">Add to batch</button>' +
+                  (outs.some(r => r.payRun) ? '<button type="button" class="link-btn" id="bulk-unrun">Remove from batch</button>' : '')
                 : '') +
             (picked.length
                 ? '<label for="bulk-date">' + (verb === 'paid' ? 'Paid on' : verb === 'received' ? 'Received on' : 'Received / paid on') + ' <input type="date" id="bulk-date" value="' + esc(keepDate) + '"></label>'
@@ -745,10 +747,10 @@
                 '<div class="field"><label for="st-date">Date paid</label><input id="st-date" type="date" value="' + iso(TODAY) + '" required></div></div>' +
                 lastBox + '<div><button class="tp-btn primary" type="submit">Record payment</button></div></form>';
             extra += r.payRun && d(r.payRun) >= TODAY
-                ? '<div class="box"><h4>In the pay run for ' + us(r.payRun) + '</h4><p>Take it out and it moves to next week with the other open payables.</p><div><button type="button" class="tp-btn" data-act="unrun">Remove from pay run</button></div></div>'
-                : '<div class="box"><h4>Pay run</h4><p>Plan to pay it on this day. Once a week has a pay run, its other open payables move to next week.</p>' +
+                ? '<div class="box"><h4>In the batch for ' + us(r.payRun) + '</h4><p>Take it out if it will not be paid with this batch. Nothing else changes.</p><div><button type="button" class="tp-btn" data-act="unrun">Remove from batch</button></div></div>'
+                : '<div class="box"><h4>Batch</h4><p>Plan to pay it on this day. Nothing else on the board moves; choose Batch in the filter to see only the batch.</p>' +
                     '<div class="field"><label for="run-date">Pay on</label><input id="run-date" type="date" min="' + iso(TODAY) + '" value="' + iso(nextFriday()) + '"></div>' +
-                    '<div><button type="button" class="tp-btn" data-act="run">Add to pay run</button></div></div>';
+                    '<div><button type="button" class="tp-btn" data-act="run">Add to batch</button></div></div>';
         }
         if (r.file) extra += '<div class="box"><h4>Invoice file</h4><span class="file">📄 ' + esc(r.file) + '</span><p>Uploaded on the project’s Invoices tab.</p></div>';
         if (out && !open) extra += '<div class="box"><h4>Paid' + (r.paidOn ? ' on ' + us(r.paidOn) : '') + '</h4><p>Reopen it if it was marked by mistake.</p></div>';
@@ -954,7 +956,7 @@
         $('q').value = '';
     }
 
-    // Put payables in the pay run for `date`, or take them out (date null).
+    // Put payables in the batch for `date`, or take them out (date null).
     async function payRun(ids, date, button) {
         if (button) button.disabled = true;
         try {
@@ -962,8 +964,8 @@
             ids.forEach(id => S.sel.delete(id));
             closeDrawer();
             toast(date
-                ? plural(json.updated, 'payable') + ' added to the ' + us(date) + ' pay run. Other open payables of that week move to the next week.'
-                : plural(json.updated, 'payable') + ' taken out of the pay run.');
+                ? plural(json.updated, 'payable') + ' added to the ' + us(date) + ' batch.'
+                : plural(json.updated, 'payable') + ' taken out of the batch.');
             await load();
         } catch (err) {
             toast(err.message);
@@ -1000,7 +1002,7 @@
         }
         if (t.id === 'bulk-run') {
             const date = $('bulk-run-date').value;
-            if (!date) { toast('Choose the day of the pay run.'); return; }
+            if (!date) { toast('Choose the day of the batch.'); return; }
             payRun([...S.sel].filter(id => { const r = byId(id); return r && B[r.b].kind === 'out' && r.status === 'Open'; }), date, t); return;
         }
         if (t.id === 'bulk-delete') { deleteReceived(receivedPicked().map(r => r.id), t); return;
@@ -1010,7 +1012,7 @@
         if (act === 'close') closeDrawer();
         else if (act === 'run') {
             const date = $('run-date').value;
-            if (!date) { toast('Choose the day of the pay run.'); return; }
+            if (!date) { toast('Choose the day of the batch.'); return; }
             payRun([S.drawer], date, t);
         }
         else if (act === 'unrun') payRun([S.drawer], null, t);
