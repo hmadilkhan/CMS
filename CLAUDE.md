@@ -633,7 +633,17 @@ read a v2 `composer.lock`), so it tries `composer2`, `composer`, `composer.phar`
 in that order, and picks the first `php` that reports 8.1+ over `php8.3` /
 `php8.2` / `php8.1`. `PHP_BIN` / `COMPOSER_BIN` override the search, and
 `DEPLOY_WEBROOT` / `DEPLOY_BRANCH` override the target. **Migrations are not run
-automatically** — `php artisan migrate --force` is still a deliberate manual step.
+by the script** — pulling code is safe to repeat, changing the schema is not.
+
+The deploy page (`/admin/deploy`, Super Admin only — the URL is lower-case, as
+Laravel routes are) has a **third button** for them: it lists the migrations this
+database has not run, asks for confirmation naming the count, then runs
+`migrate --force` and logs the output to `deploy_logs` beside the deploys. With
+nothing pending the button is disabled and says so; when the status cannot be
+read (no migrations table yet) it stays enabled and the page says the list is
+unknown. There is deliberately **no `migrate:rollback` button** — it drops
+columns and the data in them, and a wrong press cannot be undone from a web
+page, so that one stays on the command line.
 
 Root cause of all this: shared Hostinger hosting — no CI/CD pipeline, no
 post-receive hook, so the deploy script is the only place this can live.

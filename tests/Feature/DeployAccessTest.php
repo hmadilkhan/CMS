@@ -53,4 +53,55 @@ class DeployAccessTest extends TestCase
 
         $this->actingAs($user)->get('/admin/deploy')->assertOk();
     }
+
+    public function test_a_signed_in_non_super_admin_cannot_run_the_migrations(): void
+    {
+        $user = $this->userWithRole('Employee');
+
+        $this->actingAs($user)->post('/admin/deploy', ['action' => 'migrate'])->assertForbidden();
+
+        $this->assertDatabaseCount('deploy_logs', 0);
+    }
+
+    public function test_the_page_says_when_nothing_is_waiting_to_be_migrated(): void
+    {
+        $user = $this->userWithRole('Super Admin');
+
+        // The test database is migrated up to date, so the button has nothing
+        // to offer and says so rather than inviting a pointless run.
+        $this->actingAs($user)->get('/admin/deploy')
+            ->assertOk()
+            ->assertSee('No Pending Migrations')
+            ->assertDontSee('Waiting to run on this database');
+    }
+
+    public function test_a_super_admin_can_run_the_migrations_and_the_run_is_logged(): void
+    {
+        $user = $this->userWithRole('Super Admin');
+
+        $this->actingAs($user)->post('/admin/deploy', ['action' => 'migrate'])->assertOk();
+
+        $this->assertDatabaseHas('deploy_logs', [
+            'action' => 'migrate',
+            'run_by' => $user->name,
+            'status' => 'success',
+        ]);
+    }
+
+    /**
+     * Deploying and rolling back take a shell script with them; the migrations
+     * take the live schema. An action that is none of the three must not fall
+     * through to any of them.
+     */
+    public function test_an_unknown_action_runs_nothing(): void
+    {
+        $user = $this->userWithRole('Super Admin');
+
+        $this->actingAs($user)->post('/admin/deploy', ['action' => 'drop-everything'])->assertOk();
+
+        $this->assertDatabaseHas('deploy_logs', [
+            'action' => 'drop-everything',
+            'status' => 'failed',
+        ]);
+    }
 }
