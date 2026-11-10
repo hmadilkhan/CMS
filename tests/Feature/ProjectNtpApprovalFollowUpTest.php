@@ -306,6 +306,36 @@ class ProjectNtpApprovalFollowUpTest extends TestCase
         $this->assertNotSame((int) $firstChaseId, (int) $pending->id);
     }
 
+    public function test_a_chase_that_opens_on_its_field_parks_again_after_a_move_back(): void
+    {
+        // The MPU chase opens from its department field, not at the move, so
+        // nothing re-opened it after a move back cancelled it: coming forward
+        // again walked straight past the lock into Install Not Scheduled.
+        $fixture = $this->fixture(['mpu_required' => 'yes', 'ntp_approval_date' => '2026-07-01']);
+        app(DocumentFollowUpService::class)->sync($fixture['project']->refresh());
+
+        $this->moveToInstallation($fixture)->assertOk();
+        $this->assertSame(31, (int) $fixture['project']->refresh()->sub_department_id);
+
+        $this->moveBackToPermitting($fixture)->assertOk();
+        $this->assertFalse(
+            ProjectDocumentFollowUp::pending()->where('project_id', $fixture['project']->id)->exists()
+        );
+
+        // The meter spot result is still missing, so the move forward is held again.
+        $this->moveToInstallation($fixture, [
+            'taskId' => Task::where('project_id', $fixture['project']->id)->latest('id')->value('id'),
+        ])->assertOk();
+
+        $this->assertSame(31, (int) $fixture['project']->refresh()->sub_department_id);
+        $this->assertSame(
+            2,
+            ProjectDocumentFollowUp::where('project_id', $fixture['project']->id)
+                ->where('type', DocumentFollowUpService::TYPE_MPU)
+                ->count()
+        );
+    }
+
     public function test_a_closed_lane_is_never_a_destination_even_moving_backwards(): void
     {
         $fixture = $this->fixture();

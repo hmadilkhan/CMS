@@ -592,27 +592,32 @@ class DocumentFollowUpService
     }
 
     /**
-     * Open the chases that only start at the move they park. Called with the
-     * move's target department BEFORE the move is written, so the interception
-     * below sees a pending chase.
+     * Make sure every chase this move intercepts is open if its paperwork is
+     * still owed. Called with the move's target department BEFORE the move is
+     * written, so the interception below sees a pending chase.
      *
-     * Without this the NTP chase would have to open the moment a project has no
-     * date - which is every project, from Deal Review on, chased for a date
-     * nobody needs yet.
+     * Two kinds of chase need it:
+     *
+     * - The NTP chase only ever starts here ('opens_on_move'). Otherwise it
+     *   would open the moment a project has no date - which is every project,
+     *   from Deal Review on, chased for a date nobody needs yet.
+     * - The others open from their department field through sync(), but a move
+     *   back out of the parked lane ends them (`moved_back`), and moveProject()
+     *   does not sync. Without re-opening here the project came forward again
+     *   with no pending chase and walked past the lane that should hold it.
+     *   A project whose fire review predates the chase is still left alone.
      */
     public function openChasesForMove(Project $project, $targetDepartmentId, ?User $causer = null): void
     {
         foreach (self::types() as $type) {
-            if (empty($this->config($type)['opens_on_move'])) {
-                continue;
-            }
-
             if ((int) $project->department_id !== (int) $this->fromDepartmentId($type)
                 || (int) $targetDepartmentId !== (int) $this->toDepartmentId($type)) {
                 continue;
             }
 
-            if ($this->hasPending($project->id, $type) || ! $this->needsFollowUp($project, $type)) {
+            if ($this->hasPending($project->id, $type)
+                || ! $this->needsFollowUp($project, $type)
+                || $this->predatesTheChase($project, $type)) {
                 continue;
             }
 
@@ -627,10 +632,10 @@ class DocumentFollowUpService
      * Moving backwards is the one way out of a parked lane that is not the
      * document arriving, so the chase it was serving is finished with: its
      * clock stops here and the record says why. The paperwork may well still be
-     * owed, and that is deliberate - `syncType()` opens a FRESH chase for it,
-     * with its own `opened_at`, and the next time the project reaches the
-     * intercepted move `forcedTypeForMove()` parks it again. Nothing is carried
-     * over from the chase that ends here.
+     * owed, and that is deliberate - the next time the project reaches the
+     * intercepted move `openChasesForMove()` opens a FRESH chase for it, with
+     * its own `opened_at`, and `forcedTypeForMove()` parks it again. Nothing is
+     * carried over from the chase that ends here.
      *
      * Only the chases parked in THIS lane are ended. A project can be held by
      * two at once (MPU and NTP both park in Install Pending Document) and both

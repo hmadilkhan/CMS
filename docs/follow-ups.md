@@ -156,9 +156,14 @@ Order no longer matters between this and MPU — both park in the same lane, and
 
 : **Moving back ends the chases parked in that lane** (`resolved_reason`
   `moved_back`, via `DocumentFollowUpService::cancelChasesParkedIn()`), and
-  nothing is carried over. The paperwork is usually still owed, so `syncType()`
-  opens a FRESH chase with its own `opened_at`, and the next time the project
-  reaches the intercepted move it parks again on that new chase. Two chases
+  nothing is carried over. The paperwork is usually still owed, so the next time
+  the project reaches the intercepted move `openChasesForMove()` opens a FRESH
+  chase with its own `opened_at` and the project parks again on it. That holds
+  for every type, not only NTP: `moveProject()` never calls `sync()`, so before
+  this the MPU / Utility Bill / Fire Review chases stayed closed after a move
+  back and the project walked past its lock on the way forward (reported on
+  the James John project). A dashboard load (`syncAll()`) still reopens them
+  earlier, so the card comes back in the meantime. Two chases
   parked in the same lane (MPU and NTP both use Install Pending Document) are
   both ended. The move itself is an ordinary hand-over: the receiving
   department IS told, unlike the move that parked the project.
