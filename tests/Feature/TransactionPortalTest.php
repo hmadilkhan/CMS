@@ -860,6 +860,50 @@ class TransactionPortalTest extends TestCase
         $store($base + ['section' => 'aar', 'payee' => 'customer', 'amount' => 10])->assertStatus(422)->assertJsonValidationErrors(['received_amount', 'received_date']);
     }
 
+    public function test_a_miscellaneous_payment_has_no_project_and_raises_no_commission(): void
+    {
+        $project = $this->project();
+        $this->invoice($project, 'labor', 100);
+        $this->invoice($project, 'material', 100);
+        $user = $this->creator();
+        $data = ['project_id' => 'misc', 'payee' => 'others', 'milestone' => 'GoodLeap Bonus', 'amount' => 2500, 'transaction_date' => '2026-11-03', 'transaction_details' => 'Lender bonus'];
+
+        // Expected AR: no project, called a Miscellaneous payment, its milestone says what it is.
+        $item = $this->actingAs($user)->postJson(route('transaction-portal.store'), ['section' => 'ear'] + $data)->assertOk()->json('item');
+        $bonus = AccountTransaction::findOrFail((int) substr($item, 1));
+        $this->assertNull($bonus->project_id);
+        $row = $this->rows($user)[$item];
+        $this->assertSame('ear', $row['b']);
+        $this->assertSame('Miscellaneous payment', $row['project']);
+        $this->assertTrue($row['misc']);
+        $this->assertNull($row['projectUrl']);
+
+        // Received like any payment: in Actual AR, and no commission (it has no sales partner).
+        $this->actingAs($user)->postJson(route('transaction-portal.settle'), ['items' => [$item], 'date' => '2026-11-04', 'amount' => 2500])
+            ->assertOk()->assertJsonPath('closed', 1)->assertJsonPath('commissions', []);
+        $this->assertSame(0, AccountTransaction::where('payee', 'sales_partner')->count());
+        $this->assertTrue($this->rows($user)->contains(fn ($r) => $r['b'] === 'aar' && $r['transactionId'] === $bonus->id && $r['misc']));
+
+        // Added as already received, too.
+        $this->actingAs($user)->postJson(route('transaction-portal.store'), ['section' => 'aar', 'received_amount' => 500, 'received_date' => '2026-11-04'] + ['amount' => 500] + $data)
+            ->assertOk()->assertJsonPath('commission', null);
+
+        // Search finds it by what it is, or by "misc".
+        $this->assertTrue(collect($this->actingAs($user)->getJson(route('transaction-portal.search', ['q' => 'bonus']))->json('rows'))->contains('transactionId', $bonus->id));
+        $this->assertTrue(collect($this->actingAs($user)->getJson(route('transaction-portal.search', ['q' => 'misc']))->json('rows'))->contains('transactionId', $bonus->id));
+
+        // Only money coming in can have no project.
+        $this->actingAs($user)->postJson(route('transaction-portal.store'), ['section' => 'com'] + $data)->assertStatus(422)->assertJsonValidationErrors('project_id');
+
+        // The Transaction Report lists it (it used to read the project's name straight off).
+        $reporter = $this->user('Reporter', ['Transaction Report']);
+        $this->actingAs($reporter)->post(route('transaction.report'), [])->assertOk()->assertSee('Miscellaneous payment')->assertSee('GoodLeap Bonus');
+
+        // A Sales Person, who sees only their own projects' rows, never sees it.
+        $salesPerson = $this->user('Sales Person', [TransactionPortalService::PERMISSION_PAGE, TransactionPortalService::PERMISSION_EXPECTED, TransactionPortalService::PERMISSION_OTHER]);
+        $this->assertFalse($this->rows($salesPerson)->contains(fn ($r) => $r['misc'] ?? false));
+    }
+
     public function test_adding_needs_the_permission_the_project_page_needs(): void
     {
         $project = $this->project();

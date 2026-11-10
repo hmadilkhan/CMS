@@ -105,7 +105,9 @@ class TransactionPortalController extends Controller
         abort_unless(in_array($section, $this->portal->creatableSections($user), true), 403);
 
         $payees = array_keys(AccountTransaction::payeeChoices());
-        $rules = ['project_id' => 'required|integer'];
+        // Money coming in may belong to no project: a miscellaneous payment (a bonus...).
+        $misc = in_array($section, ['ear', 'aar'], true) && $request->input('project_id') === 'misc';
+        $rules = ['project_id' => $misc ? 'required|in:misc' : 'required|integer'];
 
         if ($section === 'mat') {
             $rules += [
@@ -154,8 +156,12 @@ class TransactionPortalController extends Controller
             'received_date' => 'date received',
         ]);
 
-        abort_unless(Project::whereKey($data['project_id'])->exists(), 422, 'Choose a project from the list.');
-        abort_unless(app(ProjectService::class)->canAccessProject($user, (int) $data['project_id']), 403);
+        if ($misc) {
+            $data['project_id'] = null;
+        } else {
+            abort_unless(Project::whereKey($data['project_id'])->exists(), 422, 'Choose a project from the list.');
+            abort_unless(app(ProjectService::class)->canAccessProject($user, (int) $data['project_id']), 403);
+        }
 
         $result = $this->portal->create($section, $data, $request->file('file'));
         $commission = $result['commission'];

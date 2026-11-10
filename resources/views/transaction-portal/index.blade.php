@@ -480,8 +480,9 @@
     const statusChip = r => '<span class="chip st">' + esc(r.status) + '</span>';
     function meta(r) {
         switch (r.b) {
-            case 'ear': return txt(r.finance, 'No finance option') + ' · Expected ' + us(r.expected);
-            case 'aar': return txt(r.partner, 'No sales partner') + ' · ' + txt(r.finance, 'No finance option') + ' · Received ' + us(r.received);
+            // A miscellaneous payment (no project) says what it is: its milestone.
+            case 'ear': return (r.misc ? txt(r.milestone) : txt(r.finance, 'No finance option')) + ' · Expected ' + us(r.expected);
+            case 'aar': return (r.misc ? txt(r.milestone) : txt(r.partner, 'No sales partner') + ' · ' + txt(r.finance, 'No finance option')) + ' · Received ' + us(r.received);
             case 'com': return txt(r.partner, 'No sales partner') + ' · Payment rec’d ' + us(r.paymentReceived) + ' · Due ' + us(r.due);
             case 'lab': return txt(r.sub, 'No sub-contractor') + ' · Inspection approved ' + us(r.inspection);
             case 'oth': return txt(r.payee, 'No payee') + (r.milestone ? ' · ' + esc(r.milestone) : '') + ' · Due ' + us(r.due);
@@ -776,8 +777,13 @@
     // them again and refuses a section the user may not add to.
     // The project dropdown: loaded once, A-Z (the server sorts it). Two projects
     // with the same name are told apart by their id.
+    // Money coming in (Expected / Actual AR) may belong to no project: a
+    // miscellaneous payment, like a lender's bonus. It raises no commission.
     let projects = null;
+    const MISC = 'misc', MISC_LABEL = 'Miscellaneous payment';
+    const allowsMisc = b => b === 'ear' || b === 'aar';
     const projectOptions = keep => '<option value="">' + (projects ? 'Choose a project…' : 'Loading projects…') + '</option>' +
+        (allowsMisc(S.creating) ? '<option value="' + MISC + '"' + (keep === MISC ? ' selected' : '') + '>No project (' + MISC_LABEL + ')</option>' : '') +
         (projects || []).map(p => '<option value="' + p.id + '"' + (String(p.id) === String(keep) ? ' selected' : '') + '>' + esc(p.label) + '</option>').join('');
     async function loadProjects() {
         if (projects) return;
@@ -815,7 +821,8 @@
         oth: 'A payable to any other payee (supplier, finance company, refund…).'
     };
     function newFields(b) {
-        const project = fld('project', 'Project', '<select id="nf-project" required>' + projectOptions() + '</select>');
+        const project = fld('project', 'Project', '<select id="nf-project" required>' + projectOptions() + '</select>',
+            allowsMisc(b) ? 'For money that belongs to no project (a bonus, a rebate…), choose “No project”. It raises no commission.' : '');
         const details = v => fld('transaction_details', 'Details', inp('transaction_details', 'text', ' required maxlength="1000" value="' + esc(v || '') + '"'));
         const milestone = v => fld('milestone', 'Milestone', inp('milestone', 'text', ' required maxlength="255" value="' + esc(v || '') + '"'));
         const row = (a, c) => '<div class="row2">' + a + c + '</div>';
@@ -886,7 +893,7 @@
     async function submitCreate(form) {
         const b = S.creating, button = form.querySelector('button[type="submit"]');
         const select = $('nf-project'), projectId = select.value;
-        const label = projectId ? select.options[select.selectedIndex].text : '';
+        const label = projectId === MISC ? MISC_LABEL : projectId ? select.options[select.selectedIndex].text : '';
         // Every required field, said once, before anything is sent.
         const missing = [...form.querySelectorAll('[required]')].filter(i => !String(i.value).trim()).map(i => i.name || 'project');
         if (missing.length) {

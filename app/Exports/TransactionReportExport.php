@@ -7,7 +7,7 @@ use Maatwebsite\Excel\Concerns\ShouldAutoSize;
 use Maatwebsite\Excel\Concerns\WithHeadings;
 use Maatwebsite\Excel\Concerns\WithMapping;
 
-class TransactionReportExport implements FromCollection,WithHeadings, WithMapping,ShouldAutoSize
+class TransactionReportExport implements FromCollection,ShouldAutoSize,WithHeadings, WithMapping
 {
     protected $transactions;
 
@@ -38,7 +38,8 @@ class TransactionReportExport implements FromCollection,WithHeadings, WithMappin
     public function map($transaction): array
     {
         return [
-            $transaction->project->project_name ?? '',
+            // No project: a miscellaneous payment (a bonus, a rebate...).
+            $transaction->project_id ? ($transaction->project->project_name ?? '') : 'Miscellaneous payment',
             $transaction->payee_label ?? '',
             $transaction->milestone ?? '',
             $transaction->formatted_amount,

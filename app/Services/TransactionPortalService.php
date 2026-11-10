@@ -56,6 +56,9 @@ class TransactionPortalService
 
     private const PAID_ONLY = 'paid_only';
 
+    /** What a transaction with no project is called on the board. */
+    public const MISC_LABEL = 'Miscellaneous payment';
+
     /** The most rows an all-time search returns. */
     public const SEARCH_LIMIT = 200;
 
@@ -258,10 +261,11 @@ class TransactionPortalService
                     $w->orWhere('amount', '<', 0);
                 }
             })
-            ->where(function ($w) use ($like, $payees, $amount) {
+            ->where(function ($w) use ($like, $payees, $amount, $q) {
                 $w->where('milestone', 'like', $like)
                     ->orWhere('transaction_details', 'like', $like)
                     ->orWhereHas('project', fn ($p) => $this->projectMatches($p, $like))
+                    ->when(mb_stripos(self::MISC_LABEL, $q) !== false, fn ($w) => $w->orWhereNull('account_transactions.project_id'))
                     ->orWhereHas('invoice', fn ($i) => $i->where('original_file_name', 'like', $like));
 
                 if ($payees) {
@@ -380,13 +384,14 @@ class TransactionPortalService
      *   mat  a material invoice with its file, which also updates the
      *        project's actual material cost
      *
-     * `$data` is validated by the controller.
+     * Expected / Actual AR take `project_id` null: a miscellaneous payment
+     * (no project, so no commission). `$data` is validated by the controller.
      *
      * @return array{item: string, commission: ?AccountTransaction}
      */
     public function create(string $section, array $data, ?UploadedFile $file = null): array
     {
-        $project = Project::findOrFail($data['project_id']);
+        $project = $data['project_id'] === null ? null : Project::findOrFail($data['project_id']);
         $user = auth()->user();
 
         if ($section === 'mat') {
@@ -431,7 +436,7 @@ class TransactionPortalService
         };
 
         $items = [
-            'project_id' => $project->id,
+            'project_id' => $project?->id,
             'payee' => match ($section) {
                 'com' => 'sales_partner',
                 'lab' => 'sub_contractor',
@@ -597,11 +602,12 @@ class TransactionPortalService
                 return $r;
             }
 
-            $last = $lastCommission[$r['projectId']] ?? null;
+            // A miscellaneous payment has no project: no twin to compare with, no commission.
+            $last = $r['projectId'] ? ($lastCommission[$r['projectId']] ?? null) : null;
 
             return $r + [
                 'imported' => str_starts_with((string) $r['details'], 'Imported from'),
-                'twin' => isset($twins[$r['projectId'].'|'.number_format((float) $r['expectedAmount'], 2, '.', '')]),
+                'twin' => $r['projectId'] !== null && isset($twins[$r['projectId'].'|'.number_format((float) $r['expectedAmount'], 2, '.', '')]),
                 'commissionAfter' => $last !== null && $r['received'] !== null && $this->date($last) >= $r['received'],
             ];
         });
@@ -647,9 +653,8 @@ class TransactionPortalService
     {
         return TransactionPayment::query()
             ->whereNotNull('account_transaction_id')
-            ->whereHas('transaction', fn ($t) => $t->filterByRole($user)
-                ->where('amount', '>', 0)
-                ->whereHas('project', fn ($q) => $q->whereNull('projects.deleted_at')))
+            ->whereHas('transaction', fn ($t) => $this->onLiveProjectOrNone($t->filterByRole($user))
+                ->where('amount', '>', 0))
             ->with(['transaction' => fn ($t) => $t->with(self::RELATIONS)]);
     }
 
@@ -666,10 +671,20 @@ class TransactionPortalService
     /** Transactions on live projects, scoped the way Account Transactions already is. */
     private function transactions(User $user): Builder
     {
-        return AccountTransaction::query()
-            ->filterByRole($user)
-            ->whereHas('project', fn ($q) => $q->whereNull('projects.deleted_at'))
+        return $this->onLiveProjectOrNone(AccountTransaction::query()->filterByRole($user))
             ->with(self::RELATIONS);
+    }
+
+    /**
+     * A transaction on a live project, or on none: a miscellaneous payment
+     * (a lender's bonus, a rebate...) has no project. The roles narrowed to
+     * their own projects (Sales Person, Sub-Contractor Manager) never see
+     * those, as filterByRole() reaches them through the project.
+     */
+    private function onLiveProjectOrNone($query)
+    {
+        return $query->where(fn ($q) => $q->whereNull('account_transactions.project_id')
+            ->orWhereHas('project', fn ($q) => $q->whereNull('projects.deleted_at')));
     }
 
     /**
@@ -867,13 +882,15 @@ class TransactionPortalService
         ] + $this->paymentFields($i);
     }
 
+    /** A row with no project is a miscellaneous payment (rows on deleted projects are never loaded). */
     private function projectFields(?Project $project): array
     {
         $customer = $project?->customer;
 
         return [
             'projectId' => $project?->id,
-            'project' => $project?->project_name ?? 'Unknown project',
+            'project' => $project?->project_name ?? self::MISC_LABEL,
+            'misc' => $project === null,
             'projectUrl' => $project ? route('projects.show', $project->id) : null,
             'finance' => $customer?->finances?->finance?->name,
             'partner' => $customer?->salespartner?->name,

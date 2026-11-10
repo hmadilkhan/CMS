@@ -394,7 +394,11 @@ with its balance, `settled_amount` is the total so far and `settled_date` the la
 payment's day, and Actual AR lists one item per payment (`p<id>`). **+ New**
 (header and each lane) adds a row to any section from a drawer form
 (`TransactionPortalService::create`; needs the section's permission plus
-`Account Transactions Edit`, or `Invoice Details` for Material). Receiving a
+`Account Transactions Edit`, or `Invoice Details` for Material). Money in may
+have **no project** (`account_transactions.project_id` is nullable since
+2026-11-11): a "Miscellaneous payment" such as a lender's bonus - Expected /
+Actual AR only, no commission, never shown to project-scoped roles; any code
+reading `$transaction->project->...` must allow for null. Receiving a
 customer payment, in full or in part, can raise the sales partner's commission
 (`CommissionPayableService`: received − Labor − Material − already raised, once
 both invoices are on file, due the Friday of the following week).

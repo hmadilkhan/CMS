@@ -188,6 +188,8 @@
                                     @else
                                         <select class="form-select select2 proj-select" name="{{ $field }}[project]" data-required aria-label="Project for row {{ $row['line'] }}">
                                             <option value="">Select project…</option>
+                                            {{-- Money in that belongs to no project (a bonus, a rebate...). --}}
+                                            <option value="misc">No project (Miscellaneous payment)</option>
                                             @if (! empty($row['candidates']) || $row['project_id'])
                                                 <optgroup label="{{ $row['match'] === 'ambiguous' ? 'Possible matches' : 'Closest names' }}">
                                                     @if ($row['project_id'] && ! isset($row['candidates'][$row['project_id']]))

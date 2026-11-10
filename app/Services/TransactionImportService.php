@@ -266,9 +266,13 @@ class TransactionImportService
     private function check(array $edit, User $user): array
     {
         $errors = [];
-        $projectId = (int) ($edit['project'] ?? 0);
+        // "No project": a miscellaneous payment, money in only (checked with the amount below).
+        $misc = ($edit['project'] ?? '') === 'misc';
+        $projectId = $misc ? null : (int) ($edit['project'] ?? 0);
 
-        if (! $projectId) {
+        if ($misc) {
+            // no project to check
+        } elseif (! $projectId) {
             $errors[] = 'No project chosen.';
         } elseif (! isset($this->projectIndex()['projects'][$projectId]) || ! $this->visible($user, $projectId)) {
             $errors[] = 'You cannot access the project chosen.';
@@ -287,6 +291,8 @@ class TransactionImportService
         $amount = $this->amount($edit['amount'] ?? null);
         if ($amount === null || round($amount, 2) == 0.0) {
             $errors[] = 'Amount is missing or not a number.';
+        } elseif ($misc && $amount < 0) {
+            $errors[] = 'A payment with no project must be money coming in (an amount above zero).';
         }
 
         $date = $this->date($edit['date'] ?? null);

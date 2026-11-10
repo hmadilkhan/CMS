@@ -31,7 +31,7 @@
                     ?>
                     <tr>
                         <td>{{ $i + 1 }}</td>
-                        <td>{{ $transaction->project->project_name }}</td>
+                        <td>{{ $transaction->project?->project_name ?? 'Miscellaneous payment' }}</td>
                         <td>{{ $transaction->payee_label }}</td>
                         <td>{{ $transaction->milestone }}</td>
                         <td>{{ $transaction->formatted_amount }}</td>
