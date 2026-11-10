@@ -574,16 +574,43 @@ class DocumentFollowUpService
     /* ------------------------------------------------------------- lane moves */
 
     /**
-     * The one move each chase intercepts (Permitting -> Installation for MPU,
-     * Inspection -> PTO for the utility bill). Returns the chase type whose
+     * Whether this move is the one a chase intercepts: ARRIVING in the chase's
+     * `to_department` from any department earlier in the pipeline.
+     *
+     * `from_department` (Permitting for Installation, Inspection for PTO) is the
+     * usual way in, but not the only one - a project moved back to Engineering
+     * and then straight on to Installation skips Permitting, and when only the
+     * exact pair counted, that walked past the lock (reported on Jose Jaimes).
+     * Coming in from a LATER department (moving back) or moving between lanes of
+     * the same department is never intercepted.
+     */
+    public function interceptsMove(Project $project, $targetDepartmentId, string $type): bool
+    {
+        $toDepartmentId = $this->toDepartmentId($type);
+
+        if (! $toDepartmentId
+            || (int) $targetDepartmentId !== (int) $toDepartmentId
+            || (int) $project->department_id === (int) $toDepartmentId) {
+            return false;
+        }
+
+        $current = Department::withTrashed()->find($project->department_id);
+        $target = Department::withTrashed()->find($toDepartmentId);
+
+        return $current && $current->comesBefore($target);
+    }
+
+    /**
+     * The move each chase intercepts (into Installation for MPU and NTP, into
+     * PTO for the utility bill, into Inspection for fire review - from any
+     * earlier department, see interceptsMove()). Returns the chase type whose
      * parked lane applies, or null when the move is an ordinary one.
      */
     public function forcedTypeForMove(Project $project, $targetDepartmentId): ?string
     {
         foreach (self::types() as $type) {
             if ($this->hasPending($project->id, $type)
-                && (int) $project->department_id === (int) $this->fromDepartmentId($type)
-                && (int) $targetDepartmentId === (int) $this->toDepartmentId($type)) {
+                && $this->interceptsMove($project, $targetDepartmentId, $type)) {
                 return $type;
             }
         }
@@ -610,8 +637,7 @@ class DocumentFollowUpService
     public function openChasesForMove(Project $project, $targetDepartmentId, ?User $causer = null): void
     {
         foreach (self::types() as $type) {
-            if ((int) $project->department_id !== (int) $this->fromDepartmentId($type)
-                || (int) $targetDepartmentId !== (int) $this->toDepartmentId($type)) {
+            if (! $this->interceptsMove($project, $targetDepartmentId, $type)) {
                 continue;
             }
 

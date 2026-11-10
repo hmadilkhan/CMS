@@ -336,6 +336,46 @@ class ProjectNtpApprovalFollowUpTest extends TestCase
         );
     }
 
+    public function test_skipping_permitting_on_the_way_to_installation_still_parks_the_project(): void
+    {
+        // Moved back to Engineering, then straight on to Installation: only the
+        // exact Permitting -> Installation pair used to be intercepted, so this
+        // route walked past the lock (Jose Jaimes).
+        $fixture = $this->fixture();
+        $engineering = Department::create(['id' => 3, 'name' => 'Engineering']);
+        SubDepartment::create([
+            'id' => 5,
+            'department_id' => $engineering->id,
+            'name' => 'Engineering Lane',
+            'show_in_move_list' => 1,
+        ]);
+        $fixture['project']->forceFill(['department_id' => $engineering->id, 'sub_department_id' => 5])->save();
+        $fixture['task']->forceFill(['department_id' => $engineering->id, 'sub_department_id' => 5])->save();
+
+        $this->moveToInstallation($fixture)->assertOk();
+
+        $this->assertSame(31, (int) $fixture['project']->refresh()->sub_department_id);
+        $this->assertTrue(
+            ProjectDocumentFollowUp::pending()
+                ->where('project_id', $fixture['project']->id)
+                ->where('type', DocumentFollowUpService::TYPE_NTP_APPROVAL)
+                ->exists()
+        );
+    }
+
+    public function test_coming_back_into_installation_from_a_later_department_is_not_intercepted(): void
+    {
+        $fixture = $this->fixture();
+        $inspection = Department::create(['id' => 6, 'name' => 'Inspection']);
+        $fixture['project']->forceFill(['department_id' => $inspection->id])->save();
+
+        $this->assertFalse(app(DocumentFollowUpService::class)->interceptsMove(
+            $fixture['project']->refresh(),
+            $fixture['installation']->id,
+            DocumentFollowUpService::TYPE_NTP_APPROVAL
+        ));
+    }
+
     public function test_a_closed_lane_is_never_a_destination_even_moving_backwards(): void
     {
         $fixture = $this->fixture();

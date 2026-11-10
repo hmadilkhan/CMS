@@ -23,13 +23,22 @@ All three are the same code. Only a config row differs.
 | Owner department | Engineering (3) | Deal Review (1) | Permitting (4) | — (the funding side) |
 | Opens when | `mpu_required` = `yes` | `utility_bill_required` = `no` | `fire_review_required` = `1` | the intercepted move happens |
 | …and | no `meter_spot_result` | no `utility_bill` file | no `fire_review` file | no `ntp_approval_date` |
-| Intercepted move | Permitting → Installation | Inspection → PTO | Installation → Inspection | Permitting → Installation |
+| Intercepted move | any earlier dept → Installation | any earlier dept → PTO | any earlier dept → Inspection | any earlier dept → Installation |
 | Parked lane | 31 Install Pending Document | 32 PTO Pending Document | 29 Inspection Pending Fire Review | 31 Install Pending Document |
 | Release lane | 12 Install Not Scheduled | 18 PTO | 16 Inspection Not Scheduled | 12 Install Not Scheduled |
 | Cleared by | picking the Meter Spot Result | uploading the bill | uploading the approval | filing the date in the Zones **NTP** tab |
 | Field after clearing | the result is the field | flips to **yes**, and back to **no** if every bill is deleted | stays `1` — it *was* required | the date is the field |
 | Card collects | a **value** (dropdown) | a **file** | a **file** | — (no Operations card) |
 | Files section | — | "Utility Bills", Deal Review tab | "Fire Approval Documents", Inspection tab | — |
+
+**The intercepted move is ARRIVING in the target department from any earlier
+one** (`DocumentFollowUpService::interceptsMove()`, pipeline order via
+`Department::comesBefore()`), not only from the usual previous department
+(`from_department` in the config, now descriptive). It used to be the exact
+pair, so a project moved back to Engineering and then straight on to
+Installation skipped Permitting and walked past the lock (reported on Jose
+Jaimes). Coming in from a later department, or a lane change inside the same
+department, is never intercepted.
 
 The utility bill question is the odd one out: its field is labelled **Utility
 Bill Uploaded**, so `no` — not `yes` — is the answer that owes a document.
