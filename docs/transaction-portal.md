@@ -152,6 +152,32 @@ new amount when the received box is left as it was; a part payment keeps its
 received amount. Blank boxes (rows closed before settlement existed) are kept
 blank.
 
+## Adding from the portal ("+ New", added 2026-11-11)
+
+A **+ New** button in the header and on each lane opens a form in the drawer
+(the same panel as Record payment) with a Section picker and only the fields
+that section needs. `POST transaction-portal/store`
+(`TransactionPortalController::store` → `TransactionPortalService::create`);
+the project picker is `GET transaction-portal/projects` (the import's
+`pickableProjects()`, so the same project scoping), and the server checks
+`ProjectService::canAccessProject` again.
+
+| Section | Creates | Asks for |
+|---|---|---|
+| Expected AR | positive transaction, Open | project, payee, milestone, amount, deduction (optional), expected date, details |
+| Actual AR | the same, then received through the payments ledger (so a smaller amount is a part payment and the commission is worked out) | + amount received, date received |
+| Commission | `payee = sales_partner`, negative, Open | project, milestone (Commission), amount, payment received date, due date (optional: the Friday of the week after), details |
+| Labor | `payee = sub_contractor`, negative, Open | project, milestone (Full Payment), amount, inspection approval date, details |
+| Other | negative, Open, any payee but those two | project, payee, milestone, amount, date, due date (optional), details |
+| Material | `project_invoice_details` material invoice, with its file; updates the project's `actual_material_cost` (`ProjectInvoiceDetail::syncProjectCost`, shared with the Invoices tab) | project, invoice amount, invoice date, file, notes (optional) |
+
+**Who:** the section's own permission AND what adding takes on the project
+page: `Account Transactions Edit` for a transaction, `Invoice Details` for a
+material invoice (`creatableSections()`; page config `creatable`). The form
+checks every required field before sending and lists what is missing; the
+server's 422 messages show in the same box. Each add is in the activity log
+("created the account transaction from the Transaction Portal").
+
 ## Part payments (added 2026-11-10)
 
 Every section takes a part payment: Expected AR and all four payables. Each

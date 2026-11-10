@@ -4,11 +4,15 @@ namespace App\Http\Controllers;
 
 use App\Models\AccountTransaction;
 use App\Models\FinanceOption;
+use App\Models\Project;
 use App\Models\ProjectInvoiceDetail;
 use App\Models\TransactionPayment;
+use App\Services\ProjectService;
+use App\Services\TransactionImportService;
 use App\Services\TransactionPortalService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 
 /**
  * Finance -> Transaction Portal: money in and out, week by week.
@@ -55,6 +59,13 @@ class TransactionPortalController extends Controller
                 'deleteUrl' => route('transaction-portal.delete-received'),
                 // Received payments (Actual AR) can be ticked and deleted only with both permissions.
                 'canDelete' => in_array('aar', $sections, true) && $user->can(TransactionPortalService::PERMISSION_DELETE),
+                // "+ New": the sections this user may add to, and what the form needs.
+                'creatable' => $this->portal->creatableSections($user),
+                'createUrl' => route('transaction-portal.store'),
+                'projectsUrl' => route('transaction-portal.projects'),
+                'payees' => AccountTransaction::payeeChoices(),
+                'ownSectionPayees' => TransactionPortalService::OWN_SECTION_PAYEES,
+                'materialDueDays' => (int) config('transaction_portal.material_due_days', 30),
             ],
         ]);
     }
@@ -67,6 +78,94 @@ class TransactionPortalController extends Controller
             'start' => $start->toDateString(),
             'end' => $end->toDateString(),
             'rows' => $this->portal->rows($request->user(), $start, $end),
+        ]);
+    }
+
+    /** Projects the user may add a transaction to, for the "+ New" form: [{id, name}]. */
+    public function projects(Request $request)
+    {
+        abort_unless($this->portal->creatableSections($request->user()), 403);
+
+        return response()->json(collect(app(TransactionImportService::class)->pickableProjects($request->user()))
+            ->map(fn ($name, $id) => ['id' => $id, 'name' => $name])
+            ->values());
+    }
+
+    /**
+     * "+ New" from a section: add a transaction (or a material invoice) with
+     * the fields that section needs. Needs the section's own permission and
+     * what adding takes elsewhere (see creatableSections()), and a project
+     * the user may see.
+     */
+    public function store(Request $request)
+    {
+        $user = $request->user();
+        $section = (string) $request->input('section');
+
+        abort_unless(in_array($section, $this->portal->creatableSections($user), true), 403);
+
+        $payees = array_keys(AccountTransaction::payeeChoices());
+        $rules = ['project_id' => 'required|integer'];
+
+        if ($section === 'mat') {
+            $rules += [
+                'invoice_date' => 'required|date',
+                'amount' => 'required|numeric|min:0.01',
+                'file' => 'required|file|max:20480|mimes:pdf,jpg,jpeg,png,doc,docx,xls,xlsx,csv',
+                'notes' => 'nullable|string|max:5000',
+            ];
+        } else {
+            $rules += [
+                'milestone' => 'required|string|max:255',
+                'amount' => 'required|numeric|min:0.01',
+                'transaction_date' => 'required|date',
+                'transaction_details' => 'required|string|max:1000',
+            ];
+            $rules += match ($section) {
+                'ear', 'aar' => [
+                    'payee' => ['required', Rule::in($payees)],
+                    'deduction_amount' => 'nullable|numeric|min:0|lte:amount',
+                ],
+                'oth' => [
+                    'payee' => ['required', Rule::in(array_diff($payees, TransactionPortalService::OWN_SECTION_PAYEES))],
+                    'due_date' => 'nullable|date',
+                ],
+                'com' => ['due_date' => 'nullable|date'],
+                default => [],
+            };
+
+            if ($section === 'aar') {
+                $rules += ['received_amount' => 'required|numeric|min:0.01', 'received_date' => 'required|date'];
+            }
+        }
+
+        $data = $request->validate($rules, [
+            'project_id.required' => 'Choose a project from the list.',
+        ], [
+            'transaction_date' => match ($section) {
+                'ear', 'aar' => 'expected date',
+                'com' => 'payment received date',
+                'lab' => 'inspection approval date',
+                default => 'date',
+            },
+            'transaction_details' => 'details',
+            'deduction_amount' => 'deduction',
+            'received_amount' => 'amount received',
+            'received_date' => 'date received',
+        ]);
+
+        abort_unless(Project::whereKey($data['project_id'])->exists(), 422, 'Choose a project from the list.');
+        abort_unless(app(ProjectService::class)->canAccessProject($user, (int) $data['project_id']), 403);
+
+        $result = $this->portal->create($section, $data, $request->file('file'));
+        $commission = $result['commission'];
+
+        return response()->json([
+            'item' => $result['item'],
+            'commission' => $commission ? [
+                'amount' => abs((float) $commission->amount),
+                'due' => $commission->due_date ? Carbon::parse($commission->due_date)->toDateString() : null,
+            ] : null,
         ]);
     }
 

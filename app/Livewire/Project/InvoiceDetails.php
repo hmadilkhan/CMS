@@ -114,20 +114,7 @@ class InvoiceDetails extends Component
 
     protected function syncProjectInvoiceCost(Project $project, string $invoiceType): void
     {
-        $column = [
-            'labor' => 'actual_labor_cost',
-            'material' => 'actual_material_cost',
-        ][$invoiceType] ?? null;
-
-        if (!$column) {
-            return;
-        }
-
-        $project->update([
-            $column => ProjectInvoiceDetail::where('project_id', $project->id)
-                ->where('invoice_type', $invoiceType)
-                ->sum('amount'),
-        ]);
+        ProjectInvoiceDetail::syncProjectCost($project, $invoiceType);
     }
 
     public function resetForm(): void

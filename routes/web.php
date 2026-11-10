@@ -140,6 +140,8 @@ Route::middleware('auth')->group(function () {
         Route::post('transaction-portal/settle', [App\Http\Controllers\TransactionPortalController::class, 'settle'])->name('transaction-portal.settle');
         Route::post('transaction-portal/reopen', [App\Http\Controllers\TransactionPortalController::class, 'reopen'])->name('transaction-portal.reopen');
         Route::post('transaction-portal/remove-payment', [App\Http\Controllers\TransactionPortalController::class, 'removePayment'])->name('transaction-portal.remove-payment');
+        Route::get('transaction-portal/projects', [App\Http\Controllers\TransactionPortalController::class, 'projects'])->name('transaction-portal.projects');
+        Route::post('transaction-portal/store', [App\Http\Controllers\TransactionPortalController::class, 'store'])->name('transaction-portal.store');
         Route::post('transaction-portal/pay-run', [App\Http\Controllers\TransactionPortalController::class, 'payRun'])->name('transaction-portal.pay-run');
         Route::get('transaction-portal/search', [App\Http\Controllers\TransactionPortalController::class, 'search'])->name('transaction-portal.search');
         Route::post('transaction-portal/delete-received', [App\Http\Controllers\TransactionPortalController::class, 'deleteReceived'])->name('transaction-portal.delete-received');

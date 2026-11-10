@@ -793,6 +793,99 @@ class TransactionPortalTest extends TestCase
         $this->assertSoftDeleted($single);
     }
 
+    private function creator(array $extra = [TransactionPortalService::PERMISSION_CREATE, TransactionPortalService::PERMISSION_INVOICE]): User
+    {
+        return $this->user('Finance Creator', array_merge([
+            TransactionPortalService::PERMISSION_PAGE,
+            TransactionPortalService::PERMISSION_EXPECTED,
+            TransactionPortalService::PERMISSION_OTHER,
+        ], $extra));
+    }
+
+    public function test_each_section_can_be_added_to_from_the_portal(): void
+    {
+        \Illuminate\Support\Facades\Storage::fake('public');
+        $project = $this->project();
+        $this->invoice($project, 'labor', 500);
+        $this->invoice($project, 'material', 700);
+        $user = $this->creator();
+        $store = fn (array $data) => $this->actingAs($user)->post(route('transaction-portal.store'), $data + ['project_id' => $project->id], ['Accept' => 'application/json']);
+        $base = ['milestone' => 'M1', 'transaction_date' => '2026-11-03', 'transaction_details' => 'Added in the portal'];
+
+        $this->actingAs($user)->get(route('transaction-portal.index'))->assertSee('id="new-btn"', false)->assertSee('"creatable":["ear","aar","com","lab","mat","oth"]', false);
+        $this->assertSame([$project->id], collect($this->actingAs($user)->getJson(route('transaction-portal.projects'))->assertOk()->json())->pluck('id')->all());
+
+        // Expected AR: positive and Open; the board shows it less its deduction.
+        $ear = $store($base + ['section' => 'ear', 'payee' => 'customer', 'amount' => 5000, 'deduction_amount' => 200])->assertOk()->json('item');
+        $expected = AccountTransaction::findOrFail((int) substr($ear, 1));
+        $this->assertSame('Open', $expected->status);
+        $this->assertEquals(5000, (float) $expected->amount);
+        $this->assertEquals(4800, $this->rows($user)[$ear]['amount']);
+        $this->assertDatabaseHas('activity_log', ['subject_id' => $expected->id, 'event' => 'created', 'description' => $user->name.' created the account transaction from the Transaction Portal.']);
+
+        // Actual AR: added and received at once - in part here, so it is still expected for the rest.
+        $aar = $store($base + ['section' => 'aar', 'payee' => 'customer', 'amount' => 3000, 'received_amount' => 1000, 'received_date' => '2026-11-03'])
+            ->assertOk()->assertJsonPath('commission', null)->json('item');
+        $received = AccountTransaction::findOrFail((int) substr($aar, 1));
+        $this->assertSame('Open', $received->status);
+        $this->assertEquals(1000, (float) $received->settled_amount);
+        $this->assertTrue($this->rows($user)->contains(fn ($r) => $r['b'] === 'aar' && $r['transactionId'] === $received->id && $r['amount'] == 1000));
+
+        // Commission: negative, to the sales partner, due the Friday of the week after.
+        $com = AccountTransaction::findOrFail((int) substr($store($base + ['section' => 'com', 'amount' => 900])->assertOk()->json('item'), 1));
+        $this->assertSame('sales_partner', $com->payee);
+        $this->assertEquals(-900, (float) $com->amount);
+        $this->assertSame('2026-11-13', substr((string) $com->due_date, 0, 10));
+
+        // Labor: negative, to the sub-contractor.
+        $lab = AccountTransaction::findOrFail((int) substr($store($base + ['section' => 'lab', 'amount' => 4560])->assertOk()->json('item'), 1));
+        $this->assertSame('sub_contractor', $lab->payee);
+        $this->assertEquals(-4560, (float) $lab->amount);
+
+        // Other: any payee without a section of its own.
+        $store($base + ['section' => 'oth', 'payee' => 'sales_partner', 'amount' => 75])->assertStatus(422)->assertJsonValidationErrors('payee');
+        $oth = AccountTransaction::findOrFail((int) substr($store($base + ['section' => 'oth', 'payee' => 'supplier', 'amount' => 75, 'due_date' => '2026-11-06'])->assertOk()->json('item'), 1));
+        $this->assertSame('oth', $this->rows($user)['t'.$oth->id]['b']);
+
+        // Material: an invoice with its file, which also updates the project's cost.
+        $mat = $store(['section' => 'mat', 'amount' => 1300, 'invoice_date' => '2026-10-20', 'file' => \Illuminate\Http\UploadedFile::fake()->create('invoice.pdf', 20, 'application/pdf')])->assertOk()->json('item');
+        $invoice = ProjectInvoiceDetail::findOrFail((int) substr($mat, 1));
+        $this->assertSame('material', $invoice->invoice_type);
+        $this->assertSame('Open', $invoice->status);
+        \Illuminate\Support\Facades\Storage::disk('public')->assertExists($invoice->file_path);
+        $this->assertEquals(2000, (float) $project->fresh()->actual_material_cost);
+
+        // The fields each section needs are asked for.
+        $store(['section' => 'com'])->assertStatus(422)->assertJsonValidationErrors(['amount', 'milestone', 'transaction_date', 'transaction_details']);
+        $store(['section' => 'mat', 'amount' => 10, 'invoice_date' => '2026-10-20'])->assertStatus(422)->assertJsonValidationErrors('file');
+        $store($base + ['section' => 'aar', 'payee' => 'customer', 'amount' => 10])->assertStatus(422)->assertJsonValidationErrors(['received_amount', 'received_date']);
+    }
+
+    public function test_adding_needs_the_permission_the_project_page_needs(): void
+    {
+        $project = $this->project();
+        $data = ['section' => 'ear', 'project_id' => $project->id, 'payee' => 'customer', 'milestone' => 'M1', 'amount' => 10, 'transaction_date' => '2026-11-03', 'transaction_details' => 'x'];
+
+        // The portal permissions alone: no "+ New".
+        $finance = $this->finance();
+        $this->actingAs($finance)->get(route('transaction-portal.index'))->assertDontSee('id="new-btn"', false);
+        $this->actingAs($finance)->postJson(route('transaction-portal.store'), $data)->assertForbidden();
+        $this->actingAs($finance)->getJson(route('transaction-portal.projects'))->assertForbidden();
+
+        // Account Transactions Edit without Invoice Details: everything but Material.
+        $noInvoices = $this->creator([TransactionPortalService::PERMISSION_CREATE]);
+        $this->assertSame(['ear', 'aar', 'com', 'lab', 'oth'], app(TransactionPortalService::class)->creatableSections($noInvoices));
+        $this->actingAs($noInvoices)->postJson(route('transaction-portal.store'), ['section' => 'mat', 'project_id' => $project->id])->assertForbidden();
+
+        // A Funding Manager adds only to the section they see.
+        $fm = $this->user('Funding Manager', [TransactionPortalService::PERMISSION_PAGE, TransactionPortalService::PERMISSION_EXPECTED, TransactionPortalService::PERMISSION_CREATE]);
+        $this->actingAs($fm)->postJson(route('transaction-portal.store'), ['section' => 'com'] + $data)->assertForbidden();
+        $this->actingAs($fm)->postJson(route('transaction-portal.store'), $data)->assertOk();
+
+        // A project that does not exist (or was deleted) is refused.
+        $this->actingAs($fm)->postJson(route('transaction-portal.store'), ['project_id' => 999999] + $data)->assertStatus(422);
+    }
+
     public function test_search_finds_a_part_paid_payment_as_expected_and_received(): void
     {
         $project = $this->project('Sunrise Solar');

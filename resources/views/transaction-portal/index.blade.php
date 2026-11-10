@@ -153,6 +153,17 @@
 .tp .steps .s-sub { color: var(--muted); font-size: 11.5px; }
 .tp .check { display: flex; gap: 8px; align-items: flex-start; font-size: 12.5px; color: var(--fg); margin: 0; font-weight: 400; }
 .tp .check input { margin-top: 2px; accent-color: var(--accent); }
+/* "+ New": a button on each lane, and the form in the drawer. */
+.tp .lane-add { border: 1px solid var(--line); background: var(--surface); color: var(--accent-deep); border-radius: 7px; padding: 2px 8px; font-size: 12px; font-weight: 700; cursor: pointer; white-space: nowrap; }
+.tp .lane-add:hover { background: var(--accent-soft); border-color: transparent; }
+.tp .field select, .tp .field textarea { border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; background: var(--surface); color: var(--fg); font: inherit; width: 100%; min-width: 0; }
+.tp .field textarea { min-height: 70px; resize: vertical; }
+.tp .field input { min-width: 0; width: 100%; }
+.tp .field .opt { font-weight: 400; }
+.tp .field small { color: var(--muted); font-size: 11.5px; }
+.tp .form-errors { border-radius: 10px; padding: 10px 12px; background: var(--danger-soft); color: var(--danger); font-size: 12.5px; }
+.tp .form-errors ul { margin: 0; padding-left: 18px; }
+.tp .field.bad input, .tp .field.bad select { border-color: var(--danger); }
 .tp .lane-foot { border-top: 1px dashed var(--line-strong); padding: 10px 14px 12px; display: grid; grid-template-columns: 1fr auto; align-items: baseline; gap: 2px 8px; }
 .tp .lane-foot span { font-size: 12px; text-transform: uppercase; letter-spacing: .07em; font-weight: 700; color: var(--muted); }
 .tp .lane-foot strong { font-family: var(--font-num); font-variant-numeric: tabular-nums; font-size: 16px; }
@@ -264,6 +275,9 @@
                 <button type="button" data-view="board" aria-pressed="true">Board</button>
                 <button type="button" data-view="table" aria-pressed="false">Table</button>
             </div>
+            @if (! empty($portalConfig['creatable']))
+                <button class="tp-btn primary" id="new-btn" type="button">+ New</button>
+            @endif
             <button class="tp-btn" id="export" type="button">Export</button>
             @can('Account Transactions Edit')
                 <a class="tp-btn" href="{{ route('transaction-portal.import') }}" style="text-decoration:none">Import</a>
@@ -330,6 +344,8 @@
     const CFG = @json($portalConfig);
     const CSRF = (document.querySelector('meta[name="csrf_token"]') || {}).content || '';
     const SECTIONS = CFG.sections;
+    // The sections this user may add to ("+ New").
+    const CREATABLE = CFG.creatable || [];
 
     function d(s) { const [y, m, dd] = s.split('-').map(Number); return new Date(y, m - 1, dd); }
     function iso(x) { return x.getFullYear() + '-' + String(x.getMonth() + 1).padStart(2, '0') + '-' + String(x.getDate()).padStart(2, '0'); }
@@ -506,7 +522,8 @@
         board.classList.toggle('single', SECTIONS.length === 1);
         board.innerHTML = (ins ? '<div class="grp in" style="grid-column:span ' + ins + '">Money in</div>' : '') +
             (outs ? '<div class="grp out" style="grid-column:span ' + outs + '">Money out</div>' : '') +
-            SECTIONS.map(b => '<section class="lane" aria-label="' + B[b].title + '"><header class="lane-head"><div class="lane-title"><span class="dot ' + B[b].kind + '"></span><h2>' + B[b].title + '</h2><span class="tp-count" id="lc-' + b + '">0</span></div>' +
+            SECTIONS.map(b => '<section class="lane" aria-label="' + B[b].title + '"><header class="lane-head"><div class="lane-title"><span class="dot ' + B[b].kind + '"></span><h2>' + B[b].title + '</h2><span class="tp-count" id="lc-' + b + '">0</span>' +
+                (CREATABLE.includes(b) ? '<button type="button" class="lane-add" data-new="' + b + '" aria-label="Add to ' + B[b].title + '">+ New</button>' : '') + '</div>' +
                 '<p class="fields">' + B[b].fields + '</p>' +
                 '<input type="search" class="lane-search" data-lane="' + b + '" id="ls-' + b + '" placeholder="Search ' + B[b].short + '…" aria-label="Search ' + B[b].title + '"></header>' +
                 '<div class="lane-body" id="lb-' + b + '"><p class="empty">Loading…</p></div><footer class="lane-foot" id="lf-' + b + '"></footer></section>').join('');
@@ -749,7 +766,156 @@
         const c = dr.querySelector('[data-act="close"]'); if (c) c.focus();
     }
     function closeDrawer() {
-        S.drawer = null; const dr = $('drawer'); dr.classList.remove('open'); dr.setAttribute('aria-hidden', 'true'); $('scrim').hidden = true;
+        S.drawer = null; S.creating = null; const dr = $('drawer'); dr.classList.remove('open'); dr.setAttribute('aria-hidden', 'true'); $('scrim').hidden = true;
+    }
+
+    // "+ New": add a transaction (or a material invoice) to a section, in the
+    // drawer. Each section asks only for the fields it needs; the server checks
+    // them again and refuses a section the user may not add to.
+    let projects = null, projectIds = {};
+    async function loadProjects() {
+        if (projects) return;
+        try {
+            const res = await fetch(CFG.projectsUrl, { headers: { Accept: 'application/json' } });
+            if (!res.ok) throw new Error(res.status);
+            const list = await res.json(), seen = {};
+            list.forEach(p => { seen[p.name] = (seen[p.name] || 0) + 1; });
+            projectIds = {};
+            projects = list.map(p => {
+                const label = seen[p.name] > 1 ? p.name + ' (#' + p.id + ')' : p.name;
+                projectIds[label.toLowerCase()] = p.id;
+                return label;
+            });
+        } catch (err) {
+            toast('The project list could not be loaded. Refresh the page to try again.');
+            return;
+        }
+        const dl = $('nf-projects');
+        if (dl) dl.innerHTML = projects.map(n => '<option value="' + esc(n) + '"></option>').join('');
+    }
+
+    const today = () => iso(TODAY);
+    const fld = (name, label, input, hint, optional) => '<div class="field" data-f="' + name + '"><label for="nf-' + name + '">' + label +
+        (optional ? ' <span class="opt">(optional)</span>' : '') + '</label>' + input + (hint ? '<small>' + hint + '</small>' : '') + '</div>';
+    const inp = (name, type, extra) => '<input id="nf-' + name + '" name="' + name + '" type="' + type + '"' + (extra || '') + '>';
+    const money2 = (name, extra) => inp(name, 'number', ' step="0.01" min="0.01" inputmode="decimal"' + (extra || ''));
+    function payeeSelect(b) {
+        const own = CFG.ownSectionPayees || [];
+        const opts = Object.entries(CFG.payees || {}).filter(([k]) => b !== 'oth' || !own.includes(k));
+        return '<select id="nf-payee" name="payee" required><option value="">Choose…</option>' +
+            opts.map(([k, v]) => '<option value="' + esc(k) + '"' + ((b === 'ear' || b === 'aar') && k === 'customer' ? ' selected' : '') + '>' + esc(v) + '</option>').join('') + '</select>';
+    }
+    const NEW_INFO = {
+        ear: 'A payment expected from the customer or a finance company. It stays in Expected AR until it is received.',
+        aar: 'A payment that has already come in: it is recorded as received on the date below (less than the amount is a part payment) and may raise the sales partner’s commission.',
+        com: 'A commission payable to the project’s sales partner.',
+        lab: 'A labor payable to the project’s sub-contractor.',
+        mat: 'A material invoice for the project, with its file. It also updates the project’s actual material cost, and is due ' + (CFG.materialDueDays || 30) + ' days after the invoice date.',
+        oth: 'A payable to any other payee (supplier, finance company, refund…).'
+    };
+    function newFields(b) {
+        const project = fld('project', 'Project', '<input id="nf-project" list="nf-projects" autocomplete="off" required placeholder="Type the project name…"><datalist id="nf-projects">' +
+            (projects || []).map(n => '<option value="' + esc(n) + '"></option>').join('') + '</datalist>');
+        const details = v => fld('transaction_details', 'Details', inp('transaction_details', 'text', ' required maxlength="1000" value="' + esc(v || '') + '"'));
+        const milestone = v => fld('milestone', 'Milestone', inp('milestone', 'text', ' required maxlength="255" value="' + esc(v || '') + '"'));
+        const row = (a, c) => '<div class="row2">' + a + c + '</div>';
+        switch (b) {
+            case 'ear':
+            case 'aar':
+                return project + fld('payee', 'Payee', payeeSelect(b)) + milestone() +
+                    row(fld('amount', 'Amount', money2('amount', ' required')), fld('deduction_amount', 'Deduction', inp('deduction_amount', 'number', ' step="0.01" min="0" value="0"'), '', true)) +
+                    fld('transaction_date', 'Expected date', inp('transaction_date', 'date', ' required value="' + today() + '"')) +
+                    (b === 'aar' ? row(fld('received_amount', 'Amount received', money2('received_amount', ' required')), fld('received_date', 'Date received', inp('received_date', 'date', ' required value="' + today() + '"'))) : '') +
+                    details();
+            case 'com':
+                return project + milestone('Commission') +
+                    row(fld('amount', 'Amount', money2('amount', ' required')), fld('transaction_date', 'Payment received date', inp('transaction_date', 'date', ' required value="' + today() + '"'))) +
+                    fld('due_date', 'Due date', inp('due_date', 'date'), 'Left empty: the Friday of the week after the payment received date.', true) +
+                    details('Commission Payable');
+            case 'lab':
+                return project + milestone('Full Payment') +
+                    row(fld('amount', 'Amount', money2('amount', ' required')), fld('transaction_date', 'Inspection approval date', inp('transaction_date', 'date', ' required value="' + today() + '"'))) +
+                    details('Labor Payable');
+            case 'mat':
+                return project +
+                    row(fld('amount', 'Invoice amount', money2('amount', ' required')), fld('invoice_date', 'Invoice date', inp('invoice_date', 'date', ' required value="' + today() + '"'))) +
+                    fld('file', 'Invoice file', inp('file', 'file', ' required accept=".pdf,.jpg,.jpeg,.png,.doc,.docx,.xls,.xlsx,.csv"'), 'PDF, image, Word, Excel or CSV, up to 20 MB.') +
+                    fld('notes', 'Notes', '<textarea id="nf-notes" name="notes" maxlength="5000"></textarea>', '', true);
+            default: // oth
+                return project + fld('payee', 'Payee', payeeSelect(b)) + milestone() +
+                    row(fld('amount', 'Amount', money2('amount', ' required')), fld('transaction_date', 'Date', inp('transaction_date', 'date', ' required value="' + today() + '"'))) +
+                    fld('due_date', 'Due date', inp('due_date', 'date'), 'Left empty: the date above.', true) +
+                    details();
+        }
+    }
+    function openCreate(b) {
+        if (!CREATABLE.length) return;
+        if (!CREATABLE.includes(b)) b = CREATABLE[0];
+        const keepProject = $('nf-project') ? $('nf-project').value : '';
+        S.drawer = null; S.creating = b;
+        const info = B[b];
+        $('drawer').innerHTML =
+            '<div class="d-head"><div class="d-top"><span class="eyebrow"><span class="dot ' + info.kind + '"></span>New</span><button type="button" class="icon-btn" data-act="close" aria-label="Close">×</button></div>' +
+            '<h3>Add to ' + info.title + '</h3></div>' +
+            '<form class="d-body" id="new-form" novalidate>' +
+            (CREATABLE.length > 1 ? fld('section', 'Section', '<select id="nf-section">' + CREATABLE.map(x => '<option value="' + x + '"' + (x === b ? ' selected' : '') + '>' + B[x].title + '</option>').join('') + '</select>') : '') +
+            '<p class="fields" style="margin:0">' + NEW_INFO[b] + '</p>' +
+            '<div id="nf-errors" class="form-errors" hidden></div>' +
+            newFields(b) +
+            '<div><button class="tp-btn primary" type="submit">Add to ' + info.short + '</button></div></form>';
+        if (keepProject) $('nf-project').value = keepProject;
+        const dr = $('drawer'); dr.classList.add('open'); dr.setAttribute('aria-hidden', 'false'); $('scrim').hidden = false;
+        $('nf-project').focus();
+        loadProjects();
+    }
+    // Amount received follows the amount (less its deduction) until it is typed in.
+    function followReceived() {
+        const r = $('nf-received_amount'); if (!r || r.dataset.touched) return;
+        const v = (parseFloat($('nf-amount').value) || 0) - (parseFloat($('nf-deduction_amount').value) || 0);
+        r.value = v > 0 ? v.toFixed(2) : '';
+    }
+    function showErrors(list, fields) {
+        const box = $('nf-errors');
+        document.querySelectorAll('#new-form .field.bad').forEach(f => f.classList.remove('bad'));
+        (fields || []).forEach(n => { const f = document.querySelector('#new-form [data-f="' + (n === 'project_id' ? 'project' : n) + '"]'); if (f) f.classList.add('bad'); });
+        if (!list.length) { box.hidden = true; box.innerHTML = ''; return; }
+        box.hidden = false;
+        box.innerHTML = '<ul>' + list.map(m => '<li>' + esc(m) + '</li>').join('') + '</ul>';
+        box.scrollIntoView({ block: 'nearest' });
+    }
+    async function submitCreate(form) {
+        const b = S.creating, button = form.querySelector('button[type="submit"]');
+        const label = $('nf-project').value.trim(), projectId = projectIds[label.toLowerCase()];
+        // Every required field, said once, before anything is sent.
+        const missing = [...form.querySelectorAll('[required]')].filter(i => !String(i.value).trim()).map(i => i.name || 'project');
+        if (!projectId && !missing.includes('project')) missing.push('project');
+        if (missing.length) {
+            const names = missing.map(n => (form.querySelector('[data-f="' + (n === 'project_id' ? 'project' : n) + '"] label') || {}).textContent || n);
+            showErrors([(!projectId && label ? 'Choose the project from the list. ' : '') + 'Fill in: ' + names.map(s => s.replace(' (optional)', '')).join(', ') + '.'], missing);
+            return;
+        }
+        const data = new FormData(form);
+        data.append('section', b);
+        data.append('project_id', projectId);
+        button.disabled = true;
+        try {
+            const res = await fetch(CFG.createUrl, { method: 'POST', headers: { Accept: 'application/json', 'X-CSRF-TOKEN': CSRF }, body: data });
+            const json = await res.json().catch(() => ({}));
+            if (!res.ok) {
+                if (json.errors) { showErrors(Object.values(json.errors).flat(), Object.keys(json.errors)); return; }
+                showErrors([json.message || (res.status === 403 ? 'You cannot add to this section, or to this project.' : 'Something went wrong. Try again.')]);
+                return;
+            }
+            closeDrawer();
+            let msg = 'Added to ' + B[b].title + ' for ' + label + '.';
+            if (json.commission) msg += ' Commission payable raised: ' + money(json.commission.amount) + ', due ' + us(json.commission.due) + '.';
+            toast(msg);
+            await load();
+        } catch (err) {
+            showErrors(['Something went wrong. Try again.']);
+        } finally {
+            button.disabled = false;
+        }
     }
 
     let tt;
@@ -812,6 +978,8 @@
     document.addEventListener('click', e => {
         if (!e.target.closest('#tp')) return;
         const t = e.target.closest('button'); if (!t) return;
+        if (t.dataset.new) { openCreate(t.dataset.new); return; }
+        if (t.id === 'new-btn') { openCreate(S.view === 'table' ? S.tab : CREATABLE[0]); return; }
         if (t.dataset.open) { openDrawer(t.dataset.open); return; }
         // Choosing a period leaves the all-time search and goes back to that week or month.
         if (t.id === 'prev' || t.id === 'next') {
@@ -878,6 +1046,7 @@
         if (t.classList.contains('pick')) { const id = t.dataset.id; t.checked ? S.sel.add(id) : S.sel.delete(id); renderBulk(); }
         else if (t.id === 'fin') { S.fin = t.value; render(); }
         else if (t.id === 'carry') { S.carry = t.checked; render(); }
+        else if (t.id === 'nf-section') openCreate(t.value);
     });
     document.addEventListener('input', e => {
         const t = e.target;
@@ -893,8 +1062,11 @@
         }
         else if (t.classList && t.classList.contains('lane-search')) { S.laneQ[t.dataset.lane] = t.value.trim(); if (loaded) { renderTiles(); renderLane(t.dataset.lane); } }
         else if (t.id === 'tq') { S.laneQ[S.tab] = t.value.trim(); const ls = $('ls-' + S.tab); if (ls) ls.value = t.value; render(); }
+        else if (t.id === 'nf-amount' || t.id === 'nf-deduction_amount') followReceived();
+        else if (t.id === 'nf-received_amount') t.dataset.touched = '1';
     });
     document.addEventListener('submit', e => {
+        if (e.target.id === 'new-form') { e.preventDefault(); submitCreate(e.target); return; }
         if (e.target.id !== 'settle-form') return;
         e.preventDefault();
         const amt = parseFloat($('st-amt').value), date = $('st-date').value;
@@ -902,7 +1074,7 @@
         settle([S.drawer], date, amt, e.target.querySelector('button[type="submit"]'), $('st-final') && $('st-final').checked);
     });
     $('scrim').addEventListener('click', closeDrawer);
-    document.addEventListener('keydown', e => { if (e.key === 'Escape' && S.drawer) closeDrawer(); });
+    document.addEventListener('keydown', e => { if (e.key === 'Escape' && (S.drawer || S.creating)) closeDrawer(); });
 
     if (SECTIONS.length) buildBoard();
     load();

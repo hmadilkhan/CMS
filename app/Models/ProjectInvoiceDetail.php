@@ -57,6 +57,29 @@ class ProjectInvoiceDetail extends Model
         return $this->belongsTo(Project::class)->withTrashed();
     }
 
+    /**
+     * Keep the project's actual labor / material cost equal to its invoices of
+     * that type. Called wherever an invoice is added or removed (the project's
+     * Invoices tab, the Transaction Portal).
+     */
+    public static function syncProjectCost(Project $project, string $invoiceType): void
+    {
+        $column = [
+            'labor' => 'actual_labor_cost',
+            'material' => 'actual_material_cost',
+        ][$invoiceType] ?? null;
+
+        if (! $column) {
+            return;
+        }
+
+        $project->update([
+            $column => self::where('project_id', $project->id)
+                ->where('invoice_type', $invoiceType)
+                ->sum('amount'),
+        ]);
+    }
+
     /** Money paid against it, oldest first (several when paid in parts). */
     public function payments()
     {

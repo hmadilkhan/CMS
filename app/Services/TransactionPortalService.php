@@ -9,6 +9,7 @@ use App\Models\TransactionPayment;
 use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -43,6 +44,12 @@ class TransactionPortalService
 
     /** Deleting a received payment also needs the Account Transactions edit permission. */
     public const PERMISSION_DELETE = 'Account Transactions Edit';
+
+    /** Adding a transaction from the portal: the project page's Add button needs the same. */
+    public const PERMISSION_CREATE = 'Account Transactions Edit';
+
+    /** Adding a material invoice: the project's Invoices tab needs the same. */
+    public const PERMISSION_INVOICE = 'Invoice Details';
 
     /** How a period reads its payables (see rows()). */
     private const ALL = 'all';
@@ -364,6 +371,124 @@ class TransactionPortalService
             'lab' => $r['inspection'],
             default => $r['due'],
         };
+    }
+
+    /**
+     * The sections `$user` may add to: one they can see, plus what adding it
+     * takes elsewhere - Account Transactions Edit for a transaction (the
+     * project page's Add button), Invoice Details for a material invoice (the
+     * project's Invoices tab).
+     */
+    public function creatableSections(User $user): array
+    {
+        return array_values(array_filter($this->sections($user), fn ($b) => $user->can(
+            $b === 'mat' ? self::PERMISSION_INVOICE : self::PERMISSION_CREATE
+        )));
+    }
+
+    /**
+     * Add a row to a section, as the project page would:
+     *   ear  a payment expected (positive, Open)
+     *   aar  a payment already received: added, then received in full or in
+     *        part like any Expected AR payment (so it may raise the commission)
+     *   com  a commission payable to the sales partner (negative, Open); due
+     *        the Friday of the week after unless a due date is given
+     *   lab  a labor payable to the sub-contractor (negative, Open), dated by
+     *        the inspection approval date
+     *   oth  a payable to any other payee (negative, Open)
+     *   mat  a material invoice with its file, which also updates the
+     *        project's actual material cost
+     *
+     * `$data` is validated by the controller.
+     *
+     * @return array{item: string, commission: ?AccountTransaction}
+     */
+    public function create(string $section, array $data, ?UploadedFile $file = null): array
+    {
+        $project = Project::findOrFail($data['project_id']);
+        $user = auth()->user();
+
+        if ($section === 'mat') {
+            $original = $file->getClientOriginalName();
+            $path = $file->storeAs('invoices', time().'_'.preg_replace('/[^A-Za-z0-9._-]/', '_', $original), 'public');
+
+            $invoice = DB::transaction(function () use ($project, $data, $original, $path, $user) {
+                $invoice = ProjectInvoiceDetail::create([
+                    'project_id' => $project->id,
+                    'invoice_type' => 'material',
+                    'invoice_date' => Carbon::parse($data['invoice_date'])->toDateString(),
+                    'amount' => round((float) $data['amount'], 2),
+                    'notes' => $data['notes'] ?? null,
+                    'file_name' => basename($path),
+                    'original_file_name' => $original,
+                    'file_path' => $path,
+                    'uploaded_by' => $user?->id,
+                ]);
+
+                ProjectInvoiceDetail::syncProjectCost($project, 'material');
+
+                activity('project')
+                    ->performedOn($project)
+                    ->causedBy($user)
+                    ->setEvent('updated')
+                    ->withProperties(['project_invoice_detail_id' => $invoice->id])
+                    ->log(($user?->name ?? 'System').' added an invoice detail from the Transaction Portal.');
+
+                return $invoice;
+            });
+
+            return ['item' => 'i'.$invoice->id, 'commission' => null];
+        }
+
+        $in = in_array($section, ['ear', 'aar'], true);
+        $amount = round(abs((float) $data['amount']), 2);
+        $date = Carbon::parse($data['transaction_date'])->toDateString();
+        $dueDate = match ($section) {
+            'com' => Carbon::parse($data['due_date'] ?? CommissionPayableService::dueDate($date))->toDateString(),
+            'oth' => empty($data['due_date']) ? null : Carbon::parse($data['due_date'])->toDateString(),
+            default => null,
+        };
+
+        $items = [
+            'project_id' => $project->id,
+            'payee' => match ($section) {
+                'com' => 'sales_partner',
+                'lab' => 'sub_contractor',
+                default => $data['payee'],
+            },
+            'milestone' => $data['milestone'],
+            'amount' => $in ? $amount : -$amount,
+            'deduction_amount' => $in ? round((float) ($data['deduction_amount'] ?? 0), 2) : 0,
+            'transaction_date' => $date,
+            'due_date' => $dueDate,
+            'transaction_details' => $data['transaction_details'],
+            'status' => AccountTransaction::STATUS_OPEN,
+        ];
+
+        $transaction = DB::transaction(function () use ($items, $user) {
+            $transaction = AccountTransaction::create($items);
+
+            $activity = activity('AccountTransaction')
+                ->performedOn($transaction)
+                ->withProperties($items)
+                ->setEvent('created');
+
+            if ($user) {
+                $activity->causedBy($user);
+            }
+
+            $activity->log(($user?->name ?? 'System').' created the account transaction from the Transaction Portal.');
+
+            return $transaction;
+        });
+
+        if ($section !== 'aar') {
+            return ['item' => 't'.$transaction->id, 'commission' => null];
+        }
+
+        $commission = $this->settleTransaction($transaction, (float) $data['received_amount'], $data['received_date']);
+
+        return ['item' => 't'.$transaction->id, 'commission' => $commission];
     }
 
     /** Which section a transaction belongs to, or null when the portal does not show it. */

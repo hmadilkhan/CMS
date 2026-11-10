@@ -391,7 +391,10 @@ ported as is; its CSS is scoped under `.tp`). Three permissions: the page,
 Sections`. Money in or out is recorded as **payments** (`transaction_payments`,
 written only by `TransactionPaymentService`): a part payment leaves the row Open
 with its balance, `settled_amount` is the total so far and `settled_date` the last
-payment's day, and Actual AR lists one item per payment (`p<id>`). Receiving a
+payment's day, and Actual AR lists one item per payment (`p<id>`). **+ New**
+(header and each lane) adds a row to any section from a drawer form
+(`TransactionPortalService::create`; needs the section's permission plus
+`Account Transactions Edit`, or `Invoice Details` for Material). Receiving a
 customer payment, in full or in part, can raise the sales partner's commission
 (`CommissionPayableService`: received − Labor − Material − already raised, once
 both invoices are on file, due the Friday of the following week).
