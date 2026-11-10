@@ -139,6 +139,20 @@
 .tp .chip.ok { background: var(--ok-soft); color: var(--ok); border-color: transparent; }
 .tp .chip.run { background: var(--accent-soft); color: var(--accent-deep); border-color: transparent; }
 .tp .chip.st { background: none; font-weight: 600; }
+.tp .chip.part { background: var(--warn-soft); color: var(--warn); border-color: transparent; }
+/* Payment history: one step per payment, then the balance still to come. */
+.tp .progress { height: 6px; border-radius: 4px; background: var(--line); overflow: hidden; }
+.tp .progress span { display: block; height: 100%; background: var(--ok); }
+.tp .steps { list-style: none; margin: 0; padding: 0; display: grid; }
+.tp .steps li { display: grid; grid-template-columns: 10px minmax(0, 1fr) auto; gap: 10px; align-items: start; padding: 6px 0; position: relative; }
+.tp .steps li::before { content: ''; width: 10px; height: 10px; border-radius: 50%; background: var(--ok); margin-top: 4px; }
+.tp .steps li:not(:last-child)::after { content: ''; position: absolute; left: 4px; top: 20px; bottom: -4px; width: 2px; background: var(--line); }
+.tp .steps li.todo::before { background: var(--surface); box-shadow: inset 0 0 0 2px var(--warn); }
+.tp .steps .s-main { display: grid; gap: 1px; font-size: 12.5px; min-width: 0; }
+.tp .steps .s-main b { font-family: var(--font-num); }
+.tp .steps .s-sub { color: var(--muted); font-size: 11.5px; }
+.tp .check { display: flex; gap: 8px; align-items: flex-start; font-size: 12.5px; color: var(--fg); margin: 0; font-weight: 400; }
+.tp .check input { margin-top: 2px; accent-color: var(--accent); }
 .tp .lane-foot { border-top: 1px dashed var(--line-strong); padding: 10px 14px 12px; display: grid; grid-template-columns: 1fr auto; align-items: baseline; gap: 2px 8px; }
 .tp .lane-foot span { font-size: 12px; text-transform: uppercase; letter-spacing: .07em; font-weight: 700; color: var(--muted); }
 .tp .lane-foot strong { font-family: var(--font-num); font-variant-numeric: tabular-nums; font-size: 16px; }
@@ -407,16 +421,43 @@
 
     function chip(r) {
         // Received, plus what helps spot a duplicate: where it came from, and a twin amount.
+        // A part payment says what is still to come on its row.
         if (r.b === 'aar') return '<span class="chip ok">Received</span>' +
+            (r.partOpen ? '<span class="chip part" title="Part payment: the rest is still expected">Part · ' + money(r.balance) + ' to come</span>'
+                : ((r.payments || []).length > 1 ? '<span class="chip">' + r.payments.length + ' payments</span>' : '')) +
             (r.imported ? '<span class="chip">Imported</span>' : '') +
             (r.twin ? '<span class="chip warn" title="Another payment on this project has the same amount">Same amount</span>' : '');
         if (r.status === 'Closed') return '<span class="chip ok">Paid' + (r.paidOn ? ' ' + us(r.paidOn) : '') + '</span>';
+        // Open but part paid: the amount shown is the balance.
+        const part = r.paid > 0 ? '<span class="chip part">Part paid ' + money(r.paid) + ' of ' + money(r.total) + '</span>' : '';
         const due = dueOf(r);
-        if (!due) return '';
+        if (!due) return part;
         const n = days(d(due), TODAY), verb = r.b === 'ear' ? 'Expected' : 'Due';
-        if (n > 0) return '<span class="chip bad">' + plural(n, 'day') + ' overdue</span>';
-        if (n === 0) return '<span class="chip warn">' + verb + ' today</span>';
-        return '<span class="chip ' + (-n <= 3 ? 'warn' : '') + '">' + verb + ' in ' + plural(-n, 'day') + '</span>';
+        if (n > 0) return part + '<span class="chip bad">' + plural(n, 'day') + ' overdue</span>';
+        if (n === 0) return part + '<span class="chip warn">' + verb + ' today</span>';
+        return part + '<span class="chip ' + (-n <= 3 ? 'warn' : '') + '">' + verb + ' in ' + plural(-n, 'day') + '</span>';
+    }
+    // The steps of a row's payments: each one with its date, who recorded it and
+    // the running total, then the balance still to come. Each can be undone.
+    function paymentsBox(r) {
+        const list = r.payments || [];
+        if (!list.length) return '';
+        const inbound = r.b === 'ear' || r.b === 'aar', word = inbound ? 'received' : 'paid';
+        const stillOpen = r.b === 'aar' ? r.partOpen : r.status === 'Open';
+        const pct = r.total > 0 ? Math.min(100, Math.round(r.paid / r.total * 100)) : 100;
+        let run = 0;
+        const steps = list.map((p, i) => {
+            run += p.amount;
+            return '<li><div class="s-main"><b>' + money(p.amount) + '</b><span class="s-sub">' + (list.length > 1 ? 'Payment ' + (i + 1) + ' · ' : '') + us(p.date) +
+                (p.by ? ' · by ' + esc(p.by) : '') + ' · ' + money(run) + ' of ' + money(r.total) + '</span></div>' +
+                (p.id ? '<button type="button" class="link-btn" data-act="unpay" data-pid="' + p.id + '">Remove</button>' : '<span></span>') + '</li>';
+        }).join('');
+        const todo = stillOpen && r.balance > 0
+            ? '<li class="todo"><div class="s-main"><b>' + money(r.balance) + '</b><span class="s-sub">Balance still ' + (inbound ? 'to come' : 'to pay') + '</span></div><span></span></li>'
+            : '';
+        return '<div class="box"><h4>Payments · ' + money(r.paid) + ' of ' + money(r.total) + ' ' + word + '</h4>' +
+            '<div class="progress" role="img" aria-label="' + pct + '% ' + word + '"><span style="width:' + pct + '%"></span></div>' +
+            '<ol class="steps">' + steps + todo + '</ol></div>';
     }
     const statusChip = r => '<span class="chip st">' + esc(r.status) + '</span>';
     function meta(r) {
@@ -596,7 +637,7 @@
         const message = 'Delete ' + plural(list.length, 'received payment') + ' (' + money(sum(list)) + ')?\n\n' +
             list.slice(0, 8).map(r => '• ' + r.project + ' · ' + (r.milestone || '') + ' · ' + money(r.amount) + ' · received ' + us(r.received)).join('\n') +
             (list.length > 8 ? '\n• … and ' + (list.length - 8) + ' more' : '') +
-            '\n\nThey are removed from Account Transactions (the activity log keeps a record).' +
+            '\n\nThey are removed from Account Transactions (the activity log keeps a record). A payment that is one of several on its row removes only that payment; the row is expected again for it.' +
             (raised.length ? '\n\nCommission was already raised on ' + raised.join(', ') + ' after these were received. Deleting the payment does NOT take that commission back - check Commission Payable.' : '');
         if (!window.confirm(message)) return;
         if (button) button.disabled = true;
@@ -672,17 +713,20 @@
         const fields = COLS[r.b].map(c => '<dt>' + c[0] + '</dt><dd>' + (c[0] === 'Project Name' ? esc(r.project) : c[1](r)) + '</dd>');
         if (r.milestone && !COLS[r.b].some(c => c[0] === 'Milestone')) fields.splice(1, 0, '<dt>Milestone</dt><dd>' + esc(r.milestone) + '</dd>');
         if (r.details) fields.push('<dt>Details</dt><dd>' + esc(r.details) + '</dd>');
-        let extra = '';
+        let extra = paymentsBox(r);
+        // Less than the balance is a part payment: the row stays open for the rest,
+        // unless it is ticked as the last one (closed short).
+        const lastBox = '<label class="check"><input type="checkbox" id="st-final"> <span>This is the last payment: close it even if it is less than the balance</span></label>';
         if (r.b === 'ear' && open) {
-            extra = '<form class="box" id="settle-form"><h4>Record payment received</h4><p>Moves this payment to Actual AR. When the Labor and Material invoices are on file, the sales partner’s commission is raised, due the Friday of the following week.</p>' +
+            extra += '<form class="box" id="settle-form"><h4>Record payment received</h4><p>Enter what came in. Less than the ' + money(r.amount) + ' ' + (r.paid > 0 ? 'balance' : 'expected') + ' is a part payment: it stays here for the rest, and each payment shows in Actual AR on the day it arrived. When the Labor and Material invoices are on file, the sales partner’s commission is raised, due the Friday of the following week.</p>' +
                 '<div class="row2"><div class="field"><label for="st-amt">Amount received</label><input id="st-amt" type="number" step="0.01" min="0.01" value="' + Number(r.amount).toFixed(2) + '" required></div>' +
                 '<div class="field"><label for="st-date">Date received</label><input id="st-date" type="date" value="' + iso(TODAY) + '" required></div></div>' +
-                '<div><button class="tp-btn primary" type="submit">Record payment</button></div></form>';
+                lastBox + '<div><button class="tp-btn primary" type="submit">Record payment</button></div></form>';
         } else if (out && open) {
-            extra = '<form class="box" id="settle-form"><h4>Mark as paid</h4><p>Closes this payable with the amount paid and the day it went out.</p>' +
+            extra += '<form class="box" id="settle-form"><h4>Record payment</h4><p>Enter what went out and the day. Less than the ' + money(r.amount) + ' ' + (r.paid > 0 ? 'balance' : 'due') + ' is a part payment: it stays open for the rest.</p>' +
                 '<div class="row2"><div class="field"><label for="st-amt">Amount paid</label><input id="st-amt" type="number" step="0.01" min="0.01" value="' + Number(r.amount).toFixed(2) + '" required></div>' +
                 '<div class="field"><label for="st-date">Date paid</label><input id="st-date" type="date" value="' + iso(TODAY) + '" required></div></div>' +
-                '<div><button class="tp-btn primary" type="submit">Mark as paid</button></div></form>';
+                lastBox + '<div><button class="tp-btn primary" type="submit">Record payment</button></div></form>';
             extra += r.payRun && d(r.payRun) >= TODAY
                 ? '<div class="box"><h4>In the pay run for ' + us(r.payRun) + '</h4><p>Take it out and it moves to next week with the other open payables.</p><div><button type="button" class="tp-btn" data-act="unrun">Remove from pay run</button></div></div>'
                 : '<div class="box"><h4>Pay run</h4><p>Plan to pay it on this day. Once a week has a pay run, its other open payables move to next week.</p>' +
@@ -711,14 +755,17 @@
     let tt;
     function toast(msg) { const t = $('toast'); t.textContent = msg; t.hidden = false; clearTimeout(tt); tt = setTimeout(() => t.hidden = true, 4500); }
 
-    async function settle(ids, date, amount, button) {
+    async function settle(ids, date, amount, button, last) {
         if (button) button.disabled = true;
         try {
             const list = ids.map(byId).filter(Boolean);
-            const json = await post(CFG.settleUrl, { items: ids, date: date, amount: amount });
+            const json = await post(CFG.settleUrl, { items: ids, date: date, amount: amount, final: !!last });
             const single = list.length === 1 ? list[0] : null;
             const ins = list.filter(r => r.b === 'ear'), outs = list.filter(r => r.b !== 'ear');
-            let msg = single && single.b === 'ear'
+            const part = (json.partial || [])[0];
+            let msg = single && part
+                ? 'Part payment of ' + money(amount) + ' recorded for ' + single.project + ' · ' + money(part.balance) + ' still ' + (single.b === 'ear' ? 'to come' : 'to pay') + '.'
+                : single && single.b === 'ear'
                 ? 'Payment recorded for ' + single.project + '.'
                 : [
                     ins.length ? plural(ins.length, 'payment') + ' recorded as received · ' + money(sum(ins)) : '',
@@ -802,8 +849,21 @@
         }
         else if (act === 'unrun') payRun([S.drawer], null, t);
         else if (act === 'delete') deleteReceived([S.drawer], t);
+        else if (act === 'unpay') {
+            const r = byId(S.drawer), p = r && (r.payments || []).find(x => String(x.id) === t.dataset.pid);
+            if (!p) return;
+            const inbound = r.b === 'ear' || r.b === 'aar';
+            if (!window.confirm('Remove the payment of ' + money(p.amount) + ' made on ' + us(p.date) + ' from ' + r.project + '?\n\n' +
+                'It is ' + (inbound ? 'expected' : 'payable') + ' again for that amount (the activity log keeps a record).' +
+                (inbound ? ' A commission already raised is NOT taken back - check Commission Payable.' : ''))) return;
+            t.disabled = true;
+            post(CFG.removePaymentUrl, { payment: p.id })
+                .then(() => { closeDrawer(); toast('Payment of ' + money(p.amount) + ' removed from ' + r.project + '.'); return load(); })
+                .catch(err => { toast(err.message); t.disabled = false; });
+        }
         else if (act === 'reopen') {
             const r = byId(S.drawer);
+            if ((r.payments || []).length > 1 && !window.confirm('Reopen ' + r.project + '? Its ' + r.payments.length + ' payments (' + money(r.paid) + ') are removed.')) return;
             t.disabled = true;
             post(CFG.reopenUrl, { item: r.id })
                 .then(() => { closeDrawer(); toast(r.project + ' reopened.'); return load(); })
@@ -839,7 +899,7 @@
         e.preventDefault();
         const amt = parseFloat($('st-amt').value), date = $('st-date').value;
         if (!(amt > 0) || !date) { toast('Enter the amount and the date.'); return; }
-        settle([S.drawer], date, amt, e.target.querySelector('button[type="submit"]'));
+        settle([S.drawer], date, amt, e.target.querySelector('button[type="submit"]'), $('st-final') && $('st-final').checked);
     });
     $('scrim').addEventListener('click', closeDrawer);
     document.addEventListener('keydown', e => { if (e.key === 'Escape' && S.drawer) closeDrawer(); });

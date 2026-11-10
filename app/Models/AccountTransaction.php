@@ -150,6 +150,12 @@ class AccountTransaction extends Model
         return $this->belongsTo(ProjectInvoiceDetail::class, 'project_invoice_detail_id')->withTrashed();
     }
 
+    /** Money received / paid against it, oldest first (several when paid in parts). */
+    public function payments()
+    {
+        return $this->hasMany(TransactionPayment::class)->orderBy('paid_on')->orderBy('id');
+    }
+
     // App\Models\Transaction.php
     public function scopeFilterByRole($query, $user)
     {

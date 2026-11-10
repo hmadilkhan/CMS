@@ -11,7 +11,7 @@ use Illuminate\Support\Facades\Log;
 
 /**
  * Raises the sales partner's Commission Payable when a customer payment is
- * received (an Expected AR transaction is closed).
+ * received (an Expected AR transaction is paid, in full or in part).
  *
  * The commission is what is left of the money received once the Labor and
  * Material invoices are paid for, counted over the whole project so no invoice
@@ -102,12 +102,15 @@ class CommissionPayableService
         }
     }
 
-    /** Received so far, less both invoice types and the commission already raised. */
+    /**
+     * Received so far, less both invoice types and the commission already
+     * raised. Part payments count: settled_amount is what a row has received
+     * so far, also while it is still Open for the rest.
+     */
     public function outstandingCommission(Project $project): float
     {
         $received = (float) AccountTransaction::where('project_id', $project->id)
             ->where('amount', '>', 0)
-            ->where('status', AccountTransaction::STATUS_CLOSED)
             ->sum('settled_amount');
 
         $invoices = (float) $project->invoiceDetails()

@@ -57,6 +57,12 @@ class ProjectInvoiceDetail extends Model
         return $this->belongsTo(Project::class)->withTrashed();
     }
 
+    /** Money paid against it, oldest first (several when paid in parts). */
+    public function payments()
+    {
+        return $this->hasMany(TransactionPayment::class)->orderBy('paid_on')->orderBy('id');
+    }
+
     public function uploader()
     {
         return $this->belongsTo(User::class, 'uploaded_by')->withTrashed();

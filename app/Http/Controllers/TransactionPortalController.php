@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\AccountTransaction;
 use App\Models\FinanceOption;
 use App\Models\ProjectInvoiceDetail;
+use App\Models\TransactionPayment;
 use App\Services\TransactionPortalService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -46,6 +47,7 @@ class TransactionPortalController extends Controller
                 'dataUrl' => route('transaction-portal.data'),
                 'settleUrl' => route('transaction-portal.settle'),
                 'reopenUrl' => route('transaction-portal.reopen'),
+                'removePaymentUrl' => route('transaction-portal.remove-payment'),
                 'payRunUrl' => route('transaction-portal.pay-run'),
                 'searchUrl' => route('transaction-portal.search'),
                 'searchLimit' => TransactionPortalService::SEARCH_LIMIT,
@@ -77,9 +79,11 @@ class TransactionPortalController extends Controller
     }
 
     /**
-     * Close one or more open rows. One row may carry the amount actually
-     * received / paid; several (the bulk bar) are each closed at their own
-     * amount.
+     * Record money received / paid on open rows. One row may carry the amount
+     * actually received / paid: less than its balance is a part payment and the
+     * row stays Open with what is left, unless `final` (the rest is not
+     * coming). Several (the bulk bar) are each received / paid in full - their
+     * balance.
      */
     public function settle(Request $request)
     {
@@ -88,27 +92,37 @@ class TransactionPortalController extends Controller
             'items.*' => 'required|string|max:20',
             'date' => 'required|date',
             'amount' => 'nullable|numeric|min:0.01',
+            'final' => 'sometimes|boolean',
         ]);
 
         $single = count($validated['items']) === 1 && isset($validated['amount']);
         $closed = 0;
+        $partial = [];
         $commissions = [];
 
         foreach ($validated['items'] as $item) {
             [$record, $section] = $this->resolve($request, $item);
 
-            if ($record->status !== AccountTransaction::STATUS_OPEN) {
+            if ($record instanceof TransactionPayment || $record->status !== AccountTransaction::STATUS_OPEN) {
+                continue;
+            }
+
+            $balance = $this->portal->balanceOf($record);
+            $amount = $single ? (float) $validated['amount'] : $balance;
+            $final = $single ? $request->boolean('final') : true;
+
+            if ($amount <= 0) {
+                // Nothing left to receive / pay: it only needed closing.
+                $this->portal->closePaid($record);
+                $closed++;
+
                 continue;
             }
 
             if ($record instanceof ProjectInvoiceDetail) {
-                $this->portal->settleInvoice($record, $single ? (float) $validated['amount'] : (float) $record->amount, $validated['date']);
+                $this->portal->settleInvoice($record, $amount, $validated['date'], $final);
             } else {
-                $full = $section === 'ear'
-                    ? (float) $record->amount - (float) $record->deduction_amount
-                    : abs((float) $record->amount);
-
-                $commission = $this->portal->settleTransaction($record, $single ? (float) $validated['amount'] : $full, $validated['date']);
+                $commission = $this->portal->settleTransaction($record, $amount, $validated['date'], $final);
 
                 if ($commission) {
                     $commissions[] = [
@@ -118,10 +132,46 @@ class TransactionPortalController extends Controller
                 }
             }
 
-            $closed++;
+            $record->refresh();
+
+            if ($record->status === AccountTransaction::STATUS_CLOSED) {
+                $closed++;
+            } else {
+                $partial[] = [
+                    'item' => $item,
+                    'paid' => round((float) $record->settled_amount, 2),
+                    'balance' => $this->portal->balanceOf($record),
+                ];
+            }
         }
 
-        return response()->json(['closed' => $closed, 'commissions' => $commissions]);
+        return response()->json(['closed' => $closed, 'partial' => $partial, 'commissions' => $commissions]);
+    }
+
+    /**
+     * Undo one payment from a row's payment history (recorded by mistake). The
+     * row is expected / payable again for what is left. Needs the permission
+     * of the section the row is in.
+     */
+    public function removePayment(Request $request)
+    {
+        $validated = $request->validate(['payment' => 'required|integer']);
+        $payment = TransactionPayment::findOrFail($validated['payment']);
+        $user = $request->user();
+
+        if ($payment->account_transaction_id) {
+            $record = AccountTransaction::filterByRole($user)->findOrFail($payment->account_transaction_id);
+            $section = $this->portal->sectionOf($record);
+        } else {
+            ProjectInvoiceDetail::where('invoice_type', 'material')->findOrFail($payment->project_invoice_detail_id);
+            $section = 'mat';
+        }
+
+        abort_unless($section && $user->can($this->portal->permissionFor($section)), 403);
+
+        $this->portal->removePayment($payment);
+
+        return response()->json(['removed' => true]);
     }
 
     /**
@@ -226,7 +276,8 @@ class TransactionPortalController extends Controller
         return response()->streamDownload(function () use ($rows, $titles, $dateOf, $safe) {
             $out = fopen('php://output', 'w');
             // Payee last, so the columns people already use keep their place.
-            fputcsv($out, ['Section', 'Project Name', 'Finance Option', 'Sales Partner', 'Sub-Contractor', 'Date', 'Due Date', 'Amount', 'Status', 'Received / Paid On', 'Pay Run', 'Payee']);
+            // Full Amount / Paid So Far last too: an open row's Amount is its balance once part paid.
+            fputcsv($out, ['Section', 'Project Name', 'Finance Option', 'Sales Partner', 'Sub-Contractor', 'Date', 'Due Date', 'Amount', 'Status', 'Received / Paid On', 'Pay Run', 'Payee', 'Full Amount', 'Paid So Far']);
 
             foreach ($rows as $r) {
                 fputcsv($out, array_map($safe, [
@@ -242,6 +293,8 @@ class TransactionPortalController extends Controller
                     $r['received'] ?? $r['paidOn'] ?? '',
                     $r['payRun'] ?? '',
                     $r['payee'] ?? '',
+                    isset($r['total']) ? number_format((float) $r['total'], 2, '.', '') : '',
+                    isset($r['paid']) ? number_format((float) $r['paid'], 2, '.', '') : '',
                 ]));
             }
 
@@ -268,10 +321,11 @@ class TransactionPortalController extends Controller
     }
 
     /**
-     * The record behind a board id ("t12" = transaction 12, "i5" = invoice 5),
+     * The record behind a board id ("t12" = transaction 12, "i5" = invoice 5,
+     * "p7" = payment 7 received on a customer payment, an Actual AR item),
      * refused unless the user holds the permission of the section it is in.
      *
-     * @return array{0: AccountTransaction|ProjectInvoiceDetail, 1: string}
+     * @return array{0: AccountTransaction|ProjectInvoiceDetail|TransactionPayment, 1: string}
      */
     private function resolve(Request $request, string $item): array
     {
@@ -280,6 +334,10 @@ class TransactionPortalController extends Controller
         if (preg_match('/^t(\d+)$/', $item, $match)) {
             $record = AccountTransaction::filterByRole($user)->findOrFail((int) $match[1]);
             $section = $this->portal->sectionOf($record);
+        } elseif (preg_match('/^p(\d+)$/', $item, $match)) {
+            $record = TransactionPayment::whereNotNull('account_transaction_id')->findOrFail((int) $match[1]);
+            $transaction = AccountTransaction::filterByRole($user)->findOrFail($record->account_transaction_id);
+            $section = (float) $transaction->amount > 0 ? 'aar' : null;
         } elseif (preg_match('/^i(\d+)$/', $item, $match)) {
             $record = ProjectInvoiceDetail::where('invoice_type', 'material')->findOrFail((int) $match[1]);
             $section = 'mat';

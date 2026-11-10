@@ -126,9 +126,14 @@
                             <span class="text-danger">{{ $message }}</span>
                         @enderror
                     </div>
+                    @if ($isEditMode && $paidSoFar > 0 && $originalStatus === 'Open')
+                        <div class="col-12">
+                            <small class="text-muted">Part paid: ${{ number_format($paidSoFar, 2) }} received / paid so far{{ $paymentCount > 1 ? ' in ' . $paymentCount . ' payments' : '' }}. Record the next payment from the Transaction Portal, or set Closed with the total received.</small>
+                        </div>
+                    @endif
                     @if ($status === 'Closed')
                         <div class="col-xl-3 col-lg-4 col-md-6">
-                            <label class="form-label">Received / Paid Amount</label>
+                            <label class="form-label">Total Received / Paid</label>
                             <input type="number" step="0.01" min="0" class="form-control" wire:model.defer="settled_amount">
                             @error('settled_amount')
                                 <span class="text-danger">{{ $message }}</span>
@@ -191,7 +196,9 @@
                             <td>
                                 <span
                                     class="badge {{ $transaction->status === 'Open' ? 'bg-success' : 'bg-secondary' }}">{{ $transaction->status }}</span>
-                                @if ($transaction->settled_date)
+                                @if ($transaction->settled_date && $transaction->status === 'Open')
+                                    <small class="d-block text-muted mt-1">Part paid: ${{ number_format($transaction->settled_amount, 2) }} so far, last on {{ date('d M Y', strtotime($transaction->settled_date)) }}</small>
+                                @elseif ($transaction->settled_date)
                                     <small class="d-block text-muted mt-1">${{ number_format($transaction->settled_amount, 2) }} on {{ date('d M Y', strtotime($transaction->settled_date)) }}</small>
                                 @endif
                             </td>

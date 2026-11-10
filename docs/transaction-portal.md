@@ -9,7 +9,7 @@ prototype; keep the screen as it is.
 | Key | Section | Rows | Placed in the week by |
 |-----|---------|------|-----------------------|
 | `ear` | Expected Accounts Receivable | `account_transactions`, `status = Open`, `amount > 0` | `transaction_date` |
-| `aar` | Actual Accounts Receivable | the same rows once closed | `settled_date` |
+| `aar` | Actual Accounts Receivable | one item per payment received on them (`transaction_payments`), part payments too; a row closed before payments were recorded one by one shows its one settlement | `paid_on` (`settled_date` for the old rows) |
 | `com` | Commission Payable | `payee = sales_partner`, `amount < 0` | `due_date` (falls back to `transaction_date`) |
 | `lab` | Labor Payable | `payee = sub_contractor`, `amount < 0` | `transaction_date` (the Inspection Approval Date) |
 | `mat` | Material Invoices Payable | `project_invoice_details`, `invoice_type = material` | invoice date + `material_due_days` (30) |
@@ -97,7 +97,8 @@ table's) stay local filters on what is loaded.
 - Positive transactions closed before settlement existed (no received date) are
   not found, as they are never in Actual AR.
 
-The Expected AR amount is the remitted amount (`amount - deduction_amount`).
+The Expected AR amount is the remitted amount (`amount - deduction_amount`),
+less whatever part payments have already come in (see Part payments).
 
 ## Permissions
 
@@ -141,6 +142,51 @@ deleting the payment does **not** take the commission back. The project
 page's Account Transactions form asks for the same two fields when a row is switched
 to Closed. A paid payable can be reopened, which clears both fields.
 
+**Editing a closed row on the project page** saves its Received / Paid amount
+and date as they are in the form (`AccountTransactions::editedSettlement()`).
+Until 2026-11-10 an edit to a row that was already Closed kept the old ones, so
+the portal - which shows the settled amount and places the row by the settled
+date - kept the old figure however often the row was re-saved; the only way
+round was Open, save, Closed, save. A row closed at its full amount follows a
+new amount when the received box is left as it was; a part payment keeps its
+received amount. Blank boxes (rows closed before settlement existed) are kept
+blank.
+
+## Part payments (added 2026-11-10)
+
+Every section takes a part payment: Expected AR and all four payables. Each
+payment is a row in `transaction_payments` (`account_transaction_id` or
+`project_invoice_detail_id`, `amount`, `paid_on`, `created_by`, soft deletes),
+written only through `TransactionPaymentService`, which keeps the parent in step:
+
+- `settled_amount` = the total received / paid **so far** (also on an Open row),
+  `settled_date` = the day of the last payment.
+- **Open** while the total is below the amount (positive rows: amount −
+  deduction; payables: |amount|), **Closed** once it reaches it - or when the
+  payment was ticked "This is the last payment" (`final`), which closes it short.
+- An open row's board amount is its **balance**; its chip says "Part paid $X of
+  $Y". The drawer shows the steps: each payment (date, who, running total) and
+  the balance still to come, each with **Remove**
+  (`transaction-portal.remove-payment`, the permission of the section the row is
+  in; the row reopens with its balance). **Reopen** removes every payment.
+- **Actual AR lists payments, not transactions**: item id `p<payment id>`
+  (`transactionId` names its row), placed by `paid_on`, so a week's Received
+  total is the money that came in that week. A part payment carries `partOpen`
+  and a "Part · $X to come" chip. Rows closed before this existed have no
+  payment rows and still show from `settled_amount` / `settled_date` (id
+  `t<id>`); nothing was backfilled. Deleting a received payment that is one of
+  several on its row removes only that payment; a row's only payment deletes the
+  row, as before.
+- The bulk bar receives / pays each ticked row's **balance**.
+- Payables keep one item per row: a part payment made in a week that is now past
+  is not listed under that week (the row sits in the current week, part paid).
+- The project page's form: the Closed box is the **total** received / paid.
+  Closing an open, part-paid row records only what the earlier payments did not
+  cover; editing a closed row's total moves its last payment (refused below the
+  earlier payments); setting a Closed row back to Open removes its payments, as
+  Reopen does; editing an Open row keeps its part payments.
+- CSV: `Full Amount` and `Paid So Far` columns, last.
+
 Rows closed before these columns existed have no settlement, so they never
 appear in Actual AR. Every material invoice on file at the migration was set
 to Closed, the way the account transactions status migration closed every
@@ -148,11 +194,11 @@ existing row. Only invoices uploaded from then on show as payable.
 
 ## Commission (`CommissionPayableService`)
 
-Raised when a customer payment is closed (from the portal or the Account
-Transactions form), worked out over the whole project:
+Raised when a customer payment is received - in full or in part - from the
+portal or the Account Transactions form, worked out over the whole project:
 
 ```
-commission now = all money received (settled_amount of closed positive rows)
+commission now = all money received (settled_amount of positive rows, part payments included)
                - Labor invoices - Material invoices
                - commission already raised (every negative sales_partner row)
 ```

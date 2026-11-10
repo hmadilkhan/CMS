@@ -225,7 +225,8 @@ class TransactionPortalTest extends TestCase
 
         $rows = collect($this->actingAs($this->finance())->getJson(route('transaction-portal.data', $this->week()))->json('rows'));
         $this->assertFalse($rows->contains(fn ($r) => $r['b'] === 'ear' && $r['id'] === 't'.$payment->id));
-        $this->assertTrue($rows->contains(fn ($r) => $r['b'] === 'aar' && $r['id'] === 't'.$payment->id));
+        // Actual AR lists the payment itself (p<id>), tied to its transaction.
+        $this->assertTrue($rows->contains(fn ($r) => $r['b'] === 'aar' && $r['id'] === 'p'.$payment->payments()->sole()->id && $r['transactionId'] === $payment->id));
     }
 
     public function test_commission_waits_for_both_invoices_and_is_never_deducted_twice(): void
@@ -473,8 +474,8 @@ class TransactionPortalTest extends TestCase
         $this->assertEquals(-4500, (float) $commission); // 5000 + 2500 - 1000 - 2000
 
         // They now show in Actual AR for the week received.
-        $aar = collect($this->actingAs($this->finance())->getJson(route('transaction-portal.data', $this->week()))->json('rows'))->where('b', 'aar')->pluck('id');
-        $this->assertEqualsCanonicalizing(['t'.$first->id, 't'.$second->id, 't'.$other->id], $aar->all());
+        $aar = collect($this->actingAs($this->finance())->getJson(route('transaction-portal.data', $this->week()))->json('rows'))->where('b', 'aar')->pluck('transactionId');
+        $this->assertEqualsCanonicalizing([$first->id, $second->id, $other->id], $aar->all());
     }
 
     public function test_received_payments_can_be_deleted_with_the_edit_permission(): void
@@ -638,5 +639,172 @@ class TransactionPortalTest extends TestCase
         $this->assertStringContainsString('Expected Accounts Receivable', $csv);
         $this->assertStringContainsString('Other Payables', $csv);
         $this->assertStringContainsString(',Supplier', $csv);
+    }
+
+    private function rows(User $user, array $period = []): \Illuminate\Support\Collection
+    {
+        return collect($this->actingAs($user)->getJson(route('transaction-portal.data', $period ?: $this->week()))->json('rows'))->keyBy('id');
+    }
+
+    public function test_a_part_payment_keeps_the_row_open_with_its_balance_and_payments_add_up(): void
+    {
+        $project = $this->project();
+        $this->invoice($project, 'labor', 1000);
+        $this->invoice($project, 'material', 2000);
+        $payment = $this->transaction($project, ['amount' => 20000, 'transaction_date' => '2026-11-02']);
+        $finance = $this->finance();
+
+        $this->actingAs($finance)
+            ->postJson(route('transaction-portal.settle'), ['items' => ['t'.$payment->id], 'date' => '2026-11-03', 'amount' => 5000])
+            ->assertOk()
+            ->assertJsonPath('closed', 0)
+            ->assertJsonPath('partial.0.paid', 5000)
+            ->assertJsonPath('partial.0.balance', 15000);
+
+        $payment->refresh();
+        $this->assertSame('Open', $payment->status);
+        $this->assertEquals(5000, (float) $payment->settled_amount);
+
+        // Still expected for the balance, and the money received is in Actual AR.
+        $rows = $this->rows($finance);
+        $expected = $rows['t'.$payment->id];
+        $this->assertSame('ear', $expected['b']);
+        $this->assertEquals(15000, $expected['amount']);
+        $this->assertEquals(20000, $expected['total']);
+        $this->assertEquals(5000, $expected['paid']);
+        $this->assertCount(1, $expected['payments']);
+        $this->assertSame('2026-11-03', $expected['payments'][0]['date']);
+        $first = $payment->payments()->sole();
+        $this->assertSame('aar', $rows['p'.$first->id]['b']);
+        $this->assertEquals(5000, $rows['p'.$first->id]['amount']);
+        $this->assertTrue($rows['p'.$first->id]['partOpen']);
+
+        // The commission counts the part payment: 5000 - 1000 - 2000.
+        $this->assertEquals(-2000, (float) AccountTransaction::where('project_id', $project->id)->where('payee', 'sales_partner')->sum('amount'));
+
+        // The rest arrives later: it adds up and closes the row.
+        $this->actingAs($finance)
+            ->postJson(route('transaction-portal.settle'), ['items' => ['t'.$payment->id], 'date' => '2026-11-05', 'amount' => 15000])
+            ->assertOk()
+            ->assertJsonPath('closed', 1);
+
+        $payment->refresh();
+        $this->assertSame('Closed', $payment->status);
+        $this->assertEquals(20000, (float) $payment->settled_amount);
+        $this->assertSame('2026-11-05', substr((string) $payment->settled_date, 0, 10));
+        $this->assertEquals(-17000, (float) AccountTransaction::where('project_id', $project->id)->where('payee', 'sales_partner')->sum('amount'));
+
+        $rows = $this->rows($finance);
+        $this->assertFalse($rows->has('t'.$payment->id));
+        $received = $rows->where('b', 'aar')->where('transactionId', $payment->id);
+        $this->assertEqualsCanonicalizing([5000, 15000], $received->pluck('amount')->all());
+        $this->assertCount(2, $received->first()['payments']);
+
+        // Each payment sits in the week it arrived: none of them next week.
+        $this->assertTrue($this->rows($finance, ['start' => '2026-11-08', 'end' => '2026-11-14'])->where('b', 'aar')->isEmpty());
+
+        $this->assertDatabaseHas('activity_log', ['subject_id' => $payment->id, 'event' => 'payment', 'description' => $finance->name.' recorded a part payment of $5,000.00 on 11/03/2026 ($5,000.00 of $20,000.00 paid) on the account transaction.']);
+    }
+
+    public function test_a_payable_can_be_paid_in_parts_or_closed_short(): void
+    {
+        $project = $this->project();
+        $labor = $this->transaction($project, ['payee' => 'sub_contractor', 'amount' => -4560, 'transaction_date' => '2026-11-02']);
+        $material = $this->invoice($project, 'material', 9000, '2026-10-01');
+        $finance = $this->finance();
+
+        $this->actingAs($finance)->postJson(route('transaction-portal.settle'), ['items' => ['i'.$material->id], 'date' => '2026-11-03', 'amount' => 4000])->assertOk();
+        $this->assertSame('Open', $material->fresh()->status);
+        $this->assertEquals(5000, $this->rows($finance)['i'.$material->id]['amount'], 'An open payable shows what is left to pay.');
+
+        // The bulk bar pays the balance, not the whole invoice again.
+        $this->actingAs($finance)->postJson(route('transaction-portal.settle'), ['items' => ['i'.$material->id], 'date' => '2026-11-04'])->assertJsonPath('closed', 1);
+        $this->assertEquals(9000, (float) $material->fresh()->settled_amount);
+        $this->assertSame(2, $material->payments()->count());
+
+        // Less than the balance, marked as the last payment: closed short.
+        $this->actingAs($finance)->postJson(route('transaction-portal.settle'), ['items' => ['t'.$labor->id], 'date' => '2026-11-03', 'amount' => 4000, 'final' => true])
+            ->assertJsonPath('closed', 1);
+        $labor->refresh();
+        $this->assertSame('Closed', $labor->status);
+        $this->assertEquals(4000, (float) $labor->settled_amount);
+
+        // Reopen undoes every payment.
+        $this->actingAs($finance)->postJson(route('transaction-portal.reopen'), ['item' => 'i'.$material->id])->assertOk();
+        $material->refresh();
+        $this->assertSame('Open', $material->status);
+        $this->assertNull($material->settled_amount);
+        $this->assertSame(0, $material->payments()->count());
+    }
+
+    public function test_one_payment_can_be_removed_from_the_history(): void
+    {
+        $project = $this->project();
+        $payment = $this->transaction($project, ['amount' => 20000]);
+        $finance = $this->finance();
+
+        foreach ([['2026-11-02', 5000], ['2026-11-03', 15000]] as [$date, $amount]) {
+            $this->actingAs($finance)->postJson(route('transaction-portal.settle'), ['items' => ['t'.$payment->id], 'date' => $date, 'amount' => $amount])->assertOk();
+        }
+        $this->assertSame('Closed', $payment->fresh()->status);
+        $second = $payment->payments()->get()->last();
+
+        // A Funding Manager has no Actual AR section, and the row is closed (received).
+        $this->actingAs($this->fundingManager())->postJson(route('transaction-portal.remove-payment'), ['payment' => $second->id])->assertForbidden();
+
+        $this->actingAs($finance)->postJson(route('transaction-portal.remove-payment'), ['payment' => $second->id])->assertOk();
+
+        $payment->refresh();
+        $this->assertSame('Open', $payment->status);
+        $this->assertEquals(5000, (float) $payment->settled_amount);
+        $this->assertSame('2026-11-02', substr((string) $payment->settled_date, 0, 10));
+        $this->assertSoftDeleted($second);
+        $this->assertEquals(15000, $this->rows($finance)['t'.$payment->id]['amount']);
+
+        // Open again, so the Funding Manager (Expected AR) may undo the one left.
+        $first = $payment->payments()->sole();
+        $this->actingAs($this->fundingManager())->postJson(route('transaction-portal.remove-payment'), ['payment' => $first->id])->assertOk();
+        $this->assertNull($payment->fresh()->settled_amount);
+    }
+
+    public function test_deleting_one_of_several_received_payments_keeps_the_row(): void
+    {
+        $project = $this->project();
+        $payment = $this->transaction($project, ['amount' => 20000]);
+        $single = $this->transaction($project, ['amount' => 700]);
+        $editor = $this->user('Finance Editor', [
+            TransactionPortalService::PERMISSION_PAGE,
+            TransactionPortalService::PERMISSION_EXPECTED,
+            TransactionPortalService::PERMISSION_OTHER,
+            TransactionPortalService::PERMISSION_DELETE,
+        ]);
+
+        foreach ([['t'.$payment->id, 5000], ['t'.$payment->id, 5000], ['t'.$single->id, 700]] as [$item, $amount]) {
+            $this->actingAs($editor)->postJson(route('transaction-portal.settle'), ['items' => [$item], 'date' => '2026-11-03', 'amount' => $amount])->assertOk();
+        }
+        $duplicate = $payment->payments()->get()->last();
+
+        $this->actingAs($editor)->postJson(route('transaction-portal.delete-received'), ['items' => ['p'.$duplicate->id]])->assertOk();
+        $this->assertNotSoftDeleted($payment);
+        $this->assertEquals(5000, (float) $payment->fresh()->settled_amount);
+
+        // A row's only payment: the whole received transaction goes, as before.
+        $this->actingAs($editor)->postJson(route('transaction-portal.delete-received'), ['items' => ['p'.$single->payments()->sole()->id]])->assertOk();
+        $this->assertSoftDeleted($single);
+    }
+
+    public function test_search_finds_a_part_paid_payment_as_expected_and_received(): void
+    {
+        $project = $this->project('Sunrise Solar');
+        $payment = $this->transaction($project, ['amount' => 20000, 'transaction_date' => '2026-06-01']);
+        $finance = $this->finance();
+        $this->actingAs($finance)->postJson(route('transaction-portal.settle'), ['items' => ['t'.$payment->id], 'date' => '2026-06-03', 'amount' => 5000])->assertOk();
+
+        $rows = collect($this->actingAs($finance)->getJson(route('transaction-portal.search', ['q' => 'sunrise']))->json('rows'));
+        $this->assertSame(['aar', 'ear'], $rows->where('projectId', $project->id)->pluck('b')->sort()->values()->all());
+
+        // By the amount of one payment.
+        $byAmount = collect($this->actingAs($finance)->getJson(route('transaction-portal.search', ['q' => '5,000']))->json('rows'));
+        $this->assertTrue($byAmount->contains('transactionId', $payment->id));
     }
 }

@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\AccountTransaction;
 use App\Models\Project;
 use App\Models\ProjectInvoiceDetail;
+use App\Models\TransactionPayment;
 use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Builder;
@@ -15,7 +16,8 @@ use Illuminate\Support\Facades\DB;
  * a month) plus every row from before it that is still open.
  *
  *   ear  Expected AR  open transactions with a positive amount (money coming in)
- *   aar  Actual AR    those same transactions once closed, by the date received
+ *   aar  Actual AR    money received on them, one item per payment (part
+ *                     payments too), by the date received
  *   com  Commission   negative transactions paid to the Sales Partner
  *   lab  Labor        negative transactions paid to the Sub-Contractor
  *   mat  Material     Material invoices (project_invoice_details)
@@ -56,9 +58,13 @@ class TransactionPortalService
         'project.customer.finances.finance',
         'project.customer.salespartner',
         'project.customer.subContractor',
+        'payments.creator:id,name',
     ];
 
-    public function __construct(private CommissionPayableService $commissions) {}
+    public function __construct(
+        private CommissionPayableService $commissions,
+        private TransactionPaymentService $payments,
+    ) {}
 
     /** The section keys `$user` may see, in board order. */
     public function sections(User $user): array
@@ -113,12 +119,24 @@ class TransactionPortalService
         }
 
         if (in_array('aar', $sections, true)) {
-            $rows[] = $this->withReceivedHints($this->transactions($user)
+            $period = [$start->toDateString(), $end->toDateString()];
+
+            // Every payment received in the period, part payments included...
+            $received = $this->receivedPayments($user)
+                ->whereBetween('paid_on', $period)
+                ->get()
+                ->map(fn ($p) => $this->actualRow($p->transaction, $p));
+
+            // ...and rows closed before payments were recorded one by one.
+            $legacy = $this->transactions($user)
                 ->where('amount', '>', 0)
                 ->where('status', AccountTransaction::STATUS_CLOSED)
-                ->whereBetween('settled_date', [$start->toDateString(), $end->toDateString()])
+                ->whereBetween('settled_date', $period)
+                ->whereDoesntHave('payments')
                 ->get()
-                ->map(fn ($t) => $this->actualRow($t)));
+                ->map(fn ($t) => $this->actualRow($t));
+
+            $rows[] = $this->withReceivedHints($received->concat($legacy));
         }
 
         if (in_array('com', $sections, true)) {
@@ -242,10 +260,13 @@ class TransactionPortalService
                     $w->orWhere(fn ($q) => $q->where('amount', '>', 0)->where('status', AccountTransaction::STATUS_OPEN));
                 }
                 if ($canOther) {
-                    // Actual AR lists only payments with a received date, as the board does.
-                    $w->orWhere(fn ($q) => $q->where('amount', '>', 0)
-                        ->where('status', AccountTransaction::STATUS_CLOSED)
-                        ->whereNotNull('settled_date'));
+                    // Actual AR: payments received (part payments on an open row too),
+                    // or a row closed with a received date before those were recorded.
+                    $w->orWhere(fn ($q) => $q->where('amount', '>', 0)->where(function ($q) {
+                        $q->whereHas('payments')->orWhere(fn ($q) => $q
+                            ->where('status', AccountTransaction::STATUS_CLOSED)
+                            ->whereNotNull('settled_date'));
+                    }));
                     $w->orWhere('amount', '<', 0);
                 }
             })
@@ -259,7 +280,9 @@ class TransactionPortalService
                     $w->orWhereIn('payee', $payees);
                 }
                 if ($amount !== null) {
-                    $w->orWhereRaw('ABS(amount) = ?', [$amount])->orWhere('settled_amount', $amount);
+                    $w->orWhereRaw('ABS(amount) = ?', [$amount])
+                        ->orWhere('settled_amount', $amount)
+                        ->orWhereHas('payments', fn ($p) => $p->where('amount', $amount));
                 }
             })
             ->orderByDesc('id')
@@ -284,12 +307,19 @@ class TransactionPortalService
             ->get();
 
         $rows = $transactions
-            ->map(fn ($t) => match ($this->sectionOf($t)) {
-                'ear' => $this->expectedRow($t),
-                'aar' => $this->actualRow($t),
-                'com' => $this->commissionRow($t),
-                'lab' => $this->laborRow($t),
-                default => $this->otherRow($t),
+            ->flatMap(function ($t) use ($canExpected, $canOther) {
+                if ((float) $t->amount <= 0) {
+                    return [match ($this->sectionOf($t)) {
+                        'com' => $this->commissionRow($t),
+                        'lab' => $this->laborRow($t),
+                        default => $this->otherRow($t),
+                    }];
+                }
+
+                // A part-paid payment is both still expected and (partly) received.
+                $items = $canExpected && $t->status === AccountTransaction::STATUS_OPEN ? [$this->expectedRow($t)] : [];
+
+                return $canOther ? array_merge($items, $this->actualRowsOf($t)) : $items;
             })
             ->concat($invoices->map(fn ($i) => $this->materialRow($i)))
             ->sortByDesc(fn ($r) => $this->placedOn($r))
@@ -356,27 +386,18 @@ class TransactionPortalService
     }
 
     /**
-     * Close a transaction with what was actually received or paid. A customer
-     * payment (positive) then moves to Actual AR and may raise the commission.
+     * Record money received or paid on a transaction. Less than the balance is
+     * a part payment: the row stays Open with what is left, unless `$final`
+     * (the rest is not coming). A customer payment (positive) shows in Actual
+     * AR for the day received, part payments too, and may raise the commission.
      *
      * @return AccountTransaction|null the commission payable this payment raised
      */
-    public function settleTransaction(AccountTransaction $transaction, float $amount, string $date): ?AccountTransaction
+    public function settleTransaction(AccountTransaction $transaction, float $amount, string $date, bool $final = false): ?AccountTransaction
     {
         $date = Carbon::parse($date)->toDateString();
 
-        DB::transaction(function () use ($transaction, $amount, $date) {
-            $transaction->update([
-                'status' => AccountTransaction::STATUS_CLOSED,
-                'settled_amount' => round(abs($amount), 2),
-                'settled_date' => $date,
-            ]);
-
-            $this->log($transaction, 'closed', [
-                'settled_amount' => round(abs($amount), 2),
-                'settled_date' => $date,
-            ]);
-        });
+        $this->payments->record($transaction, $amount, $date, $final);
 
         if ((float) $transaction->amount > 0 && $transaction->project) {
             return $this->commissions->raiseForPayment($transaction->project, $date);
@@ -385,14 +406,39 @@ class TransactionPortalService
         return null;
     }
 
+    /** Undo one payment (from a row's payment history). The row reopens with its balance. */
+    public function removePayment(TransactionPayment $payment): void
+    {
+        $this->payments->remove($payment);
+    }
+
     /**
-     * Delete a received payment (an Actual AR row), e.g. a duplicate. Soft
+     * Delete a received payment (an Actual AR item), e.g. a duplicate. Soft
      * delete, logged, so it can be restored. A commission it helped raise is
      * NOT taken back: the page warns when the project has one.
+     *
+     * One of several payments on a row: only that payment goes, and the row is
+     * expected again for what is left. A row's only payment (or a row closed
+     * before payments were recorded one by one): the whole transaction goes.
      */
-    public function deleteReceived(AccountTransaction $transaction): void
+    public function deleteReceived(AccountTransaction|TransactionPayment $item): void
     {
+        if ($item instanceof TransactionPayment) {
+            $transaction = $item->transaction;
+
+            if (! $transaction || $transaction->payments()->whereKeyNot($item->id)->exists()) {
+                $this->payments->remove($item);
+
+                return;
+            }
+
+            $item = $transaction;
+        }
+
+        $transaction = $item;
+
         DB::transaction(function () use ($transaction) {
+            $transaction->payments()->get()->each->delete();
             $transaction->delete();
 
             $user = auth()->user();
@@ -455,39 +501,60 @@ class TransactionPortalService
         });
     }
 
+    /** Reopen a paid row (a mistake undone): every payment on it is removed. */
     public function reopenTransaction(AccountTransaction $transaction): void
     {
         DB::transaction(function () use ($transaction) {
-            $transaction->update([
-                'status' => AccountTransaction::STATUS_OPEN,
-                'settled_amount' => null,
-                'settled_date' => null,
-            ]);
-
+            $this->payments->removeAll($transaction);
             $this->log($transaction, 'reopened', []);
         });
     }
 
-    public function settleInvoice(ProjectInvoiceDetail $invoice, float $amount, string $date): void
+    /** Pay a material invoice, in full or in part (see settleTransaction()). */
+    public function settleInvoice(ProjectInvoiceDetail $invoice, float $amount, string $date, bool $final = false): void
     {
-        $invoice->update([
-            'status' => ProjectInvoiceDetail::STATUS_CLOSED,
-            'settled_amount' => round(abs($amount), 2),
-            'settled_date' => Carbon::parse($date)->toDateString(),
-        ]);
-
-        $this->log($invoice, 'paid', ['settled_amount' => round(abs($amount), 2), 'settled_date' => $date], 'ProjectInvoiceDetail');
+        $this->payments->record($invoice, $amount, $date, $final);
     }
 
     public function reopenInvoice(ProjectInvoiceDetail $invoice): void
     {
-        $invoice->update([
-            'status' => ProjectInvoiceDetail::STATUS_OPEN,
-            'settled_amount' => null,
-            'settled_date' => null,
-        ]);
+        DB::transaction(function () use ($invoice) {
+            $this->payments->removeAll($invoice);
+            $this->log($invoice, 'reopened', [], 'ProjectInvoiceDetail');
+        });
+    }
 
-        $this->log($invoice, 'reopened', [], 'ProjectInvoiceDetail');
+    /** Close an open row whose payments already cover it. */
+    public function closePaid(AccountTransaction|ProjectInvoiceDetail $record): void
+    {
+        $this->payments->close($record);
+    }
+
+    /** Still to come on an open row: what the bulk bar receives / pays. */
+    public function balanceOf(AccountTransaction|ProjectInvoiceDetail $record): float
+    {
+        return $this->payments->balance($record);
+    }
+
+    /** Payments received on customer payments, with their transaction loaded for the row. */
+    private function receivedPayments(User $user): Builder
+    {
+        return TransactionPayment::query()
+            ->whereNotNull('account_transaction_id')
+            ->whereHas('transaction', fn ($t) => $t->filterByRole($user)
+                ->where('amount', '>', 0)
+                ->whereHas('project', fn ($q) => $q->whereNull('projects.deleted_at')))
+            ->with(['transaction' => fn ($t) => $t->with(self::RELATIONS)]);
+    }
+
+    /** A customer payment's Actual AR items: one per payment, or its one settlement from before. */
+    private function actualRowsOf(AccountTransaction $t): array
+    {
+        if ($t->payments->isNotEmpty()) {
+            return $t->payments->map(fn ($p) => $this->actualRow($t, $p))->all();
+        }
+
+        return $t->status === AccountTransaction::STATUS_CLOSED && $t->settled_date ? [$this->actualRow($t)] : [];
     }
 
     /** Transactions on live projects, scoped the way Account Transactions already is. */
@@ -582,6 +649,7 @@ class TransactionPortalService
             ->get();
     }
 
+    /** Still expected: its amount is what is left to come once part payments are taken off. */
     private function expectedRow(AccountTransaction $t): array
     {
         return $this->projectFields($t->project) + [
@@ -589,22 +657,48 @@ class TransactionPortalService
             'b' => 'ear',
             'milestone' => $t->milestone,
             'expected' => $this->date($t->transaction_date),
-            'amount' => round((float) $t->amount - (float) $t->deduction_amount, 2),
+            'amount' => $this->payments->balance($t),
             'status' => $t->status,
-        ];
+        ] + $this->paymentFields($t);
     }
 
-    private function actualRow(AccountTransaction $t): array
+    /**
+     * One payment received (id p<payment>), or - for a row closed before
+     * payments were recorded one by one - its one settlement (id t<transaction>).
+     * Always 'Closed': the money is in. `partOpen` = its row still expects more.
+     */
+    private function actualRow(AccountTransaction $t, ?TransactionPayment $p = null): array
     {
         return $this->projectFields($t->project) + [
-            'id' => 't'.$t->id,
+            'id' => $p ? 'p'.$p->id : 't'.$t->id,
             'b' => 'aar',
+            'transactionId' => $t->id,
             'milestone' => $t->milestone,
-            'received' => $this->date($t->settled_date),
-            'amount' => (float) $t->settled_amount,
+            'received' => $this->date($p ? $p->paid_on : $t->settled_date),
+            'amount' => round((float) ($p ? $p->amount : $t->settled_amount), 2),
             'expectedAmount' => round((float) $t->amount, 2),
             'details' => $t->transaction_details,
-            'status' => $t->status,
+            'status' => AccountTransaction::STATUS_CLOSED,
+            'partOpen' => $t->status === AccountTransaction::STATUS_OPEN,
+        ] + $this->paymentFields($t);
+    }
+
+    /** A payable shows what is left to pay while open, and its full amount once paid. */
+    private function payableAmount(AccountTransaction|ProjectInvoiceDetail $record): float
+    {
+        return $record->status === AccountTransaction::STATUS_OPEN
+            ? $this->payments->balance($record)
+            : $this->payments->fullAmount($record);
+    }
+
+    /** What the drawer shows of a row's payments: total, paid so far, balance, and each payment. */
+    private function paymentFields(AccountTransaction|ProjectInvoiceDetail $record): array
+    {
+        return [
+            'total' => $this->payments->fullAmount($record),
+            'paid' => $this->payments->paid($record),
+            'balance' => $this->payments->balance($record),
+            'payments' => $this->payments->history($record),
         ];
     }
 
@@ -616,11 +710,11 @@ class TransactionPortalService
             'milestone' => $t->milestone,
             'paymentReceived' => $this->date($t->transaction_date),
             'due' => $this->date($t->due_date),
-            'amount' => abs((float) $t->amount),
+            'amount' => $this->payableAmount($t),
             'status' => $t->status,
             'paidOn' => $this->date($t->settled_date),
             'payRun' => $this->date($t->pay_run_date),
-        ];
+        ] + $this->paymentFields($t);
     }
 
     private function laborRow(AccountTransaction $t): array
@@ -633,13 +727,13 @@ class TransactionPortalService
             'milestone' => $t->milestone,
             'inspection' => $this->date($t->transaction_date),
             'due' => null,
-            'amount' => abs((float) $t->amount),
+            'amount' => $this->payableAmount($t),
             'status' => $t->status,
             'paidOn' => $this->date($t->settled_date),
             'payRun' => $this->date($t->pay_run_date),
             'invoiceNo' => $invoice ? app(SubContractorPayableService::class)->invoiceNumber($invoice) : null,
             'file' => $invoice?->original_file_name,
-        ];
+        ] + $this->paymentFields($t);
     }
 
     /** A payable to anyone without a section of their own. Due on its own date. */
@@ -653,11 +747,11 @@ class TransactionPortalService
             'details' => $t->transaction_details,
             'date' => $this->date($t->transaction_date),
             'due' => $this->date($t->due_date ?? $t->transaction_date),
-            'amount' => abs((float) $t->amount),
+            'amount' => $this->payableAmount($t),
             'status' => $t->status,
             'paidOn' => $this->date($t->settled_date),
             'payRun' => $this->date($t->pay_run_date),
-        ];
+        ] + $this->paymentFields($t);
     }
 
     private function materialRow(ProjectInvoiceDetail $i): array
@@ -667,12 +761,12 @@ class TransactionPortalService
             'b' => 'mat',
             'invoiceDate' => $this->date($i->invoice_date),
             'due' => $this->date(Carbon::parse($i->invoice_date)->addDays($this->materialDueDays())),
-            'amount' => (float) $i->amount,
+            'amount' => $this->payableAmount($i),
             'status' => $i->status,
             'paidOn' => $this->date($i->settled_date),
             'payRun' => $this->date($i->pay_run_date),
             'file' => $i->original_file_name,
-        ];
+        ] + $this->paymentFields($i);
     }
 
     private function projectFields(?Project $project): array

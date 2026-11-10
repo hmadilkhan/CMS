@@ -219,4 +219,138 @@ class SubContractorPayableTest extends TestCase
 
         $this->assertSame('Closed', $transaction->refresh()->status);
     }
+
+    private function closedPayment(Project $project, array $overrides = []): AccountTransaction
+    {
+        return AccountTransaction::create($overrides + [
+            'project_id' => $project->id,
+            'payee' => 'customer',
+            'milestone' => 'Permit & Install',
+            'amount' => 19050,
+            'deduction_amount' => 0,
+            'transaction_date' => '2026-11-05',
+            'transaction_details' => 'Imported',
+            'status' => 'Closed',
+            'settled_amount' => 19050,
+            'settled_date' => '2026-11-05',
+        ]);
+    }
+
+    /** The reported case: the amount was fixed on the project page, the portal kept the old one. */
+    public function test_changing_the_amount_of_a_payment_closed_in_full_moves_what_was_received(): void
+    {
+        $project = $this->project();
+        $this->actingAs(User::factory()->create(['user_type_id' => 1]));
+        $transaction = $this->closedPayment($project);
+
+        Livewire::test(AccountTransactions::class, ['project_id' => $project->id])
+            ->call('edit', $transaction->id)
+            ->set('amount', 28050)
+            ->call('update')
+            ->assertHasNoErrors();
+
+        $transaction->refresh();
+        $this->assertEquals(28050, $transaction->amount);
+        $this->assertEquals(28050, $transaction->settled_amount);
+        $this->assertSame('2026-11-05', $transaction->settled_date);
+    }
+
+    public function test_the_received_amount_and_date_of_a_closed_row_can_be_edited(): void
+    {
+        $project = $this->project();
+        $this->actingAs(User::factory()->create(['user_type_id' => 1]));
+        $transaction = $this->closedPayment($project);
+
+        Livewire::test(AccountTransactions::class, ['project_id' => $project->id])
+            ->call('edit', $transaction->id)
+            ->set('settled_amount', 15000)
+            ->set('settled_date', '2026-11-07')
+            ->call('update')
+            ->assertHasNoErrors();
+
+        $transaction->refresh();
+        $this->assertEquals(19050, $transaction->amount);
+        $this->assertEquals(15000, $transaction->settled_amount);
+        $this->assertSame('2026-11-07', $transaction->settled_date);
+    }
+
+    public function test_a_part_payment_keeps_its_received_amount_when_the_amount_changes(): void
+    {
+        $project = $this->project();
+        $this->actingAs(User::factory()->create(['user_type_id' => 1]));
+        $transaction = $this->closedPayment($project, ['settled_amount' => 10000]);
+
+        Livewire::test(AccountTransactions::class, ['project_id' => $project->id])
+            ->call('edit', $transaction->id)
+            ->set('amount', 28050)
+            ->call('update')
+            ->assertHasNoErrors();
+
+        $this->assertEquals(10000, $transaction->refresh()->settled_amount);
+    }
+
+    public function test_a_row_closed_before_settlement_existed_is_left_without_one(): void
+    {
+        $project = $this->project();
+        $this->actingAs(User::factory()->create(['user_type_id' => 1]));
+        $transaction = $this->closedPayment($project, ['settled_amount' => null, 'settled_date' => null]);
+
+        Livewire::test(AccountTransactions::class, ['project_id' => $project->id])
+            ->call('edit', $transaction->id)
+            ->set('milestone', 'Permit')
+            ->call('update')
+            ->assertHasNoErrors();
+
+        $transaction->refresh();
+        $this->assertSame('Permit', $transaction->milestone);
+        $this->assertNull($transaction->settled_amount);
+        $this->assertNull($transaction->settled_date);
+    }
+
+    public function test_editing_a_part_paid_row_keeps_its_payments_and_closing_adds_only_the_rest(): void
+    {
+        $project = $this->project();
+        $this->actingAs(User::factory()->create(['user_type_id' => 1]));
+        $transaction = $this->closedPayment($project, ['status' => 'Open', 'settled_amount' => null, 'settled_date' => null]);
+        app(\App\Services\TransactionPaymentService::class)->record($transaction, 5000, '2026-11-03');
+
+        // An open row edited from the project page keeps its part payment.
+        Livewire::test(AccountTransactions::class, ['project_id' => $project->id])
+            ->call('edit', $transaction->id)
+            ->assertSet('paidSoFar', 5000.0)
+            ->set('milestone', 'Permit')
+            ->call('update')
+            ->assertHasNoErrors();
+        $this->assertEquals(5000, (float) $transaction->fresh()->settled_amount);
+
+        // Closed with the total received: only what was missing is recorded.
+        Livewire::test(AccountTransactions::class, ['project_id' => $project->id])
+            ->call('edit', $transaction->id)
+            ->set('status', 'Closed')
+            ->assertSet('settled_amount', 19050.0)
+            ->set('settled_date', '2026-11-06')
+            ->call('update')
+            ->assertHasNoErrors();
+
+        $transaction->refresh();
+        $this->assertSame('Closed', $transaction->status);
+        $this->assertEquals(19050, (float) $transaction->settled_amount);
+        $this->assertEquals([5000, 14050], $transaction->payments()->pluck('amount')->map(fn ($a) => (float) $a)->all());
+
+        // Editing the total of a row paid in parts moves its last payment.
+        Livewire::test(AccountTransactions::class, ['project_id' => $project->id])
+            ->call('edit', $transaction->id)
+            ->set('settled_amount', 18000)
+            ->call('update')
+            ->assertHasNoErrors();
+        $this->assertEquals([5000, 13000], $transaction->payments()->pluck('amount')->map(fn ($a) => (float) $a)->all());
+
+        // ...but cannot go below the earlier payments.
+        Livewire::test(AccountTransactions::class, ['project_id' => $project->id])
+            ->call('edit', $transaction->id)
+            ->set('settled_amount', 4000)
+            ->call('update')
+            ->assertHasErrors('settled_amount');
+        $this->assertEquals(18000, (float) $transaction->fresh()->settled_amount);
+    }
 }

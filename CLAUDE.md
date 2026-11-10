@@ -388,8 +388,11 @@ than the Sales Partner / Sub-Contractor).
 `resources/views/transaction-portal/index.blade.php` (the approved prototype,
 ported as is; its CSS is scoped under `.tp`). Three permissions: the page,
 `Transaction Portal Expected AR` (Funding Manager), and `Transaction Portal Other
-Sections`. Closing a row stores `settled_amount` / `settled_date`. Closing a
-customer payment can raise the sales partner's commission
+Sections`. Money in or out is recorded as **payments** (`transaction_payments`,
+written only by `TransactionPaymentService`): a part payment leaves the row Open
+with its balance, `settled_amount` is the total so far and `settled_date` the last
+payment's day, and Actual AR lists one item per payment (`p<id>`). Receiving a
+customer payment, in full or in part, can raise the sales partner's commission
 (`CommissionPayableService`: received − Labor − Material − already raised, once
 both invoices are on file, due the Friday of the following week).
 A past week or month shows only the payables PAID in it; a week with a **pay
