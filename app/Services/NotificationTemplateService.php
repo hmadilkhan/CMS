@@ -3,6 +3,8 @@
 namespace App\Services;
 
 use App\Models\NotificationTemplate;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Log;
 
 /**
@@ -37,6 +39,7 @@ class NotificationTemplateService
                     'is_active' => $override ? (bool) $override->is_active : true,
                     'updated_at' => $override->updated_at ?? null,
                     'updated_by' => $override?->editor?->name,
+                    'tag_groups' => $this->tagGroups($key),
                 ]);
             })
             ->all();
@@ -92,13 +95,62 @@ class NotificationTemplateService
     }
 
     /**
-     * Placeholder names a template is allowed to use.
+     * Placeholder names a template is allowed to use: its own (the values the
+     * sending code passes) plus every tag of the records it carries.
      *
      * @return array<int, string>
      */
     public function placeholderNames(string $key): array
     {
-        return array_keys(config("notification_templates.{$key}.placeholders", []));
+        $names = array_keys(config("notification_templates.{$key}.placeholders", []));
+
+        foreach ($this->recordTags($key) as $tags) {
+            $names = array_merge($names, array_keys($tags));
+        }
+
+        return array_values(array_unique($names));
+    }
+
+    /**
+     * The tags the editor offers, grouped: "This email" first (the template's
+     * own placeholders), then one group per record it carries. A record tag
+     * the template already supplies itself is listed once, under "This email".
+     *
+     * @return array<int, array{label: string, tags: array<string, string>}>
+     */
+    public function tagGroups(string $key): array
+    {
+        $own = config("notification_templates.{$key}.placeholders", []);
+        $groups = [['label' => 'This email', 'tags' => $own]];
+
+        foreach ($this->recordTags($key) as $record => $tags) {
+            $tags = array_diff_key($tags, $own);
+
+            if ($tags) {
+                $groups[] = [
+                    'label' => config("notification_tags.{$record}.label", ucfirst($record)),
+                    'tags' => array_map(fn (array $tag) => $tag['label'], $tags),
+                ];
+            }
+        }
+
+        return $groups;
+    }
+
+    /**
+     * Tag definitions of each record a template carries, keyed by record.
+     *
+     * @return array<string, array<string, array<string, mixed>>>
+     */
+    private function recordTags(string $key): array
+    {
+        $tags = [];
+
+        foreach (config("notification_templates.{$key}.records", []) as $record) {
+            $tags[$record] = config("notification_tags.{$record}.tags", []);
+        }
+
+        return $tags;
     }
 
     /**
@@ -123,13 +175,22 @@ class NotificationTemplateService
     /**
      * Fill a template with real values.
      *
-     * Missing values render as an empty string rather than leaving a raw
+     * $data holds the template's own placeholders. $records holds the models
+     * the email is about (['project' => $project], ['ticket' => $ticket]);
+     * record tags are read from them, and a record the caller did not pass is
+     * reached through config('notification_tags.*.from') - a ticket's project,
+     * a project's customer. Only the tags the template actually uses are read,
+     * so an unused tag never costs a query.
+     *
+     * A value the sender passed in $data wins over a record tag of the same
+     * name. Missing values render as an empty string rather than leaving a raw
      * {placeholder} in a customer-visible email.
      *
      * @param  array<string, mixed>  $data
+     * @param  array<string, \Illuminate\Database\Eloquent\Model|null>  $records
      * @return array{subject: string, body: string}
      */
-    public function render(string $key, array $data): array
+    public function render(string $key, array $data, array $records = []): array
     {
         $template = $this->find($key);
 
@@ -146,14 +207,129 @@ class NotificationTemplateService
             $template['body'] = config("notification_templates.{$key}.body");
         }
 
-        $replacements = [];
+        $own = array_keys(config("notification_templates.{$key}.placeholders", []));
+        $used = $this->usedPlaceholders($template['subject'].' '.$template['body']);
+
+        // Record values come from the database (names, notes typed by users),
+        // so the body gets them HTML-escaped; the subject is plain text.
+        $subjectValues = [];
+        $bodyValues = [];
+
         foreach ($this->placeholderNames($key) as $name) {
-            $replacements['{'.$name.'}'] = (string) ($data[$name] ?? '');
+            if (in_array($name, $own, true) && array_key_exists($name, $data)) {
+                $subjectValues['{'.$name.'}'] = $bodyValues['{'.$name.'}'] = (string) ($data[$name] ?? '');
+
+                continue;
+            }
+
+            $value = in_array($name, $used, true) ? $this->recordTagValue($key, $name, $records) : '';
+            $subjectValues['{'.$name.'}'] = $value;
+            $bodyValues['{'.$name.'}'] = e($value);
         }
 
         return [
-            'subject' => strip_tags(strtr($template['subject'], $replacements)),
-            'body' => strtr($template['body'], $replacements),
+            'subject' => strip_tags(strtr($template['subject'], $subjectValues)),
+            'body' => strtr($template['body'], $bodyValues),
         ];
+    }
+
+    /** @return array<int, string> */
+    private function usedPlaceholders(string $text): array
+    {
+        preg_match_all('/\{([a-z0-9_]+)\}/i', $text, $matches);
+
+        return array_values(array_unique($matches[1]));
+    }
+
+    /**
+     * The value of one record tag, or '' when the record is not reachable.
+     *
+     * @param  array<string, mixed>  $records
+     */
+    private function recordTagValue(string $key, string $name, array &$records): string
+    {
+        foreach ($this->recordTags($key) as $record => $tags) {
+            if (! isset($tags[$name])) {
+                continue;
+            }
+
+            $model = $this->resolveRecord($record, $records);
+
+            return $model ? $this->readTag($model, $tags[$name]) : '';
+        }
+
+        return '';
+    }
+
+    /**
+     * The model for a record, from $records or reached from another record
+     * through its 'from' relation. Resolved models are kept in $records so a
+     * customer reached through a ticket's project is loaded once.
+     *
+     * @param  array<string, mixed>  $records
+     * @param  array<int, string>  $visiting
+     */
+    private function resolveRecord(string $record, array &$records, array $visiting = []): ?Model
+    {
+        if (array_key_exists($record, $records)) {
+            return $records[$record] instanceof Model ? $records[$record] : null;
+        }
+
+        $visiting[] = $record;
+        $model = null;
+
+        foreach (config("notification_tags.{$record}.from", []) as $source => $relation) {
+            if (in_array($source, $visiting, true)) {
+                continue;
+            }
+
+            $parent = $this->resolveRecord($source, $records, $visiting);
+            $related = $parent?->{$relation};
+
+            if ($related instanceof Model) {
+                $model = $related;
+                break;
+            }
+        }
+
+        return $records[$record] = $model;
+    }
+
+    /** @param  array<string, mixed>  $tag */
+    private function readTag(Model $model, array $tag): string
+    {
+        try {
+            if (isset($tag['route'])) {
+                return route($tag['route'], $model->getKey());
+            }
+
+            if (isset($tag['url'])) {
+                return url(str_replace('{id}', (string) $model->getKey(), $tag['url']));
+            }
+
+            $paths = (array) ($tag['path'] ?? []);
+            $values = array_map(fn (string $path) => $this->scalar(data_get($model, $path)), $paths);
+            $value = trim(implode(' ', array_filter($values, fn (string $v) => $v !== '')));
+
+            if ($value !== '' && ($tag['format'] ?? null) === 'date') {
+                return Carbon::parse($value)->format('M d, Y');
+            }
+
+            return $value;
+        } catch (\Throwable $e) {
+            // One bad tag (an unparseable date, a missing route) must not stop the email.
+            Log::warning('Email template tag could not be read.', ['tag' => $tag, 'error' => $e->getMessage()]);
+
+            return '';
+        }
+    }
+
+    private function scalar(mixed $value): string
+    {
+        if ($value instanceof \DateTimeInterface) {
+            return $value->format('Y-m-d H:i:s');
+        }
+
+        return is_scalar($value) ? trim((string) $value) : '';
     }
 }

@@ -35,7 +35,7 @@ class ServiceTicketCreated extends Notification implements \Illuminate\Contracts
             'project_name' => optional($this->ticket->project)->project_name,
             'notes' => $this->ticket->notes ?? 'N/A',
             'ticket_url' => route('service.dashboard'),
-        ]);
+        ], ['ticket' => $this->ticket]);
 
         return (new MailMessage)
             ->subject($mail['subject'])

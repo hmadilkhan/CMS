@@ -1914,7 +1914,7 @@ class ProjectController extends Controller
                         'project_name' => $project->project_name,
                         'project_url' => url('/projects/'.$project->id),
                         'support_email' => 'engineering@solenenergyco.com',
-                    ]);
+                    ], ['project' => $project]);
                     $this->sendEmailForProjectAcceptance($project, $mail['subject'], $mail['body'], $project->salesPartnerUser->email);
                 }
                 // Log the custom message
@@ -2106,7 +2106,7 @@ class ProjectController extends Controller
                 'project_name' => $project->project_name,
                 'status' => $request->mode == 1 ? 'approved' : 'rejected',
                 'project_url' => url('/projects/'.$project->id),
-            ]);
+            ], ['project' => $project]);
             $this->sendEmailForProjectAcceptance($project, $mail['subject'], $mail['body'], 'engineering@solenenergyco.com');
             // Log the custom message
             $username = auth()->user()->name;

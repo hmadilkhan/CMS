@@ -32,7 +32,7 @@ class SiteSurveyScheduled extends Notification
             'end_time' => $this->survey->end_time,
             'customer_address' => $this->survey->customer_address,
             'survey_url' => url('/site-surveys/' . $this->survey->id),
-        ]);
+        ], ['survey' => $this->survey]);
 
         return (new MailMessage)
             ->subject($mail['subject'])

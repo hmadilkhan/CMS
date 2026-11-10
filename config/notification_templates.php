@@ -11,10 +11,13 @@
 | `notification_templates` table and overrides the default below.
 |
 | Placeholders use single curly braces: {customer_first_name}. Only the
-| placeholders listed for a template are available to it — the code that
-| sends that email supplies exactly those values. An unknown placeholder is
-| rejected when saving, so a typo can never ship an email reading
-| "Hello {frist_name}".
+| placeholders listed for a template, plus the tags of every record under
+| 'records', are available to it. 'placeholders' are the values the sending
+| code passes itself (who triggered it, the note text...); 'records' are the
+| things the email is about, and their tags (project_url, customer_phone,
+| ...) come from config/notification_tags.php - add a tag there and every
+| email about that record can use it. An unknown placeholder is rejected
+| when saving, so a typo can never ship an email reading "Hello {frist_name}".
 |
 | Bodies are HTML (the editor produces HTML) and are wrapped in the branded
 | mail layout, so no header, footer or signature is needed here.
@@ -32,6 +35,7 @@ return [
         'name' => 'Project Assigned',
         'group' => 'Projects',
         'description' => 'Sent to an employee when a project is assigned to them in a department.',
+        'records' => ['project', 'customer'],
         'placeholders' => [
             'recipient_name' => 'Name of the employee receiving the email',
             'project_name' => 'Project name',
@@ -59,6 +63,7 @@ return [
         'name' => 'Project Milestone Date Updated',
         'group' => 'Projects',
         'description' => 'Sent to the sales person when the Permit, Installation, Inspection or PTO date is entered or changed. {milestone_details} expands to one headline and sentence per changed date.',
+        'records' => ['project', 'customer'],
         'placeholders' => [
             'recipient_name' => 'Name of the sales person receiving the email',
             'project_name' => 'Project name',
@@ -85,6 +90,7 @@ return [
         'name' => 'Mentioned in a Project Note',
         'group' => 'Projects',
         'description' => 'Sent to an employee tagged with @ in a project note.',
+        'records' => ['project', 'customer'],
         'placeholders' => [
             'recipient_name' => 'Name of the employee receiving the email',
             'mentioned_by' => 'Name of the user who wrote the note',
@@ -105,6 +111,7 @@ return [
         'name' => 'New Email Received for a Project',
         'group' => 'Projects',
         'description' => 'Sent to the assigned employee when a customer replies to a project email.',
+        'records' => ['project', 'customer'],
         'placeholders' => [
             'recipient_name' => 'Name of the employee receiving the email',
             'project_name' => 'Project name',
@@ -126,6 +133,7 @@ return [
         'name' => 'Service Ticket Assigned',
         'group' => 'Service Tickets',
         'description' => 'Sent to the assigned user when a new service ticket is created.',
+        'records' => ['ticket', 'project', 'customer'],
         'placeholders' => [
             'recipient_name' => 'Name of the user receiving the email',
             'ticket_id' => 'Ticket number',
@@ -151,6 +159,7 @@ return [
         'name' => 'Service Ticket Resolved',
         'group' => 'Service Tickets',
         'description' => 'Sent to the person who raised the ticket once it is resolved.',
+        'records' => ['ticket', 'project', 'customer'],
         'placeholders' => [
             'recipient_name' => 'Name of the user receiving the email',
             'ticket_id' => 'Ticket number',
@@ -176,6 +185,7 @@ return [
         'name' => 'New Comment on a Service Ticket',
         'group' => 'Service Tickets',
         'description' => 'Sent to the person who raised the ticket when someone comments on it.',
+        'records' => ['ticket', 'project', 'customer'],
         'placeholders' => [
             'recipient_name' => 'Name of the user receiving the email',
             'ticket_id' => 'Ticket number',
@@ -199,6 +209,7 @@ return [
         'name' => 'Site Survey Scheduled',
         'group' => 'Site Surveys',
         'description' => 'Sent to the technician when a site survey is booked for them.',
+        'records' => ['survey', 'project', 'customer'],
         'placeholders' => [
             'recipient_name' => 'Name of the technician receiving the email',
             'survey_date' => 'Survey date',
@@ -221,6 +232,7 @@ return [
         'name' => 'Acceptance Review Sent',
         'group' => 'Acceptance',
         'description' => 'Sent to the sales person when a Project Acceptance Review is submitted for their approval.',
+        'records' => ['project', 'customer'],
         'placeholders' => [
             'recipient_name' => 'Name of the sales person receiving the email',
             'customer_name' => 'Customer full name',
@@ -243,6 +255,7 @@ return [
         'name' => 'Acceptance Review Approved / Rejected',
         'group' => 'Acceptance',
         'description' => 'Sent to the engineering team once the sales person approves or rejects an Acceptance Review. {status} becomes "approved" or "rejected".',
+        'records' => ['project', 'customer'],
         'placeholders' => [
             'recipient_name' => 'Name of the assigned employee',
             'customer_name' => 'Customer full name',
@@ -261,6 +274,7 @@ return [
         'name' => 'Finance Milestone Triggered',
         'group' => 'Finance',
         'description' => 'Sent to the accounting recipients when a finance milestone payment becomes collectable.',
+        'records' => ['project', 'customer'],
         'placeholders' => [
             'project_name' => 'Project name',
             'milestone_label' => 'Milestone that was triggered',

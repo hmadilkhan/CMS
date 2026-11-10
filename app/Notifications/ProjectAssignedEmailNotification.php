@@ -43,7 +43,7 @@ class ProjectAssignedEmailNotification extends Notification
             'assigned_by' => $this->assignedBy,
             'notes' => $this->task->assign_to_notes,
             'project_url' => route('projects.show', $this->project->id),
-        ]);
+        ], ['project' => $this->project]);
 
         return (new MailMessage)
             ->subject($mail['subject'])

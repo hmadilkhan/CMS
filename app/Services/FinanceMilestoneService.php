@@ -365,7 +365,7 @@ class FinanceMilestoneService
                 'customer_name' => $this->customerName($project),
                 'amount' => number_format($amount, 2),
                 'project_url' => route('projects.show', $project->id),
-            ]);
+            ], ['project' => $project]);
 
             foreach ($recipients as $recipient) {
                 SendHtmlEmailJob::dispatch($recipient, $mail['subject'], $mail['body']);

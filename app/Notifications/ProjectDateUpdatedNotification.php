@@ -42,7 +42,7 @@ class ProjectDateUpdatedNotification extends Notification
             'updated_by' => $this->updatedBy,
             'updated_at' => now()->format('j F Y'),
             'project_url' => route('projects.show', $this->project->id),
-        ]);
+        ], ['project' => $this->project]);
 
         return (new MailMessage)
             ->subject($mail['subject'])

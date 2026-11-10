@@ -36,7 +36,7 @@ class ServiceTicketResolved extends Notification implements ShouldQueue
             'priority' => $this->ticket->priority,
             'resolved_by' => optional($this->ticket->assignedUser)->name,
             'ticket_url' => route('service.dashboard'),
-        ]);
+        ], ['ticket' => $this->ticket]);
 
         return (new MailMessage)
             ->subject($mail['subject'])

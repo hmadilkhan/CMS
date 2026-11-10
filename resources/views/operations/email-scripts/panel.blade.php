@@ -80,6 +80,15 @@
             gap: 0.4rem;
         }
 
+        .template-tag-group-label {
+            margin: 0.6rem 0 0.3rem;
+            font-size: 0.72rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            color: var(--solen-muted-text, #6b7280);
+        }
+
         .template-tag {
             border: 1px solid var(--solen-primary-border, #e5e7eb);
             background: var(--solen-primary-soft, #f8fafc);
@@ -291,17 +300,21 @@
                         </div>
                         <div class="col-12">
                             <label class="form-label d-block">Available tags &mdash; click to insert</label>
-                            <div class="template-tag-list">
-                                @foreach ($editingTemplate['placeholders'] as $tag => $tagDescription)
-                                    <button type="button" class="template-tag" data-tag="{{ '{' . $tag . '}' }}"
-                                        title="{{ $tagDescription }}">{{ '{' . $tag . '}' }}</button>
-                                @endforeach
-                            </div>
+                            @foreach ($editingTemplate['tag_groups'] as $tagGroup)
+                                <div class="template-tag-group-label">{{ $tagGroup['label'] }}</div>
+                                <div class="template-tag-list">
+                                    @foreach ($tagGroup['tags'] as $tag => $tagDescription)
+                                        <button type="button" class="template-tag" data-tag="{{ '{' . $tag . '}' }}"
+                                            title="{{ $tagDescription }}">{{ '{' . $tag . '}' }}</button>
+                                    @endforeach
+                                </div>
+                            @endforeach
                             <small class="text-muted d-block mt-2">
                                 A tag goes into the subject or body, wherever you last clicked. For a link
                                 tag such as <code>{project_url}</code>, select the text first (e.g. "View
-                                Project") and click the tag to make it a link. Only the tags above work in
-                                this template &mdash; anything else is rejected when you save.
+                                Project") and click the tag to make it a link. Hover a tag to see what it
+                                holds. Only the tags above work in this template &mdash; anything else is
+                                rejected when you save.
                             </small>
                         </div>
                         <div class="col-12">

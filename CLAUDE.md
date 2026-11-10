@@ -717,3 +717,25 @@ the user has never seen is on.
   everything); users who had it ON start with none opted out.
 - Before this, only the @mention email honoured the old toggle; the other
   user-facing emails ignored it.
+
+## Email template tags — per record, not per email
+
+A template's tags are its own `placeholders` (values the sender passes: who
+triggered it, the note text) **plus** every tag of the records listed under its
+`records` (`project`, `customer`, `ticket`, `survey`). Record tags live in
+`config/notification_tags.php` and are read from the model at send time, so a
+ticket email can use `{project_url}` / `{customer_phone}` without its
+notification class changing.
+
+- Senders pass the models as the third argument:
+  `render($key, $data, ['ticket' => $ticket])`. A record not passed is reached
+  through its `from` relation (ticket → project → customer). Only tags the
+  template uses are read.
+- A value in `$data` wins over a record tag of the same name. Record values are
+  HTML-escaped in the body (they are user-typed DB text), plain in the subject.
+- **Adding a tag** = one line in `config/notification_tags.php` (`path`,
+  `format: date`, `route` or `url`). It appears in every email that carries
+  that record. Never add finance/cost/profitability fields or credentials —
+  these emails go to sales partners and sub-contractors.
+- The editor (Operations → Email Scripts → template) groups the chips by
+  record. Covered by `tests/Feature/NotificationTemplateTagsTest.php`.

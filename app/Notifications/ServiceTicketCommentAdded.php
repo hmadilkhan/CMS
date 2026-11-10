@@ -38,7 +38,7 @@ class ServiceTicketCommentAdded extends Notification implements ShouldQueue
             'comment_by' => optional($this->comment->user)->name,
             'comment' => $this->comment->comment,
             'ticket_url' => route('service.dashboard'),
-        ]);
+        ], ['ticket' => $this->ticket]);
 
         return (new MailMessage)
             ->subject($mail['subject'])

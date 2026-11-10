@@ -46,7 +46,7 @@ class EmailReceivedNotification extends Notification implements ShouldQueue
             'email_subject' => $this->email->subject,
             'sender' => $this->sender ?? 'Unknown',
             'project_url' => url('/projects/' . $this->project->id),
-        ]);
+        ], ['project' => $this->project]);
 
         return (new MailMessage)
             ->subject($mail['subject'])

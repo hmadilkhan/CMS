@@ -54,7 +54,7 @@ class NoteMentionedNotification extends Notification implements ShouldQueue
             'project_name' => $this->project->project_name,
             'note' => $this->note,
             'project_url' => url('/projects/' . $this->project->id),
-        ]);
+        ], ['project' => $this->project]);
 
         return (new MailMessage)
             ->subject($mail['subject'])
