@@ -26,7 +26,7 @@ All three are the same code. Only a config row differs.
 | Intercepted move | any earlier dept → Installation | any earlier dept → PTO | any earlier dept → Inspection | any earlier dept → Installation |
 | Parked lane | 31 Install Pending Document | 32 PTO Pending Document | 29 Inspection Pending Fire Review | 31 Install Pending Document |
 | Release lane | 12 Install Not Scheduled | 18 PTO | 16 Inspection Not Scheduled | 12 Install Not Scheduled |
-| Cleared by | picking the Meter Spot Result | uploading the bill | uploading the approval | filing the date in the Zones **NTP** tab |
+| Cleared by | picking the Meter Spot Result | uploading the bill (card or project page) | uploading the approval (card or project page) | filing the date in the Zones **NTP** tab |
 | Field after clearing | the result is the field | flips to **yes**, and back to **no** if every bill is deleted | stays `1` — it *was* required | the date is the field |
 | Card collects | a **value** (dropdown) | a **file** | a **file** | — (no Operations card) |
 | Files section | — | "Utility Bills", Deal Review tab | "Fire Approval Documents", Inspection tab | — |
@@ -201,8 +201,13 @@ department field answered so a document is owed
       → that move alone sends NO assignment e-mail
       → logForcedParkedLane() writes the note
   → project is stuck: the parked lane is closed to manual moves
-  → assignee produces the document on the dashboard card
-      → DocumentFollowUpController::update()
+  → the document is produced, from either place:
+      • the dashboard card (owning department's assignees)
+          → DocumentFollowUpController::update()
+      • the project page's Utility Bills / Fire Approval Documents section
+        (anyone who may work on the project, while the chase is open)
+          → EnhancedFilesSection::save() → saveFollowUpDocuments()
+      → DocumentFollowUpService::storeDocuments() + syncAndReport()
       → syncType() → syncFieldToDocuments() (utility bill only: field → yes)
                    → resolve() → releaseFromParkedLane()
       → project moves to the release lane, assignee IS e-mailed
@@ -304,8 +309,26 @@ options and it becomes answerable from Operations again.
 **Two files sections come from one component.** `EnhancedFilesSection` renders
 both the department file list and the category sections. `$category` NULL means
 "this department's ungrouped files"; a category name means "this group across the
-whole project". `allowUpload => false` hides the upload button on the category
-sections, because those documents are collected from the dashboard card.
+whole project". `allowUpload => false` keeps the ordinary "Upload Files" button
+off the category sections.
+
+**A category section takes the document while its chase is open.** The client
+asked for this (2026-11-11): the dashboard card is shown only to the owning
+department's assignees (`visibleTo()`), so whoever actually had the document -
+another department, a manager - had to find "the original employee" to clear a
+lock. Now the Utility Bills / Fire Approval Documents section shows an **Upload
+Document** button whenever that chase is pending on the project, from whichever
+department tab it sits under (Fire Approval lives under Inspection, but its
+files are still filed under Permitting, the owner). It needs only what the
+section already needs: access to the project and the `Files Section`
+permission. `EnhancedFilesSection::canClearFollowUp()` decides, and `save()`
+re-checks it on the server - with no open chase the upload is refused and the
+section is a read-only list again. The upload goes through the same
+`DocumentFollowUpService::storeDocuments()` + `syncAndReport()` as the card, so
+it is filed, logged, cleared and released identically; when the project leaves
+its parked lane the page reloads so the lane badge and move bar are current.
+MPU and NTP needed nothing: the meter spot result is a department field on the
+project page, and the NTP date is the Zones NTP tab.
 
 **The field flip is logged like every other step**, in both directions. It writes
 a `document_follow_up_field_answered` activity event and a

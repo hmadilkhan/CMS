@@ -412,7 +412,19 @@
                     : ($ghost == 'ghost' && $departmentId == 7) ||
                         ($ghost != 'ghost' && $departmentId == $projectDepartmentId));
         @endphp
-        @if ($showEditFields && $viewSource != 'website')
+        {{-- A follow up's own section (Utility Bills, Fire Approval Documents)
+             takes the document here while that follow up is open, so it can be
+             cleared from the project and not only from the owner's dashboard. --}}
+        @if (($canClearFollowUp ?? false) && $viewSource != 'website')
+            <div class="mb-4">
+                <div class="small text-muted mb-2">
+                    <i class="icofont-info-circle me-1"></i>{{ $followUpLabel }} is open. Uploading the document here clears it and releases the project if it is waiting in a pending-document lane.
+                </div>
+                <button type="button" wire:click="openModal" class="upload-btn">
+                    <i class="icofont-upload-alt me-2"></i>Upload Document
+                </button>
+            </div>
+        @elseif ($showEditFields && $viewSource != 'website')
             <div class="mb-4">
                 <button type="button" wire:click="openModal" class="upload-btn">
                     <i class="icofont-upload-alt me-2"></i>Upload Files
@@ -420,6 +432,12 @@
             </div>
         @endif
     @endcan
+
+    @if ($followUpMessage)
+        <div class="alert alert-success py-2 mb-3">
+            <i class="icofont-check-circled me-1"></i>{{ $followUpMessage }}
+        </div>
+    @endif
 
     <div class="files-grid">
         @forelse ($departmentFiles as $file)
@@ -576,6 +594,16 @@
     @endif
 
     <script>
+        // An upload in a follow up section released the project into another
+        // lane: reload so the lane badge and move bar show where it is now.
+        // Every instance of this component prints this script, so register once.
+        if (!window.__documentFollowUpReleaseListener) {
+            window.__documentFollowUpReleaseListener = true;
+            window.addEventListener('document-follow-up-released', () => {
+                setTimeout(() => window.location.reload(), 1500);
+            });
+        }
+
         function handleDragOver(e) {
             e.preventDefault();
             e.stopPropagation();

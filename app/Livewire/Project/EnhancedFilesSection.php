@@ -7,6 +7,7 @@ use App\Models\Project;
 use App\Models\ProjectFile;
 use App\Models\ProjectZoneFile;
 use App\Services\DocumentFollowUpService;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Livewire\Attributes\Locked;
 use Livewire\Attributes\On;
@@ -49,6 +50,9 @@ class EnhancedFilesSection extends Component
      */
     public $zoneId = null;
     public $projectZoneId = null;
+
+    /** Shown after an upload here cleared the section's follow up. */
+    public $followUpMessage = null;
 
     public $showModal = false;
     public $files = [];
@@ -155,12 +159,47 @@ class EnhancedFilesSection extends Component
         $this->files = array_values($this->files);
     }
 
+    /**
+     * The chase this section collects documents for (utility bill, fire
+     * review), or null for an ordinary department / zone file list.
+     */
+    protected function followUpType(): ?string
+    {
+        if ($this->inZoneMode()) {
+            return null;
+        }
+
+        return app(DocumentFollowUpService::class)->typeForFileCategory($this->category);
+    }
+
+    /**
+     * A chase's own section takes uploads while that chase is open on the
+     * project - from whichever department tab it sits under, and for anyone who
+     * may work on the project, not only the owning department's assignees who
+     * see the dashboard card. Uploading here clears the chase exactly as the
+     * card does. Once the chase is closed the section is a read-only list again.
+     */
+    protected function canClearFollowUp(): bool
+    {
+        $type = $this->followUpType();
+
+        return $type !== null
+            && ! $this->onPublicWebsiteView()
+            && app(DocumentFollowUpService::class)->hasPending((int) $this->projectId, $type);
+    }
+
     public function save()
     {
         $this->abortIfPublicWebsiteView();
 
         if (empty($this->uploadedFiles)) {
             $this->addError('files', 'Please upload at least one file.');
+            return;
+        }
+
+        if ($this->followUpType()) {
+            $this->saveFollowUpDocuments();
+
             return;
         }
 
@@ -199,6 +238,50 @@ class EnhancedFilesSection extends Component
         $this->closeModal();
     }
 
+    /**
+     * Upload into a chase's section: the same storage and the same clearing the
+     * dashboard card does (DocumentFollowUpService), so the chase closes, a
+     * parked project is released and its assignee e-mailed.
+     */
+    protected function saveFollowUpDocuments(): void
+    {
+        $service = app(DocumentFollowUpService::class);
+        $type = $this->followUpType();
+
+        if (! $this->canClearFollowUp()) {
+            $this->addError('files', 'This project no longer has an open '.$service->label($type).'.');
+
+            return;
+        }
+
+        $project = Project::findOrFail($this->projectId);
+
+        try {
+            $releasedInto = DB::transaction(function () use ($service, $project, $type) {
+                $service->storeDocuments($project, $type, $this->files, auth()->user());
+
+                return $service->syncAndReport($project, $type, auth()->user());
+            });
+        } catch (\Throwable $e) {
+            report($e);
+            $this->addError('files', 'The document could not be saved. Please try again.');
+
+            return;
+        }
+
+        $this->closeModal();
+
+        $this->followUpMessage = $releasedInto
+            ? $service->label($type).' cleared. The project moved to '.$releasedInto.'.'
+            : $service->label($type).' cleared.';
+
+        // The project changed lane: the lane badge and the move bar on the page
+        // are now stale, so reload it.
+        if ($releasedInto) {
+            $this->dispatch('document-follow-up-released');
+        }
+    }
+
     public function updateTitle($fileId, $newTitle)
     {
         $this->abortIfPublicWebsiteView();
@@ -232,7 +315,11 @@ class EnhancedFilesSection extends Component
             ->get();
         $departmentId = $this->departmentId;
         $projectDepartmentId = $this->projectDepartmentId;
+        $canClearFollowUp = $this->canClearFollowUp();
+        $followUpLabel = $canClearFollowUp
+            ? app(DocumentFollowUpService::class)->label($this->followUpType())
+            : null;
 
-        return view('livewire.project.enhanced-files-section', compact("departmentFiles", "departmentId", "projectDepartmentId"));
+        return view('livewire.project.enhanced-files-section', compact("departmentFiles", "departmentId", "projectDepartmentId", "canClearFollowUp", "followUpLabel"));
     }
 }

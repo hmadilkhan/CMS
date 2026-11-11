@@ -325,6 +325,13 @@ always be moved to an earlier department, which ends the chases parked in that
 lane (`moved_back`) and lets a fresh one open and park it again on the way
 forward. Forward and sideways stay shut, and no lane is ever a destination.
 
+The Utility Bill / Fire Review documents can be filed from the **project page**
+too, not only the owner's dashboard card: while the chase is open, its section
+(Utility Bills, Fire Approval Documents) shows an Upload Document button, and
+the upload clears and releases exactly like the card - both go through
+`DocumentFollowUpService::storeDocuments()` + `syncAndReport()`. Covered by
+`FollowUpClearedFromProjectTest`.
+
 
 A **fourth chase** rides the same Permitting → Installation move: the NTP
 approval date. It used to be a refusal answered by a date input in the move

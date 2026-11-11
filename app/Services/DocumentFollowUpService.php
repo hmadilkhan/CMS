@@ -258,6 +258,96 @@ class DocumentFollowUpService
             ->exists();
     }
 
+    /** The chase a file category belongs to (utility_bill, fire_review), or null. */
+    public function typeForFileCategory(?string $category): ?string
+    {
+        if (! $category) {
+            return null;
+        }
+
+        foreach (self::TYPES as $type => $config) {
+            if (($config['file_category'] ?? null) === $category) {
+                return $type;
+            }
+        }
+
+        return null;
+    }
+
+    /* ------------------------------------------------- producing the document */
+
+    /**
+     * File a chase's documents the way the dashboard card always has: same disk
+     * and folder as the project Files card, under the chase's OWNING department
+     * and marked with its category, so they land in the chase's own section
+     * instead of a department file list. Shared by the dashboard card and the
+     * project page's Utility Bills / Fire Approval Documents sections, so a
+     * document filed from either place is the same record.
+     *
+     * @param  \Illuminate\Http\UploadedFile[]  $files
+     */
+    public function storeDocuments(Project $project, string $type, array $files, ?User $causer = null): void
+    {
+        $category = $this->config($type)['file_category'] ?? null;
+
+        if (! $category || empty($files)) {
+            return;
+        }
+
+        $causer ??= auth()->user();
+        $departmentId = $this->ownerDepartmentId($type);
+        $taskId = Task::where('project_id', $project->id)
+            ->whereIn('status', ['In-Progress', 'Hold', 'Cancelled'])
+            ->latest('id')
+            ->value('id')
+            ?? Task::where('project_id', $project->id)->latest('id')->value('id');
+
+        $username = $causer->name ?? 'System';
+        $what = $type === self::TYPE_FIRE_REVIEW ? 'fire approval document' : 'utility bill';
+
+        foreach ($files as $file) {
+            $originalName = str_replace(' ', '_', $file->getClientOriginalName());
+            $storedName = basename($file->storeAs('projects', time().'_'.$originalName, 'public'));
+
+            ProjectFile::create([
+                'project_id' => $project->id,
+                'task_id' => $taskId,
+                'department_id' => $departmentId,
+                'filename' => $storedName,
+                'header_text' => $file->getClientOriginalName(),
+                'category' => $category,
+            ]);
+
+            activity('project')
+                ->performedOn($project)
+                ->causedBy($causer)
+                ->setEvent('updated')
+                ->withProperties(['files' => $storedName, 'category' => $category])
+                ->log("{$username} uploaded the {$what}: {$storedName}.");
+        }
+    }
+
+    /**
+     * Reconcile one chase after its document (or value) was just produced, and
+     * say whether that let the project out of the parked lane. Returns the name
+     * of the lane it was released into, or null when it was not parked (or is
+     * still held there by another chase).
+     */
+    public function syncAndReport(Project $project, string $type, ?User $causer = null): ?string
+    {
+        $project->refresh();
+        $wasParked = (int) $project->sub_department_id === $this->parkedSubDepartmentId($type);
+
+        $this->syncType($project, $type, $causer);
+        $project->refresh();
+
+        if ($wasParked && (int) $project->sub_department_id === $this->releasedSubDepartmentId($type)) {
+            return SubDepartment::find($project->sub_department_id)->name ?? 'the next lane';
+        }
+
+        return null;
+    }
+
     /** The department field says this paperwork is needed on this project. */
     public function paperworkRequired(Project $project, string $type): bool
     {
