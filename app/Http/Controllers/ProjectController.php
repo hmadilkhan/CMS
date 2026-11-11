@@ -272,6 +272,8 @@ class ProjectController extends Controller
             'serviceManagers' => $serviceManagers,
             'serviceTickets' => $serviceTickets,
             'designDetail' => $designDetail,
+            // The paperwork chases still open, shown under the move bar.
+            'openFollowUps' => app(DocumentFollowUpService::class)->openFollowUpsFor($project),
             // Zones section. Every zone gets a tab - the ones the project has
             // been through simply have content in them. The section itself is
             // hidden for a project that was never enrolled ($project->zone_id).

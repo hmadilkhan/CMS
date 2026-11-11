@@ -115,6 +115,12 @@ start of its life; chasing it from Deal Review would open a chase on the whole
 pipeline. `syncAll()` deliberately does **not** look for dateless projects
 either — only already-open rows are reconciled.
 
+`syncType()` honours the flag too: it may close an open NTP chase, never open
+one. Until 2026-11-11 it did not check, so every `sync()` (any department field
+save, any chase upload) opened an NTP chase on a project with no date, from
+Deal Review on. Nothing showed it — the chase has no card — until the open
+follow ups strip (below) would have listed it on almost every project.
+
 **Two chases share lane 31**, so `releaseFromParkedLane()` refuses to let a
 project out while *another* pending chase parks it in the same lane
 (`parkedByAnotherChase()`). A project owing both the meter spot result and the
@@ -122,6 +128,24 @@ NTP date waits for both; whichever arrives second releases it.
 
 Order no longer matters between this and MPU — both park in the same lane, and
 `forcedTypeForMove()` returning either one produces the same move.
+
+### Open follow ups on the project page
+
+Under the move bar the project page lists every chase still open on the
+project (**Open Follow Ups**), so nobody has to guess why a project is parked or
+which of two chases sharing a lane is still owed. One card per chase: its
+`title` (Meter Spot Result, Utility Bill, Fire Review, NTP Approval Date), who
+holds it (the assignee, else the owner department), how long it has been open,
+what it does to the pipeline — **Holding the project in <lane>** (lock icon) when
+the project sits in that chase's parked lane, or **Will hold the move into
+<department>** while that department is still ahead — and `clears_by`, how it is
+answered.
+
+`DocumentFollowUpService::openFollowUpsFor()` builds it, read only (it never
+opens or resolves a chase). `title` and `clears_by` are per-type config in
+`TYPES`. It sits outside the `isZoneOnlyUser()` block, so the Funding Manager
+sees it too — the NTP date is theirs to file. Covered by
+`OpenFollowUpsStripTest`.
 
 ---
 
@@ -353,6 +377,7 @@ really validate a Blade change: compile, then `php -l` the files in
 2. Create the parked lane in `sub_departments` with `show_in_move_list = 0`.
 3. Add a `TYPE_*` constant and a `TYPES` entry in `DocumentFollowUpService`:
    owner / from / to department names, parked and release sub-department ids,
+   a `title` and `clears_by` for the project page's Open Follow Ups strip,
    and either `file_category` (collects a document) or `value_column` +
    `value_options` (collects a value).
 4. Extend `paperworkRequired()` with the new column's test. Everything else —

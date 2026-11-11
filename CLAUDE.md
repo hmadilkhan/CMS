@@ -332,6 +332,12 @@ the upload clears and releases exactly like the card - both go through
 `DocumentFollowUpService::storeDocuments()` + `syncAndReport()`. Covered by
 `FollowUpClearedFromProjectTest`.
 
+The project page lists every chase still open under the move bar (**Open Follow
+Ups**: what is owed, who holds it, how long, whether it is holding the project
+now or will hold a later move, how it clears) via
+`DocumentFollowUpService::openFollowUpsFor()`; each type's `title` / `clears_by`
+live in `TYPES`. Covered by `OpenFollowUpsStripTest`.
+
 
 A **fourth chase** rides the same Permitting → Installation move: the NTP
 approval date. It used to be a refusal answered by a date input in the move

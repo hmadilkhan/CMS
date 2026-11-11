@@ -67,6 +67,8 @@ class DocumentFollowUpService
     public const TYPES = [
         self::TYPE_MPU => [
             'label' => 'Document Follow Up',
+            'title' => 'Meter Spot Result',
+            'clears_by' => 'Engineering picks the Meter Spot Result',
             'owner_department' => 'Engineering',
             'from_department' => 'Permitting',
             'to_department' => 'Installation',
@@ -78,6 +80,8 @@ class DocumentFollowUpService
         ],
         self::TYPE_UTILITY_BILL => [
             'label' => 'Utility Bill Follow Up',
+            'title' => 'Utility Bill',
+            'clears_by' => 'Upload the bill in the Utility Bills section',
             'owner_department' => 'Deal Review',
             'from_department' => 'Inspection',
             'to_department' => 'PTO',
@@ -106,6 +110,8 @@ class DocumentFollowUpService
         ],
         self::TYPE_FIRE_REVIEW => [
             'label' => 'Fire Review Follow Up',
+            'title' => 'Fire Review',
+            'clears_by' => 'Upload the approval in the Fire Approval Documents section',
             'owner_department' => 'Permitting',
             'from_department' => 'Installation',
             'to_department' => 'Inspection',
@@ -129,6 +135,8 @@ class DocumentFollowUpService
          */
         self::TYPE_NTP_APPROVAL => [
             'label' => 'NTP Approval Follow Up',
+            'title' => 'NTP Approval Date',
+            'clears_by' => 'The Funding Manager files the date in the Zones NTP tab',
             'owner_department' => 'Permitting',
             'from_department' => 'Permitting',
             'to_department' => 'Installation',
@@ -247,6 +255,54 @@ class DocumentFollowUpService
             ->pending()
             ->latest('id')
             ->first();
+    }
+
+    /**
+     * The chases still open on this project, oldest first, worded for the strip
+     * under the project page's move bar: what is owed, how it is cleared, who
+     * holds it, how long it has been open, and what it does to the pipeline -
+     * holding the project in its lane right now, or the move it will hold.
+     *
+     * Read only: it never opens or resolves a chase, so loading the page does
+     * not change anything.
+     *
+     * @return \Illuminate\Support\Collection<int, array{type: string, title: string, clears_by: string, owner: string, open_for: ?string, holding: bool, effect: ?string}>
+     */
+    public function openFollowUpsFor(Project $project)
+    {
+        $current = Department::withTrashed()->find($project->department_id);
+
+        return ProjectDocumentFollowUp::with('employee')
+            ->where('project_id', $project->id)
+            ->whereIn('type', self::types())
+            ->pending()
+            ->orderBy('opened_at')
+            ->orderBy('id')
+            ->get()
+            ->unique('type')
+            ->map(function (ProjectDocumentFollowUp $followUp) use ($project, $current) {
+                $config = $this->config($followUp->type);
+                $holding = (int) $project->sub_department_id === (int) $config['parked_sub_department_id'];
+                $target = Department::withTrashed()->where('name', $config['to_department'])->first();
+
+                $effect = null;
+                if ($holding) {
+                    $effect = 'Holding the project in '.(optional($project->subdepartment)->name ?? 'its lane');
+                } elseif ($current && $target && $current->comesBefore($target)) {
+                    $effect = 'Will hold the move into '.$target->name;
+                }
+
+                return [
+                    'type' => $followUp->type,
+                    'title' => $config['title'] ?? $config['label'],
+                    'clears_by' => $config['clears_by'] ?? '',
+                    'owner' => $followUp->employee?->name ?: $config['owner_department'],
+                    'open_for' => $followUp->opened_at?->diffForHumans(null, true),
+                    'holding' => $holding,
+                    'effect' => $effect,
+                ];
+            })
+            ->values();
     }
 
     /** Pass a type to ask about one chase, or nothing to ask about any. */
@@ -417,7 +473,13 @@ class DocumentFollowUpService
         $pending = $this->pendingFor($project->id, $type);
 
         if ($this->needsFollowUp($project, $type)) {
-            if (! $pending && ! $this->predatesTheChase($project, $type)) {
+            // A chase that starts at its move (NTP) is opened only by
+            // openChasesForMove(). Its "paperwork" is missing on every project
+            // from Deal Review on, so opening it here chased every project for
+            // a date nobody needs yet.
+            if (! $pending
+                && empty($this->config($type)['opens_on_move'])
+                && ! $this->predatesTheChase($project, $type)) {
                 $this->open($project, $type, $causer);
             }
 

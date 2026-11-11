@@ -620,6 +620,60 @@
             transform: translateY(-1px);
         }
 
+        .open-follow-ups {
+            margin: 0.75rem auto 0;
+            text-align: center;
+        }
+
+        .open-follow-ups-heading {
+            color: #6c757d;
+            font-size: 0.8rem;
+            font-weight: 700;
+            letter-spacing: 0.03em;
+            text-transform: uppercase;
+            margin-bottom: 0.5rem;
+        }
+
+        .open-follow-ups-list {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 0.6rem;
+        }
+
+        .open-follow-up {
+            min-width: 200px;
+            max-width: 280px;
+            padding: 0.55rem 0.85rem;
+            border-radius: 10px;
+            border: 1px solid #fde68a;
+            background: #fffbeb;
+            text-align: left;
+        }
+
+        .open-follow-up.is-holding {
+            border-color: #fdba74;
+            background: #fff7ed;
+        }
+
+        .open-follow-up-title {
+            color: #7c2d12;
+            font-size: 0.88rem;
+            font-weight: 700;
+        }
+
+        .open-follow-up-meta,
+        .open-follow-up-clears {
+            color: #6c757d;
+            font-size: 0.75rem;
+        }
+
+        .open-follow-up-effect {
+            color: #c2410c;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
         .department-detail-heading {
             margin: 0 auto 1.25rem;
             text-align: center;
@@ -2588,6 +2642,37 @@
                         </nav>
                     </div>
                     @endunless
+
+                    {{-- The paperwork follow ups still open on this project (docs/follow-ups.md).
+                         Shown to everyone who can open the project, the Funding Manager included,
+                         since the NTP approval date is theirs to file. --}}
+                    @if (isset($openFollowUps) && $openFollowUps->isNotEmpty())
+                        <div class="open-follow-ups" aria-label="Open follow ups">
+                            <div class="open-follow-ups-heading">
+                                <i class="icofont-ui-clock me-1"></i>Open Follow Ups ({{ $openFollowUps->count() }})
+                            </div>
+                            <div class="open-follow-ups-list">
+                                @foreach ($openFollowUps as $followUp)
+                                    <div class="open-follow-up {{ $followUp['holding'] ? 'is-holding' : '' }}"
+                                        title="{{ $followUp['clears_by'] }}">
+                                        <div class="open-follow-up-title">
+                                            @if ($followUp['holding'])
+                                                <i class="icofont-lock me-1"></i>
+                                            @endif
+                                            {{ $followUp['title'] }}
+                                        </div>
+                                        <div class="open-follow-up-meta">
+                                            {{ $followUp['owner'] }}@if ($followUp['open_for']) &middot; open {{ $followUp['open_for'] }}@endif
+                                        </div>
+                                        @if ($followUp['effect'])
+                                            <div class="open-follow-up-effect">{{ $followUp['effect'] }}</div>
+                                        @endif
+                                        <div class="open-follow-up-clears">{{ $followUp['clears_by'] }}</div>
+                                    </div>
+                                @endforeach
+                            </div>
+                        </div>
+                    @endif
 
                 </div>
             </div>
