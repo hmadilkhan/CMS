@@ -18,6 +18,7 @@ class AccountTransaction extends Model
     protected $fillable = [
         'project_id',
         'project_invoice_detail_id',
+        'transaction_payment_id',
         'payee',
         'milestone',
         'amount',
@@ -148,6 +149,16 @@ class AccountTransaction extends Model
     public function invoice()
     {
         return $this->belongsTo(ProjectInvoiceDetail::class, 'project_invoice_detail_id')->withTrashed();
+    }
+
+    /**
+     * Logged by the system for a material invoice payment (payee Supplier):
+     * the invoice is its source, so it is not edited or deleted by hand and
+     * the Transaction Portal does not list it (the invoice is already there).
+     */
+    public function isSupplierInvoicePayment(): bool
+    {
+        return $this->transaction_payment_id !== null;
     }
 
     /** Money received / paid against it, oldest first (several when paid in parts). */

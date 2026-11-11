@@ -45,7 +45,10 @@ class TransactionPortalService
     /** Deleting a received payment also needs the Account Transactions edit permission. */
     public const PERMISSION_DELETE = 'Account Transactions Edit';
 
-    /** Adding a transaction from the portal: the project page's Add button needs the same. */
+    /**
+     * Adding a transaction from the portal: the project page's Add button needs
+     * the same. Expected AR is the exception - see creatableSections().
+     */
     public const PERMISSION_CREATE = 'Account Transactions Edit';
 
     /** Adding a material invoice: the project's Invoices tab needs the same. */
@@ -364,12 +367,19 @@ class TransactionPortalService
      * takes elsewhere - Account Transactions Edit for a transaction (the
      * project page's Add button), Invoice Details for a material invoice (the
      * project's Invoices tab).
+     *
+     * Expected AR needs nothing beyond its own section permission: the Funding
+     * Manager works that lane and must be able to add a payment expected to it,
+     * without Account Transactions Edit (which would also open Import, deleting
+     * received payments and the project page's transaction form).
      */
     public function creatableSections(User $user): array
     {
-        return array_values(array_filter($this->sections($user), fn ($b) => $user->can(
-            $b === 'mat' ? self::PERMISSION_INVOICE : self::PERMISSION_CREATE
-        )));
+        return array_values(array_filter($this->sections($user), fn ($b) => match ($b) {
+            'ear' => true,
+            'mat' => $user->can(self::PERMISSION_INVOICE),
+            default => $user->can(self::PERMISSION_CREATE),
+        }));
     }
 
     /**
@@ -676,10 +686,16 @@ class TransactionPortalService
         return $t->status === AccountTransaction::STATUS_CLOSED && $t->settled_date ? [$this->actualRow($t)] : [];
     }
 
-    /** Transactions on live projects, scoped the way Account Transactions already is. */
+    /**
+     * Transactions on live projects, scoped the way Account Transactions
+     * already is. The Supplier rows logged for material invoice payments are
+     * left out: the invoice itself is in the Material lane, and listing both
+     * would count that money twice.
+     */
     private function transactions(User $user): Builder
     {
         return $this->onLiveProjectOrNone(AccountTransaction::query()->filterByRole($user))
+            ->whereNull('account_transactions.transaction_payment_id')
             ->with(self::RELATIONS);
     }
 

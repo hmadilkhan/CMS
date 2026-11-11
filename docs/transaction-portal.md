@@ -176,10 +176,45 @@ the project dropdown (a plain select, A-Z, loaded once) is `GET transaction-port
 
 **Who:** the section's own permission AND what adding takes on the project
 page: `Account Transactions Edit` for a transaction, `Invoice Details` for a
-material invoice (`creatableSections()`; page config `creatable`). The form
+material invoice (`creatableSections()`; page config `creatable`).
+**Expected AR is the exception:** its own permission (`Transaction Portal
+Expected AR`) is enough, so the Funding Manager - who works that lane and does
+not hold `Account Transactions Edit` - can add a payment expected. Granting
+them Edit instead was rejected because it also opens Import, deleting received
+payments and the project page's transaction form. The form
 checks every required field before sending and lists what is missing; the
 server's 422 messages show in the same box. Each add is in the activity log
 ("created the account transaction from the Transaction Portal").
+
+## Material invoice paid → Supplier transaction (added 2026-11-11)
+
+Paying a material invoice in the portal (drawer, bulk bar, in full or in part)
+also logs the money in **Account Transactions** as a payment to the
+**Supplier** - the client wanted the project's transactions to show what went
+to the supplier. `TransactionPaymentService::logSupplierPayment()`:
+
+- **One row per payment** (a part payment gets its own): payee `supplier`,
+  milestone `Material Invoice`, amount **−(payment)**, date = the day paid,
+  status Closed with `settled_amount` / `settled_date`, details "Material
+  invoice paid - <file>", `project_invoice_detail_id` = the invoice and
+  `transaction_payment_id` = the payment (the link that marks it).
+- **Removing that payment** (Remove in the drawer) or **reopening the invoice**
+  soft-deletes its row(s), logged (`unlogSupplierPayments()`).
+- **Not on the portal board.** `transactions()` leaves out rows with a
+  `transaction_payment_id`: a Supplier row would otherwise land in Other
+  Payables while the invoice is already in the Material lane - the same money
+  counted twice. `resolve()` refuses them too (404), so they cannot be paid,
+  batched or reopened on their own.
+- **Read-only on the project page.** The Account Transactions form shows "From
+  material invoice" instead of Edit / Delete and `editable()` refuses them
+  (403): they change with the invoice. They count in that table's totals and in
+  the Transaction Report, which is the point.
+- No effect on the commission (it already takes the invoice amounts off; this
+  row is negative and not a sales-partner row).
+- **Backfill** (`2026_11_11_000003`, which also adds the column): every invoice
+  payment already recorded got its row. The 33 invoices closed by
+  `2026_11_04_000003` without a recorded payment were left out on purpose - no
+  paid date or amount is known (client's call).
 
 ## Miscellaneous payments - no project (added 2026-11-11)
 

@@ -736,6 +736,56 @@ class TransactionPortalTest extends TestCase
         $this->assertSame(0, $material->payments()->count());
     }
 
+    public function test_paying_a_material_invoice_logs_a_supplier_payment_per_payment(): void
+    {
+        $project = $this->project();
+        $invoice = $this->invoice($project, 'material', 9000, '2026-10-01'); // due 10/31, carried into this week
+        $user = $this->finance();
+        $supplierRows = fn () => AccountTransaction::where('project_invoice_detail_id', $invoice->id)->where('payee', 'supplier')->orderBy('id')->get();
+
+        // A part payment: one Supplier transaction for what was paid, Closed, on the day paid.
+        $this->actingAs($user)->postJson(route('transaction-portal.settle'), ['items' => ['i'.$invoice->id], 'date' => '2026-11-03', 'amount' => 4000])->assertOk();
+        $first = $supplierRows()->sole();
+        $this->assertSame($project->id, $first->project_id);
+        $this->assertEquals(-4000, (float) $first->amount);
+        $this->assertSame('Closed', $first->status);
+        $this->assertSame('2026-11-03', substr((string) $first->transaction_date, 0, 10));
+        $this->assertSame('Material Invoice', $first->milestone);
+        $this->assertSame($invoice->payments()->sole()->id, $first->transaction_payment_id);
+
+        // The portal lists the invoice only: the Supplier row is not in Other Payables (no double count).
+        $rows = $this->rows($user);
+        $this->assertFalse($rows->has('t'.$first->id));
+        $this->assertTrue($rows->where('b', 'oth')->isEmpty());
+        $this->assertEquals(5000, $rows['i'.$invoice->id]['amount']);
+        $this->assertFalse(collect($this->actingAs($user)->getJson(route('transaction-portal.search', ['q' => 'rito']))->json('rows'))->contains('id', 't'.$first->id));
+
+        // The rest, from the bulk bar: a second row for that payment.
+        $this->actingAs($user)->postJson(route('transaction-portal.settle'), ['items' => ['i'.$invoice->id], 'date' => '2026-11-04'])->assertJsonPath('closed', 1);
+        $this->assertEquals([-4000, -5000], $supplierRows()->pluck('amount')->map(fn ($a) => (float) $a)->all());
+
+        // It cannot be changed on its own: not from the portal, not from the project page.
+        $this->actingAs($user)->postJson(route('transaction-portal.reopen'), ['item' => 't'.$first->id])->assertNotFound();
+        $editor = $this->user('Transactions Editor', ['Account Transactions Edit']);
+        \Livewire\Livewire::actingAs($editor)->test(\App\Livewire\AccountTransactions::class, ['project_id' => $project->id])
+            ->assertSee('From material invoice')
+            ->call('delete', $first->id)
+            ->assertForbidden();
+        $this->assertNotSoftDeleted($first);
+
+        // Removing a payment removes its row; reopening the invoice removes the rest.
+        $this->actingAs($user)->postJson(route('transaction-portal.remove-payment'), ['payment' => $first->transaction_payment_id])->assertOk();
+        $this->assertSoftDeleted($first);
+        $this->assertEquals([-5000], $supplierRows()->pluck('amount')->map(fn ($a) => (float) $a)->all());
+
+        $this->actingAs($user)->postJson(route('transaction-portal.reopen'), ['item' => 'i'.$invoice->id])->assertOk();
+        $this->assertTrue($supplierRows()->isEmpty());
+        $this->assertDatabaseHas('activity_log', ['subject_id' => $first->id, 'event' => 'deleted', 'description' => $user->name.' deleted the account transaction for the material invoice payment removed: Supplier payment.']);
+
+        // The commission is untouched: it already takes the invoice off, not this row.
+        $this->assertSame(0, AccountTransaction::where('payee', 'sales_partner')->count());
+    }
+
     public function test_one_payment_can_be_removed_from_the_history(): void
     {
         $project = $this->project();
@@ -933,21 +983,35 @@ class TransactionPortalTest extends TestCase
         $project = $this->project();
         $data = ['section' => 'ear', 'project_id' => $project->id, 'payee' => 'customer', 'milestone' => 'M1', 'amount' => 10, 'transaction_date' => '2026-11-03', 'transaction_details' => 'x'];
 
-        // The portal permissions alone: no "+ New".
+        // The portal permissions alone: "+ New" on Expected AR only - that
+        // section's own permission is enough to add to it.
         $finance = $this->finance();
-        $this->actingAs($finance)->get(route('transaction-portal.index'))->assertDontSee('id="new-btn"', false);
-        $this->actingAs($finance)->postJson(route('transaction-portal.store'), $data)->assertForbidden();
-        $this->actingAs($finance)->getJson(route('transaction-portal.projects'))->assertForbidden();
+        $this->assertSame(['ear'], app(TransactionPortalService::class)->creatableSections($finance));
+        $this->actingAs($finance)->get(route('transaction-portal.index'))->assertSee('id="new-btn"', false)->assertSee('"creatable":["ear"]', false);
+        $this->actingAs($finance)->postJson(route('transaction-portal.store'), ['section' => 'aar', 'received_amount' => 10, 'received_date' => '2026-11-04'] + $data)->assertForbidden();
+        $this->actingAs($finance)->postJson(route('transaction-portal.store'), ['section' => 'com'] + $data)->assertForbidden();
+
+        // Only Actual AR / payables visible, no edit permission: no "+ New" at all.
+        $otherOnly = $this->user('Other Sections Only', [TransactionPortalService::PERMISSION_PAGE, TransactionPortalService::PERMISSION_OTHER]);
+        $this->actingAs($otherOnly)->get(route('transaction-portal.index'))->assertDontSee('id="new-btn"', false);
+        $this->actingAs($otherOnly)->postJson(route('transaction-portal.store'), $data)->assertForbidden();
+        $this->actingAs($otherOnly)->getJson(route('transaction-portal.projects'))->assertForbidden();
 
         // Account Transactions Edit without Invoice Details: everything but Material.
         $noInvoices = $this->creator([TransactionPortalService::PERMISSION_CREATE]);
         $this->assertSame(['ear', 'aar', 'com', 'lab', 'oth'], app(TransactionPortalService::class)->creatableSections($noInvoices));
         $this->actingAs($noInvoices)->postJson(route('transaction-portal.store'), ['section' => 'mat', 'project_id' => $project->id])->assertForbidden();
 
-        // A Funding Manager adds only to the section they see.
-        $fm = $this->user('Funding Manager', [TransactionPortalService::PERMISSION_PAGE, TransactionPortalService::PERMISSION_EXPECTED, TransactionPortalService::PERMISSION_CREATE]);
+        // A Funding Manager - Expected AR only, no Account Transactions Edit -
+        // gets "+ New" there and adds only to the section they see.
+        $fm = $this->fundingManager();
+        $this->assertFalse($fm->can(TransactionPortalService::PERMISSION_CREATE));
+        $this->actingAs($fm)->get(route('transaction-portal.index'))->assertSee('id="new-btn"', false)->assertSee('"creatable":["ear"]', false);
+        $this->actingAs($fm)->getJson(route('transaction-portal.projects'))->assertOk();
         $this->actingAs($fm)->postJson(route('transaction-portal.store'), ['section' => 'com'] + $data)->assertForbidden();
         $this->actingAs($fm)->postJson(route('transaction-portal.store'), $data)->assertOk();
+        // ...and still no Import (that one does need Account Transactions Edit).
+        $this->actingAs($fm)->get(route('transaction-portal.import'))->assertForbidden();
 
         // A project that does not exist (or was deleted) is refused.
         $this->actingAs($fm)->postJson(route('transaction-portal.store'), ['project_id' => 999999] + $data)->assertStatus(422);

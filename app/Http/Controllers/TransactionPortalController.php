@@ -438,7 +438,9 @@ class TransactionPortalController extends Controller
         $user = $request->user();
 
         if (preg_match('/^t(\d+)$/', $item, $match)) {
-            $record = AccountTransaction::filterByRole($user)->findOrFail((int) $match[1]);
+            // The Supplier rows of material invoice payments are not on the board;
+            // they change with the invoice, never on their own.
+            $record = AccountTransaction::filterByRole($user)->whereNull('transaction_payment_id')->findOrFail((int) $match[1]);
             $section = $this->portal->sectionOf($record);
         } elseif (preg_match('/^p(\d+)$/', $item, $match)) {
             $record = TransactionPayment::whereNotNull('account_transaction_id')->findOrFail((int) $match[1]);

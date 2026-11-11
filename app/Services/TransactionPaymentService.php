@@ -75,6 +75,7 @@ class TransactionPaymentService
             ]);
 
             $this->sync($record, $final ? true : null);
+            $this->logSupplierPayment($record, $payment);
 
             $this->log($record, 'payment', [
                 'payment_id' => $payment->id,
@@ -104,6 +105,7 @@ class TransactionPaymentService
 
         DB::transaction(function () use ($payment, $record) {
             $payment->delete();
+            $this->unlogSupplierPayments([$payment->id]);
 
             if (! $record) {
                 return;
@@ -125,8 +127,79 @@ class TransactionPaymentService
     public function removeAll(AccountTransaction|ProjectInvoiceDetail $record): void
     {
         DB::transaction(function () use ($record) {
-            $record->payments()->get()->each->delete();
+            $payments = $record->payments()->get();
+            $payments->each->delete();
+            $this->unlogSupplierPayments($payments->pluck('id')->all());
             $this->sync($record, false);
+        });
+    }
+
+    /**
+     * A material invoice paid (in full or in part) is also logged in Account
+     * Transactions as a payment to the Supplier - one row per payment, Closed,
+     * linked to the invoice and to the payment. The Transaction Portal does
+     * not list these rows (the invoice is already in its Material lane), so the
+     * money is never counted twice; they show on the project's Account
+     * Transactions and in the Transaction Report.
+     */
+    private function logSupplierPayment(AccountTransaction|ProjectInvoiceDetail $record, TransactionPayment $payment): void
+    {
+        if (! $record instanceof ProjectInvoiceDetail || $record->invoice_type !== 'material') {
+            return;
+        }
+
+        $items = [
+            'project_id' => $record->project_id,
+            'project_invoice_detail_id' => $record->id,
+            'transaction_payment_id' => $payment->id,
+            'payee' => 'supplier',
+            'milestone' => 'Material Invoice',
+            'amount' => -round((float) $payment->amount, 2),
+            'deduction_amount' => 0,
+            'transaction_date' => $payment->paid_on->toDateString(),
+            'transaction_details' => 'Material invoice paid'.($record->original_file_name ? ' - '.$record->original_file_name : ''),
+            'status' => AccountTransaction::STATUS_CLOSED,
+            'settled_amount' => round((float) $payment->amount, 2),
+            'settled_date' => $payment->paid_on->toDateString(),
+        ];
+
+        $transaction = AccountTransaction::create($items);
+        $user = auth()->user();
+
+        $activity = activity('AccountTransaction')
+            ->performedOn($transaction)
+            ->withProperties($items)
+            ->setEvent('created');
+
+        if ($user) {
+            $activity->causedBy($user);
+        }
+
+        $activity->log(($user?->name ?? 'System').' created the account transaction for the material invoice paid: Supplier payment.');
+    }
+
+    /** The Supplier rows of invoice payments that were removed go with them (soft delete, logged). */
+    private function unlogSupplierPayments(array $paymentIds): void
+    {
+        if (! $paymentIds) {
+            return;
+        }
+
+        $user = auth()->user();
+
+        AccountTransaction::whereIn('transaction_payment_id', $paymentIds)->get()->each(function (AccountTransaction $transaction) use ($user) {
+            $transaction->delete();
+
+            $activity = activity('AccountTransaction')
+                ->performedOn($transaction)
+                ->withProperties($transaction->only(['project_id', 'project_invoice_detail_id', 'transaction_payment_id', 'amount', 'transaction_date']))
+                ->setEvent('deleted');
+
+            if ($user) {
+                $activity->causedBy($user);
+            }
+
+            $activity->log(($user?->name ?? 'System').' deleted the account transaction for the material invoice payment removed: Supplier payment.');
         });
     }
 

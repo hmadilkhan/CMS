@@ -204,6 +204,10 @@
                             </td>
                             @can('Account Transactions Edit')
                                 <td class="transaction-actions text-center">
+                                    {{-- Logged from a material invoice payment: the invoice is its source, so it is changed there (Transaction Portal), not here. --}}
+                                    @if ($transaction->isSupplierInvoicePayment())
+                                        <small class="text-muted" title="Logged when the material invoice was paid in the Transaction Portal. Remove that payment or reopen the invoice there to undo it.">From material invoice</small>
+                                    @else
                                     <div class="transaction-action-group">
                                         <button class="btn btn-sm btn-info transaction-action-btn" title="Edit"
                                             wire:click="edit({{ $transaction->id }})">
@@ -222,6 +226,7 @@
                                             <button class="btn btn-sm btn-secondary"
                                                 wire:click="$set('confirmingDeleteId', null)">No</button>
                                         </div>
+                                    @endif
                                     @endif
                                 </td>
                             @endcan

@@ -213,7 +213,7 @@ class AccountTransactions extends Component
 
     public function edit($id)
     {
-        $transaction = AccountTransaction::findOrFail($id);
+        $transaction = $this->editable($id);
         $this->transactionIdBeingEdited = $id;
         $this->payee = $transaction->payee;
         $this->originalPayee = $transaction->payee;
@@ -237,7 +237,7 @@ class AccountTransactions extends Component
     public function update()
     {
         $this->validate();
-        $transaction = AccountTransaction::findOrFail($this->transactionIdBeingEdited);
+        $transaction = $this->editable($this->transactionIdBeingEdited);
         $items = [
             'payee' => $this->payee,
             'milestone' => $this->milestone,
@@ -277,6 +277,20 @@ class AccountTransactions extends Component
         session()->flash('message', 'Transaction updated successfully.');
     }
 
+    /**
+     * A transaction this form may change. The Supplier rows logged for a
+     * material invoice payment are changed from the invoice (Transaction
+     * Portal: remove the payment or reopen it), never here.
+     */
+    private function editable($id): AccountTransaction
+    {
+        $transaction = AccountTransaction::findOrFail($id);
+
+        abort_if($transaction->isSupplierInvoicePayment(), 403, 'This payment was logged from a material invoice. Change it from the invoice in the Transaction Portal.');
+
+        return $transaction;
+    }
+
     public function confirmDelete($id)
     {
         $this->confirmingDeleteId = $id;
@@ -284,8 +298,8 @@ class AccountTransactions extends Component
 
     public function delete($id)
     {
-        $account = AccountTransaction::findOrFail($id);
-        AccountTransaction::findOrFail($id)->delete();
+        $account = $this->editable($id);
+        $account->delete();
         $username = auth()->user()->name;
         $changedFields = collect($account)->keys()->implode(', ');
         activity('AccountTransaction')

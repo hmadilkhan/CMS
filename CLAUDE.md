@@ -398,7 +398,11 @@ ported as is; its CSS is scoped under `.tp`). Three permissions: the page,
 Sections`. Money in or out is recorded as **payments** (`transaction_payments`,
 written only by `TransactionPaymentService`): a part payment leaves the row Open
 with its balance, `settled_amount` is the total so far and `settled_date` the last
-payment's day, and Actual AR lists one item per payment (`p<id>`). **+ New**
+payment's day, and Actual AR lists one item per payment (`p<id>`). Each payment
+on a **material invoice** also logs a Closed **Supplier** account transaction
+(`transaction_payment_id` = that payment; removed with it) that the portal hides
+(the invoice is already in the Material lane) and the project page shows
+read-only. **+ New**
 (header and each lane) adds a row to any section from a drawer form
 (`TransactionPortalService::create`; needs the section's permission plus
 `Account Transactions Edit`, or `Invoice Details` for Material). A row in any
