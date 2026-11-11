@@ -475,6 +475,16 @@ sync is gone, so the editor's rows are the truth.
   into the customer's last instalment.
 - A row whose base is 0 is skipped and not recorded (e.g. a TPO milestone on a
   customer saved before the credit split).
+- **The TPO bases never overlap** (`FinanceMilestoneService::baseAmount`):
+  `solar_tpo_credit` / `battery_tpo_credit` count only when `tpo_split` is on;
+  `single_third_party_credit` ("Third Party Credit (pre-split customers)") is
+  `third_party_credit` only when `keepsSingleThirdPartyCredit()`, else 0. Never
+  read raw `third_party_credit` as a base - on split customers it holds
+  Solar + Battery, so it would pay the credit twice. Prepaid PPA + Wheelhouse
+  carry the three TPO rows side by side at M1 (70%) and at M2 (30%)
+  (`third_party_credit_m1` / `_m2`, payee Others, seeded by
+  `2026_11_12_000001`); each project raises one set only. No backfill:
+  pre-split projects whose M1 / M2 date was already filed raise nothing for it.
 - Callers pass every column they wrote to `triggerDateMilestones()`; the service
   filters to the configured list. `triggerProjectCreated()` also fires any
   configured date already filled at creation.

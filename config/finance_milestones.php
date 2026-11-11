@@ -28,11 +28,17 @@ return [
      * The `customer_finances` figures a percent / remaining milestone is a share
      * of. "Remaining" is the base minus what earlier milestones on the SAME base
      * already raised, so a TPO credit payment never eats into the customer's.
+     *
+     * The TPO bases never overlap (FinanceMilestoneService::baseAmount): the
+     * Solar / Battery credits count only on a customer saved with the split,
+     * and the single Third Party Credit only on one saved before it. A finance
+     * option can carry rows on all three; each project raises only its own.
      */
     'amount_bases' => [
         'contract_amount' => 'Contract Amount',
         'customer_portion' => 'Customer Portion',
         'solar_tpo_credit' => 'Solar TPO Credit',
         'battery_tpo_credit' => 'Battery TPO Credit',
+        'single_third_party_credit' => 'Third Party Credit (pre-split customers)',
     ],
 ];

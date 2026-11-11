@@ -401,7 +401,25 @@ class FinanceMilestoneService
             return 0;
         }
 
-        return (float) ($project->customer?->finances?->{$base} ?? 0);
+        $finances = $project->customer?->finances;
+
+        if (! $finances) {
+            return 0;
+        }
+
+        // The TPO bases are mutually exclusive, decided by the stored row and
+        // never by which figure happens to be filled: third_party_credit is
+        // filled on split customers too (it holds Solar + Battery), so reading
+        // it there would pay the credit twice.
+        if ($base === 'single_third_party_credit') {
+            return $finances->keepsSingleThirdPartyCredit() ? (float) $finances->third_party_credit : 0;
+        }
+
+        if (in_array($base, ['solar_tpo_credit', 'battery_tpo_credit'], true) && ! $finances->tpo_split) {
+            return 0;
+        }
+
+        return (float) ($finances->{$base} ?? 0);
     }
 
     /**

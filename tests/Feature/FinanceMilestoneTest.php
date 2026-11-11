@@ -384,6 +384,171 @@ class FinanceMilestoneTest extends TestCase
         $this->assertSame(0, ProjectFinanceMilestoneEvent::where('project_id', $project->id)->count());
     }
 
+    /** The three M1 TPO rows a Prepaid PPA / Wheelhouse option carries. */
+    private function m1TpoRows(): array
+    {
+        $m1 = $this->zone('m1');
+
+        return [
+            ['label' => 'Solar Milestone 1', 'trigger_type' => 'zone_date', 'trigger_zone_id' => $m1->id, 'amount_type' => 'percent', 'amount_value' => 70, 'amount_base' => 'solar_tpo_credit', 'payee' => 'others'],
+            ['label' => 'Battery Milestone 1', 'trigger_type' => 'zone_date', 'trigger_zone_id' => $m1->id, 'amount_type' => 'percent', 'amount_value' => 70, 'amount_base' => 'battery_tpo_credit', 'payee' => 'others'],
+            ['label' => 'Third Party Credit Milestone 1', 'trigger_type' => 'zone_date', 'trigger_zone_id' => $m1->id, 'amount_type' => 'percent', 'amount_value' => 70, 'amount_base' => 'single_third_party_credit', 'payee' => 'others'],
+        ];
+    }
+
+    public function test_a_pre_split_customer_raises_only_the_third_party_credit_milestone(): void
+    {
+        $option = $this->financeOption($this->m1TpoRows());
+        $project = $this->project($option);
+        $project->customer->finances->update([
+            'third_party_credit' => 20000,
+            'solar_tpo_credit' => 0,
+            'battery_tpo_credit' => 0,
+            'tpo_split' => false,
+        ]);
+
+        app(ZoneService::class)->setApprovalDate($project->refresh(), $this->zone('m1'), '2026-11-10');
+
+        $this->assertEquals(
+            ['Third Party Credit Milestone 1' => 14000],
+            AccountTransaction::where('project_id', $project->id)->pluck('amount', 'milestone')->map(fn ($a) => (float) $a)->all()
+        );
+        $this->assertSame('others', AccountTransaction::where('project_id', $project->id)->value('payee'));
+        $this->assertSame(
+            ['single_third_party_credit'],
+            ProjectFinanceMilestoneEvent::where('project_id', $project->id)->pluck('amount_base')->all()
+        );
+    }
+
+    public function test_a_split_customer_never_raises_the_third_party_credit_milestone(): void
+    {
+        // third_party_credit holds Solar + Battery (20,000) on a split customer;
+        // reading it would pay the credit a second time.
+        $option = $this->financeOption($this->m1TpoRows());
+        $project = $this->project($option);
+
+        app(ZoneService::class)->setApprovalDate($project, $this->zone('m1'), '2026-11-10');
+
+        $this->assertEquals(
+            ['Solar Milestone 1' => 10500, 'Battery Milestone 1' => 3500],
+            AccountTransaction::where('project_id', $project->id)->pluck('amount', 'milestone')->map(fn ($a) => (float) $a)->all()
+        );
+    }
+
+    public function test_a_pre_split_customer_never_raises_a_solar_or_battery_milestone(): void
+    {
+        // Even with a stray figure in the split columns, a customer saved
+        // before the split is paid on its single credit only.
+        $option = $this->financeOption($this->m1TpoRows());
+        $project = $this->project($option);
+        $project->customer->finances->update([
+            'third_party_credit' => 20000,
+            'solar_tpo_credit' => 15000,
+            'battery_tpo_credit' => 5000,
+            'tpo_split' => false,
+        ]);
+
+        app(ZoneService::class)->setApprovalDate($project->refresh(), $this->zone('m1'), '2026-11-10');
+
+        $this->assertSame(
+            ['Third Party Credit Milestone 1'],
+            AccountTransaction::where('project_id', $project->id)->pluck('milestone')->all()
+        );
+    }
+
+    public function test_a_customer_with_no_credit_raises_no_tpo_milestone(): void
+    {
+        $option = $this->financeOption($this->m1TpoRows());
+        $project = $this->project($option);
+        $project->customer->finances->update([
+            'third_party_credit' => 0,
+            'solar_tpo_credit' => 0,
+            'battery_tpo_credit' => 0,
+            'tpo_split' => false,
+        ]);
+
+        app(ZoneService::class)->setApprovalDate($project->refresh(), $this->zone('m1'), '2026-11-10');
+
+        $this->assertSame(0, AccountTransaction::where('project_id', $project->id)->count());
+        $this->assertSame(0, ProjectFinanceMilestoneEvent::where('project_id', $project->id)->count());
+    }
+
+    public function test_the_editor_accepts_the_third_party_credit_base(): void
+    {
+        $this->actingAs($this->superAdmin())->post(route('finance.option.store'), $this->financeOptionPayload([
+            $this->row('Solar Milestone 1', 'zone_date:'.$this->zone('m1')->id, 'percent', 70, 'solar_tpo_credit', 'others'),
+            $this->row('Third Party Credit Milestone 1', 'zone_date:'.$this->zone('m1')->id, 'percent', 70, 'single_third_party_credit', 'others'),
+        ]))->assertSessionHasNoErrors();
+
+        $this->assertSame(
+            'single_third_party_credit',
+            FinanceOption::where('name', 'Dynamic Financing')->firstOrFail()
+                ->milestones()->where('label', 'Third Party Credit Milestone 1')->value('amount_base')
+        );
+    }
+
+    public function test_the_seed_adds_the_third_party_credit_row_to_the_split_options_once(): void
+    {
+        $wheelhouse = $this->financeOption([]);
+        $prepaid = $this->financeOption([]);
+        $prepaid->update(['name' => 'Prepaid PPA']);
+        $other = $this->financeOption([]);
+        $other->update(['name' => 'Some Loan']);
+
+        $migration = require database_path('migrations/2026_11_12_000001_seed_single_third_party_credit_milestone.php');
+        $migration->up();
+        $migration->up();
+
+        foreach ([$wheelhouse, $prepaid] as $option) {
+            foreach (['third_party_credit_m1' => ['m1', 70], 'third_party_credit_m2' => ['m2', 30]] as $key => [$zone, $percent]) {
+                $rows = $option->milestones()->where('key', $key)->get();
+                $this->assertCount(1, $rows, $key);
+                $this->assertSame('single_third_party_credit', $rows->first()->amount_base);
+                $this->assertSame('zone_date', $rows->first()->trigger_type);
+                $this->assertSame($this->zone($zone)->id, (int) $rows->first()->trigger_zone_id);
+                $this->assertEquals($percent, $rows->first()->amount_value);
+                $this->assertSame('others', $rows->first()->payee);
+            }
+        }
+
+        $this->assertSame(0, $other->milestones()->count());
+    }
+
+    public function test_m1_and_m2_each_raise_their_own_tpo_set_for_old_and_new_customers(): void
+    {
+        $m1 = $this->zone('m1');
+        $m2 = $this->zone('m2');
+        $option = $this->financeOption(array_merge($this->m1TpoRows(), [
+            ['label' => 'Solar Milestone 2', 'trigger_type' => 'zone_date', 'trigger_zone_id' => $m2->id, 'amount_type' => 'percent', 'amount_value' => 30, 'amount_base' => 'solar_tpo_credit', 'payee' => 'others'],
+            ['label' => 'Battery Milestone 2', 'trigger_type' => 'zone_date', 'trigger_zone_id' => $m2->id, 'amount_type' => 'percent', 'amount_value' => 30, 'amount_base' => 'battery_tpo_credit', 'payee' => 'others'],
+            ['label' => 'Third Party Credit Milestone 2', 'trigger_type' => 'zone_date', 'trigger_zone_id' => $m2->id, 'amount_type' => 'percent', 'amount_value' => 30, 'amount_base' => 'single_third_party_credit', 'payee' => 'others'],
+        ]));
+        $zones = app(ZoneService::class);
+        $amounts = fn (Project $project) => AccountTransaction::where('project_id', $project->id)
+            ->pluck('amount', 'milestone')->map(fn ($a) => (float) $a)->all();
+
+        $old = $this->project($option);
+        $old->customer->finances->update(['solar_tpo_credit' => 0, 'battery_tpo_credit' => 0, 'tpo_split' => false]);
+        $zones->setApprovalDate($old->refresh(), $m1, '2026-11-10');
+        $zones->setApprovalDate($old->refresh(), $m2, '2026-12-10');
+
+        $this->assertEquals(
+            ['Third Party Credit Milestone 1' => 14000, 'Third Party Credit Milestone 2' => 6000],
+            $amounts($old),
+            'A pre-split customer is paid its whole single credit, 70 + 30, and nothing on Solar / Battery.'
+        );
+
+        $new = $this->project($option);
+        $zones->setApprovalDate($new, $m1, '2026-11-10');
+        $zones->setApprovalDate($new->refresh(), $m2, '2026-12-10');
+
+        $this->assertEquals(
+            ['Solar Milestone 1' => 10500, 'Battery Milestone 1' => 3500, 'Solar Milestone 2' => 4500, 'Battery Milestone 2' => 1500],
+            $amounts($new),
+            'A split customer is paid on Solar / Battery only, and never on the single credit.'
+        );
+    }
+
     public function test_an_edited_amount_is_what_fires(): void
     {
         $option = $this->financeOption([
