@@ -346,7 +346,7 @@ class TransactionPortalImportTest extends TestCase
         $this->assertSame([3], array_column(session('importResult')['skipped'], 'line'));
     }
 
-    public function test_money_in_that_belongs_to_no_project_imports_as_a_miscellaneous_payment(): void
+    public function test_a_row_that_belongs_to_no_project_imports_as_a_miscellaneous_payment(): void
     {
         $user = $this->user();
         $preview = $this->preview($user, $this->sheet([
@@ -360,11 +360,11 @@ class TransactionPortalImportTest extends TestCase
             2 => ['project' => 'misc'],
         ]));
 
-        $t = AccountTransaction::whereNull('project_id')->sole();
-        $this->assertSame('GoodLeap Bonus', $t->milestone);
-        $this->assertEquals(2500, (float) $t->amount);
-        // Money going out needs a project: that row is skipped and says why.
-        $this->assertStringContainsString('money coming in', session('importResult')['skipped'][0]['reason']);
+        // Money in and money out alike.
+        $rows = AccountTransaction::whereNull('project_id')->orderBy('amount')->get();
+        $this->assertSame(['Deposit refund', 'GoodLeap Bonus'], $rows->pluck('milestone')->all());
+        $this->assertEquals([-300, 2500], $rows->pluck('amount')->map(fn ($a) => (float) $a)->all());
+        $this->assertEmpty(session('importResult')['skipped']);
     }
 
     public function test_a_project_the_user_cannot_access_is_refused_even_if_posted(): void

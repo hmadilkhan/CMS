@@ -164,6 +164,14 @@
 .tp .form-errors { border-radius: 10px; padding: 10px 12px; background: var(--danger-soft); color: var(--danger); font-size: 12.5px; }
 .tp .form-errors ul { margin: 0; padding-left: 18px; }
 .tp .field.bad input, .tp .field.bad select { border-color: var(--danger); }
+/* The searchable project dropdown (Select2), matched to the form's own inputs. */
+.tp .field .select2-container .select2-selection--single { height: auto; min-height: 38px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); display: flex; align-items: center; }
+.tp .field .select2-container .select2-selection__rendered { padding: 7px 28px 7px 10px; line-height: 1.4; color: var(--fg); }
+.tp .field .select2-container .select2-selection__arrow { height: 100%; }
+.tp .field.bad .select2-container .select2-selection--single { border-color: var(--danger) !important; }
+.tp .drawer .select2-dropdown { border-color: var(--line); border-radius: 8px; background: var(--surface); }
+.tp .drawer .select2-search__field { border: 1px solid var(--line); border-radius: 6px; padding: 6px 8px; }
+.tp .drawer .select2-results__option { font-size: 13px; padding: 6px 10px; }
 .tp .lane-foot { border-top: 1px dashed var(--line-strong); padding: 10px 14px 12px; display: grid; grid-template-columns: 1fr auto; align-items: baseline; gap: 2px 8px; }
 .tp .lane-foot span { font-size: 12px; text-transform: uppercase; letter-spacing: .07em; font-weight: 700; color: var(--muted); }
 .tp .lane-foot strong { font-family: var(--font-num); font-variant-numeric: tabular-nums; font-size: 16px; }
@@ -483,8 +491,8 @@
             // A miscellaneous payment (no project) says what it is: its milestone.
             case 'ear': return (r.misc ? txt(r.milestone) : txt(r.finance, 'No finance option')) + ' · Expected ' + us(r.expected);
             case 'aar': return (r.misc ? txt(r.milestone) : txt(r.partner, 'No sales partner') + ' · ' + txt(r.finance, 'No finance option')) + ' · Received ' + us(r.received);
-            case 'com': return txt(r.partner, 'No sales partner') + ' · Payment rec’d ' + us(r.paymentReceived) + ' · Due ' + us(r.due);
-            case 'lab': return txt(r.sub, 'No sub-contractor') + ' · Inspection approved ' + us(r.inspection);
+            case 'com': return (r.misc ? txt(r.milestone) : txt(r.partner, 'No sales partner')) + ' · Payment rec’d ' + us(r.paymentReceived) + ' · Due ' + us(r.due);
+            case 'lab': return (r.misc ? txt(r.milestone) : txt(r.sub, 'No sub-contractor')) + ' · Inspection approved ' + us(r.inspection);
             case 'oth': return txt(r.payee, 'No payee') + (r.milestone ? ' · ' + esc(r.milestone) : '') + ' · Due ' + us(r.due);
             default: return 'Invoice ' + us(r.invoiceDate) + ' · Due ' + us(r.due);
         }
@@ -781,7 +789,8 @@
     // miscellaneous payment, like a lender's bonus. It raises no commission.
     let projects = null;
     const MISC = 'misc', MISC_LABEL = 'Miscellaneous payment';
-    const allowsMisc = b => b === 'ear' || b === 'aar';
+    // Every section takes one (money in or out, a material invoice too).
+    const allowsMisc = b => !!b;
     const projectOptions = keep => '<option value="">' + (projects ? 'Choose a project…' : 'Loading projects…') + '</option>' +
         (allowsMisc(S.creating) ? '<option value="' + MISC + '"' + (keep === MISC ? ' selected' : '') + '>No project (' + MISC_LABEL + ')</option>' : '') +
         (projects || []).map(p => '<option value="' + p.id + '"' + (String(p.id) === String(keep) ? ' selected' : '') + '>' + esc(p.label) + '</option>').join('');
@@ -798,7 +807,17 @@
             return;
         }
         const select = $('nf-project');
-        if (select) select.innerHTML = projectOptions(select.value);
+        if (select) { select.innerHTML = projectOptions(select.value); searchableProject(); }
+    }
+    // The project dropdown is searchable: Select2 (loaded by the layout, as on the
+    // Import page). Its list opens inside the drawer - the drawer sits above
+    // Select2's own z-index. Without jQuery/Select2 it stays a plain dropdown.
+    function searchableProject() {
+        const $j = window.jQuery;
+        if (!$j || !$j.fn.select2 || !$('nf-project')) return;
+        const el = $j('#nf-project');
+        if (el.data('select2')) el.select2('destroy');
+        el.select2({ dropdownParent: $j('#drawer'), width: '100%', placeholder: projects ? 'Choose a project…' : 'Loading projects…' });
     }
 
     const today = () => iso(TODAY);
@@ -822,7 +841,8 @@
     };
     function newFields(b) {
         const project = fld('project', 'Project', '<select id="nf-project" required>' + projectOptions() + '</select>',
-            allowsMisc(b) ? 'For money that belongs to no project (a bonus, a rebate…), choose “No project”. It raises no commission.' : '');
+            'For one that belongs to no project (a bonus, a rebate, office costs…), choose “No project”. It raises no commission' +
+            (b === 'mat' ? ' and updates no project’s material cost.' : (b === 'com' || b === 'lab' ? ' and has no ' + (b === 'com' ? 'sales partner' : 'sub-contractor') + ' on it.' : '.')));
         const details = v => fld('transaction_details', 'Details', inp('transaction_details', 'text', ' required maxlength="1000" value="' + esc(v || '') + '"'));
         const milestone = v => fld('milestone', 'Milestone', inp('milestone', 'text', ' required maxlength="255" value="' + esc(v || '') + '"'));
         const row = (a, c) => '<div class="row2">' + a + c + '</div>';
@@ -872,6 +892,7 @@
             '<div><button class="tp-btn primary" type="submit">Add to ' + info.short + '</button></div></form>';
         if (keepProject) $('nf-project').value = keepProject;
         const dr = $('drawer'); dr.classList.add('open'); dr.setAttribute('aria-hidden', 'false'); $('scrim').hidden = false;
+        searchableProject();
         $('nf-project').focus();
         loadProjects();
     }
@@ -1081,7 +1102,11 @@
         settle([S.drawer], date, amt, e.target.querySelector('button[type="submit"]'), $('st-final') && $('st-final').checked);
     });
     $('scrim').addEventListener('click', closeDrawer);
-    document.addEventListener('keydown', e => { if (e.key === 'Escape' && (S.drawer || S.creating)) closeDrawer(); });
+    // Escape first closes an open project list (Select2 handles that), then the drawer.
+    document.addEventListener('keydown', e => {
+        if (e.key !== 'Escape' || !(S.drawer || S.creating) || document.querySelector('#drawer .select2-container--open')) return;
+        closeDrawer();
+    });
 
     if (SECTIONS.length) buildBoard();
     load();

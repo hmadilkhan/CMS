@@ -892,16 +892,40 @@ class TransactionPortalTest extends TestCase
         $this->assertTrue(collect($this->actingAs($user)->getJson(route('transaction-portal.search', ['q' => 'bonus']))->json('rows'))->contains('transactionId', $bonus->id));
         $this->assertTrue(collect($this->actingAs($user)->getJson(route('transaction-portal.search', ['q' => 'misc']))->json('rows'))->contains('transactionId', $bonus->id));
 
-        // Only money coming in can have no project.
-        $this->actingAs($user)->postJson(route('transaction-portal.store'), ['section' => 'com'] + $data)->assertStatus(422)->assertJsonValidationErrors('project_id');
+        // Every section takes one: the payables and a material invoice too.
+        foreach (['com' => 300, 'lab' => 400, 'oth' => 500] as $section => $amount) {
+            $item = $this->actingAs($user)->postJson(route('transaction-portal.store'), ['section' => $section, 'payee' => 'supplier', 'amount' => $amount, 'due_date' => '2026-11-06'] + $data)->assertOk()->json('item');
+            $payable = AccountTransaction::findOrFail((int) substr($item, 1));
+            $this->assertNull($payable->project_id);
+            $this->assertEquals(-$amount, (float) $payable->amount);
+            $row = $this->rows($user)[$item];
+            $this->assertSame([$section, 'Miscellaneous payment', true], [$row['b'], $row['project'], $row['misc']]);
+        }
+
+        \Illuminate\Support\Facades\Storage::fake('public');
+        $mat = $this->actingAs($user)->post(route('transaction-portal.store'), [
+            'section' => 'mat', 'project_id' => 'misc', 'amount' => 900, 'invoice_date' => '2026-10-05',
+            'file' => \Illuminate\Http\UploadedFile::fake()->create('office.pdf', 10, 'application/pdf'),
+        ], ['Accept' => 'application/json'])->assertOk()->json('item');
+        $invoice = ProjectInvoiceDetail::findOrFail((int) substr($mat, 1));
+        $this->assertNull($invoice->project_id);
+        $this->assertSame('Miscellaneous payment', $this->rows($user)[$mat]['project']);
+        $this->assertEquals(0, (float) $project->fresh()->actual_material_cost, 'No project cost moves.');
+        $this->assertDatabaseHas('activity_log', ['subject_id' => $invoice->id, 'log_name' => 'ProjectInvoiceDetail', 'event' => 'created']);
+
+        // It can be paid like any invoice, and search finds it by "misc".
+        $this->actingAs($user)->postJson(route('transaction-portal.settle'), ['items' => [$mat], 'date' => '2026-11-04'])->assertOk()->assertJsonPath('closed', 1);
+        $this->assertTrue(collect($this->actingAs($user)->getJson(route('transaction-portal.search', ['q' => 'misc']))->json('rows'))->contains('id', $mat));
 
         // The Transaction Report lists it (it used to read the project's name straight off).
         $reporter = $this->user('Reporter', ['Transaction Report']);
         $this->actingAs($reporter)->post(route('transaction.report'), [])->assertOk()->assertSee('Miscellaneous payment')->assertSee('GoodLeap Bonus');
 
-        // A Sales Person, who sees only their own projects' rows, never sees it.
+        // A Sales Person, who sees only their own projects' transactions, never sees one.
+        // (The Material lane has never been narrowed by role - every invoice shows
+        // to whoever holds the section - so a miscellaneous invoice does too.)
         $salesPerson = $this->user('Sales Person', [TransactionPortalService::PERMISSION_PAGE, TransactionPortalService::PERMISSION_EXPECTED, TransactionPortalService::PERMISSION_OTHER]);
-        $this->assertFalse($this->rows($salesPerson)->contains(fn ($r) => $r['misc'] ?? false));
+        $this->assertFalse($this->rows($salesPerson)->contains(fn ($r) => ($r['misc'] ?? false) && $r['b'] !== 'mat'));
     }
 
     public function test_adding_needs_the_permission_the_project_page_needs(): void

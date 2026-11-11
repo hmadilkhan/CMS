@@ -284,11 +284,12 @@ class TransactionPortalService
         $invoices = ! $canOther ? collect() : ProjectInvoiceDetail::query()
             ->where('invoice_type', 'material')
             ->whereNotNull('invoice_date')
-            ->whereHas('project', fn ($q) => $q->whereNull('projects.deleted_at'))
+            ->tap(fn ($q) => $this->onLiveProjectOrNone($q, 'project_invoice_details.project_id'))
             ->with(self::RELATIONS)
-            ->where(function ($w) use ($like, $amount) {
+            ->where(function ($w) use ($like, $amount, $q) {
                 $w->where('original_file_name', 'like', $like)
-                    ->orWhereHas('project', fn ($p) => $this->projectMatches($p, $like));
+                    ->orWhereHas('project', fn ($p) => $this->projectMatches($p, $like))
+                    ->when(mb_stripos(self::MISC_LABEL, $q) !== false, fn ($w) => $w->orWhereNull('project_invoice_details.project_id'));
 
                 if ($amount !== null) {
                     $w->orWhere('amount', $amount)->orWhere('settled_amount', $amount);
@@ -384,8 +385,9 @@ class TransactionPortalService
      *   mat  a material invoice with its file, which also updates the
      *        project's actual material cost
      *
-     * Expected / Actual AR take `project_id` null: a miscellaneous payment
-     * (no project, so no commission). `$data` is validated by the controller.
+     * Any section takes `project_id` null: a miscellaneous payment (no
+     * project, so no commission, no project cost to update, no sales partner /
+     * sub-contractor on the row). `$data` is validated by the controller.
      *
      * @return array{item: string, commission: ?AccountTransaction}
      */
@@ -400,7 +402,7 @@ class TransactionPortalService
 
             $invoice = DB::transaction(function () use ($project, $data, $original, $path, $user) {
                 $invoice = ProjectInvoiceDetail::create([
-                    'project_id' => $project->id,
+                    'project_id' => $project?->id,
                     'invoice_type' => 'material',
                     'invoice_date' => Carbon::parse($data['invoice_date'])->toDateString(),
                     'amount' => round((float) $data['amount'], 2),
@@ -411,14 +413,20 @@ class TransactionPortalService
                     'uploaded_by' => $user?->id,
                 ]);
 
-                ProjectInvoiceDetail::syncProjectCost($project, 'material');
+                // On a project: its actual material cost follows, and the project's log has it.
+                // With none (a miscellaneous invoice) the invoice's own log has it.
+                if ($project) {
+                    ProjectInvoiceDetail::syncProjectCost($project, 'material');
+                }
 
-                activity('project')
-                    ->performedOn($project)
+                activity($project ? 'project' : 'ProjectInvoiceDetail')
+                    ->performedOn($project ?? $invoice)
                     ->causedBy($user)
-                    ->setEvent('updated')
+                    ->setEvent($project ? 'updated' : 'created')
                     ->withProperties(['project_invoice_detail_id' => $invoice->id])
-                    ->log(($user?->name ?? 'System').' added an invoice detail from the Transaction Portal.');
+                    ->log(($user?->name ?? 'System').($project
+                        ? ' added an invoice detail from the Transaction Portal.'
+                        : ' added a miscellaneous material invoice (no project) from the Transaction Portal.'));
 
                 return $invoice;
             });
@@ -676,14 +684,15 @@ class TransactionPortalService
     }
 
     /**
-     * A transaction on a live project, or on none: a miscellaneous payment
-     * (a lender's bonus, a rebate...) has no project. The roles narrowed to
-     * their own projects (Sales Person, Sub-Contractor Manager) never see
-     * those, as filterByRole() reaches them through the project.
+     * A transaction (or invoice) on a live project, or on none: a
+     * miscellaneous payment (a lender's bonus, a rebate, office costs...) has
+     * no project. The roles narrowed to their own projects (Sales Person,
+     * Sub-Contractor Manager) never see those, as filterByRole() reaches them
+     * through the project.
      */
-    private function onLiveProjectOrNone($query)
+    private function onLiveProjectOrNone($query, string $column = 'account_transactions.project_id')
     {
-        return $query->where(fn ($q) => $q->whereNull('account_transactions.project_id')
+        return $query->where(fn ($q) => $q->whereNull($column)
             ->orWhereHas('project', fn ($q) => $q->whereNull('projects.deleted_at')));
     }
 
@@ -739,7 +748,7 @@ class TransactionPortalService
 
         return ProjectInvoiceDetail::query()
             ->where('invoice_type', 'material')
-            ->whereHas('project', fn ($q) => $q->whereNull('projects.deleted_at'))
+            ->tap(fn ($q) => $this->onLiveProjectOrNone($q, 'project_invoice_details.project_id'))
             ->with(self::RELATIONS)
             ->where(function ($q) use ($period, $invoicedFor, $mode) {
                 $q->where(function ($q) use ($period) {

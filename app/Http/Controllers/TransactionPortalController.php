@@ -105,8 +105,9 @@ class TransactionPortalController extends Controller
         abort_unless(in_array($section, $this->portal->creatableSections($user), true), 403);
 
         $payees = array_keys(AccountTransaction::payeeChoices());
-        // Money coming in may belong to no project: a miscellaneous payment (a bonus...).
-        $misc = in_array($section, ['ear', 'aar'], true) && $request->input('project_id') === 'misc';
+        // Any section may take a row that belongs to no project: a miscellaneous
+        // payment (a lender's bonus, office costs...).
+        $misc = $request->input('project_id') === 'misc';
         $rules = ['project_id' => $misc ? 'required|in:misc' : 'required|integer'];
 
         if ($section === 'mat') {

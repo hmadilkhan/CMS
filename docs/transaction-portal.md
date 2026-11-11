@@ -183,26 +183,37 @@ server's 422 messages show in the same box. Each add is in the activity log
 
 ## Miscellaneous payments - no project (added 2026-11-11)
 
-Money the company receives that belongs to no project (a lender's bonus, a
-program rebate, a deposit) is an account transaction with `project_id` NULL
-(migration `2026_11_11_000001`; the foreign key stays).
+Money that belongs to no project (a lender's bonus, a program rebate, a
+deposit, office costs) is an account transaction - or, in Material, an invoice -
+with `project_id` NULL (migrations `2026_11_11_000001` for
+`account_transactions`, `2026_11_11_000002` for `project_invoice_details`; the
+foreign keys stay).
 
-- Only **money in**: Expected AR / Actual AR. The "+ New" project dropdown
-  offers **No project (Miscellaneous payment)** (`project_id=misc`) for those
-  two sections only; any other section still needs a project (422).
+- **Every section** takes one (the first version allowed money in only; the
+  client asked for all sections the same day). The "+ New" project dropdown offers
+  **No project (Miscellaneous payment)** (`project_id=misc`) everywhere.
 - On the board its project is **Miscellaneous payment** (`MISC_LABEL`, row flag
   `misc`), and its meta line shows the milestone (e.g. "GoodLeap Bonus") where
-  a project payment shows the finance option. No "Open project" link.
-- It is received / part paid like any payment and moves to Actual AR, but
-  raises **no commission** (no project, so no sales partner), and gets no
-  "Same amount" / commission hints.
+  a project row shows the finance option, sales partner or sub-contractor. No
+  "Open project" link.
+- It is received / paid / part paid like any row, but raises **no commission**
+  (no project, so no sales partner), and gets no "Same amount" / commission
+  hints. A Commission or Labor one has no sales partner / sub-contractor on it.
+- A **material invoice** with no project updates no project's
+  `actual_material_cost`, and its "added" line goes to the invoice's own
+  activity log (`ProjectInvoiceDetail`, event `created`) instead of a
+  project's. Everything else that reads invoices does so through a project
+  (Invoices tab, invoice move gates, commission, Labor Payable), so it never
+  sees these. The Material lane is not narrowed by role (it never was: every
+  invoice shows to whoever holds the section), so a Sales Person given that
+  section would see a miscellaneous invoice too.
 - Visibility: `transactions()` takes "a live project, or none"
   (`onLiveProjectOrNone`). Sales Person / Sub-Contractor Manager reach rows
   through the project, so they never see these.
 - Search finds them by milestone / details / payee / amount, or by typing
   "misc".
-- **Import:** the preview's project select has the same option; such a row
-  must be money in (a negative amount is skipped with the reason).
+- **Import:** the preview's project select has the same option, for money in
+  or out.
 - The Transaction Report and its export show "Miscellaneous payment" for them
   (the report table used to read the project's name straight off and would
   have failed on such a row).

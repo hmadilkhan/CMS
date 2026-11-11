@@ -266,7 +266,7 @@ class TransactionImportService
     private function check(array $edit, User $user): array
     {
         $errors = [];
-        // "No project": a miscellaneous payment, money in only (checked with the amount below).
+        // "No project": a miscellaneous payment, money in or out.
         $misc = ($edit['project'] ?? '') === 'misc';
         $projectId = $misc ? null : (int) ($edit['project'] ?? 0);
 
@@ -291,8 +291,6 @@ class TransactionImportService
         $amount = $this->amount($edit['amount'] ?? null);
         if ($amount === null || round($amount, 2) == 0.0) {
             $errors[] = 'Amount is missing or not a number.';
-        } elseif ($misc && $amount < 0) {
-            $errors[] = 'A payment with no project must be money coming in (an amount above zero).';
         }
 
         $date = $this->date($edit['date'] ?? null);
