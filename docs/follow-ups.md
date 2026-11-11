@@ -133,13 +133,14 @@ Order no longer matters between this and MPU — both park in the same lane, and
 
 Under the move bar the project page lists every chase still open on the
 project (**Open Follow Ups**), so nobody has to guess why a project is parked or
-which of two chases sharing a lane is still owed. One card per chase: its
-`title` (Meter Spot Result, Utility Bill, Fire Review, NTP Approval Date), who
-holds it (the assignee, else the owner department), how long it has been open,
-what it does to the pipeline — **Holding the project in <lane>** (lock icon) when
-the project sits in that chase's parked lane, or **Will hold the move into
-<department>** while that department is still ahead — and `clears_by`, how it is
-answered.
+which of two chases sharing a lane is still owed. One small pill per chase
+showing its `title` (Meter Spot Result, Utility Bill, Fire Review, NTP Approval
+Date) — a lock icon when the project sits in that chase's parked lane, a clock
+otherwise. The pill's hover tooltip carries the rest: what it does to the
+pipeline (**Holding the project in <lane>**, or **Will hold the move into
+<department>** while that department is still ahead), who holds it (the
+assignee, else the owner department) and for how long, and `clears_by`, how it
+is answered.
 
 `DocumentFollowUpService::openFollowUpsFor()` builds it, read only (it never
 opens or resolves a chase). `title` and `clears_by` are per-type config in
