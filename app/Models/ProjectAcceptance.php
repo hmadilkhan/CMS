@@ -60,6 +60,27 @@ class ProjectAcceptance extends Model
      * price when the snapshot has them; otherwise just the names - acceptances
      * whose prices could not be recovered (see migration 2026_11_24_000003).
      */
+    /**
+     * The rows under "Adder Total" on the acceptance page: each adder's name
+     * and price, or the name with a null price where the snapshot has none.
+     *
+     * @return array<int, array{name: string, amount: float|null}>
+     */
+    public function adderRows(): array
+    {
+        if (! empty($this->adders_detail)) {
+            return array_map(
+                fn ($adder) => ['name' => (string) ($adder['name'] ?? ''), 'amount' => (float) ($adder['amount'] ?? 0)],
+                $this->adders_detail
+            );
+        }
+
+        return array_map(
+            fn ($name) => ['name' => (string) $name, 'amount' => null],
+            array_values((array) $this->adders_list)
+        );
+    }
+
     public function addersForDisplay(): array
     {
         if (! empty($this->adders_detail)) {

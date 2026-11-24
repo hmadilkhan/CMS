@@ -116,17 +116,26 @@
                     <td>-</td>
                     <td>{{ number_format($addersAmount, 2) }}</td>
                 </tr>
+                {{-- Each adder under the total it adds up to. --}}
+                @foreach ($projectAcceptance->adderRows() as $adderRow)
+                    <tr class="acceptance-adder-row">
+                        <td class="ps-4 text-muted small">&#8627; {{ $adderRow['name'] }}</td>
+                        <td></td>
+                        <td class="text-muted small">
+                            @if (is_null($adderRow['amount']))
+                                -
+                            @else
+                                {{ $adderRow['amount'] < 0 ? '-' : '' }}{{ number_format(abs($adderRow['amount']), 2) }}
+                            @endif
+                        </td>
+                    </tr>
+                @endforeach
                 <tr>
                     <td>Commission</td>
                     <td>-</td>
                     <td>{{ number_format($commissionAmount, 2) }}</td>
                 </tr>
             </table>
-        </div>
-        <div class="row mx-4">
-            <div class="col-md-12 ">
-                <h5 class="fs-10  flex-fill">Adders : {{ implode(', ', $projectAcceptance->addersForDisplay()) }}</h5>
-            </div>
         </div>
         @if (!empty($projectAcceptance->notes))
             <div class="row mx-4 mt-3">

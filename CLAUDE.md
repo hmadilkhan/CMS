@@ -649,9 +649,10 @@ Covered by `tests/Feature/TaskStintDurationTest.php`.
 
 The acceptance page (`projects/project-acceptance.blade.php`) shows a SNAPSHOT
 taken when the review was sent (`project_acceptances`), never the live deal.
-"Adders :" lists each adder with its price from `adders_detail` (json
-`[{name, amount}]`, via `ProjectAcceptance::addersForDisplay()`); `adders_list`
-still holds the names alone - the assistant reads it - and is the fallback.
+Each adder is a row under "Adder Total" with its price from `adders_detail`
+(json `[{name, amount}]`, via `ProjectAcceptance::adderRows()`; the review PDF
+uses the `adderLabel()` text form); `adders_list` still holds the names alone -
+the assistant reads it - and is the fallback (price shown as "-").
 
 - New acceptances write both through `ProjectAcceptance::adderSnapshot()`.
 - Existing ones were recovered by migration `2026_11_24_000003` from

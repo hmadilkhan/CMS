@@ -269,7 +269,9 @@ class ProjectAcceptanceWorkflowTest extends TestCase
             'file' => UploadedFile::fake()->image('acceptance.png', 600, 400),
         ])
             ->assertOk()
-            ->assertSee('Adders : Tesla Expansion Battery ($8,250.00), Commission Adjustment (-$553.00)', false);
+            // One row per adder, under the Adder Total it adds up to.
+            ->assertSeeInOrder(['Adder Total', 'Tesla Expansion Battery', '8,250.00', 'Commission Adjustment', '-553.00', 'Commission'])
+            ->assertDontSee('Adders :');
 
         $acceptance = ProjectAcceptance::firstOrFail();
         $this->assertSame(['Tesla Expansion Battery', 'Commission Adjustment'], $acceptance->adders_list);
@@ -284,6 +286,10 @@ class ProjectAcceptanceWorkflowTest extends TestCase
         $acceptance = new ProjectAcceptance(['adders_list' => ['Concrete Tile Roof', 'MPU']]);
 
         $this->assertSame(['Concrete Tile Roof', 'MPU'], $acceptance->addersForDisplay());
+        $this->assertSame(
+            [['name' => 'Concrete Tile Roof', 'amount' => null], ['name' => 'MPU', 'amount' => null]],
+            $acceptance->adderRows()
+        );
     }
 
     public function test_the_migration_recovers_each_adder_price_as_it_was_when_the_review_was_sent(): void
