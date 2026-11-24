@@ -660,7 +660,11 @@ still holds the names alone - the assistant reads it - and is the fallback.
   and not yet deleted are the deal at that moment. Tried at `created_at`, then
   `updated_at` (pre-2025-12-09 snapshots were filled later by
   `acceptance:backfill-financials` from the deal as it was then), and used only
-  when the names AND the Adder Total match the snapshot. Do not "fix" the
+  when the names AND the Adder Total match the snapshot. `2026_11_24_000004`
+  then filled the 5 whose names matched but whose Adder Total did not (the
+  deal's `customer_finances.adders` had drifted from its rows) - agreed with the
+  business, so on those pages the prices do not add up to the Adder Total.
+  The 8 whose names never match keep the names alone. Do not "fix" the
   names-only rows from today's adders - the ledger shows today's prices, which
   differ from the review's wherever adders changed after it.
 

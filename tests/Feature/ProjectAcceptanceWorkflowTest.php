@@ -318,6 +318,8 @@ class ProjectAcceptanceWorkflowTest extends TestCase
         $backfilled = $acceptance(['Battery', 'Trenching'], 8500, '2025-06-01 09:00:00', '2026-03-01 09:00:00');
         // Adder Total disagrees with every moment: no price is guessed.
         $mismatch = $acceptance(['Battery', 'MPU'], 9999, '2026-01-10 09:00:00', '2026-01-10 09:00:00');
+        // Names the deal never carried: no price, ever.
+        $unknown = $acceptance(['Solar Roof'], 100, '2026-01-10 09:00:00', '2026-01-10 09:00:00');
 
         Schema::table('project_acceptances', fn ($table) => $table->dropColumn('adders_detail'));
         $migration = require database_path('migrations/2026_11_24_000003_add_adders_detail_to_project_acceptances.php');
@@ -333,6 +335,21 @@ class ProjectAcceptanceWorkflowTest extends TestCase
         );
         $this->assertNull(ProjectAcceptance::findOrFail($mismatch)->adders_detail);
         $this->assertSame(['Battery', 'MPU'], ProjectAcceptance::findOrFail($mismatch)->addersForDisplay());
+
+        // 000004: the names match the review's adders, only the deal's Adder
+        // Total drifted - those prices are shown too.
+        $followUp = require database_path('migrations/2026_11_24_000004_fill_adder_prices_where_only_the_adder_total_differs.php');
+        $followUp->up();
+
+        $this->assertSame(
+            ['Battery ($8,000.00)', 'MPU ($1,000.00)'],
+            ProjectAcceptance::findOrFail($mismatch)->addersForDisplay()
+        );
+        $this->assertNull(ProjectAcceptance::findOrFail($unknown)->adders_detail);
+        $this->assertSame(
+            ['Battery ($8,000.00)', 'Trenching ($500.00)'],
+            ProjectAcceptance::findOrFail($backfilled)->addersForDisplay()
+        );
     }
 
     public function test_project_acceptance_action_approves_and_locks_adders(): void
