@@ -50,9 +50,14 @@ class ProjectFinancialLedgerTest extends TestCase
 
     private function financeOption(string $name): FinanceOption
     {
+        // Prepaid PPA and Wheelhouse are switched to "TPO Credit Split" = Yes,
+        // as the migration that added the flag left them.
         return FinanceOption::firstOrCreate(
             ['name' => $name],
-            ['loan_id' => 0, 'holdback' => 0, 'dollar_watt_value' => 0, 'pto_restriction' => 0, 'no_of_days' => 0]
+            [
+                'loan_id' => 0, 'holdback' => 0, 'dollar_watt_value' => 0, 'pto_restriction' => 0, 'no_of_days' => 0,
+                'uses_tpo_split' => in_array($name, ['Prepaid PPA', 'Wheelhouse Credit Union'], true),
+            ]
         );
     }
 

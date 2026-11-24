@@ -286,6 +286,7 @@ class OperationController extends Controller
                     "holdback" => $validated["holdback"],
                     "dollar_watt_value" => ($validated["holdback"] == 0 ? 0 : $validated["dollar_watt_value"]),
                     "milestone_enabled" => $validated["milestone_enabled"],
+                    "uses_tpo_split" => $validated["uses_tpo_split"] ?? 0,
                 ]);
                 // The editor's rows when it sent them; otherwise the standard
                 // four, so turning milestones on later has a schedule to edit.
@@ -327,6 +328,10 @@ class OperationController extends Controller
             $adder->holdback = $validated["holdback"];
             $adder->dollar_watt_value = ($validated["holdback"] == 0 ? 0 : $validated["dollar_watt_value"]);
             $adder->milestone_enabled = $validated["milestone_enabled"];
+            // Absent (a sender without the dropdown) = leave it as it was.
+            if (array_key_exists("uses_tpo_split", $validated)) {
+                $adder->uses_tpo_split = $validated["uses_tpo_split"];
+            }
             DB::transaction(function () use ($request, $validated, $adder) {
                 $adder->save();
                 // Rows are only rewritten while milestones are on: switched
@@ -1309,6 +1314,7 @@ class OperationController extends Controller
             "holdback" => ["required", Rule::in([0, 1])],
             "dollar_watt_value" => ["required_if:holdback,1", "nullable", "numeric", "min:0"],
             "milestone_enabled" => ["required", Rule::in([0, 1])],
+            "uses_tpo_split" => ["sometimes", "required", Rule::in([0, 1])],
         ];
 
         if (!empty($ignoreId)) {

@@ -989,6 +989,7 @@ return [
                 'no_of_days',
                 'holdback',
                 'dollar_watt_value',
+                'uses_tpo_split',
                 'created_at',
                 'updated_at',
                 'deleted_at',

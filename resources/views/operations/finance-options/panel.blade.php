@@ -173,6 +173,19 @@
                             <div class="text-danger message mt-2">{{ $message }}</div>
                         @enderror
                     </div>
+                    {{-- Yes = the customer form collects Solar TPO Credit +
+                         Battery TPO Credit and works out the Customer Portion
+                         (contract amount minus the two credits). --}}
+                    <div class="col-xl-3 col-lg-4 col-md-6 col-12">
+                        <label class="form-label">TPO Credit Split</label>
+                        <select class="form-select select2" id="uses_tpo_split" name="uses_tpo_split" required>
+                            <option value="1" @if (old('uses_tpo_split', !empty($finance) ? (int) $finance->uses_tpo_split : 0) == 1) selected @endif>Yes</option>
+                            <option value="0" @if (old('uses_tpo_split', !empty($finance) ? (int) $finance->uses_tpo_split : 0) == 0) selected @endif>No</option>
+                        </select>
+                        @error('uses_tpo_split')
+                            <div class="text-danger message mt-2">{{ $message }}</div>
+                        @enderror
+                    </div>
                     {{-- The milestone schedule. Each row: what fires it, how much
                          (fixed, a percent of its base, or what is left of its
                          base), and who the transaction is for. Zone triggers
@@ -370,6 +383,7 @@
                         <th>Holdback</th>
                         <th>Dollar Watt Value</th>
                         <th>Milestone</th>
+                        <th>TPO Credit Split</th>
                         <th>Actions</th>
                     </tr>
                 </thead>
@@ -388,6 +402,7 @@
                             <td>{{ $financeOption->holdback == 1 ? 'Yes' : 'No' }}</td>
                             <td>{{ $financeOption->dollar_watt_value }}</td>
                             <td>{{ $financeOption->milestone_enabled ? 'Yes (' . $financeOption->milestones->where('is_active', true)->count() . ')' : 'No' }}</td>
+                            <td>{{ $financeOption->uses_tpo_split ? 'Yes' : 'No' }}</td>
                             <td class="text-center">
                                 <a class="action-link" data-toggle="tooltip" title="Edit"
                                     href="{{ $screenUrl($financeOption->id) }}">

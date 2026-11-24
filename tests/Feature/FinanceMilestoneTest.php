@@ -78,6 +78,7 @@ class FinanceMilestoneTest extends TestCase
             'dollar_watt_value' => 0,
             'pto_restriction' => 0,
             'no_of_days' => 0,
+            'uses_tpo_split' => true,
             'milestone_enabled' => 1,
         ]);
 

@@ -708,9 +708,17 @@ number, a leading `1` is dropped; `formatOrKeep` leaves unreadable values alone)
 
 ## Third Party Credit → Solar + Battery TPO Credit
 
-For the finance options that split the contract (`FinanceOption::usesCustomerPortion()`
-— Prepaid PPA, Wheelhouse Credit Union) the customer form collects a **Solar TPO
-Credit** and a **Battery TPO Credit** instead of one Third Party Credit.
+For the finance options that split the contract (`FinanceOption::usesCustomerPortion()`)
+the customer form collects a **Solar TPO Credit** and a **Battery TPO Credit**
+instead of one Third Party Credit.
+
+- Which options split is **data**: the **TPO Credit Split** Yes/No dropdown in
+  Operations → Finance Options (`finance_options.uses_tpo_split`). It used to be
+  hard-coded to ids 9 / 10 (Prepaid PPA, Wheelhouse Credit Union); migration
+  `2026_11_24_000001` switched those two on. The customer create/edit JS reads it
+  from the option's `data-tpo-split` - never re-add an id check there.
+- Wheelhouse's dealer fee on the Customer Portion is still `finance_option_id === 10`
+  in the customer forms and `public/customer/create.js` - a separate question.
 
 - `customer_finances.third_party_credit` still holds the **total** (Solar + Battery),
   so `customer_portion = contract_amount - third_party_credit` holds for every row,

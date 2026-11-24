@@ -147,12 +147,14 @@ class OperationsWorkflowTest extends TestCase
             'dollar_watt_value' => 0.25,
             // Required since finance options grew milestones.
             'milestone_enabled' => 1,
+            'uses_tpo_split' => 1,
         ]);
 
         $createResponse->assertRedirect(route('finance.option.types'));
 
         $finance = FinanceOption::where('name', 'Operations Financing')->first();
         $this->assertNotNull($finance);
+        $this->assertTrue($finance->usesCustomerPortion());
 
         $this->assertDatabaseHas('loan_terms', [
             'finance_option_id' => $finance->id,
@@ -191,6 +193,8 @@ class OperationsWorkflowTest extends TestCase
             'no_of_days' => 0,
             'holdback' => 0,
             'dollar_watt_value' => 0,
+            // Not sent by this update, so left as it was.
+            'uses_tpo_split' => 1,
         ]);
 
         $deleteResponse = $this->actingAs($admin)->post(route('finance.option.delete'), [

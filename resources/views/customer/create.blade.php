@@ -382,6 +382,7 @@
                                 <option value="">Select Finance Option</option>
                                 @foreach ($financeoptions as $financeOption)
                                     <option value="{{ $financeOption->id }}"
+                                        data-tpo-split="{{ $financeOption->usesCustomerPortion() ? 1 : 0 }}"
                                         {{ old('finance_option_id') == $financeOption->id ? 'selected' : '' }}>
                                         {{ $financeOption->name }}
                                     </option>
@@ -797,10 +798,18 @@
             calculateCommission()
         }
 
+        // Does this finance option split the contract into Solar + Battery TPO
+        // Credit and a Customer Portion? Set per option by "TPO Credit Split" in
+        // Operations -> Finance Options, carried on the option's data-tpo-split.
+        function usesTpoSplit(financeOptionId) {
+            if (!financeOptionId) {
+                return false;
+            }
+            return String($('#finance_option_id option[value="' + parseInt(financeOptionId) + '"]').data('tpo-split')) === '1';
+        }
+
         function togglePrepaidPPAFields(financeOptionId) {
-            let id = parseInt(financeOptionId);
-            // Prepaid PPA (9) and Wheelhouse Credit Union (10) both use the TPO Credit + Customer Portion fields.
-            if (id === 9 || id === 10) {
+            if (usesTpoSplit(financeOptionId)) {
                 $(".prepaidPPADiv").show();
                 calculateCustomerPortion();
             } else {
@@ -820,7 +829,7 @@
 
         $("#contract_amount, #solar_tpo_credit, #battery_tpo_credit").on('input blur', function() {
             let id = parseInt($("#finance_option_id").val());
-            if (id === 9 || id === 10) {
+            if (usesTpoSplit(id)) {
                 calculateCustomerPortion();
                 // Wheelhouse (10): recompute dealer fee amount on the updated Customer Portion.
                 if (id === 10) {

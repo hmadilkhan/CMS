@@ -16,15 +16,15 @@ class FinanceOption extends Model
      * Does this finance option split the contract into a third-party credit and
      * a customer portion?
      *
-     * Prepaid PPA and Wheelhouse Credit Union both do, so both collect the pair
-     * on the customer form and both show it on the project's Financial Ledger.
-     * Seeded ids are matched as well as names, because either can be renamed.
+     * Set per option by the "TPO Credit Split" dropdown in Operations → Finance
+     * Options (`uses_tpo_split`). An option that does collects Solar + Battery
+     * TPO Credit on the customer form and shows the pair on the project's
+     * Financial Ledger. Prepaid PPA and Wheelhouse Credit Union were switched
+     * on by the migration that added the column.
      */
     public function usesCustomerPortion(): bool
     {
-        return in_array((int) $this->id, [9, 10], true)
-            || strcasecmp(trim((string) $this->name), 'Prepaid PPA') === 0
-            || strcasecmp(trim((string) $this->name), 'Wheelhouse Credit Union') === 0;
+        return (bool) $this->uses_tpo_split;
     }
 
     public function milestones()

@@ -237,14 +237,66 @@ class CustomerProjectWorkflowTest extends TestCase
 
     private function prepaidPpa(): FinanceOption
     {
+        return $this->tpoSplitOption('Prepaid PPA');
+    }
+
+    /** An option with "TPO Credit Split" = Yes in the finance option editor. */
+    private function tpoSplitOption(string $name): FinanceOption
+    {
         return FinanceOption::create([
-            'name' => 'Prepaid PPA',
+            'name' => $name,
             'loan_id' => 0,
             'holdback' => 0,
             'dollar_watt_value' => 0,
             'pto_restriction' => 0,
             'no_of_days' => 0,
+            'uses_tpo_split' => true,
         ]);
+    }
+
+    public function test_any_option_switched_to_tpo_credit_split_collects_the_two_credits(): void
+    {
+        $admin = $this->superAdmin();
+        $basics = $this->seedProjectBasics();
+        $option = $this->tpoSplitOption('Brand New Lender');
+
+        // The customer form learns it from the option itself, not from its id.
+        $this->actingAs($admin)->get(route('customers.create'))
+            ->assertOk()
+            ->assertSee('data-tpo-split="1"', false);
+
+        $this->actingAs($admin)->post(route('customers.store'), [
+            ...$this->validCustomerPayload($basics),
+            'finance_option_id' => $option->id,
+        ])->assertSessionHasErrors(['solar_tpo_credit', 'battery_tpo_credit']);
+
+        $this->actingAs($admin)->post(route('customers.store'), [
+            ...$this->validCustomerPayload($basics),
+            'finance_option_id' => $option->id,
+            'solar_tpo_credit' => 6000,
+            'battery_tpo_credit' => 4000.50,
+        ])->assertRedirect(route('customers.index'));
+
+        $finance = Customer::where('email', 'workflow.customer@example.com')->firstOrFail()->finances;
+        $this->assertEquals(10000.50, $finance->third_party_credit);
+        $this->assertEquals(14999.50, $finance->customer_portion);
+        $this->assertTrue($finance->tpo_split);
+    }
+
+    public function test_an_option_left_on_no_does_not_collect_tpo_credits(): void
+    {
+        $admin = $this->superAdmin();
+        $basics = $this->seedProjectBasics();
+        $option = $this->tpoSplitOption('Plain Lender');
+        $option->update(['uses_tpo_split' => false]);
+
+        $this->actingAs($admin)->post(route('customers.store'), [
+            ...$this->validCustomerPayload($basics),
+            'finance_option_id' => $option->id,
+        ])->assertRedirect(route('customers.index'));
+
+        $finance = Customer::where('email', 'workflow.customer@example.com')->firstOrFail()->finances;
+        $this->assertEquals(0, $finance->customer_portion);
     }
 
     public function test_a_new_customer_enters_solar_and_battery_tpo_credits(): void
