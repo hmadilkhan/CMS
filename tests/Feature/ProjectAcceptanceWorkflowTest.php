@@ -3,7 +3,10 @@
 namespace Tests\Feature;
 
 use App\Jobs\AcceptanceEmailJob;
+use App\Models\AdderType;
+use App\Models\AdderUnit;
 use App\Models\Customer;
+use App\Models\CustomerAdder;
 use App\Models\CustomerFinance;
 use App\Models\Department;
 use App\Models\Employee;
@@ -21,7 +24,9 @@ use App\Models\UserType;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Queue;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
 use Spatie\Permission\Models\Role;
 use Tests\TestCase;
@@ -224,6 +229,110 @@ class ProjectAcceptanceWorkflowTest extends TestCase
         $this->assertSame('Acceptance Inverter', $acceptance->inverter_name);
         Storage::disk('public')->assertExists('project-acceptance/' . $acceptance->image);
         Queue::assertPushed(AcceptanceEmailJob::class);
+    }
+
+    /** One adder on the fixture's customer, live between $from and $until. */
+    private function adder(Customer $customer, string $name, float $amount, ?string $from = null, ?string $until = null): CustomerAdder
+    {
+        $adder = CustomerAdder::create([
+            'customer_id' => $customer->id,
+            'adder_type_id' => AdderType::firstOrCreate(['name' => $name])->id,
+            'adder_sub_type_id' => 1,
+            'adder_unit_id' => AdderUnit::firstOrCreate(['name' => 'Each'])->id,
+            'amount' => $amount,
+        ]);
+
+        if ($from || $until) {
+            DB::table('customer_adders')->where('id', $adder->id)->update(array_filter([
+                'created_at' => $from,
+                'deleted_at' => $until,
+            ]));
+        }
+
+        return $adder;
+    }
+
+    public function test_the_acceptance_page_lists_each_adder_with_its_price(): void
+    {
+        Storage::fake('public');
+        Queue::fake();
+
+        $admin = $this->superAdmin();
+        $fixture = $this->acceptanceFixture();
+        $this->adder($fixture['customer'], 'Tesla Expansion Battery', 8250);
+        $this->adder($fixture['customer'], 'Commission Adjustment', -553);
+
+        $this->actingAs($admin)->post(route('project.accept.file'), [
+            'mode' => 'post',
+            'project_id' => $fixture['project']->id,
+            'sales_partner_id' => $fixture['salesPartner']->id,
+            'file' => UploadedFile::fake()->image('acceptance.png', 600, 400),
+        ])
+            ->assertOk()
+            ->assertSee('Adders : Tesla Expansion Battery ($8,250.00), Commission Adjustment (-$553.00)', false);
+
+        $acceptance = ProjectAcceptance::firstOrFail();
+        $this->assertSame(['Tesla Expansion Battery', 'Commission Adjustment'], $acceptance->adders_list);
+        $this->assertSame([
+            ['name' => 'Tesla Expansion Battery', 'amount' => 8250.0],
+            ['name' => 'Commission Adjustment', 'amount' => -553.0],
+        ], $acceptance->adders_detail);
+    }
+
+    public function test_an_acceptance_without_prices_still_lists_the_names(): void
+    {
+        $acceptance = new ProjectAcceptance(['adders_list' => ['Concrete Tile Roof', 'MPU']]);
+
+        $this->assertSame(['Concrete Tile Roof', 'MPU'], $acceptance->addersForDisplay());
+    }
+
+    public function test_the_migration_recovers_each_adder_price_as_it_was_when_the_review_was_sent(): void
+    {
+        $fixture = $this->acceptanceFixture();
+        $customer = $fixture['customer'];
+
+        // Live at the review (10 Jan): Battery 8,000 + MPU 1,000. After it the
+        // MPU was removed and Trenching added, so today's adders differ.
+        $this->adder($customer, 'Battery', 8000, '2026-01-01 09:00:00');
+        $this->adder($customer, 'MPU', 1000, '2026-01-01 09:00:00', '2026-02-01 09:00:00');
+        $this->adder($customer, 'Trenching', 500, '2026-02-01 09:00:00');
+
+        $acceptance = function (array $names, float $total, string $sent, string $updated) use ($fixture) {
+            $id = DB::table('project_acceptances')->insertGetId([
+                'project_id' => $fixture['project']->id,
+                'sales_partner_id' => $fixture['salesPartner']->id,
+                'image' => 'x.png',
+                'action_by' => 0,
+                'status' => 0,
+                'adders_list' => json_encode($names),
+                'adders_amount' => $total,
+                'created_at' => $sent,
+                'updated_at' => $updated,
+            ]);
+
+            return $id;
+        };
+
+        $sent = $acceptance(['Battery', 'MPU'], 9000, '2026-01-10 09:00:00', '2026-01-10 09:00:00');
+        // Filled in later by acceptance:backfill-financials: matches its updated_at.
+        $backfilled = $acceptance(['Battery', 'Trenching'], 8500, '2025-06-01 09:00:00', '2026-03-01 09:00:00');
+        // Adder Total disagrees with every moment: no price is guessed.
+        $mismatch = $acceptance(['Battery', 'MPU'], 9999, '2026-01-10 09:00:00', '2026-01-10 09:00:00');
+
+        Schema::table('project_acceptances', fn ($table) => $table->dropColumn('adders_detail'));
+        $migration = require database_path('migrations/2026_11_24_000003_add_adders_detail_to_project_acceptances.php');
+        $migration->up();
+
+        $this->assertSame(
+            ['Battery ($8,000.00)', 'MPU ($1,000.00)'],
+            ProjectAcceptance::findOrFail($sent)->addersForDisplay()
+        );
+        $this->assertSame(
+            ['Battery ($8,000.00)', 'Trenching ($500.00)'],
+            ProjectAcceptance::findOrFail($backfilled)->addersForDisplay()
+        );
+        $this->assertNull(ProjectAcceptance::findOrFail($mismatch)->adders_detail);
+        $this->assertSame(['Battery', 'MPU'], ProjectAcceptance::findOrFail($mismatch)->addersForDisplay());
     }
 
     public function test_project_acceptance_action_approves_and_locks_adders(): void

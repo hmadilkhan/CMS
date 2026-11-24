@@ -1879,13 +1879,8 @@ class ProjectController extends Controller
                 $moduleQtyPrice = $project->customer->finances->module_type_cost + $project->overwrite_panel_price;
                 $modulesAmount = $project->customer->panel_qty * $moduleQtyPrice;
 
-                // Extract adder names
-                $addersList = [];
-                foreach ($project->customer->adders as $adder) {
-                    if (! empty($adder->type)) {
-                        $addersList[] = $adder->type->name;
-                    }
-                }
+                // The adders as they are now: names, and name + price of each.
+                $adderSnapshot = ProjectAcceptance::adderSnapshot($project->customer->adders);
 
                 $projectAcceptance = ProjectAcceptance::create([
                     'project_id' => $request->project_id,
@@ -1906,7 +1901,8 @@ class ProjectController extends Controller
                     'adders_amount' => $project->customer->finances->adders,
                     'commission_amount' => $project->customer->finances->commission,
                     'inverter_name' => $project->customer->inverter->name,
-                    'adders_list' => $addersList,
+                    'adders_list' => $adderSnapshot['adders_list'],
+                    'adders_detail' => $adderSnapshot['adders_detail'],
                 ]);
                 // The review itself is recorded above; only the email follows the sales person's switch.
                 if ($project->salesPartnerUser->wantsEmail('acceptance_review_sent')) {
@@ -2037,18 +2033,19 @@ class ProjectController extends Controller
         $pdf->Cell(70, 10, 'Contract Price', 1);
         $pdf->Cell(70, 10, '-', 1);
         $pdf->Cell(50, 10, number_format($project->customer->finances->contract_amount, 2), 1, 1);
-        $addersName = '';
-
-        foreach ($project->customer->adders as $adders) {
-            $addersName .= $adders->type->name.',';
-        }
+        // Each adder with its price, as on the acceptance page.
+        $addersName = implode(', ', array_map(
+            fn ($adder) => ProjectAcceptance::adderLabel($adder['name'], $adder['amount']),
+            ProjectAcceptance::adderSnapshot($project->customer->adders)['adders_detail']
+        ));
 
         $pdf->ln(5);
         // Total Adder Cost Title
         $pdf->SetFont('Arial', 'B', 14);
         $pdf->Cell(0, 10, 'Adders : ', 0, 1, 'L');
         $pdf->SetFont('Arial', '', 12);
-        $pdf->Cell(0, 10, $addersName, 0, 1, 'L');
+        // Wraps: with prices the list no longer fits one line.
+        $pdf->MultiCell(0, 8, $addersName, 0, 'L');
 
         // Set the file path where you want to save the PDF in the 'storage/app/public/pdfs' folder
         $filePath = storage_path('app/public/pdfs/project_acceptance_review-'.$project->id.'.pdf');

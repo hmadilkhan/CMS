@@ -645,6 +645,25 @@ for two stints that really lasted 44 seconds and 15 seconds.
 
 Covered by `tests/Feature/TaskStintDurationTest.php`.
 
+## Project acceptance — adder prices
+
+The acceptance page (`projects/project-acceptance.blade.php`) shows a SNAPSHOT
+taken when the review was sent (`project_acceptances`), never the live deal.
+"Adders :" lists each adder with its price from `adders_detail` (json
+`[{name, amount}]`, via `ProjectAcceptance::addersForDisplay()`); `adders_list`
+still holds the names alone - the assistant reads it - and is the fallback.
+
+- New acceptances write both through `ProjectAcceptance::adderSnapshot()`.
+- Existing ones were recovered by migration `2026_11_24_000003` from
+  `customer_adders` AS OF the review: adders are never edited in place (every
+  change soft deletes the row and creates a new one), so the rows created by then
+  and not yet deleted are the deal at that moment. Tried at `created_at`, then
+  `updated_at` (pre-2025-12-09 snapshots were filled later by
+  `acceptance:backfill-financials` from the deal as it was then), and used only
+  when the names AND the Adder Total match the snapshot. Do not "fix" the
+  names-only rows from today's adders - the ledger shows today's prices, which
+  differ from the review's wherever adders changed after it.
+
 ## General development notes
 
 - Email/IMAP: `EmailFetchService`, `app/Console/Commands/FetchEmails.php` / `FetchAllEmails.php`, jobs in `app/Jobs`.

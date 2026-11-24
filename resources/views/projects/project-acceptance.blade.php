@@ -125,7 +125,7 @@
         </div>
         <div class="row mx-4">
             <div class="col-md-12 ">
-                <h5 class="fs-10  flex-fill">Adders : {{ implode(', ', $projectAcceptance->adders_list) }}</h5>
+                <h5 class="fs-10  flex-fill">Adders : {{ implode(', ', $projectAcceptance->addersForDisplay()) }}</h5>
             </div>
         </div>
         @if (!empty($projectAcceptance->notes))

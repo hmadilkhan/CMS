@@ -90,15 +90,8 @@ class BackfillProjectAcceptanceFinancials extends Command
                 $moduleQtyPrice = $project->customer->finances->module_type_cost + ($project->overwrite_panel_price ?? 0);
                 $modulesAmount = $project->customer->panel_qty * $moduleQtyPrice;
                 
-                // Extract adder names
-                $addersList = [];
-                if ($project->customer->adders) {
-                    foreach ($project->customer->adders as $adder) {
-                        if ($adder->type) {
-                            $addersList[] = $adder->type->name;
-                        }
-                    }
-                }
+                // Adder names, and name + price of each
+                $adderSnapshot = ProjectAcceptance::adderSnapshot($project->customer->adders ?? []);
                 
                 // Prepare update data
                 $updateData = [
@@ -112,7 +105,8 @@ class BackfillProjectAcceptanceFinancials extends Command
                     'adders_amount' => $project->customer->finances->adders,
                     'commission_amount' => $project->customer->finances->commission,
                     'inverter_name' => $project->customer->inverter->name,
-                    'adders_list' => $addersList,
+                    'adders_list' => $adderSnapshot['adders_list'],
+                    'adders_detail' => $adderSnapshot['adders_detail'],
                 ];
                 
                 if (!$dryRun) {
