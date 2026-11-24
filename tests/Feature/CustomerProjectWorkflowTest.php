@@ -263,7 +263,14 @@ class CustomerProjectWorkflowTest extends TestCase
         // The customer form learns it from the option itself, not from its id.
         $this->actingAs($admin)->get(route('customers.create'))
             ->assertOk()
-            ->assertSee('data-tpo-split="1"', false);
+            ->assertSee('data-tpo-split="1"', false)
+            ->assertDontSee('data-dealer-fee-base="customer_portion"', false);
+
+        // Its script charges the dealer fee on the Customer Portion only for an
+        // option whose Dealer Fee Base says so.
+        $option->update(['dealer_fee_base' => 'customer_portion']);
+        $this->actingAs($admin)->get(route('customers.create'))
+            ->assertSee('data-dealer-fee-base="customer_portion"', false);
 
         $this->actingAs($admin)->post(route('customers.store'), [
             ...$this->validCustomerPayload($basics),

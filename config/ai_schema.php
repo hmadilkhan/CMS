@@ -990,6 +990,7 @@ return [
                 'holdback',
                 'dollar_watt_value',
                 'uses_tpo_split',
+                'dealer_fee_base',
                 'created_at',
                 'updated_at',
                 'deleted_at',

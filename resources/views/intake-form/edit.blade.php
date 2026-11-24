@@ -440,7 +440,8 @@
                                 @foreach ($financeoptions as $financeOption)
                                     <option
                                         {{ $customer->finances->finance_option_id == $financeOption->id ? 'selected' : '' }}
-                                        value="{{ $financeOption->id }}">{{ $financeOption->name }}</option>
+                                        value="{{ $financeOption->id }}"
+                                        data-dealer-fee-base="{{ $financeOption->chargesDealerFeeOnCustomerPortion() ? 'customer_portion' : 'contract_amount' }}">{{ $financeOption->name }}</option>
                                 @endforeach
                             </select>
                             @error('finance_option_id')

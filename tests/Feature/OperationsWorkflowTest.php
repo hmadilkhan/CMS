@@ -208,6 +208,53 @@ class OperationsWorkflowTest extends TestCase
         $this->assertSame(0, LoanTerm::where('finance_option_id', $finance->id)->count());
     }
 
+    public function test_finance_option_dealer_fee_base_needs_the_tpo_split_for_customer_portion(): void
+    {
+        $admin = $this->superAdmin();
+        $payload = [
+            'name' => 'Portion Lender',
+            'loan_id' => 0,
+            'production_requirements' => 0,
+            'dealer_fee' => 1,
+            'pto_restriction' => 0,
+            'holdback' => 0,
+            'milestone_enabled' => 0,
+        ];
+
+        // No TPO credits = no Customer Portion to charge the fee on.
+        $this->actingAs($admin)->post(route('finance.option.store'), [
+            ...$payload,
+            'uses_tpo_split' => 0,
+            'dealer_fee_base' => 'customer_portion',
+        ])->assertSessionHasErrors('dealer_fee_base');
+        $this->assertNull(FinanceOption::where('name', 'Portion Lender')->first());
+
+        $this->actingAs($admin)->post(route('finance.option.store'), [
+            ...$payload,
+            'uses_tpo_split' => 1,
+            'dealer_fee_base' => 'customer_portion',
+        ])->assertSessionHasNoErrors();
+
+        $finance = FinanceOption::where('name', 'Portion Lender')->firstOrFail();
+        $this->assertTrue($finance->chargesDealerFeeOnCustomerPortion());
+
+        // Switching the split off later takes the portion base with it.
+        $this->actingAs($admin)->post(route('finance.option.update'), [
+            ...$payload,
+            'id' => $finance->id,
+            'uses_tpo_split' => 0,
+            'dealer_fee_base' => 'customer_portion',
+        ])->assertSessionHasErrors('dealer_fee_base');
+
+        $this->actingAs($admin)->post(route('finance.option.update'), [
+            ...$payload,
+            'id' => $finance->id,
+            'uses_tpo_split' => 0,
+            'dealer_fee_base' => 'contract_amount',
+        ])->assertSessionHasNoErrors();
+        $this->assertFalse($finance->fresh()->chargesDealerFeeOnCustomerPortion());
+    }
+
     public function test_sales_partner_can_be_created_updated_and_deleted(): void
     {
         $admin = $this->superAdmin();

@@ -442,7 +442,8 @@
                                     <option
                                         {{ old('finance_option_id', $customer->finances?->finance_option_id) == $financeOption->id ? 'selected' : '' }}
                                         value="{{ $financeOption->id }}"
-                                        data-tpo-split="{{ $financeOption->usesCustomerPortion() ? 1 : 0 }}">
+                                        data-tpo-split="{{ $financeOption->usesCustomerPortion() ? 1 : 0 }}"
+                                        data-dealer-fee-base="{{ $financeOption->chargesDealerFeeOnCustomerPortion() ? 'customer_portion' : 'contract_amount' }}">
                                         {{ $financeOption->name }}
                                     </option>
                                 @endforeach
@@ -791,12 +792,22 @@
             calculateCommission()
         }
 
+        // Is this option's dealer fee charged on the Customer Portion rather than
+        // the Contract Amount? "Dealer Fee Base" in Operations -> Finance Options,
+        // carried on the option's data-dealer-fee-base.
+        function dealerFeeOnCustomerPortion(financeOptionId) {
+            if (!financeOptionId) {
+                return false;
+            }
+            return $('#finance_option_id option[value="' + parseInt(financeOptionId) + '"]').data('dealer-fee-base') === 'customer_portion';
+        }
+
         function dealerFee(value) {
             let dealerFee = (value != undefined ? value : parseFloat($("#dealer_fee").val()));
             let dealerPercentage = (dealerFee * 100).toFixed(2);
             let contractAmount = parseFloat($('#contract_amount').val());
-            // Wheelhouse Credit Union (id 10): dealer fee is calculated on the Customer Portion, not the Contract Amount.
-            let dealerFeeBase = (parseInt($('#finance_option_id').val()) === 10)
+            // Options set to "Dealer Fee Base = Customer Portion" (Wheelhouse) charge it on the portion.
+            let dealerFeeBase = dealerFeeOnCustomerPortion($('#finance_option_id').val())
                 ? (parseFloat($('#customer_portion').val()) || 0)
                 : contractAmount;
             if (value != undefined) {
@@ -847,8 +858,8 @@
             let id = parseInt($("#finance_option_id").val());
             if (usesTpoSplit(id)) {
                 calculateCustomerPortion();
-                // Wheelhouse (10): recompute dealer fee amount on the updated Customer Portion.
-                if (id === 10) {
+                // Fee charged on the Customer Portion: recompute it on the new portion.
+                if (dealerFeeOnCustomerPortion(id)) {
                     dealerFee();
                 }
             }

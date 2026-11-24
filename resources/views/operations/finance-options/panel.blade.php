@@ -186,6 +186,20 @@
                             <div class="text-danger message mt-2">{{ $message }}</div>
                         @enderror
                     </div>
+                    {{-- What the dealer fee percentage is charged on. Customer
+                         Portion = contract minus the TPO credits, so it needs
+                         TPO Credit Split = Yes. --}}
+                    <div class="col-xl-3 col-lg-4 col-md-6 col-12">
+                        <label class="form-label">Dealer Fee Base</label>
+                        <select class="form-select select2" id="dealer_fee_base" name="dealer_fee_base" required>
+                            @foreach (\App\Models\FinanceOption::DEALER_FEE_BASES as $baseKey => $baseLabel)
+                                <option value="{{ $baseKey }}" @if (old('dealer_fee_base', !empty($finance) ? $finance->dealer_fee_base : 'contract_amount') === $baseKey) selected @endif>{{ $baseLabel }}</option>
+                            @endforeach
+                        </select>
+                        @error('dealer_fee_base')
+                            <div class="text-danger message mt-2">{{ $message }}</div>
+                        @enderror
+                    </div>
                     {{-- The milestone schedule. Each row: what fires it, how much
                          (fixed, a percent of its base, or what is left of its
                          base), and who the transaction is for. Zone triggers
@@ -384,6 +398,7 @@
                         <th>Dollar Watt Value</th>
                         <th>Milestone</th>
                         <th>TPO Credit Split</th>
+                        <th>Dealer Fee Base</th>
                         <th>Actions</th>
                     </tr>
                 </thead>
@@ -403,6 +418,7 @@
                             <td>{{ $financeOption->dollar_watt_value }}</td>
                             <td>{{ $financeOption->milestone_enabled ? 'Yes (' . $financeOption->milestones->where('is_active', true)->count() . ')' : 'No' }}</td>
                             <td>{{ $financeOption->uses_tpo_split ? 'Yes' : 'No' }}</td>
+                            <td>{{ \App\Models\FinanceOption::DEALER_FEE_BASES[$financeOption->dealer_fee_base] ?? 'Contract Amount' }}</td>
                             <td class="text-center">
                                 <a class="action-link" data-toggle="tooltip" title="Edit"
                                     href="{{ $screenUrl($financeOption->id) }}">

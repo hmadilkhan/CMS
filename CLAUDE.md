@@ -717,8 +717,16 @@ instead of one Third Party Credit.
   hard-coded to ids 9 / 10 (Prepaid PPA, Wheelhouse Credit Union); migration
   `2026_11_24_000001` switched those two on. The customer create/edit JS reads it
   from the option's `data-tpo-split` - never re-add an id check there.
-- Wheelhouse's dealer fee on the Customer Portion is still `finance_option_id === 10`
-  in the customer forms and `public/customer/create.js` - a separate question.
+- **Dealer Fee Base** (same editor, `finance_options.dealer_fee_base`:
+  `contract_amount` | `customer_portion`) says what the dealer fee % is charged
+  on. Was hard-coded `finance_option_id === 10` (Wheelhouse); migration
+  `2026_11_24_000002` set Wheelhouse to Customer Portion, everything else -
+  Prepaid PPA included - stays on Contract Amount. Customer Portion needs TPO
+  Credit Split = Yes (validated; `FinanceOption::chargesDealerFeeOnCustomerPortion()`
+  also requires it). The fee is computed in the browser - customer create/edit and
+  the intake forms (`public/customer/create.js`) read `data-dealer-fee-base` -
+  and the server stores the posted `dealer_fee_amount`; saved customers are not
+  recalculated until re-saved.
 
 - `customer_finances.third_party_credit` still holds the **total** (Solar + Battery),
   so `customer_portion = contract_amount - third_party_credit` holds for every row,

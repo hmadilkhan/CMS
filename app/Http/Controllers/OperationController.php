@@ -287,6 +287,7 @@ class OperationController extends Controller
                     "dollar_watt_value" => ($validated["holdback"] == 0 ? 0 : $validated["dollar_watt_value"]),
                     "milestone_enabled" => $validated["milestone_enabled"],
                     "uses_tpo_split" => $validated["uses_tpo_split"] ?? 0,
+                    "dealer_fee_base" => $validated["dealer_fee_base"] ?? "contract_amount",
                 ]);
                 // The editor's rows when it sent them; otherwise the standard
                 // four, so turning milestones on later has a schedule to edit.
@@ -331,6 +332,9 @@ class OperationController extends Controller
             // Absent (a sender without the dropdown) = leave it as it was.
             if (array_key_exists("uses_tpo_split", $validated)) {
                 $adder->uses_tpo_split = $validated["uses_tpo_split"];
+            }
+            if (array_key_exists("dealer_fee_base", $validated)) {
+                $adder->dealer_fee_base = $validated["dealer_fee_base"];
             }
             DB::transaction(function () use ($request, $validated, $adder) {
                 $adder->save();
@@ -1315,6 +1319,7 @@ class OperationController extends Controller
             "dollar_watt_value" => ["required_if:holdback,1", "nullable", "numeric", "min:0"],
             "milestone_enabled" => ["required", Rule::in([0, 1])],
             "uses_tpo_split" => ["sometimes", "required", Rule::in([0, 1])],
+            "dealer_fee_base" => ["sometimes", "required", Rule::in(array_keys(FinanceOption::DEALER_FEE_BASES))],
         ];
 
         if (!empty($ignoreId)) {
@@ -1341,6 +1346,21 @@ class OperationController extends Controller
             "milestones.*.label.required" => "Every milestone needs a name.",
             "milestones.*.amount_value.required_unless" => "Enter an amount for every Fixed or Percent milestone.",
         ]);
+
+        // There is no Customer Portion without the TPO credits, so the fee
+        // cannot be charged on it. Judged on the split as it will be saved: the
+        // value sent, else the one on file.
+        $validator->after(function ($validator) use ($request, $ignoreId) {
+            if ($request->input("dealer_fee_base") !== "customer_portion") {
+                return;
+            }
+            $splits = $request->has("uses_tpo_split")
+                ? (int) $request->input("uses_tpo_split") === 1
+                : (!empty($ignoreId) && (bool) FinanceOption::whereKey($ignoreId)->value("uses_tpo_split"));
+            if (!$splits) {
+                $validator->errors()->add("dealer_fee_base", "Dealer Fee on Customer Portion needs TPO Credit Split set to Yes.");
+            }
+        });
 
         $validator->after(function ($validator) use ($request, $milestones) {
             if (!$this->milestonesSubmitted($request) || $validator->errors()->isNotEmpty()) {

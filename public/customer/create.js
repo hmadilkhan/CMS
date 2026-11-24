@@ -229,9 +229,9 @@ function dealerFee(value) {
     let dealerFee = (value != undefined ? value : parseFloat($("#dealer_fee").val()));
     let dealerPercentage = (dealerFee * 100).toFixed(2);
     let contractAmount = parseFloat($('#contract_amount').val());
-    // Wheelhouse Credit Union (id 10): the dealer fee is charged on the Customer Portion
-    // (contract minus the third-party credit on file), as on the customer form.
-    let dealerFeeBase = (parseInt($('#finance_option_id').val()) === 10)
+    // Options set to "Dealer Fee Base = Customer Portion" (Wheelhouse) charge the fee
+    // on contract minus the third-party credit on file, as on the customer form.
+    let dealerFeeBase = ($('#finance_option_id option:selected').data('dealer-fee-base') === 'customer_portion')
         ? contractAmount - (parseFloat($('#contract_amount').data('tpo-credit')) || 0)
         : contractAmount;
     if (value != undefined) {
